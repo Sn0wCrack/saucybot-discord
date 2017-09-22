@@ -18,10 +18,12 @@ discord_token = os.environ["DISCORD_API_KEY"]
 weasyl_headers = {'X-Weasyl-API-Key': os.environ["WEASYL_API_KEY"]}
 
 fa_pattern = re.compile('(furaffinity\.net/view/(\d+))')
-ws_reverse_pattern = re.compile('(\d+)(?=/snoissimbus/.*moc.lysaew)')
+ws_pattern = re.compile('weasyl\.com\/~\w+\/submissions\/(\d+)')
+da_pattern = re.compile('deviantart\.com.*.\d')
 
 fapi_url = "https://bawk.space/fapi/submission/{}"
 wsapi_url = "https://www.weasyl.com/api/submissions/{}/view"
+daapi_url = "https://backend.deviantart.com/oembed?url={}"
 
 client = discord.Client()
 
@@ -59,15 +61,11 @@ async def on_message(message):
 
         await client.send_message(message.channel, embed=em)
         
-    # Reverse message content to perform regex using lookahead instead of
-    # lookbehind because lookbehind does not support matching to indeterminate
-    # length substrings which we need to catch a possible username.
-    ws_links = ws_reverse_pattern.findall(message.content[::-1])
-    
-        # Process each ws link
-    for (ws_id) in ws_links:
-        ws_id = ws_id[::-1] # Un-reverse ID matched from revered message content
         
+    ws_links = ws_pattern.findall(message.content)
+    
+    # Process each ws link
+    for (ws_id) in ws_links:
         # Request submission info
         ws_get = requests.get(wsapi_url.format(ws_id), headers=weasyl_headers)
 
@@ -86,6 +84,31 @@ async def on_message(message):
         em.set_author(
             name=wsapi["owner"],
             icon_url=wsapi["owner_media"]["avatar"][0]["url"])
+
+        await client.send_message(message.channel, embed=em)
+        
+        
+    da_links = da_pattern.findall(message.content)
+    
+    # Process each da link
+    for (da_id) in da_links:
+        # Request submission info
+        da_get = requests.get(daapi_url.format(da_id))
+
+        # Check for success from API
+        if not da_get:
+            continue
+
+        daapi = json.loads(da_get.text)
+        print(daapi)
+
+        em = discord.Embed(
+            title=daapi["title"])
+
+        em.set_image(url=daapi["url"])
+        em.set_author(
+            name=daapi["author_name"],
+            icon_url=em.Empty)
 
         await client.send_message(message.channel, embed=em)
 
