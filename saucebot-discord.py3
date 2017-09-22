@@ -83,7 +83,7 @@ async def on_message(message):
 
         em.set_image(url=wsapi["media"]["submission"][0]["url"])
         em.set_author(
-            name=waapi["owner"],
+            name=wsapi["owner"],
             icon_url=wsapi["owner_media"]["avatar"][0]["url"])
 
         await client.send_message(message.channel, embed=em)
