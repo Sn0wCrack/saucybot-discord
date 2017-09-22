@@ -81,7 +81,8 @@ async def on_message(message):
         em = discord.Embed(
             title=wsapi["title"])
 
-        em.set_image(url=wsapi["media"]["submission"][0]["url"])
+        # Discord didn't want to load the submission image, but the link worked
+        em.set_image(url=wsapi["media"]["submission"][0]["links"]["cover"][0]["url"])
         em.set_author(
             name=wsapi["owner"],
             icon_url=wsapi["owner_media"]["avatar"][0]["url"])
