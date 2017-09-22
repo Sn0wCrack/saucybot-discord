@@ -15,10 +15,13 @@ import json
 import os
 
 discord_token = os.environ["DISCORD_API_KEY"]
+weasyl_headers = {'X-Weasyl-API-Key': os.environ["WEASYL_API_KEY"]}
 
 fa_pattern = re.compile('(furaffinity\.net/view/(\d+))')
+ws_reverse_pattern = re.compile('(\d+)(?=/snoissimbus/.*moc.lysaew)')
 
 fapi_url = "https://bawk.space/fapi/submission/{}"
+wsapi_url = "https://www.weasyl.com/api/submissions/{}/view"
 
 client = discord.Client()
 
@@ -31,7 +34,7 @@ async def on_message(message):
 
     fa_links = fa_pattern.findall(message.content)
 
-    # Process each link
+    # Process each fa link
     for (fa_link, fa_id) in fa_links:
         # Request submission info
         fa_get = requests.get(fapi_url.format(fa_id))
@@ -53,6 +56,35 @@ async def on_message(message):
         em.set_author(
             name=fapi["author"],
             icon_url=fapi["avatar"])
+
+        await client.send_message(message.channel, embed=em)
+        
+    # Reverse message content to perform regex using lookahead instead of
+    # lookbehind because lookbehind does not support matching to indeterminate
+    # length substrings which we need to catch a possible username.
+    ws_links = ws_reverse_pattern.findall(message.content[::-1])
+    
+        # Process each ws link
+    for (ws_id) in ws_links:
+        ws_id = ws_id[::-1] # Un-reverse ID matched from revered message content
+        
+        # Request submission info
+        ws_get = requests.get(wsapi_url.format(ws_id), headers=weasyl_headers)
+
+        # Check for success from API
+        if not ws_get:
+            continue
+
+        wsapi = json.loads(ws_get.text)
+        print(wsapi)
+
+        em = discord.Embed(
+            title=wsapi["title"])
+
+        em.set_image(url=wsapi["media"]["submission"][0]["url"])
+        em.set_author(
+            name=waapi["owner"],
+            icon_url=wsapi["owner_media"]["avatar"][0]["url"])
 
         await client.send_message(message.channel, embed=em)
 
