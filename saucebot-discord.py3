@@ -20,10 +20,12 @@ weasyl_headers = {'X-Weasyl-API-Key': os.environ["WEASYL_API_KEY"]}
 fa_pattern = re.compile('(furaffinity\.net/view/(\d+))')
 ws_pattern = re.compile('weasyl\.com\/~\w+\/submissions\/(\d+)')
 da_pattern = re.compile('deviantart\.com.*.\d')
+e621_pattern = re.compile('e621\.net\/post/show\/(\d+)')
 
 fapi_url = "https://bawk.space/fapi/submission/{}"
 wsapi_url = "https://www.weasyl.com/api/submissions/{}/view"
 daapi_url = "https://backend.deviantart.com/oembed?url={}"
+e621api_url = "https://e621.net/post/show.json?id={}"
 
 client = discord.Client()
 
@@ -113,6 +115,28 @@ async def on_message(message):
         await client.send_message(message.channel, embed=em)
 
 
+    e621_links = e621_pattern.findall(message.content)
+
+    # Process each e621 link
+    for (e621_link, e621_id) in e621_links:
+        # Request submission info
+        e621_get = requests.get(e621api_url.format(e621_id))
+
+        # Check for success from API
+        if not e621_get:
+            continue
+
+        e621api = json.loads(e621_get.text)
+        print(e621api)
+
+        em = discord.Embed(
+            title=e621api["artist"]["0"])
+
+        em.set_image(url=fapi["file_url"])
+
+        await client.send_message(message.channel, embed=em)
+ 
+ 
 @client.event
 async def on_ready():
     print('Logged in as')
