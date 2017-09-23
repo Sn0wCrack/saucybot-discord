@@ -118,7 +118,7 @@ async def on_message(message):
     e621_links = e621_pattern.findall(message.content)
 
     # Process each e621 link
-    for (e621_link, e621_id) in e621_links:
+    for (e621_id) in e621_links:
         # Request submission info
         e621_get = requests.get(e621api_url.format(e621_id))
 
