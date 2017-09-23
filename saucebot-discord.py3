@@ -130,7 +130,7 @@ async def on_message(message):
         print(e621api)
 
         em = discord.Embed(
-            title=e621api["artist"]["0"])
+            title=e621api["artist"][0])
 
         em.set_image(url=fapi["file_url"])
 
