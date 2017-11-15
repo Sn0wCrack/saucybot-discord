@@ -19,11 +19,13 @@ weasyl_headers = {'X-Weasyl-API-Key': os.environ["WEASYL_API_KEY"]}
 
 fa_pattern = re.compile('(furaffinity\.net/view/(\d+))')
 ws_pattern = re.compile('weasyl\.com\/~\w+\/submissions\/(\d+)')
+wschar_pattern = re.compile('weasyl\.com\/~\w+\/character\/(\d+)')
 da_pattern = re.compile('deviantart\.com.*.\d')
 e621_pattern = re.compile('e621\.net\/post/show\/(\d+)')
 
 fapi_url = "https://bawk.space/fapi/submission/{}"
 wsapi_url = "https://www.weasyl.com/api/submissions/{}/view"
+wscharapi_url = "https://www.weasyl.com/api/characters/{}/view"
 daapi_url = "https://backend.deviantart.com/oembed?url={}"
 e621api_url = "https://e621.net/post/show.json?id={}"
 
@@ -86,6 +88,32 @@ async def on_message(message):
         em.set_author(
             name=wsapi["owner"],
             icon_url=wsapi["owner_media"]["avatar"][0]["url"])
+
+        await client.send_message(message.channel, embed=em)
+
+
+    wschar_links = wschar_pattern.findall(message.content)
+    
+    # Process each ws character page link
+    for (wschar_id) in wschar_links:
+        # Request submission info
+        wschar_get = requests.get(wscharapi_url.format(wschar_id), headers=weasyl_headers)
+
+        # Check for success from API
+        if not wschar_get:
+            continue
+
+        wscharapi = json.loads(wschar_get.text)
+        print(wscharapi)
+
+        em = discord.Embed(
+            title=wscharapi["title"])
+
+        # Discord didn't want to load the submission image, but the link worked
+        em.set_image(url=wscharapi["media"]["submission"][0]["links"]["cover"][0]["url"])
+        em.set_author(
+            name=wscharapi["owner"],
+            icon_url=wscharapi["owner_media"]["avatar"][0]["url"])
 
         await client.send_message(message.channel, embed=em)
         
