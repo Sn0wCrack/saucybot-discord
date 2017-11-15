@@ -19,7 +19,7 @@ weasyl_headers = {'X-Weasyl-API-Key': os.environ["WEASYL_API_KEY"]}
 
 fa_pattern = re.compile('(furaffinity\.net/view/(\d+))')
 ws_pattern = re.compile('weasyl\.com\/~\w+\/submissions\/(\d+)')
-wschar_pattern = re.compile('weasyl\.com\/~\w+\/character\/(\d+)')
+wschar_pattern = re.compile('weasyl\.com\/character\/(\d+)')
 da_pattern = re.compile('deviantart\.com.*.\d')
 e621_pattern = re.compile('e621\.net\/post/show\/(\d+)')
 
