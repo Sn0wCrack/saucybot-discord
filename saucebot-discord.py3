@@ -62,6 +62,11 @@ async def on_message(message):
             continue
 
         fapi = json.loads(fa_get.text)
+
+        # FA now embeds general submissions, skip in that case
+        if fapi["rating"] == "general":
+            continue
+
         print(message.author.name + '#' + message.author.discriminator + '@' + message.server.name + ':' + message.channel.name + ': ' + fapi["image_url"])
 
         em = discord.Embed(
