@@ -12,6 +12,8 @@ Currently supports:
  * Most multi-image twitter posts
  * Pixiv
 
+Enclosing messages in angle brackets disables image preview.
+
 Requires
 --------
 
