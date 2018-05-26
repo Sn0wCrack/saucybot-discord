@@ -46,7 +46,8 @@ e621api_url = "https://e621.net/post/show.json?id={}"
 twitterapi = twitter.Api(consumer_key=twitter_consumer_key,
                   consumer_secret=twitter_consumer_secret,
                   access_token_key=twitter_access_token_key,
-                  access_token_secret=twitter_access_token_secret)
+                  access_token_secret=twitter_access_token_secret,
+                  tweet_mode='extended')
 
 pixivapi = pixivpy3.AppPixivAPI()
 pixivapi.login(pixiv_login, pixiv_password)
