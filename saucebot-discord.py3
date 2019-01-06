@@ -16,6 +16,7 @@ import os
 import twitter
 import pixivpy3
 import io
+import time
 
 discord_token = os.environ["DISCORD_API_KEY"]
 weasyl_headers = {'X-Weasyl-API-Key': os.environ["WEASYL_API_KEY"]}
@@ -282,4 +283,12 @@ async def on_ready():
     print(client.user.id)
     print('------')
 
-client.run(discord_token)
+# Attempt to reconnect if we lose connection to discord, ie. one of these http requests took too long and we lost our auth.
+# TODO: Figoure out how to use aiohttp and what to do about modules that use requests internally.
+while (1):
+    try:
+        client.run(discord_token) # Connect to discord and begin client event functions
+    except:
+        print('Restarting...')
+        time.sleep(1) # Try not to spam discord
+
