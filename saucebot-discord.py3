@@ -288,6 +288,9 @@ async def on_ready():
 while (1):
     try:
         client.run(discord_token) # Connect to discord and begin client event functions
+    # Allow normal ctrl-c exit, etc.
+    except (KeyboardInterrupt, SystemExit):
+        raise
     except:
         print('Restarting...')
         time.sleep(1) # Try not to spam discord
