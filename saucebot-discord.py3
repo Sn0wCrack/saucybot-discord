@@ -28,7 +28,7 @@ pixiv_login = os.environ['PIXIV_LOGIN']
 pixiv_password = os.environ['PIXIV_PASSWORD']
 
 disable_command_pattern = re.compile('<(?!@|#|:|a:).*>')
-fa_pattern = re.compile('(furaffinity\.net/view/(\d+))')
+fa_pattern = re.compile('(furaffinity\.net/(?:view|full)/(\d+))')
 ws_pattern = re.compile('weasyl\.com\/~\w+\/submissions\/(\d+)')
 wschar_pattern = re.compile('weasyl\.com\/character\/(\d+)')
 da_pattern = re.compile('deviantart\.com.*.\d')
