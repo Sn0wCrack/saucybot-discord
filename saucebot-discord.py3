@@ -211,6 +211,10 @@ async def on_message(message):
         if not tweet_status:
             continue
 
+        # Check if tweet has media
+        if not hasattr(tweet_status, 'media'):
+            continue
+
         # Get media links in tweet
         for (media_num, media_item) in enumerate(tweet_status.media):
             # Check if media is an image and not first image (disp. by embed)
