@@ -290,8 +290,10 @@ while (1):
         client.run(discord_token) # Connect to discord and begin client event functions
     # Allow normal ctrl-c exit, etc.
     except (KeyboardInterrupt, SystemExit):
-        raise
+        client.close()
+        raise SystemExit
     except:
         print('Restarting...')
+        client.close()
         time.sleep(1) # Try not to spam discord
 
