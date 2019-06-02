@@ -5,8 +5,8 @@
 __title__ = 'saucebot-discord'
 __author__ = 'Goopypanther'
 __license__ = 'GPL'
-__copyright__ = 'Copyright 2018 Goopypanther'
-__version__ = '0.2'
+__copyright__ = 'Copyright 2019 Goopypanther'
+__version__ = '0.3'
 
 import discord
 import re
@@ -84,7 +84,7 @@ async def on_message(message):
         if fapi["rating"] == "general":
             continue
 
-        print(message.author.name + '#' + message.author.discriminator + '@' + message.server.name + ':' + message.channel.name + ': ' + fapi["image_url"])
+        print(message.author.name + '#' + message.author.discriminator + '@' + message.guild.name + ':' + message.channel.name + ': ' + fapi["image_url"])
 
         em = discord.Embed(
             title=fapi["title"])
@@ -97,7 +97,7 @@ async def on_message(message):
             name=fapi["author"],
             icon_url=fapi["avatar"])
 
-        await client.send_message(message.channel, embed=em)
+        await message.channel.send(embed=em)
 
 
     ws_links = ws_pattern.findall(message.content)
@@ -112,7 +112,7 @@ async def on_message(message):
             continue
 
         wsapi = json.loads(ws_get.text)
-        print(message.author.name + '#' + message.author.discriminator + '@' + message.server.name + ':' + message.channel.name + ': ' + wsapi["media"]["submission"][0]["links"]["cover"][0]["url"])
+        print(message.author.name + '#' + message.author.discriminator + '@' + message.guild.name + ':' + message.channel.name + ': ' + wsapi["media"]["submission"][0]["links"]["cover"][0]["url"])
 
         em = discord.Embed(
             title=wsapi["title"])
@@ -123,7 +123,7 @@ async def on_message(message):
             name=wsapi["owner"],
             icon_url=wsapi["owner_media"]["avatar"][0]["url"])
 
-        await client.send_message(message.channel, embed=em)
+        await message.channel.send(embed=em)
 
 
     wschar_links = wschar_pattern.findall(message.content)
@@ -138,7 +138,7 @@ async def on_message(message):
             continue
 
         wscharapi = json.loads(wschar_get.text)
-        print(message.author.name + '#' + message.author.discriminator + '@' + message.server.name + ':' + message.channel.name + ': ' + wscharapi["media"]["submission"][0]["links"]["cover"][0]["url"])
+        print(message.author.name + '#' + message.author.discriminator + '@' + message.guild.name + ':' + message.channel.name + ': ' + wscharapi["media"]["submission"][0]["links"]["cover"][0]["url"])
 
         em = discord.Embed(
             title=wscharapi["title"])
@@ -149,7 +149,7 @@ async def on_message(message):
             name=wscharapi["owner"],
             icon_url=wscharapi["owner_media"]["avatar"][0]["url"])
 
-        await client.send_message(message.channel, embed=em)
+        await message.channel.send(embed=em)
 
 
     da_links = da_pattern.findall(message.content)
@@ -164,7 +164,7 @@ async def on_message(message):
             continue
 
         daapi = json.loads(da_get.text)
-        print(message.author.name + '#' + message.author.discriminator + '@' + message.server.name + ':' + message.channel.name + ': ' + daapi["url"])
+        print(message.author.name + '#' + message.author.discriminator + '@' + message.guild.name + ':' + message.channel.name + ': ' + daapi["url"])
 
         em = discord.Embed(
             title=daapi["title"])
@@ -174,7 +174,7 @@ async def on_message(message):
             name=daapi["author_name"],
             icon_url=em.Empty)
 
-        await client.send_message(message.channel, embed=em)
+        await message.channel.send(embed=em)
 
 
     e621_links = e621_pattern.findall(message.content)
@@ -189,14 +189,14 @@ async def on_message(message):
             continue
 
         e621api = json.loads(e621_get.text)
-        print(message.author.name + '#' + message.author.discriminator + '@' + message.server.name + ':' + message.channel.name + ': ' + e621api["file_url"])
+        print(message.author.name + '#' + message.author.discriminator + '@' + message.guild.name + ':' + message.channel.name + ': ' + e621api["file_url"])
 
         em = discord.Embed(
             title=e621api["artist"][0])
 
         em.set_image(url=e621api["file_url"])
 
-        await client.send_message(message.channel, embed=em)
+        await message.channel.send(embed=em)
 
 
     twitter_links = twitter_pattern.findall(message.content)
@@ -228,9 +228,9 @@ async def on_message(message):
 
     # Check if any non-displayed media was found in any tweets in msg
     if len(tweet_media) > 0:
-        print(message.author.name + '#' + message.author.discriminator + '@' + message.server.name + ':' + message.channel.name + ': ' + tweet_media)
+        print(message.author.name + '#' + message.author.discriminator + '@' + message.guild.name + ':' + message.channel.name + ': ' + tweet_media)
 
-        await client.send_message(message.channel, tweet_media)
+        await message.channel.send(tweet_media)
 
 
     pixiv_links = pixiv_pattern.findall(message.content)
@@ -250,18 +250,19 @@ async def on_message(message):
 
             # Check for multi-image set
             if len(pixiv_result.illust.meta_pages) > 0:
-                await client.send_message(message.channel, 'This is part of a {} image set.'.format(len(pixiv_result.illust.meta_pages)))
+                await message.channel.send('This is part of a {} image set.'.format(len(pixiv_result.illust.meta_pages)))
 
             pixiv_image_link = pixiv_result.illust.image_urls.large
 
-            print(message.author.name + '#' + message.author.discriminator + '@' + message.server.name + ':' + message.channel.name + ': ' + pixiv_image_link)
+            print(message.author.name + '#' + message.author.discriminator + '@' + message.guild.name + ':' + message.channel.name + ': ' + pixiv_image_link)
 
             pixiv_image_rsp = requests.get(pixiv_image_link, headers={'Referer': 'https://app-api.pixiv.net/'}, stream=True)
 
+            pixiv_image_rsp_fp = io.BytesIO(pixiv_image_rsp.content)
             # Add file name to stream
-            pixiv_image_rsp.raw.name = pixiv_image_link.rsplit('/', 1)[-1]
+            pixiv_image_rsp_fp.name = pixiv_image_link.rsplit('/', 1)[-1]
 
-            await client.send_file(message.channel, pixiv_image_rsp.raw)
+            await message.channel.send(file=discord.File(pixiv_image_rsp_fp))
 
 
     pixiv_direct_img_links = pixiv_direct_img_pattern.findall(message.content)
@@ -273,12 +274,13 @@ async def on_message(message):
 
             pixiv_image_rsp = requests.get(url, headers={'Referer': 'https://app-api.pixiv.net/'}, stream=True)
 
-            print(message.author.name + '#' + message.author.discriminator + '@' + message.server.name + ':' + message.channel.name + ': ' + url)
+            print(message.author.name + '#' + message.author.discriminator + '@' + message.guild.name + ':' + message.channel.name + ': ' + url)
 
+            pixiv_image_rsp_fp = io.BytesIO(pixiv_image_rsp.content)
             # Add file name to stream
-            pixiv_image_rsp.raw.name = url.rsplit('/', 1)[-1]
+            pixiv_image_rsp_fp.name = url.rsplit('/', 1)[-1]
 
-            await client.send_file(message.channel, pixiv_image_rsp.raw)
+            await message.channel.send(file=discord.File(pixiv_image_rsp_fp))
 
 @client.event
 async def on_ready():
@@ -289,15 +291,4 @@ async def on_ready():
 
 # Attempt to reconnect if we lose connection to discord, ie. one of these http requests took too long and we lost our auth.
 # TODO: Figoure out how to use aiohttp and what to do about modules that use requests internally.
-while (1):
-    try:
-        client.run(discord_token) # Connect to discord and begin client event functions
-    # Allow normal ctrl-c exit, etc.
-    except (KeyboardInterrupt, SystemExit):
-        client.close()
-        raise SystemExit
-    except:
-        print('Restarting...')
-        client.close()
-        time.sleep(1) # Try not to spam discord
-
+client.run(discord_token) # Connect to discord and begin client event functions
