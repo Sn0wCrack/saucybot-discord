@@ -34,7 +34,7 @@ wschar_pattern = re.compile('weasyl\.com\/character\/(\d+)')
 da_pattern = re.compile('deviantart\.com.*.\d')
 e621_pattern = re.compile('e621\.net\/post/show\/(\d+)')
 twitter_pattern = re.compile('twitter.com/\w+/status/(\d+)')
-pixiv_pattern = re.compile('pixiv.net/.*illust_id=(\d*)')
+pixiv_pattern = re.compile('pixiv.net\/.*artworks\/(\d*)')
 pixiv_direct_img_pattern = re.compile('i\.pximg\.net\S*\w')
 
 fapi_url = "https://bawk.space/fapi/submission/{}"
