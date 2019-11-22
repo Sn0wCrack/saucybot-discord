@@ -11,6 +11,7 @@ class e621(Base):
         self.name = 'e621'
         self.pattern = 'e621\.net\/post/show\/(\d+)'
         self.api_url = 'https://e621.net/post/show.json?id={}'
+        self.colour = discord.Colour(0x00549e)
 
     def process(self, match):
 
@@ -24,14 +25,14 @@ class e621(Base):
             parsed_response = json.loads(response.text)
 
             # Don't try and embed videos and flash files
-            if parsed_response['file_ext'] in ['webm', 'mp4', 'swf']: 
+            if parsed_response['file_ext'] in ['webm', 'mp4', 'swf']:
                 return None
 
             ret = {}
 
             discord_embed = discord.Embed(title='#{}: {}'.format(
-                parsed_response['id'], parsed_response['artist'][0]), description=parsed_response['description'])
-            
+                parsed_response['id'], parsed_response['artist'][0]), description=parsed_response['description'], colour=self.colour)
+
             discord_embed.set_image(url=parsed_response['file_url'])
 
             discord_embed.set_author(name=parsed_response['author'])
