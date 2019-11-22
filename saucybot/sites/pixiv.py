@@ -1,5 +1,6 @@
 import requests
 import io
+import discord
 from sites.base import Base
 import config.pixiv
 import pixivpy3
@@ -40,7 +41,7 @@ class Pixiv(Base):
 
                 image = self.get_image(pixiv_image_link)
 
-                ret['files'] = [image]
+                ret['files'] = [discord.File(image)]
 
                 return ret
 
@@ -52,7 +53,7 @@ class Pixiv(Base):
 
                 image = self.get_image(pixiv_image_link)
 
-                files.append(image)
+                files.append(discord.File(image))
 
             # Display a message saying this is an incomplete image set
             if (pixiv_meta_page_count > 5):

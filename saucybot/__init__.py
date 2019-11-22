@@ -29,13 +29,10 @@ async def on_message(message):
         if 'message' in response:
             await message.channel.send(response['message'])
 
-        if 'files' in response:
-            # Convert array of file-objects to Discord Files
-            # This is better than sending individual messages
-            discord_files = []
-            for file in response['files']:
-                discord_files.append(discord.File(file))
-            
-            await message.channel.send(files=discord_files)
+        if 'files' in response:            
+            await message.channel.send(files=response['files'])
+
+        if 'embed' in response:
+            await message.channel.send(embed=response['embed'])
 
 client.run(config.discord.config['discord_token'])
