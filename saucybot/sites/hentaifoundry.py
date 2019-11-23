@@ -26,7 +26,7 @@ class HentaiFoundry(Base):
         full_url = self.post_url.format(hf_user, hf_id, hf_slug)
 
         response = session.get(full_url)
-        
+
         d = pq(response.text)
 
         title = d('.imageTitle')
@@ -36,12 +36,14 @@ class HentaiFoundry(Base):
         description = d('.picDescript')
 
         ret = {}
-        
-        discord_embed = discord.Embed(title=title.text(), url=full_url, description=description.text())
+
+        discord_embed = discord.Embed(
+            title=title.text(), url=full_url, description=description.text())
 
         discord_embed.set_image(url='https:' + image.attr('src'))
 
-        discord_embed.set_author(name=author_img.attr('title'), url=self.base_url + author_link.attr('href'), icon_url='https:' + author_img.attr('src'))
+        discord_embed.set_author(name=author_img.attr(
+            'title'), url=self.base_url + author_link.attr('href'), icon_url='https:' + author_img.attr('src'))
 
         ret['embed'] = discord_embed
 

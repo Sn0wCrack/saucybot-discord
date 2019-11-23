@@ -4,6 +4,7 @@ from sites import (
     hentaifoundry
 )
 
+
 class SiteRunner():
 
     def __init__(self):

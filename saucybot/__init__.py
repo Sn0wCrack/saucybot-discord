@@ -12,7 +12,6 @@ from site_runner import SiteRunner
 import config.discord
 import discord
 
-
 client = discord.Client()
 runner = SiteRunner()
 
