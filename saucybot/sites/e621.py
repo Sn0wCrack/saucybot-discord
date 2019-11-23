@@ -14,29 +14,29 @@ class e621(Base):
         self.colour = discord.Colour(0x00549e)
 
     def process(self, match):
+        (e621_id) = match.groups()
 
-        for (e621_id) in match.groups():
-            response = requests.get(self.api_url.format(e621_id), headers={
-                                    'User-Agent': 'SaucyBot/0.1.0'})
+        response = requests.get(self.api_url.format(e621_id), headers={
+                                'User-Agent': 'SaucyBot/0.1.0'})
 
-            if not response:
-                return None
+        if not response:
+            return None
 
-            parsed_response = json.loads(response.text)
+        parsed_response = json.loads(response.text)
 
-            # Don't try and embed videos and flash files
-            if parsed_response['file_ext'] in ['webm', 'mp4', 'swf']:
-                return None
+        # Don't try and embed videos and flash files
+        if parsed_response['file_ext'] in ['webm', 'mp4', 'swf']:
+            return None
 
-            ret = {}
+        ret = {}
 
-            discord_embed = discord.Embed(title='#{}: {}'.format(
-                parsed_response['id'], parsed_response['artist'][0]), description=parsed_response['description'], colour=self.colour)
+        discord_embed = discord.Embed(title='#{}: {}'.format(
+            parsed_response['id'], parsed_response['artist'][0]), description=parsed_response['description'], colour=self.colour)
 
-            discord_embed.set_image(url=parsed_response['file_url'])
+        discord_embed.set_image(url=parsed_response['file_url'])
 
-            discord_embed.set_author(name=parsed_response['author'])
+        discord_embed.set_author(name=parsed_response['author'])
 
-            ret['embed'] = discord_embed
+        ret['embed'] = discord_embed
 
-            return ret
+        return ret

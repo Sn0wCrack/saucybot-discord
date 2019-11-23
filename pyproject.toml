@@ -10,6 +10,8 @@ python-dotenv = "^0.10.3"
 PixivPy = "^3.5"
 "discord.py" = "^1.2"
 requests-toolbelt = "^0.9.1"
+pyquery = "^1.4"
+requests = "^2.22"
 
 [tool.poetry.dev-dependencies]
 pytest = "^3.0"
