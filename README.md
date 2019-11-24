@@ -1,40 +1,24 @@
-Saucebot
+Saucybot
 ========
+
+Forked from: [JeremyRuhland's original 'SauceBot'](https://github.com/JeremyRuhland/saucebot-discord)
 
 A discord bot for interacting with multiple art hosting website URLs.
 
-If you would like to add this bot to your server [click here](https://discordapp.com/oauth2/authorize?client_id=284138973318742026&scope=bot&permissions=0) and authorize it through your discord account.
-
 Currently supports:
 
- * Furaffinity
- * Deviantart
- * Weasly
- * e621
- * Most multi-image twitter posts
- * Pixiv
-
-Enclosing messages in angle brackets disables image preview. Links hiden by spoilers are automatically disabled.
-
-Requires
---------
-
- * `>=Python3.5`
- * [Discord.py](https://github.com/Rapptz/discord.py) >= 1
- * [pixivpy](https://github.com/upbit/pixivpy)
- * [twitter](https://github.com/bear/python-twitter)
- * re
- * requests
- * io
- * json
- * Discord bot token
- * Weasly API key
- * Twitter consumer key and secret, access token key and secret
- * Pixiv login and password
+* ArtStation
+  * e621
+  * Hentai Foundry
+  * Pixiv
 
 Installing
 ----------
 
-Do the install stuff, you'll need a discord app and bot account.
-Set the appropriate environment variables to pass credentials into the program.
-Follow the instructions [here](https://github.com/reactiflux/discord-irc/wiki/Creating-a-discord-bot-&-getting-a-token) for creating those and getting the bot invited to your server.
+* Install Python >= 3.6
+  * Install Poetry ([here](https://poetry.eustace.io/docs/]))
+  * Run ```poetry install``` in base directory
+  * If you recieve a ModuleNotFoundError and you're running Python 3.8 run this command: ```cp -r $HOME/.poetry/lib/poetry/_vendor/py3.7 $HOME/.poetry/lib/poetry/_vendor/py3.8```
+  * Run ```cp .env.example .env```
+  * Open .env in your editor of choice and fill in the required environment variables
+  * Run ```python saucybot/__init__.py```
