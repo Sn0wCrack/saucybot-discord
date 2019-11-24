@@ -6,10 +6,10 @@ Forked from: [JeremyRuhland's original 'SauceBot'](https://github.com/JeremyRuhl
 A discord bot for interacting with multiple art hosting website URLs.
 
 * Currently Supports:
-  * ArtStation
-  * e621
-  * Hentai Foundry
-  * Pixiv
+  * ArtStation (Embeds all extra images)
+  * e621 (Embeds image in full quality)
+  * Hentai Foundry (Creates embed as none exists for site)
+  * Pixiv (Posts up to 5 images of the set)
 
 Installing
 ----------
