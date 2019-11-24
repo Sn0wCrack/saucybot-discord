@@ -37,8 +37,15 @@ class HentaiFoundry(Base):
 
         ret = {}
 
+        description_text = description.text()
+
+        # Discord has a maximum character limit of 6000, but some HF descriptions are
+        # super fucking long, so lets just make them shorter in that cast
+        if len(description_text) > 300:
+            description_text = description_text[0:300] + '...'
+
         discord_embed = discord.Embed(
-            title=title.text(), url=full_url, description=description.text())
+            title=title.text(), url=full_url, description=description_text)
 
         discord_embed.set_image(url='https:' + image.attr('src'))
 

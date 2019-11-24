@@ -14,7 +14,7 @@ class e621(Base):
         self.colour = discord.Colour(0x00549e)
 
     def process(self, match):
-        (e621_id) = match.groups()
+        (e621_id,) = match.groups()
 
         response = requests.get(self.api_url.format(e621_id), headers={
                                 'User-Agent': 'SaucyBot/0.1.0'})

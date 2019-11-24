@@ -1,17 +1,20 @@
 from sites import (
     pixiv,
     e621,
-    hentaifoundry
+    hentaifoundry,
+    artstation
 )
 
 
 class SiteRunner():
 
     def __init__(self):
+        # TODO: Make this load all of the modules dynamtically
         self.loaded_sites = [
             pixiv.Pixiv(),
             e621.e621(),
-            hentaifoundry.HentaiFoundry()
+            hentaifoundry.HentaiFoundry(),
+            artstation.ArtStation()
         ]
 
     def process(self, message):
