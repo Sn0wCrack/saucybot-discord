@@ -11,7 +11,7 @@ class FurAffinity(Base):
 
     def __init__(self):
         self.name = 'FurAffinity'
-        self.pattern = '(furaffinity\.net/(?:view|full)/(\d+))'
+        self.pattern = '((http|https)://furaffinity\.net/(?:view|full)/(\d+))'
         self.colour = discord.Colour(0x000000)
 
     def process(self, match):
