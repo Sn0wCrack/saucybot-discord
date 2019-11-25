@@ -37,7 +37,7 @@ class ArtStation(Base):
             if asset['asset_type'] in ['image', 'cover']:
                 discord_embed = discord.Embed(title=parsed_response['title'], colour=self.colour)
 
-                discord_embed.set_image(url=assest['image_url'])
+                discord_embed.set_image(url=asset['image_url'])
 
                 embeds.append(discord_embed)
 
