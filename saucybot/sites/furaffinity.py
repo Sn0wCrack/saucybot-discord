@@ -19,8 +19,8 @@ class FurAffinity(Base):
 
         session = requests.Session()
 
-        session.cookie.set(name='a', value=config.furaffinity.config['cookie_a'])
-        session.cookie.set(name='b', value=config.furaffinity.config['cookie_b'])
+        session.cookies.set(name='a', value=config.furaffinity.config['cookie_a'])
+        session.cookies.set(name='b', value=config.furaffinity.config['cookie_b'])
 
         respone = session.get(fa_link)
 
