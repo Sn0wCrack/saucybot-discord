@@ -32,9 +32,9 @@ class ArtStation(Base):
 
         embeds = []
 
-        for assest in parsed_response['assets'][1:]:
+        for asset in parsed_response['assets'][1:]:
             
-            if assest['type'] in ['image', 'cover']:
+            if asset['asset_type'] in ['image', 'cover']:
                 discord_embed = discord.Embed(title=parsed_response['title'], colour=self.colour)
 
                 discord_embed.set_image(url=assest['image_url'])
