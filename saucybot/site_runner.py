@@ -2,7 +2,8 @@ from sites import (
     pixiv,
     e621,
     hentaifoundry,
-    artstation
+    artstation,
+    furaffinity
 )
 
 
@@ -14,7 +15,8 @@ class SiteRunner():
             pixiv.Pixiv(),
             e621.e621(),
             hentaifoundry.HentaiFoundry(),
-            artstation.ArtStation()
+            artstation.ArtStation(),
+            furaffinity.FurAffinity()
         ]
 
     def process(self, message):

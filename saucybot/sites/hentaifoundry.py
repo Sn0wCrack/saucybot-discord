@@ -12,7 +12,7 @@ class HentaiFoundry(Base):
         self.name = 'Hentai Foundry'
         self.base_url = 'https://www.hentai-foundry.com'
         self.post_url = 'https://www.hentai-foundry.com/pictures/user/{}/{}/{}'
-        self.pattern = 'hentai-foundry.com\/pictures\/user\/(.*)\/(\d+)\/(.*)'
+        self.pattern = 'hentai-foundry\.com\/pictures\/user\/(.*)\/(\d+)\/(.*)'
 
     def process(self, match):
         (hf_user, hf_id, hf_slug) = match.groups()
