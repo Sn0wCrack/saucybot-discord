@@ -12,6 +12,7 @@ A discord bot for interacting with multiple art hosting website URLs.
   * e621 (Embeds image in full quality)
   * Hentai Foundry (Creates embed as none exists for site)
   * Pixiv (Posts up to 5 images of the set)
+  * FurAffinity (Creates image embed as none exists for site)
 
 Installing
 ----------
