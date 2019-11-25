@@ -11,7 +11,7 @@ class FurAffinity(Base):
 
     def __init__(self):
         self.name = 'FurAffinity'
-        self.pattern = '((http|https)://furaffinity\.net/(?:view|full)/(\d+))'
+        self.pattern = '(furaffinity\.net\/(?:view|full)\/(\d+))'
         self.colour = discord.Colour(0x000000)
 
     def process(self, match):
@@ -22,7 +22,7 @@ class FurAffinity(Base):
         session.cookies.set(name='a', value=config.furaffinity.config['cookie_a'])
         session.cookies.set(name='b', value=config.furaffinity.config['cookie_b'])
 
-        respone = session.get(fa_link)
+        respone = session.get('https://' + fa_link)
 
         if not response:
             return None
