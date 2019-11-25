@@ -3,6 +3,8 @@ Saucybot
 
 Forked from: [JeremyRuhland's original 'SauceBot'](https://github.com/JeremyRuhland/saucebot-discord)
 
+If you would like to add this bot to your server [click here](https://discordapp.com/api/oauth2/authorize?client_id=647368715742216193&permissions=388096&scope=bot) and authorize it through your discord account.
+
 A discord bot for interacting with multiple art hosting website URLs.
 
 * Currently Supports:
