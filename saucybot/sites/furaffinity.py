@@ -22,7 +22,7 @@ class FurAffinity(Base):
         session.cookies.set(name='a', value=config.furaffinity.config['cookie_a'])
         session.cookies.set(name='b', value=config.furaffinity.config['cookie_b'])
 
-        respone = session.get('https://' + fa_link)
+        response = session.get('https://' + fa_link)
 
         if not response:
             return None
