@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from site_runner import SiteRunner
+import re
 import config.discord
 import discord
 
@@ -20,6 +21,10 @@ async def on_message(message):
 
     # Skip messages from bot
     if message.author == client.user:
+        return
+
+    # If Message is sorrounded by < > it'll be ignored
+    if re.match('(<|\|\|)(?!@|#|:|a:).*(>|\|\|)', message.content):
         return
 
     response = runner.process(message.content)
