@@ -106,7 +106,7 @@ class Pixiv(Base):
 
         # We only havea maximum of 8MBs that we can upload at a time
         if (len(stream.getvalue()) >= 8 * (10 ** 6)):
-            ret['message'] = 'Ugoira tool large to upload, displaying preview only'
+            ret['message'] = 'Ugoira animation too large to upload, displaying preview only'
 
             pixiv_image_link = pixiv_result.illust.image_urls.large
 
