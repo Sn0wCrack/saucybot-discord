@@ -13,6 +13,7 @@ requests-toolbelt = "^0.9.1"
 pyquery = "^1.4"
 requests = "^2.22"
 Pillow = "^6.2"
+ffmpeg-python = "^0.2.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^3.0"

@@ -92,6 +92,25 @@ websockets = ">=6.0,<7.0"
 
 [[package]]
 category = "main"
+description = "Python bindings for FFmpeg - with complex filtering support"
+name = "ffmpeg-python"
+optional = false
+python-versions = "*"
+version = "0.2.0"
+
+[package.dependencies]
+future = "*"
+
+[[package]]
+category = "main"
+description = "Clean single-source support for Python 3 and 2"
+name = "future"
+optional = false
+python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
+version = "0.18.2"
+
+[[package]]
+category = "main"
 description = "Internationalized Domain Names in Applications (IDNA)"
 name = "idna"
 optional = false
@@ -307,7 +326,7 @@ version = "0.6.0"
 more-itertools = "*"
 
 [metadata]
-content-hash = "19a333dc1cbff81cfa738100282cda2d521bc943148a795edc8d632a4252c872"
+content-hash = "537b5f8e9ab1611bdf9bd6a0d9d4bbacae27158e0c623e15feecdb41dc9c70b3"
 python-versions = "^3.6"
 
 [metadata.hashes]
@@ -320,6 +339,8 @@ chardet = ["84ab92ed1c4d4f16916e05906b6b75a6c0fb5db821cc65e70cbd64a3e2a5eaae", "
 colorama = ["05eed71e2e327246ad6b38c540c4a3117230b19679b875190486ddd2d721422d", "f8ac84de7840f5b9c4e3347b3c1eaa50f7e49c2b07596221daec5edaabbd7c48"]
 cssselect = ["f612ee47b749c877ebae5bb77035d8f4202c6ad0f0fc1271b3c18ad6c4468ecf", "f95f8dedd925fd8f54edb3d2dfb44c190d9d18512377d3c1e2388d16126879bc"]
 "discord.py" = ["7c843b523bb011062b453864e75c7b675a03faf573c58d14c9f096e85984329d"]
+ffmpeg-python = ["65225db34627c578ef0e11c8b1eb528bb35e024752f6f10b78c011f6f64c4127", "ac441a0404e053f8b6a1113a77c0f452f1cfc62f6344a769475ffdc0f56c23c5"]
+future = ["b1bead90b70cf6ec3f0710ae53a525360fa360d306a86583adc6bf83a4db537d"]
 idna = ["c357b3f628cf53ae2c4c05627ecc484553142ca23264e593d327bcde5e9c3407", "ea8b7f6188e6fa117537c3df7da9fc686d485087abf6ac197f9c46432f7e4a3c"]
 idna-ssl = ["a933e3bb13da54383f9e8f35dc4f9cb9eb9b3b78c6b36f311254d6d0d92c6c7c"]
 importlib-metadata = ["aa18d7378b00b40847790e7c27e11673d7fed219354109d0e7b9e5b25dc3ad26", "d5f18a79777f3aa179c145737780282e27b508fc8fd688cb17c7a813e8bd39af"]

@@ -4,6 +4,7 @@ import discord
 import zipfile
 import glob
 import shutil
+import ffmpeg
 from PIL import Image
 from sites.base import Base
 import config.pixiv
@@ -82,40 +83,17 @@ class Pixiv(Base):
 
         z.extractall(path='/tmp/{}'.format(pixiv_result.illust.id))
 
-        frames = []
-        images = glob.glob('/tmp/{}/*'.format(pixiv_result.illust.id))
+        out, _ = (
+            ffmpeg
+            .input('/tmp/{}/*.jpg'.format(pixiv_result.illust.id), pattern_type='glob', framerate=30)
+            .output('/tmp/{}/ugoira.webm'.format(pixiv_result.illust.id))
+            .run()
+        )
 
-        for i in images:
-            new_frame = Image.open(i)
-            frames.append(new_frame)
-
-        timings = []
-
-        for f in metadata.ugoira_metadata.frames:
-            timings.append(f.delay)
-
-        ret = {}
-
-        stream = io.BytesIO()
-        stream.name = 'ugoira.gif'
-
-        frames[0].save(stream, format='GIF', append_images=frames[1:], save_all=True, duration=timings, loop=True)
-
-        # Need to reset stream or discord.py freaks out
-        stream.seek(0)
-
-        # We only havea maximum of 8MBs that we can upload at a time
-        if (len(stream.getvalue()) >= 8 * (10 ** 6)):
-            ret['message'] = 'Ugoira animation too large to upload, displaying preview only'
-
-            pixiv_image_link = pixiv_result.illust.image_urls.large
-
-            image = self.get_file(pixiv_image_link)
-
-            ret['files'] = [discord.File(image)]
-
-            return ret
-
+        with open('/tmp/{}/ugoira.webm'.format(pixiv_result.illust.id), 'rb') as f:
+            stream = io.BytesIO(f.read())
+            stream.name = 'ugoira.webm'
+        
         shutil.rmtree('/tmp/{}'.format(pixiv_result.illust.id))
 
         ret = {}
