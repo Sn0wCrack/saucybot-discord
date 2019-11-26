@@ -83,9 +83,14 @@ class Pixiv(Base):
 
         z.extractall(path='/tmp/{}'.format(pixiv_result.illust.id))
 
+        ffconcat = self.build_ffconccat(metadata.ugoira_metadata.frames)
+
+        with open('/tmp/{}/ffconcat'.format(pixiv_result.illust.id), 'w') as f:
+            f.write(ffconcat)
+
         out, _ = (
             ffmpeg
-            .input('/tmp/{}/*.jpg'.format(pixiv_result.illust.id), pattern_type='glob', framerate=30)
+            .input('/tmp/{}/ffconcat'.format(pixiv_result.illust.id), format='concat', safe=0)
             .output('/tmp/{}/ugoira.webm'.format(pixiv_result.illust.id))
             .run()
         )
@@ -101,6 +106,19 @@ class Pixiv(Base):
         ret['files'] = [discord.File(stream)]
 
         return ret
+        
+    def build_ffconccat(self, frames):
+        ffconcat = ''
+
+        for f in frames:
+            delay = f.delay / 1000
+
+            ffconcat += 'file ' + f.file + '\n'
+            ffconcat += 'duration ' + str(delay) + '\n'
+
+        ffconcat += 'file ' + frames[-1].file + '\n'
+
+        return ffconcat
 
     def get_file(self, url):
         file_resp = requests.get(
