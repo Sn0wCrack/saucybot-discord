@@ -32,7 +32,12 @@ class ArtStation(Base):
 
         embeds = []
 
-        for asset in parsed_response['assets'][1:]:
+        asset_count = len(parsed_response['asset'])
+
+        if asset_count > 6:
+            ret['message'] = ret['message'] = 'This is part of a {} image set.'.format(asset_count)
+
+        for asset in parsed_response['assets'][1:6]:
             
             if asset['asset_type'] in ['image', 'cover']:
                 discord_embed = discord.Embed(title=parsed_response['title'], colour=self.colour)
