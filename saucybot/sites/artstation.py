@@ -25,14 +25,14 @@ class ArtStation(Base):
 
         parsed_response = json.loads(response.text)
 
-        if len(parsed_response['assets']) == 1:
+        asset_count = len(parsed_response['assets'])
+
+        if asset_count == 1:
             return None
 
         ret = {}
 
         embeds = []
-
-        asset_count = len(parsed_response['asset'])
 
         if asset_count > 6:
             ret['message'] = ret['message'] = 'This is part of a {} image set.'.format(asset_count)
