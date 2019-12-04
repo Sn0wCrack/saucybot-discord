@@ -38,14 +38,19 @@ class ArtStation(Base):
         limit = config.artstation.config['post_limit'] + 1
 
         if asset_count > limit:
-            ret['content'] = 'This is part of a {} image set.'.format(asset_count)
+            ret['content'] = 'This is part of a {} image set.'.format(
+                asset_count)
 
         for asset in parsed_response['assets'][1:limit]:
-            
+
             if asset['asset_type'] in ['image', 'cover']:
-                discord_embed = discord.Embed(title=parsed_response['title'], colour=self.colour)
+                discord_embed = discord.Embed(
+                    title=parsed_response['title'], url=parsed_response['permalink'], colour=self.colour)
 
                 discord_embed.set_image(url=asset['image_url'])
+
+                discord_embed.set_author(name=parsed_response['user']['full_name'], url=parsed_response['user']
+                                         ['permalink'], icon_url=parsed_response['user']['medium_avatar_url'])
 
                 embeds.append(discord_embed)
 

@@ -13,6 +13,7 @@ class HentaiFoundry(Base):
         self.base_url = 'https://www.hentai-foundry.com'
         self.post_url = 'https://www.hentai-foundry.com/pictures/user/{}/{}/{}'
         self.pattern = 'hentai-foundry\.com\/pictures\/user\/(.*)\/(\d+)\/(.*)'
+        self.colour = discord.Colour(0xFF67A2)
 
     def process(self, match):
         (hf_user, hf_id, hf_slug) = match.groups()
@@ -45,7 +46,7 @@ class HentaiFoundry(Base):
             description_text = description_text[0:300] + '...'
 
         discord_embed = discord.Embed(
-            title=title.text(), url=full_url, description=description_text)
+            title=title.text(), url=full_url, description=description_text, colour=self.colour)
 
         discord_embed.set_image(url='https:' + image.attr('src'))
 
