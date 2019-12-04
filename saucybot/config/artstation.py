@@ -1,5 +1,5 @@
 import os
 
 config = {
-    'post_limit': int(os.environ['ARTSTAION_POST_LIMIT']),
+    'post_limit': int(os.environ['ARTSTATION_POST_LIMIT']),
 }
