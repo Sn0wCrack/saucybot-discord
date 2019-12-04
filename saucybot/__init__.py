@@ -30,18 +30,11 @@ async def on_message(message):
     response = runner.process(message.content)
 
     if response:
-        if 'message' in response:
-            await message.channel.send(response['message'])
-
-        if 'files' in response:            
-            await message.channel.send(files=response['files'])
-
-        if 'embed' in response:
-            await message.channel.send(embed=response['embed'])
-
         # This is a workaround until Discord supports multiple embeds
         if 'embeds' in response:
             for embed in response['embeds']:
                 await message.channel.send(embed=embed)
+        else:
+            await message.channel.send(**response)
 
 client.run(config.discord.config['discord_token'])

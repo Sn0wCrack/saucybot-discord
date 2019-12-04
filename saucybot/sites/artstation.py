@@ -2,6 +2,7 @@ import requests
 import io
 import discord
 import json
+import config.artstation
 from sites.base import Base
 
 
@@ -34,10 +35,12 @@ class ArtStation(Base):
 
         embeds = []
 
-        if asset_count > 6:
-            ret['message'] = ret['message'] = 'This is part of a {} image set.'.format(asset_count)
+        limit = config.artstation.config['post_limit'] + 1
 
-        for asset in parsed_response['assets'][1:6]:
+        if asset_count > limit:
+            ret['content'] = 'This is part of a {} image set.'.format(asset_count)
+
+        for asset in parsed_response['assets'][1:limit]:
             
             if asset['asset_type'] in ['image', 'cover']:
                 discord_embed = discord.Embed(title=parsed_response['title'], colour=self.colour)

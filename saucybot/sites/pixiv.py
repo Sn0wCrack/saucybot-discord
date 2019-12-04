@@ -42,7 +42,7 @@ class Pixiv(Base):
 
         # We only grab a maximum of 5 to prevent issues with rate-limiting
         # As well as hopefully prevent spam issues
-        pixiv_meta_pages = pixiv_result.illust.meta_pages[:5]
+        pixiv_meta_pages = pixiv_result.illust.meta_pages[:config.pixiv.config['post_limit']]
 
         ret = {}
 
@@ -67,8 +67,8 @@ class Pixiv(Base):
             files.append(discord.File(image))
 
         # Display a message saying this is an incomplete image set
-        if (pixiv_meta_page_count > 5):
-            ret['message'] = 'This is part of a {} image set.'.format(pixiv_meta_page_count)
+        if (pixiv_meta_page_count > config.pixiv.config['post_limit']):
+            ret['content'] = 'This is part of a {} image set.'.format(pixiv_meta_page_count)
         
         ret['files'] = files
 
@@ -91,13 +91,13 @@ class Pixiv(Base):
         out, _ = (
             ffmpeg
             .input('/tmp/{}/ffconcat'.format(pixiv_result.illust.id), format='concat', safe=0)
-            .output('/tmp/{}/ugoira.webm'.format(pixiv_result.illust.id))
+            .output('/tmp/{}/ugoira.{}'.format(pixiv_result.illust.id, config.pixiv.config['ugoira_format']))
             .run()
         )
 
-        with open('/tmp/{}/ugoira.webm'.format(pixiv_result.illust.id), 'rb') as f:
+        with open('/tmp/{}/ugoira.{}'.format(pixiv_result.illust.id, config.pixiv.config['ugoira_format']), 'rb') as f:
             stream = io.BytesIO(f.read())
-            stream.name = 'ugoira.webm'
+            stream.name = 'ugoira.{}'.format(config.pixiv.config['ugoira_format'])
         
         shutil.rmtree('/tmp/{}'.format(pixiv_result.illust.id))
 
