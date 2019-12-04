@@ -8,11 +8,11 @@ If you would like to add this bot to your server [click here](https://discordapp
 A discord bot for interacting with multiple art hosting website URLs.
 
 * Currently Supports:
-  * ArtStation - Embeds all extra images
+  * ArtStation - Embeds up to X extra images (X is configurable, default 5)
   * e621  - Embeds image in full quality)
   * Hentai Foundry - Creates embed as none exists for site
-  * Pixiv - Posts up to 5 images of the set
-    * Pixiv Ugoira - Uploads a WebM with correct framerate and frametiming
+  * Pixiv - Posts up to X images of the set (X is configurable, default 5)
+    * Pixiv Ugoira - Uploads a video with correct framerate and frametiming (Video format is configurable)
   * FurAffinity - Creates image embed as none exists for site
 
 Installing
