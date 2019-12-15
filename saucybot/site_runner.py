@@ -3,7 +3,8 @@ from sites import (
     e621,
     hentaifoundry,
     artstation,
-    furaffinity
+    furaffinity,
+    newgrounds
 )
 
 
@@ -16,7 +17,8 @@ class SiteRunner():
             e621.e621(),
             hentaifoundry.HentaiFoundry(),
             artstation.ArtStation(),
-            furaffinity.FurAffinity()
+            furaffinity.FurAffinity(),
+            newgrounds.Newgrounds(),
         ]
 
     def process(self, message):
