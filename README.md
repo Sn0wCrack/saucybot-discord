@@ -14,6 +14,7 @@ A discord bot for interacting with multiple art hosting website URLs.
   * Pixiv - Posts up to X images of the set (X is configurable, default 5)
     * Pixiv Ugoira - Uploads a video with correct framerate and frametiming (Video format is configurable)
   * FurAffinity - Creates image embed as none exists for site
+  * Newgrounds - Creates embed for site as image isn't fully embeded, this also displays the rating the image has
 
 Installing
 ----------
