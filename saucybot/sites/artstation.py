@@ -39,7 +39,7 @@ class ArtStation(Base):
 
         limit = config.artstation.config['post_limit'] + 1
 
-        cover_filename = os.basename(urllib.parse.urlsplit(parsed_response['cover_url']).path)
+        cover_filename = os.path.basename(urllib.parse.urlsplit(parsed_response['cover_url']).path)
 
         if asset_count > limit:
             ret['content'] = 'This is part of a {} image set.'.format(
