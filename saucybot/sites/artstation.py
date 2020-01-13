@@ -3,6 +3,8 @@ import io
 import discord
 import json
 import config.artstation
+import urllib.parse
+import os
 from sites.base import Base
 
 
@@ -37,6 +39,8 @@ class ArtStation(Base):
 
         limit = config.artstation.config['post_limit'] + 1
 
+        cover_filename = os.basename(urllib.parse.urlsplit(parsed_response['cover_url']).path)
+
         if asset_count > limit:
             ret['content'] = 'This is part of a {} image set.'.format(
                 asset_count)
@@ -44,6 +48,11 @@ class ArtStation(Base):
         for asset in parsed_response['assets'][1:limit]:
 
             if asset['asset_type'] in ['image', 'cover']:
+
+                # Skip Image if it's the same as the cover
+                if cover_filename in asset['image_url']:
+                    continue
+
                 discord_embed = discord.Embed(
                     title=parsed_response['title'], url=parsed_response['permalink'], colour=self.colour)
 

@@ -4,7 +4,8 @@ from sites import (
     hentaifoundry,
     artstation,
     furaffinity,
-    newgrounds
+    newgrounds,
+    deviantart
 )
 
 
@@ -19,6 +20,7 @@ class SiteRunner():
             artstation.ArtStation(),
             furaffinity.FurAffinity(),
             newgrounds.Newgrounds(),
+            deviantart.DeviantArt(),
         ]
 
     def process(self, message):
