@@ -6,7 +6,7 @@
   "author": "Sn0wCrack",
   "license": "MIT",
   "scripts": {
-    "start": "node dist/index.js",
+    "start": "node dist/src/index.js",
     "start:dev": "nodemon",
     "build": "tsc",
     "lint": "tsc --noEmit && eslint \"**/*.{js,ts}\" --quiet --fix",
