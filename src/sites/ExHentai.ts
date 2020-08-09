@@ -1,0 +1,90 @@
+import BaseSite from "./BaseSite";
+import { ProcessResponse } from "./ProcessResponse";
+import cheerio from 'cheerio';
+import got from 'got';
+import { DateTime } from "luxon";
+import { MessageEmbed } from "discord.js";
+import htmlToText from 'html-to-text';
+import { CookieJar } from "tough-cookie";
+
+class ExHentai extends BaseSite
+{
+    name = 'ExHentai';
+
+    pattern = /e[x-]hentai.org\/g\/(?<id>\d+)\/(?<hash>.+)/;
+
+    color = 0x660611;
+
+    async process (match: RegExpMatchArray): Promise<ProcessResponse|false> {
+        const message: ProcessResponse = {
+            embeds: [],
+            files: [],
+        };
+
+        const jar = new CookieJar();
+
+        const response = await got.get(match.input, { cookieJar: jar });
+
+        const $ = cheerio.load(response.body);
+
+        const title = $('.gm h1#gn');
+        const image = $('.gm #gd1 > div');
+        const description = $('div#comment_0');
+
+        const imageUrl = image.css('background').match(/url\((?<url>.*)\)/).groups['url'];
+
+        const metaContainer = $('.gm #gmid #gd3 #gdd tbody');
+
+        const posted = metaContainer.children('tr').first().children('.gdt2');
+        const language = metaContainer.children('tr').children('td:contains("Language:")').siblings().first();
+        const pages = metaContainer.children('tr').children('td:contains("Length:")').siblings().first();
+
+        const rating = $('td#rating_label');
+
+        const authorLink = $('.gm #gmid #gdn a');
+
+        let descriptionText = htmlToText.fromString(description.html());
+
+        if (descriptionText.length > 300) {
+            descriptionText = descriptionText.substring(0, 300) + '...';
+        }
+
+        const embed = new MessageEmbed({
+            title: title.text(),
+            url: match.input,
+            description: descriptionText,
+            color: this.color,
+            timestamp: DateTime.fromFormat(posted.text(), 'yyyy-MM-dd HH:mm').toUTC().toMillis(),
+            image: {
+                url: imageUrl,
+            },
+            author: {
+                name: authorLink.text(),
+                url: `${authorLink.attr('href')}`,
+            },
+            fields: [
+                {
+                    name: 'Language',
+                    value: language.text().trim(),
+                    inline: true,
+                },
+                {
+                    name: 'Pages',
+                    value: pages.text().replace('pages', '').trim(),
+                    inline: true,
+                },
+                {
+                    name: 'Rating',
+                    value: `${rating.text().replace('Average:', '').trim()} / 5.00`,
+                    inline: true,
+                }
+            ]
+        })
+
+        message.embeds.push(embed);
+
+        return Promise.resolve(message);
+    }
+}
+
+export default ExHentai;

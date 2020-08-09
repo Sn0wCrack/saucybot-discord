@@ -14,7 +14,7 @@ class ArtStation extends BaseSite
     pattern = /artstation.com\/artwork\/(?<hash>\S*)/;
 
     async process (match: RegExpMatchArray): Promise<ProcessResponse|false> {
-        
+
         const message: ProcessResponse = {
             embeds: [],
             files: [],
@@ -28,7 +28,7 @@ class ArtStation extends BaseSite
             }
         })
         .json();
-        
+
         // Discord embeds the first ArtStation item, so if there's only one, ignore the request
         if (response.assets.length == 1) {
             return Promise.resolve(false);

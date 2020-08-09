@@ -7,6 +7,10 @@ dotenv.config();
 
 const client = new discord.Client();
 
+client.on('ready', () => {
+    console.log('Ready');
+})
+
 client.on('message', async (message) => {
     // If message is from Bot, then ignore it.
     if (message.author == client.user) {

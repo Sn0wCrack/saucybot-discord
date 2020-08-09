@@ -68,7 +68,7 @@ class Newgrounds extends BaseSite
                 },
             ]
         })
-        
+
         message.embeds.push(embed);
 
         return Promise.resolve(message);

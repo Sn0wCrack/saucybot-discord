@@ -138,7 +138,7 @@ class Pixiv extends BaseSite
             const delay: number = frame.delay / 1000;
 
             concat += `file ${frame.file}\n`;
-            concat += `duration ${delay}\n`;   
+            concat += `duration ${delay}\n`;
         }
 
         const lastFrame = frames[frames.length - 1];
