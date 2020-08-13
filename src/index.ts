@@ -22,7 +22,7 @@ client.on('message', async (message) => {
         return;
     }
 
-    const response = await SiteRunner.process(message.content);
+    const response = await SiteRunner.process(message);
 
     // If the response is false, then we didn't find anything.
     if (response === false) {

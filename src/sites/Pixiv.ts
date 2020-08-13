@@ -1,6 +1,6 @@
 import { FileOptions } from "discord.js";
 import BaseSite from "./BaseSite";
-import { ProcessResponse } from "./ProcessResponse";
+import ProcessResponse from "./ProcessResponse";
 import got from "got";
 import path from 'path';
 import PixivAppApi from 'pixiv-app-api';
@@ -91,7 +91,7 @@ class Pixiv extends BaseSite
         const file = await this.getFile(metadata.ugoiraMetadata.zipUrls.medium);
 
         // Because the attachment can be a stirng or buffer, we have to type cast to any, as string can't go to buffer automatically
-        const buffer: any = file.attachment;
+        const buffer = file.attachment as Buffer;
 
         const zip = new AdmZip(buffer);
 
@@ -131,11 +131,11 @@ class Pixiv extends BaseSite
         return Promise.resolve(message);
     }
 
-    buildConcatFile (frames: Array<Record<string, any>>): string {
+    buildConcatFile (frames: Array<Record<string, unknown>>): string {
         let concat = '';
 
         for (const frame of frames) {
-            const delay: number = frame.delay / 1000;
+            const delay = frame.delay as number / 1000;
 
             concat += `file ${frame.file}\n`;
             concat += `duration ${delay}\n`;
@@ -154,7 +154,7 @@ class Pixiv extends BaseSite
             ffmpeg({ cwd: path.dirname(input) })
                 .input(input)
                 .inputFormat('concat')
-                .videoBitrate(2000)
+                .videoBitrate(Environment.get('PIXIV_UGOIRA_BITRATE', 2000))
                 .on('error', (err) => reject(err))
                 .on('end', () => resolve(true))
                 .save(output)

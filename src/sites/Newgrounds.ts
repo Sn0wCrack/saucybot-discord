@@ -1,5 +1,5 @@
 import BaseSite from "./BaseSite";
-import { ProcessResponse } from "./ProcessResponse";
+import ProcessResponse from "./ProcessResponse";
 import cheerio from 'cheerio';
 import got from 'got';
 import { MessageEmbed } from "discord.js";

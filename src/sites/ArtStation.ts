@@ -1,5 +1,5 @@
 import BaseSite from "./BaseSite";
-import { ProcessResponse } from "./ProcessResponse";
+import ProcessResponse from "./ProcessResponse";
 import got from "got";
 import { version } from "../../package.json";
 import Environment from "../Environment";
@@ -20,6 +20,7 @@ class ArtStation extends BaseSite
             files: [],
         };
 
+        /* eslint-disable  @typescript-eslint/no-explicit-any */
         const response: Record<string, any> = await got.get(`https://www.artstation.com/projects/${match.groups.hash}.json`, {
             responseType: 'json',
             headers: {

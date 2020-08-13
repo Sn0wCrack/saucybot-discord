@@ -1,4 +1,4 @@
-import { ProcessResponse } from "./ProcessResponse";
+import ProcessResponse from "./ProcessResponse";
 
 class BaseSite
 {
@@ -12,6 +12,7 @@ class BaseSite
         return message.match(this.pattern)
     }
 
+    /* eslint-disable  @typescript-eslint/no-unused-vars */
     async process (match: RegExpMatchArray): Promise<ProcessResponse|false> {
         throw new Error('Not yet implemented');
     }

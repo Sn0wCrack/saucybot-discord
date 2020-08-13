@@ -1,5 +1,5 @@
 import BaseSite from "./BaseSite";
-import { ProcessResponse } from "./ProcessResponse";
+import ProcessResponse from "./ProcessResponse";
 import { CookieJar } from "tough-cookie";
 import cheerio from 'cheerio';
 import got from 'got';
@@ -50,10 +50,10 @@ class HentaiFoundry extends BaseSite
             .parent()
             .siblings()
             .first();
-        
+
         const authorLink = $('#descriptionBox .boxbody a');
         const authorImage = $('#descriptionBox .boxbody a img');
-        
+
         let descriptionText = description.text();
 
         // Since Discord has a maximum character limit of 6000, and some HF descriptions are long

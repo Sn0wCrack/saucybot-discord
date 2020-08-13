@@ -1,11 +1,12 @@
 import BaseSite from "./BaseSite";
-import { ProcessResponse } from "./ProcessResponse";
+import ProcessResponse from "./ProcessResponse";
 import cheerio from 'cheerio';
 import got from 'got';
 import { DateTime } from "luxon";
 import { MessageEmbed } from "discord.js";
 import htmlToText from 'html-to-text';
 import { CookieJar } from "tough-cookie";
+import Environment from "../Environment";
 
 class ExHentai extends BaseSite
 {
@@ -22,6 +23,9 @@ class ExHentai extends BaseSite
         };
 
         const jar = new CookieJar();
+
+        await jar.setCookie(`ipb_member_id=${Environment.get('EHENTAI_IPB_ID')}`, 'https://exhentai.org');
+        await jar.setCookie(`ipb_pass_hash=${Environment.get('EHENTAI_IPB_PASS')}`, 'https://exhentai.org')
 
         const response = await got.get(match.input, { cookieJar: jar });
 
