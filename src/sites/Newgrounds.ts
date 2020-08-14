@@ -52,8 +52,8 @@ class Newgrounds extends BaseSite
             },
             author: {
                 name: authorLink.text(),
-                url: `${authorLink.attr('href')}`,
-                iconURL: `https:${authorImage.attr('src')}`,
+                url: authorLink.attr('href'),
+                iconURL: authorImage.attr('src'),
             },
             fields: [
                 {
