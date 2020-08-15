@@ -12,7 +12,7 @@ class ExHentai extends BaseSite
 {
     name = 'ExHentai';
 
-    pattern = /e[x-]hentai.org\/g\/(?<id>\d+)\/(?<hash>.+)/;
+    pattern = /https?:\/\/(www\.)?e[x-]hentai.org\/g\/(?<id>\d+)\/(?<hash>.+)/;
 
     color = 0x660611;
 
@@ -22,12 +22,14 @@ class ExHentai extends BaseSite
             files: [],
         };
 
+        const url = match[0];
+
         const jar = new CookieJar();
 
         await jar.setCookie(`ipb_member_id=${Environment.get('EHENTAI_IPB_ID')}`, 'https://exhentai.org');
         await jar.setCookie(`ipb_pass_hash=${Environment.get('EHENTAI_IPB_PASS')}`, 'https://exhentai.org')
 
-        const response = await got.get(match.input, { cookieJar: jar });
+        const response = await got.get(url, { cookieJar: jar });
 
         const $ = cheerio.load(response.body);
 
@@ -55,7 +57,7 @@ class ExHentai extends BaseSite
 
         const embed = new MessageEmbed({
             title: title.text(),
-            url: match.input,
+            url: url,
             description: descriptionText,
             color: this.color,
             timestamp: DateTime.fromFormat(posted.text(), 'yyyy-MM-dd HH:mm').toUTC().toMillis(),

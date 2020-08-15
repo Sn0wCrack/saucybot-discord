@@ -40,9 +40,7 @@ client.on('message', async (message) => {
             message.channel.send(response.text);
         }
 
-        for (const embed of response.embeds) {
-            message.channel.send(embed);
-        }
+        message.channel.send(response.embeds);
     }
 });
 

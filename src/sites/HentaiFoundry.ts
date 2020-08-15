@@ -10,7 +10,7 @@ class HentaiFoundry extends BaseSite
 {
     name = 'Hentai Foundry';
 
-    pattern = /hentai-foundry\.com\/pictures\/user\/(?<user>.*)\/(?<id>\d+)\/(?<slug>.*)/;
+    pattern = /https:?\/\/(www\.)?hentai-foundry\.com\/pictures\/user\/(?<user>.*)\/(?<id>\d+)\/(?<slug>.*)/;
 
     color = 0xFF67A2;
 
@@ -23,11 +23,13 @@ class HentaiFoundry extends BaseSite
             files: [],
         };
 
+        const url = match[0];
+
         const jar = new CookieJar();
 
         await got.get(`${this.baseUrl}/?enterAgree=1`, {cookieJar: jar});
 
-        const response = await got.get(match.input, {cookieJar: jar});
+        const response = await got.get(url, {cookieJar: jar});
 
         const $ = cheerio.load(response.body);
 
@@ -65,7 +67,7 @@ class HentaiFoundry extends BaseSite
         const embed = new MessageEmbed({
             type: 'image',
             title: title.text(),
-            url: match.input,
+            url: url,
             timestamp: DateTime.fromISO(postedAt.attr('datetime')).toUTC().toMillis(),
             description: descriptionText,
             color: this.color,

@@ -16,7 +16,7 @@ class Pixiv extends BaseSite
 {
     name = 'Pixiv';
 
-    pattern = /pixiv.net\/.*artworks\/(?<id>\d+)/;
+    pattern = /https?:\/\/(www\.)?pixiv.net\/.*artworks\/(?<id>\d+)/;
 
     api: PixivAppApi;
 

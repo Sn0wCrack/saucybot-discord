@@ -11,7 +11,7 @@ class ArtStation extends BaseSite
 {
     name = 'ArtStation';
 
-    pattern = /artstation.com\/artwork\/(?<hash>\S*)/;
+    pattern = /https?:\/\/(www\.)?artstation.com\/artwork\/(?<hash>\S*)/;
 
     async process (match: RegExpMatchArray): Promise<ProcessResponse|false> {
 
@@ -38,7 +38,7 @@ class ArtStation extends BaseSite
         const limit = Environment.get('ARTSTATION_POST_LIMIT', 5);
 
         if (response.assets.length > limit) {
-            message.text = `This is part of a ${response.assets.length} set`;
+            message.text = `This is part of a ${response.assets.length} image set.`;
         }
 
         const coverFileName = path.basename(new URL(response.cover_url).pathname);

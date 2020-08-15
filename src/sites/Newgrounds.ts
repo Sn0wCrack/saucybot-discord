@@ -9,7 +9,7 @@ class Newgrounds extends BaseSite
 {
     name = 'Newgrounds';
 
-    pattern = /newgrounds\.com\/art\/view\/(?<user>.*)\/(?<slug>.*)/;
+    pattern = /https?:\/\/(www\.)?newgrounds\.com\/art\/view\/(?<user>.*)\/(?<slug>.*)/;
 
     color = 0xFFF17A;
 
@@ -19,7 +19,9 @@ class Newgrounds extends BaseSite
             files: [],
         };
 
-        const response = await got.get(match.input);
+        const url = match[0];
+
+        const response = await got.get(url);
 
         const $ = cheerio.load(response.body);
 
@@ -44,7 +46,7 @@ class Newgrounds extends BaseSite
 
         const embed = new MessageEmbed({
             title: title.text(),
-            url: match.input,
+            url: url,
             description: descriptionText,
             color: this.color,
             image: {
@@ -67,7 +69,7 @@ class Newgrounds extends BaseSite
                     inline: true,
                 },
             ]
-        })
+        });
 
         message.embeds.push(embed);
 
