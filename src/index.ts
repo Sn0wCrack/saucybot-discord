@@ -44,6 +44,14 @@ client.on('message', async (message) => {
     }
 });
 
+client.on('ready', async () => {
+    client.setInterval(async () => {
+        await client.user.setActivity(`Your Links... | Servers: ${client.guilds.cache.size}`, {
+            type: 'WATCHING'
+        });
+    }, 5000);
+});
+
 client
     .login(Environment.get('DISCORD_API_KEY'))
     .catch((err) => {
