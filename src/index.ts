@@ -7,10 +7,6 @@ dotenv.config();
 
 const client = new discord.Client();
 
-client.on('ready', () => {
-    console.log('Ready');
-})
-
 client.on('message', async (message) => {
     // If message is from Bot, then ignore it.
     if (message.author == client.user) {
@@ -45,6 +41,8 @@ client.on('message', async (message) => {
 });
 
 client.on('ready', async () => {
+    console.log('Ready');
+
     client.setInterval(async () => {
         await client.user.setActivity(`Your Links... | Servers: ${client.guilds.cache.size}`, {
             type: 'WATCHING'
