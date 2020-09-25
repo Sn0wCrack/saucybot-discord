@@ -9,8 +9,7 @@
     "start": "node dist/src/index.js",
     "start:dev": "nodemon",
     "build": "tsc",
-    "lint": "tsc --noEmit && eslint \"**/*.{js,ts}\" --quiet --fix",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "lint": "tsc --noEmit && eslint \"**/*.{js,ts}\" --quiet --fix"
   },
   "dependencies": {
     "adm-zip": "^0.4.16",
