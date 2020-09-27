@@ -15,7 +15,8 @@ WORKDIR /bot
 ENV NODE_ENV=production
 
 # Install depdency packages
-RUN apt-get install ffmpeg
+RUN apt-get -y update
+RUN apt-get -y install ffmpeg
 
 COPY package*.json ./
 RUN npm ci --quiet --only=production
