@@ -14,6 +14,9 @@ FROM node:latest AS production
 WORKDIR /bot
 ENV NODE_ENV=production
 
+# Install depdency packages
+RUN apt-get install ffmpeg
+
 COPY package*.json ./
 RUN npm ci --quiet --only=production
 
