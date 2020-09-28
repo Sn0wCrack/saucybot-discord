@@ -1,5 +1,5 @@
 # Build Step -- Build out our TypeScript code
-FROM node:latest AS build
+FROM node:alpine AS build
 
 WORKDIR /usr/src/app
 
@@ -9,14 +9,15 @@ COPY ./src ./src
 RUN npm ci --quiet && npm run build
 
 # Production Step -- Run our compiled TypeScript code
-FROM node:latest AS production
+FROM node:alpine AS production
 
 WORKDIR /bot
 ENV NODE_ENV=production
 
 # Install depdency packages
-RUN apt-get -y update
-RUN apt-get -y install ffmpeg
+# libc6-compat - makes sure all node functions work correctly
+# ffmpeg - used for pixiv ugoira
+RUN apk add --no-cache --update libc6-compat ffmpeg
 
 COPY package*.json ./
 RUN npm ci --quiet --only=production
