@@ -1,22 +1,21 @@
-import BaseSite from "./BaseSite";
-import ProcessResponse from "./ProcessResponse";
+import BaseSite from './BaseSite';
+import ProcessResponse from './ProcessResponse';
 import cheerio from 'cheerio';
 import got from 'got';
-import { DateTime } from "luxon";
-import { MessageEmbed } from "discord.js";
+import { DateTime } from 'luxon';
+import { MessageEmbed } from 'discord.js';
 import htmlToText from 'html-to-text';
-import { CookieJar } from "tough-cookie";
-import Environment from "../Environment";
+import { CookieJar } from 'tough-cookie';
+import Environment from '../Environment';
 
-class ExHentai extends BaseSite
-{
+class ExHentai extends BaseSite {
     name = 'ExHentai';
 
     pattern = /https?:\/\/(www\.)?e[x-]hentai.org\/g\/(?<id>\d+)\/(?<hash>.+)/;
 
     color = 0x660611;
 
-    async process (match: RegExpMatchArray): Promise<ProcessResponse|false> {
+    async process(match: RegExpMatchArray): Promise<ProcessResponse | false> {
         const message: ProcessResponse = {
             embeds: [],
             files: [],
@@ -26,8 +25,14 @@ class ExHentai extends BaseSite
 
         const jar = new CookieJar();
 
-        await jar.setCookie(`ipb_member_id=${Environment.get('EHENTAI_IPB_ID')}`, 'https://exhentai.org');
-        await jar.setCookie(`ipb_pass_hash=${Environment.get('EHENTAI_IPB_PASS')}`, 'https://exhentai.org')
+        await jar.setCookie(
+            `ipb_member_id=${Environment.get('EHENTAI_IPB_ID')}`,
+            'https://exhentai.org'
+        );
+        await jar.setCookie(
+            `ipb_pass_hash=${Environment.get('EHENTAI_IPB_PASS')}`,
+            'https://exhentai.org'
+        );
 
         const response = await got.get(url, { cookieJar: jar });
 
@@ -37,13 +42,22 @@ class ExHentai extends BaseSite
         const image = $('.gm #gd1 > div');
         const description = $('div#comment_0');
 
-        const imageUrl = image.css('background').match(/url\((?<url>.*)\)/).groups['url'];
+        const imageUrl = image.css('background').match(/url\((?<url>.*)\)/)
+            .groups['url'];
 
         const metaContainer = $('.gm #gmid #gd3 #gdd tbody');
 
         const posted = metaContainer.children('tr').first().children('.gdt2');
-        const language = metaContainer.children('tr').children('td:contains("Language:")').siblings().first();
-        const pages = metaContainer.children('tr').children('td:contains("Length:")').siblings().first();
+        const language = metaContainer
+            .children('tr')
+            .children('td:contains("Language:")')
+            .siblings()
+            .first();
+        const pages = metaContainer
+            .children('tr')
+            .children('td:contains("Length:")')
+            .siblings()
+            .first();
 
         const rating = $('td#rating_label');
 
@@ -60,7 +74,9 @@ class ExHentai extends BaseSite
             url: url,
             description: descriptionText,
             color: this.color,
-            timestamp: DateTime.fromFormat(posted.text(), 'yyyy-MM-dd HH:mm').toUTC().toMillis(),
+            timestamp: DateTime.fromFormat(posted.text(), 'yyyy-MM-dd HH:mm')
+                .toUTC()
+                .toMillis(),
             image: {
                 url: imageUrl,
             },
@@ -81,11 +97,14 @@ class ExHentai extends BaseSite
                 },
                 {
                     name: 'Rating',
-                    value: `${rating.text().replace('Average:', '').trim()} / 5.00`,
+                    value: `${rating
+                        .text()
+                        .replace('Average:', '')
+                        .trim()} / 5.00`,
                     inline: true,
-                }
-            ]
-        })
+                },
+            ],
+        });
 
         message.embeds.push(embed);
 

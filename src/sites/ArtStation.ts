@@ -1,34 +1,36 @@
-import BaseSite from "./BaseSite";
-import ProcessResponse from "./ProcessResponse";
-import got from "got";
-import { version } from "../../package.json";
-import Environment from "../Environment";
+import BaseSite from './BaseSite';
+import ProcessResponse from './ProcessResponse';
+import got from 'got';
+import { version } from '../../package.json';
+import Environment from '../Environment';
 import path from 'path';
-import { MessageEmbed } from "discord.js";
-import { DateTime } from "luxon";
+import { MessageEmbed } from 'discord.js';
+import { DateTime } from 'luxon';
 
-class ArtStation extends BaseSite
-{
+class ArtStation extends BaseSite {
     name = 'ArtStation';
 
     pattern = /https?:\/\/(www\.)?artstation.com\/artwork\/(?<hash>\S*)/;
 
-    async process (match: RegExpMatchArray): Promise<ProcessResponse|false> {
-
+    async process(match: RegExpMatchArray): Promise<ProcessResponse | false> {
         const message: ProcessResponse = {
             embeds: [],
             files: [],
         };
 
         /* eslint-disable  @typescript-eslint/no-explicit-any */
-        const response: Record<string, any> = await got.get(`https://www.artstation.com/projects/${match.groups.hash}.json`, {
-            responseType: 'json',
-            headers: {
-                'User-Agent': `SaucyBot/${version}`,
-                'Referer': 'https://www.artstation.com/'
-            }
-        })
-        .json();
+        const response: Record<string, any> = await got
+            .get(
+                `https://www.artstation.com/projects/${match.groups.hash}.json`,
+                {
+                    responseType: 'json',
+                    headers: {
+                        'User-Agent': `SaucyBot/${version}`,
+                        Referer: 'https://www.artstation.com/',
+                    },
+                }
+            )
+            .json();
 
         // Discord embeds the first ArtStation item, so if there's only one, ignore the request
         if (response.assets.length == 1) {
@@ -41,13 +43,15 @@ class ArtStation extends BaseSite
             message.text = `This is part of a ${response.assets.length} image set.`;
         }
 
-        const coverFileName = path.basename(new URL(response.cover_url).pathname);
+        const coverFileName = path.basename(
+            new URL(response.cover_url).pathname
+        );
 
         const assets = response.assets.slice(1, limit);
 
         for (const asset of assets) {
             // If this asset isn't an image, skip over it as we can only display those for now
-            if (! ['image', 'cover'].includes(asset.asset_type)) {
+            if (!['image', 'cover'].includes(asset.asset_type)) {
                 continue;
             }
 
@@ -61,7 +65,9 @@ class ArtStation extends BaseSite
                 title: asset.title ? asset.title : response.title,
                 url: response.permalink,
                 color: this.color,
-                timestamp: DateTime.fromISO(response.published_at).toUTC().toMillis(),
+                timestamp: DateTime.fromISO(response.published_at)
+                    .toUTC()
+                    .toMillis(),
                 image: {
                     url: asset.image_url,
                 },
