@@ -1,7 +1,6 @@
-class Environment
-{
+class Environment {
     /* eslint-disable  @typescript-eslint/no-explicit-any */
-    static get(key: string|number, fallback: any = null): any {
+    static get(key: string | number, fallback: any = null): any {
         return process.env[key] ?? fallback;
     }
 }

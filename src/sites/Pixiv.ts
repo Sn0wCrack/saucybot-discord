@@ -1,26 +1,25 @@
-import { FileOptions } from "discord.js";
-import BaseSite from "./BaseSite";
-import ProcessResponse from "./ProcessResponse";
-import got from "got";
+import { FileOptions } from 'discord.js';
+import BaseSite from './BaseSite';
+import ProcessResponse from './ProcessResponse';
+import got from 'got';
 import path from 'path';
 import PixivAppApi from 'pixiv-app-api';
-import Environment from "../Environment";
-import { PixivIllustDetail } from "pixiv-app-api/dist/PixivTypes";
+import Environment from '../Environment';
+import { PixivIllustDetail } from 'pixiv-app-api/dist/PixivTypes';
 import os from 'os';
-import AdmZip from "adm-zip";
+import AdmZip from 'adm-zip';
 import fs from 'fs/promises';
-import rimraf from "rimraf";
+import rimraf from 'rimraf';
 import ffmpeg from 'fluent-ffmpeg';
 
-class Pixiv extends BaseSite
-{
+class Pixiv extends BaseSite {
     name = 'Pixiv';
 
     pattern = /https?:\/\/(www\.)?pixiv.net\/.*artworks\/(?<id>\d+)/;
 
     api: PixivAppApi;
 
-    constructor () {
+    constructor() {
         super();
 
         this.api = new PixivAppApi(
@@ -32,8 +31,7 @@ class Pixiv extends BaseSite
         );
     }
 
-    async process (match: RegExpMatchArray): Promise<ProcessResponse|false> {
-
+    async process(match: RegExpMatchArray): Promise<ProcessResponse | false> {
         await this.api.login();
 
         const id = parseInt(match.groups.id);
@@ -47,7 +45,9 @@ class Pixiv extends BaseSite
         return this.processImage(response);
     }
 
-    async processImage (details: PixivIllustDetail): Promise<ProcessResponse|false> {
+    async processImage(
+        details: PixivIllustDetail
+    ): Promise<ProcessResponse | false> {
         const message: ProcessResponse = {
             embeds: [],
             files: [],
@@ -80,7 +80,9 @@ class Pixiv extends BaseSite
         return Promise.resolve(message);
     }
 
-    async processUgoira (details: PixivIllustDetail): Promise<ProcessResponse|false> {
+    async processUgoira(
+        details: PixivIllustDetail
+    ): Promise<ProcessResponse | false> {
         const message: ProcessResponse = {
             embeds: [],
             files: [],
@@ -101,7 +103,7 @@ class Pixiv extends BaseSite
 
         const format = Environment.get('PIXIV_UGOIRA_FORMAT', 'mp4');
 
-        const videoFilePath = path.join(basePath, `ugoira.${format}`)
+        const videoFilePath = path.join(basePath, `ugoira.${format}`);
 
         zip.extractAllTo(basePath, true);
 
@@ -121,7 +123,10 @@ class Pixiv extends BaseSite
         });
 
         // Snake case and remove hyphens from title
-        const fileName = `${details.illust.title.toLowerCase().replace('-', '').replace(/\s+/g, '_')}_ugoira.${format}`;
+        const fileName = `${details.illust.title
+            .toLowerCase()
+            .replace('-', '')
+            .replace(/\s+/g, '_')}_ugoira.${format}`;
 
         message.files.push({
             attachment: video,
@@ -131,11 +136,11 @@ class Pixiv extends BaseSite
         return Promise.resolve(message);
     }
 
-    buildConcatFile (frames: Array<Record<string, unknown>>): string {
+    buildConcatFile(frames: Array<Record<string, unknown>>): string {
         let concat = '';
 
         for (const frame of frames) {
-            const delay = frame.delay as number / 1000;
+            const delay = (frame.delay as number) / 1000;
 
             concat += `file ${frame.file}\n`;
             concat += `duration ${delay}\n`;
@@ -143,12 +148,12 @@ class Pixiv extends BaseSite
 
         const lastFrame = frames[frames.length - 1];
 
-        concat += `file ${lastFrame.file}\n`
+        concat += `file ${lastFrame.file}\n`;
 
         return concat;
     }
 
-    async ffmpeg (input: string, output: string): Promise<boolean> {
+    async ffmpeg(input: string, output: string): Promise<boolean> {
         // This is required as fluent-ffmpeg doesn't support promises unfortunately
         return new Promise<boolean>((resolve, reject) => {
             ffmpeg({ cwd: path.dirname(input) })
@@ -157,24 +162,24 @@ class Pixiv extends BaseSite
                 .videoBitrate(Environment.get('PIXIV_UGOIRA_BITRATE', 2000))
                 .on('error', (err) => reject(err))
                 .on('end', () => resolve(true))
-                .save(output)
+                .save(output);
         });
     }
 
-    async getFile (url: string): Promise<FileOptions> {
-
-        const response = await got.get(url, {
-            responseType: 'buffer',
-            headers: {
-                'Referer': 'https://app-api.pixiv.net/'
-            },
-        })
-        .buffer()
+    async getFile(url: string): Promise<FileOptions> {
+        const response = await got
+            .get(url, {
+                responseType: 'buffer',
+                headers: {
+                    Referer: 'https://app-api.pixiv.net/',
+                },
+            })
+            .buffer();
 
         const file: FileOptions = {
             attachment: response,
             name: path.basename(new URL(url).pathname),
-        }
+        };
 
         return Promise.resolve(file);
     }

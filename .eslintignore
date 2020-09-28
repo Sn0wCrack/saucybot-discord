@@ -1,7 +1,8 @@
-# /node_modules/* in the project root is ignored by default
+node_modules
 # build artefacts
-dist/*
-coverage/*
+dist
+build
+coverage
 # data definition files
 **/*.d.ts
 # custom definition files

@@ -1,19 +1,18 @@
-import BaseSite from "./BaseSite";
-import ProcessResponse from "./ProcessResponse";
+import BaseSite from './BaseSite';
+import ProcessResponse from './ProcessResponse';
 import cheerio from 'cheerio';
 import got from 'got';
-import { MessageEmbed } from "discord.js";
+import { MessageEmbed } from 'discord.js';
 import htmlToText from 'html-to-text';
 
-class Newgrounds extends BaseSite
-{
+class Newgrounds extends BaseSite {
     name = 'Newgrounds';
 
     pattern = /https?:\/\/(www\.)?newgrounds\.com\/art\/view\/(?<user>.*)\/(?<slug>.*)/;
 
-    color = 0xFFF17A;
+    color = 0xfff17a;
 
-    async process (match: RegExpMatchArray): Promise<ProcessResponse|false> {
+    async process(match: RegExpMatchArray): Promise<ProcessResponse | false> {
         const message: ProcessResponse = {
             embeds: [],
             files: [],
@@ -29,12 +28,14 @@ class Newgrounds extends BaseSite
         const image = $('.pod-body img');
         const description = $('#author_comments');
 
-        const authorLink = $('.body-guts .column.thin .pod-body .item-details a');
-        const authorImage = $('.body-guts .column.thin .pod-body .user-icon-bordered img');
+        const authorLink = $(
+            '.body-guts .column.thin .pod-body .item-details a'
+        );
+        const authorImage = $(
+            '.body-guts .column.thin .pod-body .user-icon-bordered img'
+        );
 
-        const views = $('.sidestats dt:contains("Views")')
-            .siblings()
-            .first();
+        const views = $('.sidestats dt:contains("Views")').siblings().first();
 
         const score = $('#score_number');
 
@@ -68,7 +69,7 @@ class Newgrounds extends BaseSite
                     value: `${score.text()} / 5.00`,
                     inline: true,
                 },
-            ]
+            ],
         });
 
         message.embeds.push(embed);

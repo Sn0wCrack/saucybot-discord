@@ -27,9 +27,9 @@ client.on('message', async (message) => {
 
     if (response.embeds.length <= 1) {
         message.channel.send({
-            embed: response.embeds.find(x => x !== undefined), // This safely gets the first element of our array
+            embed: response.embeds.find((x) => x !== undefined), // This safely gets the first element of our array
             files: response.files,
-            content: response.text
+            content: response.text,
         });
     } else {
         if (response.text) {
@@ -44,14 +44,15 @@ client.on('ready', async () => {
     console.log('Ready');
 
     client.setInterval(async () => {
-        await client.user.setActivity(`Your Links... | Servers: ${client.guilds.cache.size}`, {
-            type: 'WATCHING'
-        });
+        await client.user.setActivity(
+            `Your Links... | Servers: ${client.guilds.cache.size}`,
+            {
+                type: 'WATCHING',
+            }
+        );
     }, 5000);
 });
 
-client
-    .login(Environment.get('DISCORD_API_KEY'))
-    .catch((err) => {
-        console.error(err.message);
-    });
+client.login(Environment.get('DISCORD_API_KEY')).catch((err) => {
+    console.error(err.message);
+});

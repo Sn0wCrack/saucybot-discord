@@ -1,23 +1,21 @@
-import BaseSite from "./BaseSite";
-import ProcessResponse from "./ProcessResponse";
-import { CookieJar } from "tough-cookie";
+import BaseSite from './BaseSite';
+import ProcessResponse from './ProcessResponse';
+import { CookieJar } from 'tough-cookie';
 import cheerio from 'cheerio';
 import got from 'got';
-import { MessageEmbed } from "discord.js";
-import { DateTime } from "luxon";
+import { MessageEmbed } from 'discord.js';
+import { DateTime } from 'luxon';
 
-class HentaiFoundry extends BaseSite
-{
+class HentaiFoundry extends BaseSite {
     name = 'Hentai Foundry';
 
     pattern = /https:?\/\/(www\.)?hentai-foundry\.com\/pictures\/user\/(?<user>.*)\/(?<id>\d+)\/(?<slug>.*)/;
 
-    color = 0xFF67A2;
+    color = 0xff67a2;
 
     baseUrl = 'https://www.hentai-foundry.com';
 
-    async process (match: RegExpMatchArray): Promise<ProcessResponse|false> {
-
+    async process(match: RegExpMatchArray): Promise<ProcessResponse | false> {
         const message: ProcessResponse = {
             embeds: [],
             files: [],
@@ -27,9 +25,9 @@ class HentaiFoundry extends BaseSite
 
         const jar = new CookieJar();
 
-        await got.get(`${this.baseUrl}/?enterAgree=1`, {cookieJar: jar});
+        await got.get(`${this.baseUrl}/?enterAgree=1`, { cookieJar: jar });
 
-        const response = await got.get(url, {cookieJar: jar});
+        const response = await got.get(url, { cookieJar: jar });
 
         const $ = cheerio.load(response.body);
 
@@ -43,10 +41,7 @@ class HentaiFoundry extends BaseSite
         // HF has no specific selectors for these elements, so we do this jank method
         // That involves getting the label, going up one level (from the <b></b> tags)
         // and then getting the next sibling
-        const views = $('#yw0 b:contains("Views")')
-            .parent()
-            .siblings()
-            .first();
+        const views = $('#yw0 b:contains("Views")').parent().siblings().first();
 
         const votes = $('#yw0 b:contains("Vote Score")')
             .parent()
@@ -68,16 +63,18 @@ class HentaiFoundry extends BaseSite
             type: 'image',
             title: title.text(),
             url: url,
-            timestamp: DateTime.fromISO(postedAt.attr('datetime')).toUTC().toMillis(),
+            timestamp: DateTime.fromISO(postedAt.attr('datetime'))
+                .toUTC()
+                .toMillis(),
             description: descriptionText,
             color: this.color,
             image: {
-                url: `https:${image.attr('src')}`
+                url: `https:${image.attr('src')}`,
             },
             author: {
                 name: authorImage.attr('title'),
                 url: `${this.baseUrl}${authorLink.attr('href')}`,
-                iconURL: `https:${authorImage.attr('src')}`
+                iconURL: `https:${authorImage.attr('src')}`,
             },
             fields: [
                 {
@@ -89,8 +86,8 @@ class HentaiFoundry extends BaseSite
                     name: 'Votes',
                     value: votes.text(),
                     inline: true,
-                }
-            ]
+                },
+            ],
         });
 
         message.embeds.push(embed);

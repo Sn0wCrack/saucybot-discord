@@ -1,24 +1,24 @@
-import BaseSite from "./BaseSite";
-import ProcessResponse from "./ProcessResponse";
-import got from "got";
-import { MessageEmbed } from "discord.js";
+import BaseSite from './BaseSite';
+import ProcessResponse from './ProcessResponse';
+import got from 'got';
+import { MessageEmbed } from 'discord.js';
 
-class FurAffinity extends BaseSite
-{
+class FurAffinity extends BaseSite {
     name = 'FurAffinity';
 
     pattern = /https?:\/\/(www\.)?furaffinity\.net\/(?:view|full)\/(?<id>\d+)/;
 
-    async process (match: RegExpMatchArray): Promise<ProcessResponse|false> {
-
+    async process(match: RegExpMatchArray): Promise<ProcessResponse | false> {
         const message: ProcessResponse = {
             embeds: [],
             files: [],
         };
 
-        const response = await got.get(`https://bawk.space/fapi/submission/${match.groups.id}`, {
-            responseType: 'json'
-        }).json() as Record<string, unknown>;
+        const response = (await got
+            .get(`https://bawk.space/fapi/submission/${match.groups.id}`, {
+                responseType: 'json',
+            })
+            .json()) as Record<string, unknown>;
 
         const embed = new MessageEmbed({
             type: 'image',
@@ -31,7 +31,7 @@ class FurAffinity extends BaseSite
             author: {
                 name: response.author as string,
                 iconURL: response.avatar as string,
-            }
+            },
         });
 
         message.embeds.push(embed);
