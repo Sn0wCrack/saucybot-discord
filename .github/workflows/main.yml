@@ -21,6 +21,11 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - run: npm ci
-      - run: npm run lint:check
+      - name: Run linter 
+        run: npm run lint:check
+        env:
+          CI: true
+      - name: Run build
+        run: npm run build
         env:
           CI: true
