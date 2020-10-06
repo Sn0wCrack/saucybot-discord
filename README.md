@@ -16,7 +16,11 @@ If you would like to add this bot to your server [click here](https://discordapp
     * Pixiv Ugoira - Uploads a video with correct framerate and frametiming (Video format is configurable, requires ffmpeg)
   * FurAffinity - Creates image embed as none exists for site
   * Newgrounds - Creates embed for site as image isn't fully embeded, this also displays the rating the image has.
-    * Note: Doesn't support embeding videos
+    * NOTE: Doesn't support embeding videos
+  * e621 - Creates an embed similar to what discord embeds but with higher quality image and slightly more information
+    * NOTE: This is disabled on live version as I think it doesn't add much right now
+  * E(x-)Hentai - Creates an embed to preview cover art, title, current score, etc.
+    * NOTE: Live version only supports e-hentai.org right now
 
 Installion
 ----------
