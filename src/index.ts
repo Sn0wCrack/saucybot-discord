@@ -7,6 +7,8 @@ dotenv.config();
 
 const client = new discord.Client();
 
+const runner = new SiteRunner();
+
 client.on('message', async (message) => {
     // If message is from Bot, then ignore it.
     if (message.author == client.user) {
@@ -18,7 +20,7 @@ client.on('message', async (message) => {
         return;
     }
 
-    const response = await SiteRunner.process(message);
+    const response = await runner.process(message);
 
     // If the response is false, then we didn't find anything.
     if (response === false) {

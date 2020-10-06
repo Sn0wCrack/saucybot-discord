@@ -3,7 +3,7 @@ import ProcessResponse from './ProcessResponse';
 class BaseSite {
     name = 'Base';
 
-    pattern = /base/;
+    pattern = /base/i;
 
     color = 0x000000;
 

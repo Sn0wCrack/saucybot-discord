@@ -11,7 +11,7 @@ import Environment from '../Environment';
 class ExHentai extends BaseSite {
     name = 'ExHentai';
 
-    pattern = /https?:\/\/(www\.)?e[x-]hentai.org\/g\/(?<id>\d+)\/(?<hash>.+)/;
+    pattern = /https?:\/\/(www\.)?e[x-]hentai.org\/g\/(?<id>\d+)\/(?<hash>.+)/i;
 
     color = 0x660611;
 
