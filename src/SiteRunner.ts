@@ -20,8 +20,6 @@ class SiteRunner {
     }
 
     async process(message: Message): Promise<ProcessResponse | false> {
-        console.log(this.sites);
-
         for (const site of this.sites) {
             const match = site.match(message.content);
 
