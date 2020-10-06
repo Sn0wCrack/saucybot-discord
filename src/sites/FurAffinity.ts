@@ -14,11 +14,11 @@ class FurAffinity extends BaseSite {
             files: [],
         };
 
-        const response = (await got
+        const response: Record<string, unknown> = await got
             .get(`https://bawk.space/fapi/submission/${match.groups.id}`, {
                 responseType: 'json',
             })
-            .json()) as Record<string, unknown>;
+            .json();
 
         const embed = new MessageEmbed({
             type: 'image',

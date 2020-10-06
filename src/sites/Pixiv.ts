@@ -15,7 +15,7 @@ import ffmpeg from 'fluent-ffmpeg';
 class Pixiv extends BaseSite {
     name = 'Pixiv';
 
-    pattern = /https?:\/\/(www\.)?pixiv.net\/.*artworks\/(?<id>\d+)/;
+    pattern = /https?:\/\/(www\.)?pixiv.net\/.*artworks\/(?<id>\d+)/i;
 
     api: PixivAppApi;
 

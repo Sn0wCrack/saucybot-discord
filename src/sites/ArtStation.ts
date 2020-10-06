@@ -10,7 +10,7 @@ import { DateTime } from 'luxon';
 class ArtStation extends BaseSite {
     name = 'ArtStation';
 
-    pattern = /https?:\/\/(www\.)?artstation.com\/artwork\/(?<hash>\S*)/;
+    pattern = /https?:\/\/(www\.)?artstation.com\/artwork\/(?<hash>\S*)/i;
 
     async process(match: RegExpMatchArray): Promise<ProcessResponse | false> {
         const message: ProcessResponse = {
