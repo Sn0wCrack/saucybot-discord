@@ -25,12 +25,25 @@ class ExHentai extends BaseSite {
 
         const jar = new CookieJar();
 
+        const memberId = Environment.get('EHENTAI_IPB_ID');
+        const passHash = Environment.get('EHENTAI_IPB_PASS');
+
+        // If we're processing for exhentai, we require these cookies
+        // So if that's the case, then we just simply bail out early as this will never work
+        if (
+            url.toLowerCase().includes('exhentai') &&
+            memberId === null &&
+            passHash === null
+        ) {
+            return Promise.resolve(false);
+        }
+
         await jar.setCookie(
-            `ipb_member_id=${Environment.get('EHENTAI_IPB_ID')}`,
+            `ipb_member_id=${memberId})}`,
             'https://exhentai.org'
         );
         await jar.setCookie(
-            `ipb_pass_hash=${Environment.get('EHENTAI_IPB_PASS')}`,
+            `ipb_pass_hash=${passHash}`,
             'https://exhentai.org'
         );
 
