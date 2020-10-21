@@ -6,6 +6,12 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 COPY tsconfig*.json ./
 COPY ./src ./src
+
+# Install depdency packages
+# git - pulling git repos
+RUN apk add --no-cache --update \
+    git
+
 RUN npm ci --quiet && npm run build
 
 # Production Step -- Run our compiled TypeScript code
@@ -18,7 +24,10 @@ ENV NODE_ENV=production
 # libc6-compat - makes sure all node functions work correctly
 # ffmpeg - used for pixiv ugoira
 # git - pulling git repos
-RUN apk add --no-cache --update libc6-compat ffmpeg git
+RUN apk add --no-cache --update \
+    libc6-compat \
+    ffmpeg \
+    git
 
 COPY package*.json ./
 RUN npm ci --quiet --only=production
