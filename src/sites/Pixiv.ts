@@ -56,7 +56,9 @@ class Pixiv extends BaseSite {
         const pageCount = details.illust.metaPages.length;
 
         if (pageCount == 0) {
-            const file = await this.getFile(details.illust.imageUrls.large);
+            const file = await this.getFile(
+                details.illust.metaSinglePage.originalImageUrl
+            );
 
             message.files.push(file);
 
@@ -68,7 +70,7 @@ class Pixiv extends BaseSite {
         const metaPages = details.illust.metaPages.slice(0, postLimit);
 
         for (const page of metaPages) {
-            const file = await this.getFile(page.imageUrls.large);
+            const file = await this.getFile(page.imageUrls.original);
 
             message.files.push(file);
         }
