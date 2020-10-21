@@ -17,7 +17,8 @@ ENV NODE_ENV=production
 # Install depdency packages
 # libc6-compat - makes sure all node functions work correctly
 # ffmpeg - used for pixiv ugoira
-RUN apk add --no-cache --update libc6-compat ffmpeg
+# git - pulling git repos
+RUN apk add --no-cache --update libc6-compat ffmpeg git
 
 COPY package*.json ./
 RUN npm ci --quiet --only=production
