@@ -56,9 +56,19 @@ class Pixiv extends BaseSite {
         const pageCount = details.illust.metaPages.length;
 
         if (pageCount == 0) {
-            const file = await this.getFile(
-                details.illust.metaSinglePage.originalImageUrl
-            );
+            const urls = [
+                details.illust.metaSinglePage.originalImageUrl,
+                details.illust.imageUrls.large,
+                details.illust.imageUrls.medium,
+            ];
+
+            const url = await this.determineHighestQuality(urls);
+
+            if (!url) {
+                return Promise.resolve(message);
+            }
+
+            const file = await this.getFile(url);
 
             message.files.push(file);
 
@@ -70,7 +80,19 @@ class Pixiv extends BaseSite {
         const metaPages = details.illust.metaPages.slice(0, postLimit);
 
         for (const page of metaPages) {
-            const file = await this.getFile(page.imageUrls.original);
+            const urls = [
+                page.imageUrls.original,
+                page.imageUrls.large,
+                page.imageUrls.medium,
+            ];
+
+            const url = await this.determineHighestQuality(urls);
+
+            if (!url) {
+                continue;
+            }
+
+            const file = await this.getFile(url);
 
             message.files.push(file);
         }
@@ -138,11 +160,11 @@ class Pixiv extends BaseSite {
         return Promise.resolve(message);
     }
 
-    buildConcatFile(frames: Array<Record<string, unknown>>): string {
+    buildConcatFile(frames: Array<{ file: string; delay: number }>): string {
         let concat = '';
 
         for (const frame of frames) {
-            const delay = (frame.delay as number) / 1000;
+            const delay = frame.delay / 1000;
 
             concat += `file ${frame.file}\n`;
             concat += `duration ${delay}\n`;
@@ -166,6 +188,30 @@ class Pixiv extends BaseSite {
                 .on('end', () => resolve(true))
                 .save(output);
         });
+    }
+
+    /**
+     * Determines the highest quality of an image that can be posted to Discord inside of its size limit
+     *
+     * @param urls a list of urls from highest quality to lowest quality
+     */
+    async determineHighestQuality(urls: string[]): Promise<string | false> {
+        // Maximum filesize for discord bots
+        const maxSize = 8_388_119;
+
+        for (const url of urls) {
+            const resp = await got.head(url, {
+                headers: {
+                    Referer: 'https://app-api.pixiv.net/',
+                },
+            });
+
+            if (parseInt(resp.headers['content-length']) < maxSize) {
+                return Promise.resolve(url);
+            }
+        }
+
+        return Promise.resolve(false);
     }
 
     async getFile(url: string): Promise<FileOptions> {

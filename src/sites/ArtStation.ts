@@ -19,7 +19,7 @@ class ArtStation extends BaseSite {
         };
 
         /* eslint-disable  @typescript-eslint/no-explicit-any */
-        const response: Record<string, any> = await got
+        const response: ArtStationProject = await got
             .get(
                 `https://www.artstation.com/projects/${match.groups.hash}.json`,
                 {
@@ -95,6 +95,38 @@ class ArtStation extends BaseSite {
 
         return Promise.resolve(message);
     }
+}
+
+interface ArtStationProject {
+    id: number;
+    user_id: number;
+    title: string;
+    description: string;
+    cover_url: string;
+    permalink: string;
+    hash_id: string;
+    user: {
+        username: string;
+        full_name: string;
+        permalink: string;
+        medium_avatar_url: string;
+        large_avatar_url: string;
+        small_cover_url: string;
+    };
+    assets: {
+        has_image: boolean;
+        has_embedded_player: boolean;
+        id: number;
+        title: string;
+        image_url: string;
+        width: number;
+        height: number;
+        position: number;
+        asset_type: 'image' | 'cover' | 'video' | 'video_clip';
+    }[];
+    likes_count: number;
+    views_count: number;
+    published_at: string;
 }
 
 export default ArtStation;

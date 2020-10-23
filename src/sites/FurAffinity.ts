@@ -14,7 +14,7 @@ class FurAffinity extends BaseSite {
             files: [],
         };
 
-        const response: Record<string, unknown> = await got
+        const response: BawkSubmission = await got
             .get(`https://bawk.space/fapi/submission/${match.groups.id}`, {
                 responseType: 'json',
             })
@@ -22,15 +22,15 @@ class FurAffinity extends BaseSite {
 
         const embed = new MessageEmbed({
             type: 'image',
-            title: response.title as string,
+            title: response.title,
             url: match[0],
             color: this.color,
             image: {
-                url: response.image_url as string,
+                url: response.image_url,
             },
             author: {
-                name: response.author as string,
-                iconURL: response.avatar as string,
+                name: response.author,
+                iconURL: response.avatar,
             },
         });
 
@@ -38,6 +38,14 @@ class FurAffinity extends BaseSite {
 
         return Promise.resolve(message);
     }
+}
+
+interface BawkSubmission {
+    author: string;
+    avatar: string;
+    image_url: string;
+    rating: string;
+    title: string;
 }
 
 export default FurAffinity;

@@ -21,7 +21,7 @@ class E621 extends BaseSite {
         const url = match[0];
 
         /* eslint-disable  @typescript-eslint/no-explicit-any */
-        const response: Record<string, any> = await got
+        const response: E621Post = await got
             .get(`https://e621.net/posts/${match.groups.id}.json`, {
                 responseType: 'json',
                 headers: {
@@ -108,6 +108,52 @@ class E621 extends BaseSite {
 
         return Promise.resolve(message);
     }
+}
+
+interface E621Post {
+    post: {
+        id: number;
+        created_at: string;
+        updated_at: string;
+        file: {
+            width: number;
+            height: number;
+            ext: string;
+            size: number;
+            md5: string;
+            url: string;
+        };
+        preview: {
+            width: number;
+            height: number;
+            url: string;
+        };
+        sample: {
+            has: boolean;
+            width: number;
+            height: number;
+            url: string;
+        };
+        score: {
+            up: number;
+            down: number;
+            total: number;
+        };
+        tags: {
+            artist: string[] | null;
+            meta: string[] | null;
+        };
+        change_seq: number;
+        rating: string;
+        fav_count: string;
+        approver_id: number | null;
+        uploader_id: number;
+        description: string;
+        comment_count: number;
+        is_favorited: boolean;
+        has_notes: false;
+        duration: number | null;
+    };
 }
 
 export default E621;
