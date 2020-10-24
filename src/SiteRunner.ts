@@ -8,10 +8,8 @@ class SiteRunner {
     sites: Array<BaseSite>;
 
     constructor() {
-        const disabled: Array<string> = Environment.get(
-            'DISABLED_SITES',
-            ''
-        ).split(',');
+        const list: string = Environment.get('DISABLED_SITES', '') as string;
+        const disabled: Array<string> = list.split(',');
 
         // NOTE: Should do the filtering before instiating classes for performance sake, but isn't much of an issue right now
         this.sites = Sites.map((s) => new s()).filter(

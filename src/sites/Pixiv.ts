@@ -23,8 +23,8 @@ class Pixiv extends BaseSite {
         super();
 
         this.api = new PixivAppApi(
-            Environment.get('PIXIV_LOGIN'),
-            Environment.get('PIXIV_PASSWORD'),
+            Environment.get('PIXIV_LOGIN') as string,
+            Environment.get('PIXIV_PASSWORD') as string,
             {
                 camelcaseKeys: true,
             }
@@ -75,7 +75,7 @@ class Pixiv extends BaseSite {
             return Promise.resolve(message);
         }
 
-        const postLimit = Environment.get('PIXIV_POST_LIMIT', 5);
+        const postLimit = Environment.get('PIXIV_POST_LIMIT', 5) as number;
 
         const metaPages = details.illust.metaPages.slice(0, postLimit);
 
@@ -125,7 +125,7 @@ class Pixiv extends BaseSite {
 
         const concatFilePath = path.join(basePath, 'ffconcat');
 
-        const format = Environment.get('PIXIV_UGOIRA_FORMAT', 'mp4');
+        const format = Environment.get('PIXIV_UGOIRA_FORMAT', 'mp4') as string;
 
         const videoFilePath = path.join(basePath, `ugoira.${format}`);
 
@@ -183,7 +183,9 @@ class Pixiv extends BaseSite {
             ffmpeg({ cwd: path.dirname(input) })
                 .input(input)
                 .inputFormat('concat')
-                .videoBitrate(Environment.get('PIXIV_UGOIRA_BITRATE', 2000))
+                .videoBitrate(
+                    Environment.get('PIXIV_UGOIRA_BITRATE', 2000) as number
+                )
                 .on('error', (err) => reject(err))
                 .on('end', () => resolve(true))
                 .save(output);

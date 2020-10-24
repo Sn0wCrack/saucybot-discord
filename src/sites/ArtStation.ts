@@ -37,7 +37,7 @@ class ArtStation extends BaseSite {
             return Promise.resolve(false);
         }
 
-        const limit = Environment.get('ARTSTATION_POST_LIMIT', 5);
+        const limit = Environment.get('ARTSTATION_POST_LIMIT', 5) as number;
 
         if (response.assets.length > limit) {
             message.text = `This is part of a ${response.assets.length} image set.`;

@@ -55,6 +55,6 @@ client.on('ready', async () => {
     }, 5000);
 });
 
-client.login(Environment.get('DISCORD_API_KEY')).catch((err) => {
+client.login(Environment.get('DISCORD_API_KEY') as string).catch((err) => {
     console.error(err.message);
 });
