@@ -11,55 +11,54 @@ import ProcessResponse from './sites/ProcessResponse';
 
 class MessageSender {
     async send(recieved: Message, response: ProcessResponse): Promise<void> {
-        let messages: MessageTypes;
+        let messages: MessageTypes = [];
 
-        if (response.embeds.length > 1) {
-            messages = await this.handleMultipleEmbeds(response);
-        }
-
-        if (response.embeds.length == 1) {
-            messages = await this.handleSingleEmbed(response);
-        }
-
-        if (response.files.length > 1) {
-            messages = await this.handleMultipleFiles(response);
+        // Pattern matching on a budget
+        switch (true) {
+            case response.embeds.length > 1:
+                messages = await this.handleMultipleEmbeds(response);
+                break;
+            case response.embeds.length == 1:
+                messages = await this.handleSingleEmbed(response);
+                break;
+            case response.files.length >= 1:
+                messages = await this.handleFiles(response);
+                break;
+            default:
+                messages = [response.text];
+                break;
         }
 
         for (const message of messages) {
-            await recieved.channel.send(message);
-        }
-
-        /**
-        if (response.embeds.length <= 1) {
-            recieved.channel
-                .send({
-                    embed: response.embeds.find((x) => x !== undefined), // This safely gets the first element of our array
-                    files: response.files,
-                    content: response.text,
-                })
-                .catch(console.error);
-        } else {
-            if (response.text) {
-                recieved.channel.send(response.text).catch(console.error);
+            try {
+                await recieved.channel.send(message);
+            } catch (ex) {
+                console.error(ex);
             }
-
-            recieved.channel.send(response.embeds).catch(console.error);
         }
-        */
 
         return Promise.resolve();
     }
 
     /**
-     * When no embeds are detected but there are multiple files
+     * When no embeds are detected but there are files
      */
-    async handleMultipleFiles(
+    private async handleFiles(
         response: ProcessResponse
     ): Promise<MessageTypes> {
         const messages: MessageTypes = [];
 
         if (response.text) {
             messages.push(response.text);
+        }
+
+        // If we only have a single file, may as well push it and bail early to save cycles
+        if (response.files.length == 1) {
+            messages.push({
+                files: response.files,
+            });
+
+            return messages;
         }
 
         // We split up file messages into groups of files under the file size limit
@@ -111,11 +110,30 @@ class MessageSender {
     /**
      * When only a single embed is detected
      */
-    async handleSingleEmbed(response: ProcessResponse): Promise<MessageTypes> {
+    private async handleSingleEmbed(
+        response: ProcessResponse
+    ): Promise<MessageTypes> {
         const messages: MessageTypes = [];
 
+        const embed = response.embeds.find((x) => x !== undefined);
+        // Map the embed attachment files down to their names
+        const files = embed.files.map((item) => {
+            let filename = '';
+
+            if (typeof item == 'object') {
+                filename = item.name;
+            }
+
+            if (typeof item == 'string') {
+                filename = item;
+            }
+
+            return filename.replace('attachment://', '');
+        });
+
         messages.push({
-            embed: response.embeds.find((x) => x !== undefined),
+            embed: embed,
+            files: response.files.filter((item) => !files.includes(item.name)), // Only send attachments that are related to this embed
             content: response.text,
         });
 
@@ -125,7 +143,7 @@ class MessageSender {
     /**
      * When multiple embeds are detected
      */
-    async handleMultipleEmbeds(
+    private async handleMultipleEmbeds(
         response: ProcessResponse
     ): Promise<MessageTypes> {
         const messages: MessageTypes = [];
@@ -134,7 +152,7 @@ class MessageSender {
             messages.push(response.text);
         }
 
-        messages.concat(response.embeds);
+        messages.push(...response.embeds);
 
         return Promise.resolve(messages);
     }
