@@ -11,6 +11,7 @@ import AdmZip from 'adm-zip';
 import fs from 'fs/promises';
 import rimraf from 'rimraf';
 import ffmpeg from 'fluent-ffmpeg';
+import { MAX_FILESIZE } from '../Constants';
 
 class Pixiv extends BaseSite {
     name = 'Pixiv';
@@ -198,9 +199,6 @@ class Pixiv extends BaseSite {
      * @param urls a list of urls from highest quality to lowest quality
      */
     async determineHighestQuality(urls: string[]): Promise<string | false> {
-        // Maximum filesize for discord bots
-        const maxSize = 8_388_119;
-
         for (const url of urls) {
             const resp = await got.head(url, {
                 headers: {
@@ -208,7 +206,7 @@ class Pixiv extends BaseSite {
                 },
             });
 
-            if (parseInt(resp.headers['content-length']) < maxSize) {
+            if (parseInt(resp.headers['content-length']) < MAX_FILESIZE) {
                 return Promise.resolve(url);
             }
         }

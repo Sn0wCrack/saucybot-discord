@@ -1,6 +1,7 @@
 import discord from 'discord.js';
 import dotenv from 'dotenv';
 import Environment from './Environment';
+import MessageSender from './MessageSender';
 import SiteRunner from './SiteRunner';
 
 dotenv.config();
@@ -8,6 +9,8 @@ dotenv.config();
 const client = new discord.Client();
 
 const runner = new SiteRunner();
+
+const sender = new MessageSender();
 
 client.on('message', async (message) => {
     // If message is from Bot, then ignore it.
@@ -27,19 +30,7 @@ client.on('message', async (message) => {
         return;
     }
 
-    if (response.embeds.length <= 1) {
-        message.channel.send({
-            embed: response.embeds.find((x) => x !== undefined), // This safely gets the first element of our array
-            files: response.files,
-            content: response.text,
-        });
-    } else {
-        if (response.text) {
-            message.channel.send(response.text);
-        }
-
-        message.channel.send(response.embeds);
-    }
+    sender.send(message, response);
 });
 
 client.on('ready', async () => {
