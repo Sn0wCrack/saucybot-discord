@@ -64,41 +64,43 @@ class MessageSender {
         // We split up file messages into groups of files under the file size limit
         // This is faster than sending the images back one-by-one
 
-        const splitFiles: FileOptions[][] = [];
+        const segments: FileOptions[][] = [];
 
         for (const file of response.files) {
-            if (splitFiles.length == 0) {
-                splitFiles.push([file]);
+            if (segments.length == 0) {
+                segments.push([file]);
 
                 continue;
             }
 
-            for (const index in splitFiles) {
-                const totalSize: number = splitFiles[index].reduce(
-                    (total, item) => total + (item.attachment as Buffer).length,
+            for (const index in segments) {
+                const totalSize: number = segments[index].reduce(
+                    (total, item) => {
+                        const attachment = item.attachment as Buffer;
+                        return total + attachment.length;
+                    },
                     0
                 );
 
+                const attachment = file.attachment as Buffer;
+
                 // If we're about tot reach maximum message size, move onto the next index
                 // If we've reached the end of the array, add a new item to the array as well
-                if (
-                    (file.attachment as Buffer).length + totalSize >=
-                    MAX_FILESIZE
-                ) {
-                    // If we're on the last index, we push to a new array
-                    if (parseInt(index) + 1 == splitFiles.length) {
-                        splitFiles.push([file]);
+                if (attachment.length + totalSize >= MAX_FILESIZE) {
+                    // If we're on the last index, we push to a new entry and continue the loop
+                    if (parseInt(index) + 1 == segments.length) {
+                        segments.push([file]);
                     }
 
                     continue;
                 }
 
                 // If we've not reached the maximum message size, add to the current index
-                splitFiles[index].push(file);
+                segments[index].push(file);
             }
         }
 
-        for (const files of splitFiles) {
+        for (const files of segments) {
             messages.push({
                 files: files,
             });
