@@ -25,8 +25,8 @@ class ExHentai extends BaseSite {
 
         const jar = new CookieJar();
 
-        const memberId = Environment.get('EHENTAI_IPB_ID') as string;
-        const passHash = Environment.get('EHENTAI_IPB_PASS') as string;
+        const memberId = Environment.get('EHENTAI_IPB_ID') as string | null;
+        const passHash = Environment.get('EHENTAI_IPB_PASS') as string | null;
 
         // If we're processing for exhentai, we require these cookies
         // So if that's the case, then we just simply bail out early as this will never work
