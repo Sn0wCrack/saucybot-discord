@@ -23,14 +23,18 @@ client.on('message', async (message) => {
         return;
     }
 
-    const response = await runner.process(message);
+    try {
+        const response = await runner.process(message);
 
-    // If the response is false, then we didn't find anything.
-    if (response === false) {
-        return;
+        // If the response is false, then we didn't find anything.
+        if (response === false) {
+            return;
+        }
+
+        sender.send(message, response);
+    } catch (ex) {
+        console.error(ex);
     }
-
-    sender.send(message, response);
 });
 
 client.on('ready', async () => {
