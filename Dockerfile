@@ -30,8 +30,13 @@ ENV NODE_ENV=production
 # git - pulling git repos
 RUN apk add --no-cache --update \
     libc6-compat \
-    ffmpeg
+    ffmpeg \
+    git \
+    yarn
 
+COPY package.json ./
+COPY yarn.lock ./
+RUN yarn install --frozen-lockfile --silent --production
 COPY --from=build /usr/src/app/dist ./dist
 
 CMD ["node", "/bot/dist/src/index.js"]
