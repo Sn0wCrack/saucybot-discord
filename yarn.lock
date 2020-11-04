@@ -1575,7 +1575,7 @@ picomatch@^2.0.4, picomatch@^2.2.1:
 
 "pixiv-app-api@github:sn0wcrack/pixiv-app-api#bugfix/cloudflare-captcha":
   version "1.2.1"
-  resolved "https://codeload.github.com/sn0wcrack/pixiv-app-api/tar.gz/74d441427899f5a7e6da9c224d9d4ff3f953c8ac"
+  resolved "https://codeload.github.com/sn0wcrack/pixiv-app-api/tar.gz/8f0c7d3465f7f2273fa8dfd1be29537ad2111428"
   dependencies:
     axios "^0.19.2"
     camelcase-keys "^6.2.1"
