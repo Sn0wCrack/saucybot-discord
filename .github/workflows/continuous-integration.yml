@@ -1,0 +1,51 @@
+name: 'Continuous Integration'
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - '**.ts'
+      - '**.json'
+      - '.eslintignore'
+      - '.prettierrc'
+    tags-ignore:
+      - 'v*'
+  pull_request:
+    branches: [ master ]
+    paths:
+      - '**.ts'
+      - '**.json'
+      - '.eslintignore'
+      - '.prettierrc'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [ '14.x', '15.x' ] # LTS and Latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+      - id: cache_dir
+        run: echo "::set-output name=dir::$(yarn cache dir)"
+      - name: Cache
+        uses: actions/cache@v1
+        with:
+          path: ${{ steps.cache_dir.outputs.dir }}
+          key: ${{ runner.os }}-node-${{ matrix.node-version }}-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+             ${{ runner.os }}-node-${{ matrix.node-version }}-
+      - run: yarn install --frozen-lockfile
+      - name: Run linter
+        run: yarn lint:check
+        env:
+          CI: true
+      - name: Run build
+        run: yarn build
+        env:
+          CI: true
