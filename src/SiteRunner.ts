@@ -21,13 +21,15 @@ class SiteRunner {
         for (const site of this.sites) {
             const match = site.match(message.content);
 
-            if (match) {
-                console.log(
-                    `${message.guild.name} - Matched ${message.content} to site ${site.name}`
-                );
-
-                return site.process(match);
+            if (!match) {
+                continue;
             }
+
+            console.log(
+                `${message.guild.name} - Matched message "${message.content}" to site ${site.name}`
+            );
+
+            return site.process(match);
         }
 
         return Promise.resolve(false);

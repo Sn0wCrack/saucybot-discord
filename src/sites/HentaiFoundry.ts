@@ -9,7 +9,7 @@ import { DateTime } from 'luxon';
 class HentaiFoundry extends BaseSite {
     name = 'Hentai Foundry';
 
-    pattern = /https:?\/\/(www\.)?hentai-foundry\.com\/pictures\/user\/(?<user>.*)\/(?<id>\d+)\/(?<slug>.*)/i;
+    pattern = /https:?\/\/(www\.)?hentai-foundry\.com\/pictures\/user\/(?<user>.*)\/(?<id>\d+)\/(?<slug>\S+)/i;
 
     color = 0xff67a2;
 

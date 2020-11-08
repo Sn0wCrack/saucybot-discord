@@ -8,7 +8,7 @@ import htmlToText from 'html-to-text';
 class Newgrounds extends BaseSite {
     name = 'Newgrounds';
 
-    pattern = /https?:\/\/(www\.)?newgrounds\.com\/art\/view\/(?<user>.*)\/(?<slug>.*)/i;
+    pattern = /https?:\/\/(www\.)?newgrounds\.com\/art\/view\/(?<user>.*)\/(?<slug>\S+)/i;
 
     color = 0xfff17a;
 
@@ -25,7 +25,8 @@ class Newgrounds extends BaseSite {
         const $ = cheerio.load(response.body);
 
         const title = $('.body-guts .column.wide.right .pod-head h2');
-        const image = $('.pod-body img');
+        const image = $('.pod-body .image #portal_item_view img');
+
         const description = $('#author_comments');
 
         const authorLink = $(
