@@ -1,6 +1,7 @@
 import discord from 'discord.js';
 import dotenv from 'dotenv';
 import Environment from './Environment';
+import Logger from './Logger';
 import MessageSender from './MessageSender';
 import SiteRunner from './SiteRunner';
 
@@ -33,12 +34,12 @@ client.on('message', async (message) => {
 
         sender.send(message, response);
     } catch (ex) {
-        console.error(ex);
+        Logger.error(ex.message);
     }
 });
 
 client.on('ready', async () => {
-    console.log('Ready');
+    Logger.info('Ready');
 
     client.setInterval(async () => {
         await client.user.setActivity(
@@ -51,5 +52,5 @@ client.on('ready', async () => {
 });
 
 client.login(Environment.get('DISCORD_API_KEY') as string).catch((err) => {
-    console.error(err.message);
+    Logger.error(err.message);
 });

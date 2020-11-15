@@ -7,6 +7,7 @@ import {
     FileOptions,
 } from 'discord.js';
 import { MAX_FILESIZE } from './Constants';
+import Logger from './Logger';
 import ProcessResponse from './sites/ProcessResponse';
 
 class MessageSender {
@@ -33,7 +34,7 @@ class MessageSender {
             try {
                 await recieved.channel.send(message);
             } catch (ex) {
-                console.error(ex);
+                Logger.error(ex.message);
             }
         }
 
