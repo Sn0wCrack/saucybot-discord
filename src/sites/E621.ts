@@ -56,21 +56,21 @@ class E621 extends BaseSite {
             const value: string = response.post.tags.artist
                 .map((tag: string) => {
                     return tag
-                        .replace(/([a-z])([A-Z])/g, function (
-                            all,
-                            first,
-                            second
-                        ) {
-                            return first + ' ' + second;
-                        })
+                        .replace(
+                            /([a-z])([A-Z])/g,
+                            function (all, first, second) {
+                                return first + ' ' + second;
+                            }
+                        )
                         .toLowerCase()
-                        .replace(/([ -_]|^)(.)/g, function (
-                            all,
-                            first,
-                            second
-                        ) {
-                            return (first ? ' ' : '') + second.toUpperCase();
-                        });
+                        .replace(
+                            /([ -_]|^)(.)/g,
+                            function (all, first, second) {
+                                return (
+                                    (first ? ' ' : '') + second.toUpperCase()
+                                );
+                            }
+                        );
                 })
                 .join(', ');
 
