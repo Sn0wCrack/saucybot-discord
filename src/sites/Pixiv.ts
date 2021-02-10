@@ -54,7 +54,7 @@ class Pixiv extends BaseSite {
 
         const pageCount = details.body.pageCount;
 
-        if (pageCount == 0) {
+        if (pageCount == 1) {
             const urls = [
                 details.body.urls.original,
                 details.body.urls.regular,
