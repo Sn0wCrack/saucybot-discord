@@ -23,7 +23,7 @@
     "got": "^11.8.0",
     "html-to-text": "^5.1.1",
     "luxon": "^1.25.0",
-    "pixiv-app-api": "github:sn0wcrack/pixiv-app-api#bugfix/cloudflare-captcha",
+    "pixiv-web-api": "0.1.2",
     "rimraf": "^3.0.2",
     "tough-cookie": "^4.0.0"
   },

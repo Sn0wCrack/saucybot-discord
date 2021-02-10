@@ -3,33 +3,31 @@ import BaseSite from './BaseSite';
 import ProcessResponse from './ProcessResponse';
 import got from 'got';
 import path from 'path';
-import PixivAppApi from 'pixiv-app-api';
 import Environment from '../Environment';
-import { PixivIllustDetail } from 'pixiv-app-api/dist/PixivTypes';
 import os from 'os';
 import AdmZip from 'adm-zip';
 import fs from 'fs/promises';
 import rimraf from 'rimraf';
 import ffmpeg from 'fluent-ffmpeg';
 import { MAX_FILESIZE } from '../Constants';
+import PixivWeb from 'pixiv-web-api';
+import { IllustDetailsResponse } from 'pixiv-web-api/dist/ResponseTypes';
 
 class Pixiv extends BaseSite {
     name = 'Pixiv';
 
     pattern = /https?:\/\/(www\.)?pixiv.net\/.*artworks\/(?<id>\d+)/i;
 
-    api: PixivAppApi;
+    api: PixivWeb;
 
     constructor() {
         super();
 
-        this.api = new PixivAppApi(
-            Environment.get('PIXIV_LOGIN') as string,
-            Environment.get('PIXIV_PASSWORD') as string,
-            {
-                camelcaseKeys: true,
-            }
-        );
+        this.api = new PixivWeb({
+            username: Environment.get('PIXIV_LOGIN') as string,
+            password: Environment.get('PIXIV_PASSWORD') as string,
+            cookie: Environment.get('PIXIV_COOKIE') as string,
+        });
     }
 
     async process(match: RegExpMatchArray): Promise<ProcessResponse | false> {
@@ -37,9 +35,9 @@ class Pixiv extends BaseSite {
 
         const id = parseInt(match.groups.id);
 
-        const response = await this.api.illustDetail(id);
+        const response = await this.api.illustDetails(id);
 
-        if (response.illust.type == 'ugoira') {
+        if (response.body.illustType == 2) {
             return this.processUgoira(response);
         }
 
@@ -47,20 +45,20 @@ class Pixiv extends BaseSite {
     }
 
     async processImage(
-        details: PixivIllustDetail
+        details: IllustDetailsResponse
     ): Promise<ProcessResponse | false> {
         const message: ProcessResponse = {
             embeds: [],
             files: [],
         };
 
-        const pageCount = details.illust.metaPages.length;
+        const pageCount = details.body.pageCount;
 
         if (pageCount == 0) {
             const urls = [
-                details.illust.metaSinglePage.originalImageUrl,
-                details.illust.imageUrls.large,
-                details.illust.imageUrls.medium,
+                details.body.urls.original,
+                details.body.urls.regular,
+                details.body.urls.small,
             ];
 
             const url = await this.determineHighestQuality(urls);
@@ -76,15 +74,17 @@ class Pixiv extends BaseSite {
             return Promise.resolve(message);
         }
 
+        const pagesDetails = await this.api.illustPages(details.body.id);
+
         const postLimit = Environment.get('PIXIV_POST_LIMIT', 5) as number;
 
-        const metaPages = details.illust.metaPages.slice(0, postLimit);
+        const pages = pagesDetails.body.slice(0, postLimit);
 
-        for (const page of metaPages) {
+        for (const page of pages) {
             const urls = [
-                page.imageUrls.original,
-                page.imageUrls.large,
-                page.imageUrls.medium,
+                page.urls.original,
+                page.urls.regular,
+                page.urls.small,
             ];
 
             const url = await this.determineHighestQuality(urls);
@@ -106,23 +106,23 @@ class Pixiv extends BaseSite {
     }
 
     async processUgoira(
-        details: PixivIllustDetail
+        details: IllustDetailsResponse
     ): Promise<ProcessResponse | false> {
         const message: ProcessResponse = {
             embeds: [],
             files: [],
         };
 
-        const metadata = await this.api.ugoiraMetaData(details.illust.id);
+        const metadata = await this.api.ugoiraMetaData(details.body.id);
 
-        const file = await this.getFile(metadata.ugoiraMetadata.zipUrls.medium);
+        const file = await this.getFile(metadata.body.originalSrc);
 
         // Because the attachment can be a stirng or buffer, we have to type cast to any, as string can't go to buffer automatically
         const buffer = file.attachment as Buffer;
 
         const zip = new AdmZip(buffer);
 
-        const basePath = path.join(os.tmpdir(), details.illust.id.toString());
+        const basePath = path.join(os.tmpdir(), details.body.id.toString());
 
         const concatFilePath = path.join(basePath, 'ffconcat');
 
@@ -132,7 +132,7 @@ class Pixiv extends BaseSite {
 
         zip.extractAllTo(basePath, true);
 
-        const ffconcat = this.buildConcatFile(metadata.ugoiraMetadata.frames);
+        const ffconcat = this.buildConcatFile(metadata.body.frames);
 
         await fs.writeFile(concatFilePath, ffconcat);
 
@@ -148,7 +148,7 @@ class Pixiv extends BaseSite {
         });
 
         // Snake case and remove hyphens from title
-        const fileName = `${details.illust.title
+        const fileName = `${details.body.title
             .toLowerCase()
             .replace('-', '')
             .replace(/\s+/g, '_')}_ugoira.${format}`;
@@ -200,13 +200,9 @@ class Pixiv extends BaseSite {
      */
     async determineHighestQuality(urls: string[]): Promise<string | false> {
         for (const url of urls) {
-            const resp = await got.head(url, {
-                headers: {
-                    Referer: 'https://app-api.pixiv.net/',
-                },
-            });
+            const response = await this.api.pokeFile(url);
 
-            if (parseInt(resp.headers['content-length']) < MAX_FILESIZE) {
+            if (parseInt(response.headers['content-length']) < MAX_FILESIZE) {
                 return Promise.resolve(url);
             }
         }
@@ -215,14 +211,7 @@ class Pixiv extends BaseSite {
     }
 
     async getFile(url: string): Promise<FileOptions> {
-        const response = await got
-            .get(url, {
-                responseType: 'buffer',
-                headers: {
-                    Referer: 'https://app-api.pixiv.net/',
-                },
-            })
-            .buffer();
+        const response = await this.api.getFile(url);
 
         const file: FileOptions = {
             attachment: response,
