@@ -1,7 +1,6 @@
 import { FileOptions } from 'discord.js';
 import BaseSite from './BaseSite';
 import ProcessResponse from './ProcessResponse';
-import got from 'got';
 import path from 'path';
 import Environment from '../Environment';
 import os from 'os';
