@@ -10,7 +10,11 @@ import rimraf from 'rimraf';
 import ffmpeg from 'fluent-ffmpeg';
 import { MAX_FILESIZE } from '../Constants';
 import PixivWeb from 'pixiv-web-api';
-import { IllustDetailsResponse } from 'pixiv-web-api/dist/ResponseTypes';
+import {
+    IllustDetailsResponse,
+    UgoiraFrame,
+} from 'pixiv-web-api/dist/ResponseTypes';
+import IllustType from 'pixiv-web-api/dist/IllustType';
 
 class Pixiv extends BaseSite {
     name = 'Pixiv';
@@ -36,7 +40,7 @@ class Pixiv extends BaseSite {
 
         const response = await this.api.illustDetails(id);
 
-        if (response.body.illustType == 2) {
+        if (response.body.illustType == IllustType.Ugoira) {
             return this.processUgoira(response);
         }
 
@@ -117,9 +121,7 @@ class Pixiv extends BaseSite {
         const file = await this.getFile(metadata.body.originalSrc);
 
         // Because the attachment can be a stirng or buffer, we have to type cast to any, as string can't go to buffer automatically
-        const buffer = file.attachment as Buffer;
-
-        const zip = new AdmZip(buffer);
+        const zip = new AdmZip(file.attachment as Buffer);
 
         const basePath = path.join(os.tmpdir(), details.body.id.toString());
 
@@ -131,9 +133,10 @@ class Pixiv extends BaseSite {
 
         zip.extractAllTo(basePath, true);
 
-        const ffconcat = this.buildConcatFile(metadata.body.frames);
-
-        await fs.writeFile(concatFilePath, ffconcat);
+        await fs.writeFile(
+            concatFilePath,
+            this.buildConcatFile(metadata.body.frames)
+        );
 
         await this.ffmpeg(concatFilePath, videoFilePath);
 
@@ -160,7 +163,7 @@ class Pixiv extends BaseSite {
         return Promise.resolve(message);
     }
 
-    buildConcatFile(frames: Array<{ file: string; delay: number }>): string {
+    buildConcatFile(frames: Array<UgoiraFrame>): string {
         let concat = '';
 
         for (const frame of frames) {
@@ -212,9 +215,11 @@ class Pixiv extends BaseSite {
     async getFile(url: string): Promise<FileOptions> {
         const response = await this.api.getFile(url);
 
+        const parsed = new URL(url);
+
         const file: FileOptions = {
             attachment: response,
-            name: path.basename(new URL(url).pathname),
+            name: path.basename(parsed.pathname),
         };
 
         return Promise.resolve(file);
