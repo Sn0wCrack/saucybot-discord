@@ -34,9 +34,12 @@ RUN apk add --no-cache --update \
     git \
     yarn
 
+# Install pm2 runtime
+RUN yarn global add pm2
+
 COPY package.json ./
 COPY yarn.lock ./
 RUN yarn install --frozen-lockfile --silent --production
 COPY --from=build /usr/src/app/dist ./dist
 
-CMD ["node", "/bot/dist/src/index.js"]
+CMD ["pm2-runtime", "/bot/dist/src/index.js"]

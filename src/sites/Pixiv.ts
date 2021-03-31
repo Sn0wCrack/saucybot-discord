@@ -14,8 +14,7 @@ import {
     IllustDetailsResponse,
     UgoiraFrame,
 } from 'pixiv-web-api/dist/ResponseTypes';
-import IllustType from 'pixiv-web-api/dist/IllustType';
-
+import { IllustType } from 'pixiv-web-api/dist/IllustType';
 class Pixiv extends BaseSite {
     name = 'Pixiv';
 
