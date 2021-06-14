@@ -4,31 +4,35 @@ import chalk from 'chalk';
 import { DateTime } from 'luxon';
 
 class Logger {
-    static fatal(message: any): void {
-        console.error(this.format(message, LogLevel.FATAL));
+    static fatal(message: any, source: string | number = ''): void {
+        console.error(this.format(message, LogLevel.FATAL, source));
     }
 
-    static error(message: any): void {
-        console.error(this.format(message, LogLevel.ERROR));
+    static error(message: any, source: string | number = ''): void {
+        console.error(this.format(message, LogLevel.ERROR, source));
     }
 
-    static warn(message: any): void {
-        console.warn(this.format(message, LogLevel.WARN));
+    static warn(message: any, source: string | number = ''): void {
+        console.warn(this.format(message, LogLevel.WARN, source));
     }
 
-    static info(message: any): void {
-        console.info(this.format(message, LogLevel.INFO));
+    static info(message: any, source: string | number = ''): void {
+        console.info(this.format(message, LogLevel.INFO, source));
     }
 
-    static debug(message: any): void {
-        console.debug(this.format(message, LogLevel.DEBUG));
+    static debug(message: any, source: string | number = ''): void {
+        console.debug(this.format(message, LogLevel.DEBUG, source));
     }
 
-    static trace(message: any): void {
-        console.debug(this.format(message, LogLevel.TRACE));
+    static trace(message: any, source: string | number = ''): void {
+        console.debug(this.format(message, LogLevel.TRACE, source));
     }
 
-    private static format(message: any, level: LogLevel): string {
+    private static format(
+        message: any,
+        level: LogLevel,
+        source: string | number = ''
+    ): string {
         const now = DateTime.local();
         const time = now.toFormat('yyyy-MM-dd HH:mm:ss');
 
@@ -41,7 +45,15 @@ class Logger {
             trace: chalk.green,
         }[level];
 
-        return color(`[${time}] [${level.toUpperCase()}] ${message}`);
+        let formatted = `[${time}]`;
+
+        if (source) {
+            formatted += ` [${source}]`;
+        }
+
+        formatted += ` [${level.toUpperCase()}] ${message}`;
+
+        return color(formatted);
     }
 }
 
