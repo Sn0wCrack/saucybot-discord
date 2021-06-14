@@ -28,6 +28,7 @@ ENV NODE_ENV=production
 # libc6-compat - makes sure all node functions work correctly
 # ffmpeg - used for pixiv ugoira
 # git - pulling git repos
+# yarn - nodejs package manager
 RUN apk add --no-cache --update \
     libc6-compat \
     ffmpeg \

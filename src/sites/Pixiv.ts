@@ -16,7 +16,7 @@ import {
 } from 'pixiv-web-api/dist/ResponseTypes';
 import { IllustType } from 'pixiv-web-api/dist/IllustType';
 class Pixiv extends BaseSite {
-    name = 'Pixiv';
+    identifier = 'Pixiv';
 
     pattern = /https?:\/\/(www\.)?pixiv.net\/.*artworks\/(?<id>\d+)/i;
 

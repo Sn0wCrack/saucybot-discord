@@ -1,4 +1,4 @@
-import ProcessResponse from './sites/ProcessResponse';
+import RunnerResponse from './RunnerResponse';
 import BaseSite from './sites/BaseSite';
 import Sites from './sites';
 import { Message } from 'discord.js';
@@ -12,13 +12,12 @@ class SiteRunner {
         const list: string = Environment.get('DISABLED_SITES', '') as string;
         const disabled: Array<string> = list.split(',');
 
-        // NOTE: Should do the filtering before instiating classes for performance sake, but isn't much of an issue right now
         this.sites = Sites.map((s) => new s()).filter(
-            (s) => !disabled.includes(s.name)
+            (s) => !disabled.includes(s.identifier)
         );
     }
 
-    async process(message: Message): Promise<ProcessResponse | false> {
+    async process(message: Message): Promise<RunnerResponse | false> {
         for (const site of this.sites) {
             const match = site.match(message.content);
 
@@ -27,10 +26,13 @@ class SiteRunner {
             }
 
             Logger.info(
-                `${message.guild.name} - Matched message "${message.content}" to site ${site.name}`
+                `${message.guild.name} - Matched message "${message.content}" to site ${site.identifier}`
             );
 
-            return site.process(match);
+            return Promise.resolve({
+                site: site,
+                match: match,
+            });
         }
 
         return Promise.resolve(false);

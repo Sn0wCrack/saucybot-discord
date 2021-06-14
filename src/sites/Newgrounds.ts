@@ -6,9 +6,10 @@ import { MessageEmbed } from 'discord.js';
 import htmlToText from 'html-to-text';
 
 class Newgrounds extends BaseSite {
-    name = 'Newgrounds';
+    identifier = 'Newgrounds';
 
-    pattern = /https?:\/\/(www\.)?newgrounds\.com\/art\/view\/(?<user>.*)\/(?<slug>\S+)/i;
+    pattern =
+        /https?:\/\/(www\.)?newgrounds\.com\/art\/view\/(?<user>.*)\/(?<slug>\S+)/i;
 
     color = 0xfff17a;
 

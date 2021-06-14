@@ -6,7 +6,7 @@ import { MessageEmbed } from 'discord.js';
 import { DateTime } from 'luxon';
 
 class E621 extends BaseSite {
-    name = 'E621';
+    identifier = 'E621';
 
     pattern = /https?:\/\/(www\.)?e621.net\/posts\/(?<id>\d+)/i;
 

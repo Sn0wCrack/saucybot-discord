@@ -1,7 +1,7 @@
 import ProcessResponse from './ProcessResponse';
 
 class BaseSite {
-    name = 'Base';
+    identifier = 'Base';
 
     pattern = /base/i;
 

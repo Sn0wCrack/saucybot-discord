@@ -4,7 +4,7 @@ import got from 'got';
 import { MessageEmbed } from 'discord.js';
 
 class FurAffinity extends BaseSite {
-    name = 'FurAffinity';
+    identifier = 'FurAffinity';
 
     pattern = /https?:\/\/(www\.)?furaffinity\.net\/(?:view|full)\/(?<id>\d+)/;
 

@@ -7,9 +7,10 @@ import { MessageEmbed } from 'discord.js';
 import { DateTime } from 'luxon';
 
 class HentaiFoundry extends BaseSite {
-    name = 'Hentai Foundry';
+    identifier = 'Hentai Foundry';
 
-    pattern = /https:?\/\/(www\.)?hentai-foundry\.com\/pictures\/user\/(?<user>.*)\/(?<id>\d+)\/(?<slug>\S+)/i;
+    pattern =
+        /https:?\/\/(www\.)?hentai-foundry\.com\/pictures\/user\/(?<user>.*)\/(?<id>\d+)\/(?<slug>\S+)/i;
 
     color = 0xff67a2;
 

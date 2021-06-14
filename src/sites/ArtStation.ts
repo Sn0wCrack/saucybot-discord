@@ -8,7 +8,7 @@ import { MessageEmbed } from 'discord.js';
 import { DateTime } from 'luxon';
 
 class ArtStation extends BaseSite {
-    name = 'ArtStation';
+    identifier = 'ArtStation';
 
     pattern = /https?:\/\/(www\.)?artstation.com\/artwork\/(?<hash>\S+)/i;
 

@@ -32,10 +32,30 @@ client.on('message', async (message) => {
             return;
         }
 
-        sender.send(message, response);
+        // TODO: When discord.js releases version 13, change this to be an inline-reply that doesn't ping
+        const waitMessage = await message.reply(
+            `Matched link to ${response.site.identifier}, please wait...`
+        );
+
+        const processed = await response.site.process(response.match);
+
+        // If we failed to process the image, remove the wait message and return
+        if (processed === false) {
+            waitMessage.delete();
+            return;
+        }
+
+        await sender.send(message, processed);
+
+        await waitMessage.delete();
     } catch (ex) {
         Logger.error(ex.message);
     }
+});
+
+// Capture any unhandled client errors here
+client.on('error', async (error) => {
+    Logger.error(error);
 });
 
 client.on('ready', async () => {
