@@ -7,6 +7,8 @@ Saucybot
 ![Version](https://img.shields.io/github/package-json/v/sn0wcrack/saucybot-discord)
 ![License](https://img.shields.io/github/license/sn0wcrack/saucybot-discord)
 
+**NOTE**: Currently the bot is pending verification so it cannot be added to anymore servers, please see more details here: https://github.com/Sn0wCrack/saucybot-discord/issues/9
+
 If you would like to add this bot to your server [click here](https://discordapp.com/api/oauth2/authorize?client_id=647368715742216193&permissions=388096&scope=bot) and authorize it through your discord account.
 
 * Currently Supports:
