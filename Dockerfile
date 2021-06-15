@@ -20,6 +20,7 @@ RUN yarn build
 
 # Production Step -- Run our compiled TypeScript code
 FROM node:alpine AS production
+LABEL org.opencontainers.image.source="https://github.com/Sn0wCrack/saucybot-discord"
 
 WORKDIR /bot
 ENV NODE_ENV=production
