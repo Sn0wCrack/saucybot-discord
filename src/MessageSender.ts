@@ -35,7 +35,10 @@ class MessageSender {
                 // TODO: When discord.js releases version 13, change this to be an inline-reply that doesn't ping
                 await recieved.channel.send(message);
             } catch (ex) {
-                Logger.error(ex.message);
+                Logger.error(
+                    ex.message,
+                    `Shard ${recieved.client.shard?.ids?.[0] ?? 0}`
+                );
             }
         }
 

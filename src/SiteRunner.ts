@@ -3,8 +3,6 @@ import BaseSite from './sites/BaseSite';
 import Sites from './sites';
 import { Message } from 'discord.js';
 import Environment from './Environment';
-import Logger from './Logger';
-
 class SiteRunner {
     sites: Array<BaseSite>;
 
@@ -24,10 +22,6 @@ class SiteRunner {
             if (!match) {
                 continue;
             }
-
-            Logger.info(
-                `${message.guild.name} - Matched message "${message.content}" to site ${site.identifier}`
-            );
 
             return Promise.resolve({
                 site: site,

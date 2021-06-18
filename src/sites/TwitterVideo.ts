@@ -8,7 +8,7 @@ import path from 'path';
 import got from 'got';
 
 class TwitterVideo extends BaseSite {
-    identifier = 'TwitterVideo';
+    identifier = 'Twitter Video';
 
     pattern =
         /https?:\/\/(www\.)?twitter\.com\/(?<user>.*)\/status\/(?<id>\S+)(\?\=.*)?/i;
