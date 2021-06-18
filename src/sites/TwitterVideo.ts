@@ -44,14 +44,16 @@ class TwitterVideo extends BaseSite {
             return false;
         }
 
-        const video = media.find((item) => item.type === 'video');
+        const video = media.find((item) =>
+            ['video', 'animated_gif'].includes(item.type)
+        );
 
         if (!video) {
             return false;
         }
 
         const variants = video.video_info.variants
-            .filter((item) => item.bitrate)
+            .filter((item) => item?.bitrate !== null)
             .sort((a, b) => b.bitrate - a.bitrate)
             .map((item) => item.url);
 
