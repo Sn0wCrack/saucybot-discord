@@ -13,7 +13,7 @@ If you would like to add this bot to your server [click here](https://discordapp
 
 * Currently Supports:
   * ArtStation - Embeds up to X extra images (X is configurable, default 5)
-  * Twitter Videos - Embeds a twitter video
+  * Twitter Videos - Embeds a Twitter videoes and GIFs
     * NOTE: On the live version this is temporary until discord fixes video embeds from Twitter, may not always work as expected due to API rate limits
   * Hentai Foundry - Creates embed as none exists for site.
   * Pixiv - Posts up to X images of the set (X is configurable, default 5)
