@@ -53,7 +53,7 @@ class TwitterVideo extends BaseSite {
         }
 
         const variants = video.video_info.variants
-            .filter((item) => item?.bitrate !== null)
+            .filter((item) => item?.bitrate)
             .sort((a, b) => b.bitrate - a.bitrate)
             .map((item) => item.url);
 
