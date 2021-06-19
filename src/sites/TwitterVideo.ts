@@ -52,14 +52,10 @@ class TwitterVideo extends BaseSite {
             return false;
         }
 
-        console.log(video.video_info.variants);
-
         const variants = video.video_info.variants
             .filter((item) => item?.bitrate !== undefined)
             .sort((a, b) => b.bitrate - a.bitrate)
             .map((item) => item.url);
-
-        console.log(variants);
 
         const variant = await this.determineHighestQuality(variants);
 
