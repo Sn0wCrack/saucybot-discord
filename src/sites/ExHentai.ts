@@ -4,7 +4,7 @@ import cheerio from 'cheerio';
 import got from 'got';
 import { DateTime } from 'luxon';
 import { MessageEmbed } from 'discord.js';
-import htmlToText from 'html-to-text';
+import { convert } from 'html-to-text';
 import { CookieJar } from 'tough-cookie';
 import Environment from '../Environment';
 
@@ -77,7 +77,7 @@ class ExHentai extends BaseSite {
 
         const authorLink = $('.gm #gmid #gdn a');
 
-        let descriptionText = htmlToText.fromString(description.html());
+        let descriptionText = convert(description.html());
 
         if (descriptionText.length > 300) {
             descriptionText = descriptionText.substring(0, 300) + '...';

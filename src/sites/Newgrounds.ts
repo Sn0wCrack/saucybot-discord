@@ -3,7 +3,7 @@ import ProcessResponse from './ProcessResponse';
 import cheerio from 'cheerio';
 import got from 'got';
 import { MessageEmbed } from 'discord.js';
-import htmlToText from 'html-to-text';
+import { convert } from 'html-to-text';
 
 class Newgrounds extends BaseSite {
     identifier = 'Newgrounds';
@@ -41,7 +41,7 @@ class Newgrounds extends BaseSite {
 
         const score = $('#score_number');
 
-        let descriptionText = htmlToText.fromString(description.html());
+        let descriptionText = convert(description.html());
 
         if (descriptionText.length > 300) {
             descriptionText = descriptionText.substring(0, 300) + '...';
