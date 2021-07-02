@@ -1,4 +1,4 @@
-import discord from 'discord.js';
+import discord, { Intents } from 'discord.js';
 import dotenv from 'dotenv';
 import Environment from './Environment';
 import Logger from './Logger';
@@ -7,7 +7,10 @@ import SiteRunner from './SiteRunner';
 
 dotenv.config();
 
-const client = new discord.Client();
+const client = new discord.Client({
+    intents: Intents.NON_PRIVILEGED,
+    allowedMentions: { repliedUser: false },
+});
 
 const runner = new SiteRunner();
 
@@ -81,7 +84,7 @@ client.on('ready', async () => {
             guilds = client.guilds.cache.size;
         }
 
-        await client.user.setActivity(`Your Links... | Servers: ${guilds}`, {
+        client.user.setActivity(`Your Links... | Servers: ${guilds}`, {
             type: 'WATCHING',
         });
     }, 5000);

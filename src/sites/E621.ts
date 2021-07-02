@@ -2,7 +2,7 @@ import got from 'got';
 import ProcessResponse from './ProcessResponse';
 import { version } from '../../package.json';
 import BaseSite from './BaseSite';
-import { MessageEmbed } from 'discord.js';
+import { EmbedField, MessageEmbed } from 'discord.js';
 import { DateTime } from 'luxon';
 
 class E621 extends BaseSite {
@@ -48,7 +48,7 @@ class E621 extends BaseSite {
                 : response.post.preview.url;
         }
 
-        const fields = [];
+        const fields: EmbedField[] = [];
 
         // If we found the Artist in the tags, add their tag into the embed fields for credit
         if (response.post.tags.artist.length >= 1) {
@@ -85,7 +85,7 @@ class E621 extends BaseSite {
 
         fields.push({
             name: 'Score',
-            value: response.post.score.total,
+            value: response.post.score.total.toString(),
             inline: true,
         });
 

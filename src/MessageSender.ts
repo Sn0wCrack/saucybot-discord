@@ -1,10 +1,8 @@
 import {
-    APIMessageContentResolvable,
     Message,
     MessageOptions,
-    MessageAdditions,
-    StringResolvable,
     FileOptions,
+    MessagePayload,
 } from 'discord.js';
 import { MAX_FILESIZE } from './Constants';
 import Logger from './Logger';
@@ -33,7 +31,7 @@ class MessageSender {
         for (const message of messages) {
             try {
                 // TODO: When discord.js releases version 13, change this to be an inline-reply that doesn't ping
-                await recieved.channel.send(message);
+                await recieved.reply(message);
             } catch (ex) {
                 Logger.error(
                     ex.message,
@@ -124,23 +122,11 @@ class MessageSender {
 
         const embed = response.embeds.find((x) => x !== undefined);
         // Map the embed attachment files down to their names
-        const files = embed.files.map((item) => {
-            let filename = '';
-
-            if (typeof item == 'object') {
-                filename = item.name;
-            }
-
-            if (typeof item == 'string') {
-                filename = item;
-            }
-
-            return filename.replace('attachment://', '');
-        });
+        const imageUrl = embed.image.url.replace('attachment://', '');
 
         messages.push({
-            embed: embed,
-            files: response.files.filter((item) => !files.includes(item.name)), // Only send attachments that are related to this embed
+            embeds: [embed],
+            files: response.files.filter((item) => item.name !== imageUrl), // Only send attachments that are related to this embed
             content: response.text,
         });
 
@@ -153,13 +139,12 @@ class MessageSender {
     private async handleMultipleEmbeds(
         response: ProcessResponse
     ): Promise<MessageTypes> {
-        const messages: MessageTypes = [];
-
-        if (response.text) {
-            messages.push(response.text);
-        }
-
-        messages.push(...response.embeds);
+        const messages: MessageTypes = [
+            {
+                content: response.text,
+                embeds: response.embeds,
+            },
+        ];
 
         return Promise.resolve(messages);
     }
@@ -168,11 +153,6 @@ class MessageSender {
 /**
  * An amalgamation of all types that can be used to send messages to a channel
  */
-type MessageTypes = (
-    | MessageOptions
-    | MessageAdditions
-    | APIMessageContentResolvable
-    | StringResolvable
-)[];
+type MessageTypes = (MessageOptions | MessagePayload | string)[];
 
 export default MessageSender;
