@@ -1,6 +1,6 @@
 {
   "name": "saucybot",
-  "version": "1.3.4",
+  "version": "1.4.0",
   "description": "A discord bot that fills in the gaps ",
   "repository": {},
   "author": "Sn0wCrack",
@@ -15,10 +15,12 @@
   },
   "dependencies": {
     "adm-zip": "^0.5.5",
+    "bufferutil": "^4.0.3",
     "chalk": "^4.1.0",
     "cheerio": "^1.0.0-rc.3",
     "discord.js": "^13.0.0-dev.fe6cc0c.1625184228",
     "dotenv": "^10.0.0",
+    "erlpack": "^0.1.3",
     "fluent-ffmpeg": "^2.1.2",
     "got": "^11.8.0",
     "html-to-text": "^8.0.0",
@@ -26,7 +28,9 @@
     "pixiv-web-api": "^0.1.5",
     "rimraf": "^3.0.2",
     "tough-cookie": "^4.0.0",
-    "twitter-api-client": "^1.3.8"
+    "twitter-api-client": "^1.3.8",
+    "utf-8-validate": "^5.0.5",
+    "zlib-sync": "^0.1.7"
   },
   "devDependencies": {
     "@types/adm-zip": "^0.4.33",
@@ -34,18 +38,18 @@
     "@types/fluent-ffmpeg": "^2.1.16",
     "@types/html-to-text": "^8.0.0",
     "@types/luxon": "^1.25.0",
-    "@types/node": "^15.12.4",
+    "@types/node": "^15.14.0",
     "@types/rimraf": "^3.0.0",
     "@types/tough-cookie": "^4.0.0",
     "@types/ws": "^7.2.7",
-    "@typescript-eslint/eslint-plugin": "^4.26.1",
-    "@typescript-eslint/parser": "^4.26.1",
+    "@typescript-eslint/eslint-plugin": "^4.28.1",
+    "@typescript-eslint/parser": "^4.28.1",
     "eslint": "^7.29.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^3.1.4",
-    "nodemon": "^2.0.6",
-    "prettier": "^2.1.2",
+    "nodemon": "^2.0.9",
+    "prettier": "^2.3.2",
     "ts-node": "^10.0.0",
-    "typescript": "^4.1.0"
+    "typescript": "^4.3.5"
   }
 }
