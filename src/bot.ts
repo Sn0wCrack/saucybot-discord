@@ -42,7 +42,6 @@ client.on('message', async (message) => {
             identifier
         );
 
-        // TODO: When discord.js releases version 13, change this to be an inline-reply that doesn't ping
         const waitMessage = await message.reply(
             `Matched link to ${response.site.identifier}, please wait...`
         );
