@@ -79,12 +79,12 @@ class ArtStation extends BaseSite {
                 fields: [
                     {
                         name: 'Views',
-                        value: response.views_count,
+                        value: response.views_count.toString(),
                         inline: true,
                     },
                     {
                         name: 'Likes',
-                        value: response.likes_count,
+                        value: response.likes_count.toString(),
                         inline: true,
                     },
                 ],

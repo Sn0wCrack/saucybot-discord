@@ -15,6 +15,7 @@ import {
     UgoiraFrame,
 } from 'pixiv-web-api/dist/ResponseTypes';
 import { IllustType } from 'pixiv-web-api/dist/IllustType';
+import Logger from '../Logger';
 class Pixiv extends BaseSite {
     identifier = 'Pixiv';
 
@@ -137,14 +138,19 @@ class Pixiv extends BaseSite {
             this.buildConcatFile(metadata.body.frames)
         );
 
-        await this.ffmpeg(concatFilePath, videoFilePath);
+        try {
+            await this.ffmpeg(concatFilePath, videoFilePath);
+        } catch (ex) {
+            Logger.error(ex);
+            return Promise.resolve(false);
+        }
 
         const video = await fs.readFile(videoFilePath);
 
         // Remove all files in the temporary directory
         rimraf(basePath, (err) => {
             if (err) {
-                console.error(err);
+                Logger.error(err);
             }
         });
 
@@ -163,7 +169,8 @@ class Pixiv extends BaseSite {
     }
 
     buildConcatFile(frames: Array<UgoiraFrame>): string {
-        let concat = '';
+        // Adding this header ensures the file path resolution is in safe mode
+        let concat = 'ffconcat version 1.0\n';
 
         for (const frame of frames) {
             const delay = frame.delay / 1000;
@@ -172,6 +179,7 @@ class Pixiv extends BaseSite {
             concat += `duration ${delay}\n`;
         }
 
+        // We add the last frame in again as it creates a more natural look to the final frame
         const lastFrame = frames[frames.length - 1];
 
         concat += `file ${lastFrame.file}\n`;
@@ -188,6 +196,9 @@ class Pixiv extends BaseSite {
                 .videoBitrate(
                     Environment.get('PIXIV_UGOIRA_BITRATE', 2000) as number
                 )
+                // Pad the video size to be divisble by two
+                // This ensures h264 can actually encode the output
+                .videoFilter('pad=ceil(iw/2)*2:ceil(ih/2)*2')
                 .on('error', (err) => reject(err))
                 .on('end', () => resolve(true))
                 .save(output);
