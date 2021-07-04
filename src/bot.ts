@@ -46,17 +46,24 @@ client.on('message', async (message) => {
             `Matched link to ${response.site.identifier}, please wait...`
         );
 
-        const processed = await response.site.process(response.match);
+        // Always ensure, even if there's an exception from processing
+        // that we delete our waiting message
+        try {
+            const processed = await response.site.process(response.match);
 
-        // If we failed to process the image, remove the wait message and return
-        if (processed === false) {
-            waitMessage.delete();
-            return;
+            // If we failed to process the image, remove the wait message and return
+            if (processed === false) {
+                waitMessage.delete();
+                return;
+            }
+
+            await sender.send(message, processed);
+
+            await waitMessage.delete();
+        } catch (ex) {
+            await waitMessage.delete();
+            throw ex;
         }
-
-        await sender.send(message, processed);
-
-        await waitMessage.delete();
     } catch (ex) {
         Logger.error(ex.message, identifier);
     }
