@@ -69,37 +69,29 @@ class MessageSender {
         const segments: FileOptions[][] = [];
 
         for (const file of response.files) {
-            if (segments.length == 0) {
+            if (segments.length === 0) {
                 segments.push([file]);
-
                 continue;
             }
 
-            for (const index in segments) {
-                const totalSize: number = segments[index].reduce(
-                    (total, item) => {
-                        const attachment = item.attachment as Buffer;
-                        return total + attachment.length;
-                    },
-                    0
-                );
+            const index = segments.length - 1;
 
-                const attachment = file.attachment as Buffer;
+            const totalSize: number = segments[index].reduce((total, item) => {
+                const attachment = item.attachment as Buffer;
+                return total + attachment.length;
+            }, 0);
 
-                // If we're about tot reach maximum message size, move onto the next index
-                // If we've reached the end of the array, add a new item to the array as well
-                if (attachment.length + totalSize >= MAX_FILESIZE) {
-                    // If we're on the last index, we push to a new entry and continue the loop
-                    if (parseInt(index) + 1 == segments.length) {
-                        segments.push([file]);
-                    }
+            const attachment = file.attachment as Buffer;
 
-                    continue;
-                }
-
-                // If we've not reached the maximum message size, add to the current index
-                segments[index].push(file);
+            // If we're about to reach maximum message size, move onto the next index
+            // If we've reached the end of the array, add a new item to the array as well
+            if (attachment.length + totalSize >= MAX_FILESIZE) {
+                segments.push([file]);
+                continue;
             }
+
+            // If we've not reached the maximum message size, add to the current index
+            segments[index].push(file);
         }
 
         for (const files of segments) {
