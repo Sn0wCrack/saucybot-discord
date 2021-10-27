@@ -90,7 +90,6 @@ class E621 extends BaseSite {
         });
 
         const embed = new MessageEmbed({
-            type: 'image',
             title: `${prefix} Post #${match.groups.id}`,
             url: url,
             color: this.color,

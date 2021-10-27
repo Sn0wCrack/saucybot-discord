@@ -61,7 +61,6 @@ class ArtStation extends BaseSite {
             }
 
             const embed = new MessageEmbed({
-                type: 'image',
                 title: asset.title ? asset.title : response.title,
                 url: response.permalink,
                 color: this.color,

@@ -61,7 +61,6 @@ class HentaiFoundry extends BaseSite {
         }
 
         const embed = new MessageEmbed({
-            type: 'image',
             title: title.text(),
             url: url,
             timestamp: DateTime.fromISO(postedAt.attr('datetime'))

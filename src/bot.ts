@@ -7,8 +7,13 @@ import SiteRunner from './SiteRunner';
 
 dotenv.config();
 
+const intents = new Intents([
+    Intents.FLAGS.GUILDS,
+    Intents.FLAGS.GUILD_MESSAGES,
+]);
+
 const client = new discord.Client({
-    intents: Intents.NON_PRIVILEGED,
+    intents: intents,
     allowedMentions: { repliedUser: false },
 });
 
@@ -18,7 +23,7 @@ const sender = new MessageSender();
 
 const identifier = `Shard ${client.shard?.ids?.[0] ?? 0}`;
 
-client.on('message', async (message) => {
+client.on('messageCreate', async (message) => {
     // If message is from Bot, then ignore it.
     if (message.author == client.user) {
         return;
@@ -74,10 +79,10 @@ client.on('error', async (error) => {
     Logger.error(error, identifier);
 });
 
-client.on('ready', async () => {
+client.once('ready', async () => {
     Logger.info('Ready', identifier);
 
-    client.setInterval(async () => {
+    setInterval(async () => {
         let guilds = 0;
 
         if (client.shard !== null) {
@@ -85,7 +90,10 @@ client.on('ready', async () => {
                 'guilds.cache.size'
             );
 
-            guilds = results.reduce((acc, guildCount) => acc + guildCount, 0);
+            guilds = results.reduce(
+                (acc: number, guildCount: number) => acc + guildCount,
+                0
+            ) as number;
         } else {
             guilds = client.guilds.cache.size;
         }

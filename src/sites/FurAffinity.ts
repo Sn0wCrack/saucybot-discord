@@ -21,7 +21,6 @@ class FurAffinity extends BaseSite {
             .json();
 
         const embed = new MessageEmbed({
-            type: 'image',
             title: response.title,
             url: match[0],
             color: this.color,
