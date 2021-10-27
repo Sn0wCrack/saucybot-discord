@@ -1,6 +1,6 @@
 import ProcessResponse from './ProcessResponse';
 
-class BaseSite {
+abstract class BaseSite {
     identifier = 'Base';
 
     pattern = /base/i;
@@ -11,10 +11,7 @@ class BaseSite {
         return message.match(this.pattern);
     }
 
-    /* eslint-disable  @typescript-eslint/no-unused-vars */
-    async process(match: RegExpMatchArray): Promise<ProcessResponse | false> {
-        throw new Error('Not yet implemented');
-    }
+    abstract process(match: RegExpMatchArray): Promise<ProcessResponse | false>;
 }
 
 export default BaseSite;
