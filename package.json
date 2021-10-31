@@ -17,7 +17,7 @@
     "adm-zip": "^0.5.5",
     "chalk": "^4.1.0",
     "cheerio": "^1.0.0-rc.3",
-    "discord.js": "^13.2.0",
+    "discord.js": "^13.3.0",
     "dotenv": "^10.0.0",
     "fluent-ffmpeg": "^2.1.2",
     "got": "^11.0.0",
