@@ -11,15 +11,15 @@ jobs:
     steps:
       - name: 'Create Release'
         uses: softprops/action-gh-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
         with:
           tag_name: ${{ github.ref }}
           name: Release ${{ github.ref_name }}
           draft: false
           prerelease: false
+  
   package:
     name: 'Publish Container'
+    needs: release
     runs-on: ubuntu-latest
     steps:
       # Setup working environment for Docker
@@ -54,3 +54,19 @@ jobs:
           labels: ${{ steps.docker_meta.outputs.labels }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
+  
+  deploy:
+    name: 'Deploy'
+    needs: package
+    runs-on: ubuntu-latest
+    environment: Production
+    
+    steps:
+      - uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOSTNAME }}
+          username: ${{ secrets.SSH_USERNAME }}
+          port: ${{ secrets.SSH_PORT }}
+          key: ${{ secre.tsSSH_PRIVATE_KEY }}
+          script: |
+            ./update.sh
