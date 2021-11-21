@@ -1,5 +1,5 @@
 # Build Step -- Build out our TypeScript code
-FROM node:alpine AS build
+FROM node:lts-alpine AS build
 
 WORKDIR /usr/src/app
 
@@ -19,7 +19,7 @@ RUN yarn install --frozen-lockfile --silent
 RUN yarn build
 
 # Production Step -- Run our compiled TypeScript code
-FROM node:alpine AS production
+FROM node:lts-alpine AS production
 
 LABEL org.opencontainers.image.source="https://github.com/Sn0wCrack/saucybot-discord"
 LABEL org.opencontainers.image.authors="Sn0wCrack"
