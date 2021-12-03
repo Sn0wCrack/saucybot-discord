@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-import chalk from 'chalk';
+import pc from 'picocolors';
 import { DateTime } from 'luxon';
 
 class Logger {
@@ -37,12 +37,12 @@ class Logger {
         const time = now.toFormat('yyyy-MM-dd HH:mm:ss');
 
         const color = {
-            fatal: chalk.red,
-            error: chalk.red,
-            warn: chalk.yellow,
-            info: chalk.blue,
-            debug: chalk.blue,
-            trace: chalk.green,
+            fatal: pc.red,
+            error: pc.red,
+            warn: pc.yellow,
+            info: pc.blue,
+            debug: pc.blue,
+            trace: pc.green,
         }[level];
 
         let formatted = `[${time}]`;

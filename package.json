@@ -15,7 +15,6 @@
   },
   "dependencies": {
     "adm-zip": "^0.5.5",
-    "chalk": "^4.1.0",
     "cheerio": "^1.0.0-rc.3",
     "discord.js": "^13.3.0",
     "dotenv": "^10.0.0",
@@ -23,6 +22,7 @@
     "got": "^11.0.0",
     "html-to-text": "^8.0.0",
     "luxon": "^2.0.1",
+    "picocolors": "^1.0.0",
     "pixiv-web-api": "^0.1.5",
     "rimraf": "^3.0.2",
     "tough-cookie": "^4.0.0",
