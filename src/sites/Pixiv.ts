@@ -16,6 +16,8 @@ import {
 } from 'pixiv-web-api/dist/ResponseTypes';
 import { IllustType } from 'pixiv-web-api/dist/IllustType';
 import Logger from '../Logger';
+import { URL } from 'url';
+
 class Pixiv extends BaseSite {
     identifier = 'Pixiv';
 

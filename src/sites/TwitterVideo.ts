@@ -6,6 +6,7 @@ import { MAX_FILESIZE } from '../Constants';
 import { FileOptions } from 'discord.js';
 import path from 'path';
 import got from 'got';
+import { URL } from 'url';
 
 class TwitterVideo extends BaseSite {
     identifier = 'Twitter Video';

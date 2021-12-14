@@ -6,6 +6,7 @@ import Environment from '../Environment';
 import path from 'path';
 import { MessageEmbed } from 'discord.js';
 import { DateTime } from 'luxon';
+import { URL } from 'url';
 
 class ArtStation extends BaseSite {
     identifier = 'ArtStation';
