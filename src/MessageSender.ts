@@ -3,13 +3,17 @@ import {
     MessageOptions,
     FileOptions,
     MessagePayload,
+    CommandInteraction,
 } from 'discord.js';
 import { MAX_FILESIZE } from './Constants';
 import Logger from './Logger';
 import ProcessResponse from './sites/ProcessResponse';
 
 class MessageSender {
-    async send(recieved: Message, response: ProcessResponse): Promise<void> {
+    async send(
+        recieved: Message | CommandInteraction,
+        response: ProcessResponse
+    ): Promise<void> {
         let messages: MessageTypes = [];
 
         // Pattern matching on a budget
@@ -30,7 +34,13 @@ class MessageSender {
 
         for (const message of messages) {
             try {
-                await recieved.reply(message);
+                if (recieved instanceof Message) {
+                    await recieved.reply(message);
+                }
+
+                if (recieved instanceof CommandInteraction) {
+                    await recieved.editReply(message);
+                }
             } catch (ex) {
                 Logger.error(
                     ex.message,

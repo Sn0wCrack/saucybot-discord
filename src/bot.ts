@@ -35,7 +35,7 @@ client.on('messageCreate', async (message) => {
     }
 
     try {
-        const response = await runner.process(message);
+        const response = await runner.process(message.content);
 
         // If the response is false, then we didn't find anything.
         if (response === false) {
@@ -43,7 +43,7 @@ client.on('messageCreate', async (message) => {
         }
 
         Logger.info(
-            `Matched message "${response.match[0]}" to site ${response.site.identifier}`,
+            `Matched link "${response.match[0]}" to site ${response.site.identifier}`,
             identifier
         );
 
@@ -69,6 +69,46 @@ client.on('messageCreate', async (message) => {
             await waitMessage.delete();
             throw ex;
         }
+    } catch (ex) {
+        Logger.error(ex.message, identifier);
+    }
+});
+
+client.on('interactionCreate', async (interaction) => {
+    if (!interaction.isCommand()) {
+        return;
+    }
+
+    const { commandName } = interaction;
+
+    if (commandName !== 'sauce') {
+        return;
+    }
+
+    interaction.deferReply();
+
+    try {
+        const response = await runner.process(
+            interaction.options.getString('url')
+        );
+
+        // If the response is false, then we didn't find anything.
+        if (response === false) {
+            return;
+        }
+
+        Logger.info(
+            `Matched message "${response.match[0]}" to site ${response.site.identifier}`,
+            identifier
+        );
+
+        const processed = await response.site.process(response.match);
+
+        if (!processed) {
+            return;
+        }
+
+        await sender.send(interaction, processed);
     } catch (ex) {
         Logger.error(ex.message, identifier);
     }

@@ -1,7 +1,6 @@
 import RunnerResponse from './RunnerResponse';
 import BaseSite from './sites/BaseSite';
 import Sites from './sites';
-import { Message } from 'discord.js';
 import Environment from './Environment';
 class SiteRunner {
     sites: Array<BaseSite>;
@@ -15,9 +14,9 @@ class SiteRunner {
         );
     }
 
-    async process(message: Message): Promise<RunnerResponse | false> {
+    async process(message: string): Promise<RunnerResponse | false> {
         for (const site of this.sites) {
-            const match = site.match(message.content);
+            const match = site.match(message);
 
             if (!match) {
                 continue;
