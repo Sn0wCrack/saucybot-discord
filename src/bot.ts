@@ -94,6 +94,7 @@ client.on('interactionCreate', async (interaction) => {
 
         // If the response is false, then we didn't find anything.
         if (response === false) {
+            interaction.editReply('Provided URL cannot be sauced');
             return;
         }
 
@@ -105,11 +106,13 @@ client.on('interactionCreate', async (interaction) => {
         const processed = await response.site.process(response.match);
 
         if (!processed) {
+            interaction.editReply('Provided URL cannot be sauced');
             return;
         }
 
         await sender.send(interaction, processed);
     } catch (ex) {
+        interaction.editReply('Provided URL cannot be sauced');
         Logger.error(ex.message, identifier);
     }
 });
