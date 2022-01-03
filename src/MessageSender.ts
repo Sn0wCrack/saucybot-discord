@@ -38,8 +38,10 @@ class MessageSender {
                     await recieved.reply(message);
                 }
 
+                // We use followUp as this is the only way to add multiple replies
+                // to the original interaction unfortunatley, far less intutative but it works
                 if (recieved instanceof CommandInteraction) {
-                    await recieved.editReply(message);
+                    await recieved.followUp(message);
                 }
             } catch (ex) {
                 Logger.error(
