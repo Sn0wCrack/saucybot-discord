@@ -23,7 +23,7 @@ class Pixiv extends BaseSite {
 
     pattern = /https?:\/\/(www\.)?pixiv.net\/.*artworks\/(?<id>\d+)/i;
 
-    api: PixivWeb;
+    private api: PixivWeb;
 
     constructor() {
         super();
