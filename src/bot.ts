@@ -70,7 +70,7 @@ client.on('messageCreate', async (message) => {
             throw ex;
         }
     } catch (ex) {
-        Logger.error(ex.message, identifier);
+        Logger.error(ex?.message, identifier);
     }
 });
 
@@ -113,7 +113,7 @@ client.on('interactionCreate', async (interaction) => {
         await sender.send(interaction, processed);
     } catch (ex) {
         interaction.editReply('Provided URL cannot be sauced');
-        Logger.error(ex.message, identifier);
+        Logger.error(ex?.message, identifier);
     }
 });
 

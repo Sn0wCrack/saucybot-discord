@@ -13,6 +13,7 @@ If you would like to add this bot to your server [click here](https://discordapp
   * ArtStation - Embeds up to X extra images (X is configurable, default 5)
   * Twitter Videos - Embeds a Twitter videoes and GIFs
     * NOTE: On the live version this is temporary until discord fixes video embeds from Twitter, may not always work as expected due to API rate limits
+  * DeviantArt - Embeds main image or thumbnail, includes more information than built-in embed
   * Hentai Foundry - Creates embed as none exists for site.
   * Pixiv - Posts up to X images of the set (X is configurable, default 5)
     * Pixiv Ugoira - Uploads a video with correct framerate and frametiming (Video format is configurable, requires ffmpeg)

@@ -1,4 +1,5 @@
 import ArtStation from './ArtStation';
+import DeviantArt from './DeviantArt';
 import E621 from './E621';
 import ExHentai from './ExHentai';
 import FurAffinity from './FurAffinity';
@@ -9,6 +10,7 @@ import TwitterVideo from './TwitterVideo';
 
 export default [
     ArtStation,
+    DeviantArt,
     ExHentai,
     E621,
     FurAffinity,

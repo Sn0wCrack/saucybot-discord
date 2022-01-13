@@ -28,3 +28,4 @@ dist
 .vscode
 
 commands.js
+.terraform
