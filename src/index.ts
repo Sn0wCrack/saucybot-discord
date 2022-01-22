@@ -7,7 +7,6 @@ import Logger from './Logger';
 dotenv.config();
 
 const manager = new ShardingManager(join(__dirname, 'bot.js'), {
-    totalShards: 'auto',
     token: Environment.get('DISCORD_API_KEY') as string,
 });
 
