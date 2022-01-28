@@ -124,12 +124,25 @@ class MessageSender {
         const messages: MessageTypes = [];
 
         const embed = response.embeds.find((x) => x !== undefined);
-        // Map the embed attachment files down to their names
-        const imageUrl = embed.image.url.replace('attachment://', '');
+
+        const embedUrls: string[] = [];
+
+        if (embed?.image) {
+            embedUrls.push(embed.image.url.replace('attachment://', ''));
+        }
+
+        if (embed?.video) {
+            embedUrls.push(embed.video.url.replace('attachment://', ''));
+        }
+
+        // Only send attachments that are related to this embed
+        const files = response.files.filter(
+            (item) => !embedUrls.includes(item.name)
+        );
 
         messages.push({
             embeds: [embed],
-            files: response.files.filter((item) => item.name !== imageUrl), // Only send attachments that are related to this embed
+            files: files,
             content: response.text,
         });
 
