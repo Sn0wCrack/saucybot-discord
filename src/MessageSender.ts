@@ -127,11 +127,11 @@ class MessageSender {
 
         const embedUrls: string[] = [];
 
-        if (embed?.image) {
+        if (embed?.image?.url) {
             embedUrls.push(embed.image.url.replace('attachment://', ''));
         }
 
-        if (embed?.video) {
+        if (embed?.image?.url) {
             embedUrls.push(embed.video.url.replace('attachment://', ''));
         }
 

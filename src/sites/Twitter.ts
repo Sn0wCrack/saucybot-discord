@@ -8,6 +8,7 @@ import path from 'path';
 import got from 'got';
 import { URL } from 'url';
 import { DateTime } from 'luxon';
+import { delay } from '../Helpers';
 
 class TwitterVideo extends BaseSite {
     identifier = 'Twitter';
@@ -47,9 +48,20 @@ class TwitterVideo extends BaseSite {
             ['video', 'animated_gif'].includes(item.type)
         );
 
-        const hasTwitterEmbed = source?.embeds?.find((item) => {
-            return item.url.includes('twitter.com');
-        });
+        let hasTwitterEmbed: MessageEmbed | null | undefined = null;
+
+        if (source) {
+            await delay(600);
+
+            source = await source.fetch(true);
+
+            hasTwitterEmbed = source.embeds?.find((item) => {
+                return (
+                    item.url.includes('twitter.com') ||
+                    item.url.includes('t.co')
+                );
+            });
+        }
 
         // Only try and embed this twitter link if one of the following is true:
         //  - Discord has failed to create an embed for Twitter
@@ -134,7 +146,7 @@ class TwitterVideo extends BaseSite {
                 },
             ],
             image: {
-                url: photo.media_url_https,
+                url: photo?.media_url_https ?? '',
             },
             footer: {
                 iconURL: TWITTER_ICON_URL,
