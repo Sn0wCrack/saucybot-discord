@@ -4,6 +4,7 @@ import Environment from './Environment';
 import Logger from './Logger';
 import MessageSender from './MessageSender';
 import SiteRunner from './SiteRunner';
+import * as Sentry from '@sentry/node';
 
 dotenv.config();
 
@@ -22,6 +23,17 @@ const runner = new SiteRunner();
 const sender = new MessageSender();
 
 const identifier = `Shard ${client.shard?.ids?.[0] ?? 0}`;
+
+Sentry.init({
+    initialScope: {
+        contexts: {
+            shard: {
+                identifier: identifier,
+                master: false,
+            },
+        },
+    },
+});
 
 client.on('messageCreate', async (message) => {
     // If message is from Bot, then ignore it.
@@ -77,6 +89,7 @@ client.on('messageCreate', async (message) => {
                         await waitMessage.delete();
                     } catch (ex) {
                         await waitMessage.delete();
+                        Sentry.captureException(ex);
                         Logger.error(ex?.message, identifier);
                     }
 
@@ -89,6 +102,7 @@ client.on('messageCreate', async (message) => {
 
         Promise.all(playbook);
     } catch (ex) {
+        Sentry.captureException(ex);
         Logger.error(ex?.message, identifier);
     }
 });
@@ -146,6 +160,7 @@ client.on('interactionCreate', async (interaction) => {
         Promise.all(playbook);
     } catch (ex) {
         interaction.editReply('Provided URL cannot be sauced');
+        Sentry.captureException(ex);
         Logger.error(ex?.message, identifier);
     }
 });
