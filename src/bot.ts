@@ -34,8 +34,6 @@ client.on('messageCreate', async (message) => {
         return;
     }
 
-    console.log(message.embeds);
-
     try {
         const responses = await runner.process(message.content);
 
@@ -44,6 +42,7 @@ client.on('messageCreate', async (message) => {
             return;
         }
 
+        // TODO: Find a way to turn this into a "Promise.all" so we can match and process the links at the same time
         for (const response of responses) {
             for (const match of response.matches) {
                 Logger.info(
@@ -58,7 +57,10 @@ client.on('messageCreate', async (message) => {
                 // Always ensure, even if there's an exception from processing
                 // that we delete our waiting message
                 try {
-                    const processed = await response.site.process(match);
+                    const processed = await response.site.process(
+                        match,
+                        message
+                    );
 
                     // If we failed to process the image, remove the wait message and return
                     if (processed === false) {
@@ -111,7 +113,7 @@ client.on('interactionCreate', async (interaction) => {
                     identifier
                 );
 
-                const processed = await response.site.process(match);
+                const processed = await response.site.process(match, null);
 
                 if (!processed) {
                     interaction.editReply('Provided URL cannot be sauced');

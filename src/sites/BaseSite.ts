@@ -1,3 +1,4 @@
+import { Message } from 'discord.js';
 import ProcessResponse from './ProcessResponse';
 
 abstract class BaseSite {
@@ -11,7 +12,10 @@ abstract class BaseSite {
         return message.matchAll(this.pattern);
     }
 
-    abstract process(match: RegExpMatchArray): Promise<ProcessResponse | false>;
+    abstract process(
+        match: RegExpMatchArray,
+        source: Message | null
+    ): Promise<ProcessResponse | false>;
 }
 
 export default BaseSite;

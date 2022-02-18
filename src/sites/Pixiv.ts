@@ -1,4 +1,4 @@
-import { FileOptions } from 'discord.js';
+import { FileOptions, Message } from 'discord.js';
 import BaseSite from './BaseSite';
 import ProcessResponse from './ProcessResponse';
 import path from 'path';
@@ -35,7 +35,10 @@ class Pixiv extends BaseSite {
         });
     }
 
-    async process(match: RegExpMatchArray): Promise<ProcessResponse | false> {
+    async process(
+        match: RegExpMatchArray,
+        source: Message | null
+    ): Promise<ProcessResponse | false> {
         await this.api.login();
 
         const id = parseInt(match.groups.id);

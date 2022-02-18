@@ -6,7 +6,7 @@ import FurAffinity from './FurAffinity';
 import HentaiFoundry from './HentaiFoundry';
 import Newgrounds from './Newgrounds';
 import Pixiv from './Pixiv';
-import TwitterVideo from './TwitterVideo';
+import Twitter from './Twitter';
 
 export default [
     ArtStation,
@@ -17,5 +17,5 @@ export default [
     HentaiFoundry,
     Newgrounds,
     Pixiv,
-    TwitterVideo,
+    Twitter,
 ];

@@ -2,7 +2,7 @@ import got from 'got';
 import ProcessResponse from './ProcessResponse';
 import { version } from '../../package.json';
 import BaseSite from './BaseSite';
-import { EmbedField, MessageEmbed } from 'discord.js';
+import { EmbedField, Message, MessageEmbed } from 'discord.js';
 import { DateTime } from 'luxon';
 
 class E621 extends BaseSite {
@@ -12,7 +12,10 @@ class E621 extends BaseSite {
 
     color = 0x00549e;
 
-    async process(match: RegExpExecArray): Promise<ProcessResponse | false> {
+    async process(
+        match: RegExpMatchArray,
+        source: Message | null
+    ): Promise<ProcessResponse | false> {
         const message: ProcessResponse = {
             embeds: [],
             files: [],
