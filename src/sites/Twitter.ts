@@ -53,7 +53,7 @@ class TwitterVideo extends BaseSite {
         // If we have a message attached, we need to wait a bit for Discord to process the embed,
         // we when need to refetch the message and see if an embed has been added in that time.
         if (source) {
-            await delay(600);
+            await delay(Environment.get('TWITTER_READ_DELAY', 1000) as number);
 
             source = await source.fetch(true);
 
