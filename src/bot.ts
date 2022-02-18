@@ -25,6 +25,7 @@ const sender = new MessageSender();
 const identifier = `Shard ${client.shard?.ids?.[0] ?? 0}`;
 
 Sentry.init({
+    integrations: [new Sentry.Integrations.Http()],
     initialScope: {
         contexts: {
             shard: {

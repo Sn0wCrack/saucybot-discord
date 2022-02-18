@@ -8,6 +8,7 @@ import * as Sentry from '@sentry/node';
 dotenv.config();
 
 Sentry.init({
+    integrations: [new Sentry.Integrations.Http()],
     initialScope: {
         contexts: {
             shard: {
