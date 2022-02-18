@@ -11,8 +11,10 @@ If you would like to add this bot to your server [click here](https://discordapp
 
 * Currently Supports:
   * ArtStation - Embeds up to X extra images (X is configurable, default 5)
-  * Twitter Videos - Embeds a Twitter videoes and GIFs
-    * NOTE: On the live version this is temporary until discord fixes video embeds from Twitter, may not always work as expected due to API rate limits
+  * Twitter - Embeds posts when native embeds fail
+    * NOTE: May not always work as expected due to API rate limits
+    * Will create an embed when Twitter fails to embed a Link itself
+    * Will embed a video if it cannot be played natively in Discord
   * DeviantArt - Embeds main image or thumbnail, includes more information than built-in embed
   * Hentai Foundry - Creates embed as none exists for site.
   * Pixiv - Posts up to X images of the set (X is configurable, default 5)
