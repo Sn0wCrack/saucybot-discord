@@ -10,7 +10,6 @@ import { URL } from 'url';
 import { DateTime } from 'luxon';
 import { delay } from '../Helpers';
 import CacheManager from '../CacheManager';
-import Logger from '../Logger';
 
 class TwitterVideo extends BaseSite {
     identifier = 'Twitter';
@@ -78,7 +77,9 @@ class TwitterVideo extends BaseSite {
         const cacheKey = `twitter_tweet_${match.groups.id}`;
         const cacheManager = await CacheManager.getInstance();
 
-        if (await cacheManager.has(cacheKey)) {
+        const exists = await cacheManager.has(cacheKey);
+
+        if (exists === 1) {
             const cachedValue = await cacheManager.get(cacheKey);
             return JSON.parse(cachedValue) as StatusesShow;
         }
