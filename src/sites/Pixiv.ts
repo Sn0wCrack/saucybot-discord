@@ -1,4 +1,4 @@
-import { FileOptions } from 'discord.js';
+import { FileOptions, Message } from 'discord.js';
 import BaseSite from './BaseSite';
 import ProcessResponse from './ProcessResponse';
 import path from 'path';
@@ -21,7 +21,7 @@ import { URL } from 'url';
 class Pixiv extends BaseSite {
     identifier = 'Pixiv';
 
-    pattern = /https?:\/\/(www\.)?pixiv.net\/.*artworks\/(?<id>\d+)/i;
+    pattern = /https?:\/\/(www\.)?pixiv.net\/.*artworks\/(?<id>\d+)/gim;
 
     private api: PixivWeb;
 
@@ -35,7 +35,10 @@ class Pixiv extends BaseSite {
         });
     }
 
-    async process(match: RegExpMatchArray): Promise<ProcessResponse | false> {
+    async process(
+        match: RegExpMatchArray,
+        source: Message | null
+    ): Promise<ProcessResponse | false> {
         await this.api.login();
 
         const id = parseInt(match.groups.id);

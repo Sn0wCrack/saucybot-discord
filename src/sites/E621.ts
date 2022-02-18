@@ -2,17 +2,20 @@ import got from 'got';
 import ProcessResponse from './ProcessResponse';
 import { version } from '../../package.json';
 import BaseSite from './BaseSite';
-import { EmbedField, MessageEmbed } from 'discord.js';
+import { EmbedField, Message, MessageEmbed } from 'discord.js';
 import { DateTime } from 'luxon';
 
 class E621 extends BaseSite {
     identifier = 'E621';
 
-    pattern = /https?:\/\/(www\.)?e621.net\/posts\/(?<id>\d+)/i;
+    pattern = /https?:\/\/(www\.)?e621.net\/posts\/(?<id>\d+)/gim;
 
     color = 0x00549e;
 
-    async process(match: RegExpMatchArray): Promise<ProcessResponse | false> {
+    async process(
+        match: RegExpMatchArray,
+        source: Message | null
+    ): Promise<ProcessResponse | false> {
         const message: ProcessResponse = {
             embeds: [],
             files: [],

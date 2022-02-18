@@ -2,18 +2,21 @@ import BaseSite from './BaseSite';
 import ProcessResponse from './ProcessResponse';
 import cheerio from 'cheerio';
 import got from 'got';
-import { MessageEmbed } from 'discord.js';
+import { Message, MessageEmbed } from 'discord.js';
 import { convert } from 'html-to-text';
 
 class Newgrounds extends BaseSite {
     identifier = 'Newgrounds';
 
     pattern =
-        /https?:\/\/(www\.)?newgrounds\.com\/art\/view\/(?<user>.*)\/(?<slug>\S+)/i;
+        /https?:\/\/(www\.)?newgrounds\.com\/art\/view\/(?<user>.*)\/(?<slug>\S+)/gim;
 
     color = 0xfff17a;
 
-    async process(match: RegExpMatchArray): Promise<ProcessResponse | false> {
+    async process(
+        match: RegExpMatchArray,
+        source: Message | null
+    ): Promise<ProcessResponse | false> {
         const message: ProcessResponse = {
             embeds: [],
             files: [],

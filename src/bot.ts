@@ -35,40 +35,59 @@ client.on('messageCreate', async (message) => {
     }
 
     try {
-        const response = await runner.process(message.content);
+        const responses = await runner.process(message.content);
 
         // If the response is false, then we didn't find anything.
-        if (response === false) {
+        if (responses === false) {
             return;
         }
 
-        Logger.info(
-            `Matched link "${response.match[0]}" to site ${response.site.identifier}`,
-            identifier
-        );
+        // In order to process our messages simulataneously we build up an array of Promises.
+        // We then run Promse.all over this array to roughly execute
+        const playbook: Array<Promise<void>> = [];
 
-        const waitMessage = await message.reply(
-            `Matched link to ${response.site.identifier}, please wait...`
-        );
+        for (const response of responses) {
+            for (const match of response.matches) {
+                const promise = new Promise<void>(async (resolve) => {
+                    Logger.info(
+                        `Matched link "${match[0]}" to site ${response.site.identifier}`,
+                        identifier
+                    );
 
-        // Always ensure, even if there's an exception from processing
-        // that we delete our waiting message
-        try {
-            const processed = await response.site.process(response.match);
+                    const waitMessage = await message.reply(
+                        `Matched link to ${response.site.identifier}, please wait...`
+                    );
 
-            // If we failed to process the image, remove the wait message and return
-            if (processed === false) {
-                waitMessage.delete();
-                return;
+                    // Always ensure, even if there's an exception from processing
+                    // that we delete our waiting message
+                    try {
+                        const processed = await response.site.process(
+                            match,
+                            message
+                        );
+
+                        // If we failed to process the image, remove the wait message and return
+                        if (processed === false) {
+                            waitMessage.delete();
+                            return;
+                        }
+
+                        await sender.send(message, processed);
+
+                        await waitMessage.delete();
+                    } catch (ex) {
+                        await waitMessage.delete();
+                        Logger.error(ex?.message, identifier);
+                    }
+
+                    return resolve();
+                });
+
+                playbook.push(promise);
             }
-
-            await sender.send(message, processed);
-
-            await waitMessage.delete();
-        } catch (ex) {
-            await waitMessage.delete();
-            throw ex;
         }
+
+        Promise.all(playbook);
     } catch (ex) {
         Logger.error(ex?.message, identifier);
     }
@@ -88,29 +107,43 @@ client.on('interactionCreate', async (interaction) => {
     interaction.deferReply();
 
     try {
-        const response = await runner.process(
+        const responses = await runner.process(
             interaction.options.getString('url')
         );
 
         // If the response is false, then we didn't find anything.
-        if (response === false) {
+        if (responses === false) {
             interaction.editReply('Provided URL cannot be sauced');
             return;
         }
 
-        Logger.info(
-            `Matched message "${response.match[0]}" to site ${response.site.identifier}`,
-            identifier
-        );
+        const playbook: Array<Promise<void>> = [];
 
-        const processed = await response.site.process(response.match);
+        for (const response of responses) {
+            for (const match of response.matches) {
+                const promise = new Promise<void>(async (resolve) => {
+                    Logger.info(
+                        `Matched message "${match[0]}" to site ${response.site.identifier}`,
+                        identifier
+                    );
 
-        if (!processed) {
-            interaction.editReply('Provided URL cannot be sauced');
-            return;
+                    const processed = await response.site.process(match, null);
+
+                    if (!processed) {
+                        interaction.editReply('Provided URL cannot be sauced');
+                        return;
+                    }
+
+                    await sender.send(interaction, processed);
+
+                    return resolve();
+                });
+
+                playbook.push(promise);
+            }
         }
 
-        await sender.send(interaction, processed);
+        Promise.all(playbook);
     } catch (ex) {
         interaction.editReply('Provided URL cannot be sauced');
         Logger.error(ex?.message, identifier);

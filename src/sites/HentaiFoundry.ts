@@ -3,20 +3,23 @@ import ProcessResponse from './ProcessResponse';
 import { CookieJar } from 'tough-cookie';
 import cheerio from 'cheerio';
 import got from 'got';
-import { MessageEmbed } from 'discord.js';
+import { Message, MessageEmbed } from 'discord.js';
 import { DateTime } from 'luxon';
 
 class HentaiFoundry extends BaseSite {
     identifier = 'Hentai Foundry';
 
     pattern =
-        /https:?\/\/(www\.)?hentai-foundry\.com\/pictures\/user\/(?<user>.*)\/(?<id>\d+)\/(?<slug>\S+)/i;
+        /https:?\/\/(www\.)?hentai-foundry\.com\/pictures\/user\/(?<user>.*)\/(?<id>\d+)\/(?<slug>\S+)/gim;
 
     color = 0xff67a2;
 
     baseUrl = 'https://www.hentai-foundry.com';
 
-    async process(match: RegExpMatchArray): Promise<ProcessResponse | false> {
+    async process(
+        match: RegExpMatchArray,
+        source: Message | null
+    ): Promise<ProcessResponse | false> {
         const message: ProcessResponse = {
             embeds: [],
             files: [],

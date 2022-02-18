@@ -4,16 +4,19 @@ import got from 'got';
 import { version } from '../../package.json';
 import Environment from '../Environment';
 import path from 'path';
-import { MessageEmbed } from 'discord.js';
+import { Message, MessageEmbed } from 'discord.js';
 import { DateTime } from 'luxon';
 import { URL } from 'url';
 
 class ArtStation extends BaseSite {
     identifier = 'ArtStation';
 
-    pattern = /https?:\/\/(www\.)?artstation.com\/artwork\/(?<hash>\S+)/i;
+    pattern = /https?:\/\/(www\.)?artstation.com\/artwork\/(?<hash>\S+)/gim;
 
-    async process(match: RegExpMatchArray): Promise<ProcessResponse | false> {
+    async process(
+        match: RegExpMatchArray,
+        source: Message | null
+    ): Promise<ProcessResponse | false> {
         const message: ProcessResponse = {
             embeds: [],
             files: [],

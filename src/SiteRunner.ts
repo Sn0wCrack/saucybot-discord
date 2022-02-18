@@ -14,21 +14,39 @@ class SiteRunner {
         );
     }
 
-    async process(message: string): Promise<RunnerResponse | false> {
-        for (const site of this.sites) {
-            const match = site.match(message);
+    async process(message: string): Promise<Array<RunnerResponse> | false> {
+        const results = [];
 
-            if (!match) {
+        let embedCount = 0;
+        const maximumEmbeds = Environment.get('MAXIMUM_EMBEDS', 5) as number;
+
+        for (const site of this.sites) {
+            let matches = Array.from(site.match(message));
+
+            if (matches.length === 0) {
                 continue;
             }
 
-            return Promise.resolve({
-                site: site,
-                match: match,
+            // If the number of matches would exceed our maximum embeds when added to our output
+            // instead only get the number of matches that would still fit within our maximum.
+            if (embedCount + matches.length > maximumEmbeds) {
+                matches = matches.slice(0, maximumEmbeds - embedCount);
+            }
+
+            embedCount += matches.length;
+
+            // If we go over our maximum embed limit, return the results now and display everything we've matched
+            if (embedCount > maximumEmbeds) {
+                return results;
+            }
+
+            results.push({
+                site,
+                matches,
             });
         }
 
-        return Promise.resolve(false);
+        return Promise.resolve(results.length > 0 ? results : false);
     }
 }
 

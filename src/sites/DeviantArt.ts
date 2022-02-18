@@ -9,7 +9,7 @@ import Deviant, {
 } from '@sn0wcrack/deviant';
 import cheerio from 'cheerio';
 import { DeviantionResponse } from '@sn0wcrack/deviant/dist/Responses';
-import { MessageEmbed } from 'discord.js';
+import { Message, MessageEmbed } from 'discord.js';
 import { DateTime } from 'luxon';
 
 const OMEBED_URL = 'https://backend.deviantart.com/oembed';
@@ -18,7 +18,7 @@ class DeviantArt extends BaseSite {
     identifier = 'DeviantArt';
 
     pattern =
-        /https?:\/\/(www\.)?deviantart.com\/(?<author>\S+)\/art\/(?<slug>\S+)/i;
+        /https?:\/\/(www\.)?deviantart.com\/(?<author>\S+)\/art\/(?<slug>\S+)/gim;
 
     color = 0x00e59b;
 
@@ -41,7 +41,10 @@ class DeviantArt extends BaseSite {
         this.api.authorize();
     }
 
-    async process(match: RegExpMatchArray): Promise<ProcessResponse | false> {
+    async process(
+        match: RegExpMatchArray,
+        source: Message | null
+    ): Promise<ProcessResponse | false> {
         const message: ProcessResponse = {
             embeds: [],
             files: [],

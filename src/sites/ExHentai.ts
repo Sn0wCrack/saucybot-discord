@@ -3,7 +3,7 @@ import ProcessResponse from './ProcessResponse';
 import cheerio from 'cheerio';
 import got from 'got';
 import { DateTime } from 'luxon';
-import { MessageEmbed } from 'discord.js';
+import { Message, MessageEmbed } from 'discord.js';
 import { convert } from 'html-to-text';
 import { CookieJar } from 'tough-cookie';
 import Environment from '../Environment';
@@ -12,11 +12,14 @@ class ExHentai extends BaseSite {
     identifier = 'ExHentai';
 
     pattern =
-        /https?:\/\/(www\.)?e[x-]hentai.org\/g\/(?<id>\d+)\/(?<hash>\S+)/i;
+        /https?:\/\/(www\.)?e[x-]hentai.org\/g\/(?<id>\d+)\/(?<hash>\S+)/gim;
 
     color = 0x660611;
 
-    async process(match: RegExpMatchArray): Promise<ProcessResponse | false> {
+    async process(
+        match: RegExpMatchArray,
+        source: Message | null
+    ): Promise<ProcessResponse | false> {
         const message: ProcessResponse = {
             embeds: [],
             files: [],

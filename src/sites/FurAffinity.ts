@@ -1,14 +1,18 @@
 import BaseSite from './BaseSite';
 import ProcessResponse from './ProcessResponse';
 import got from 'got';
-import { MessageEmbed } from 'discord.js';
+import { Message, MessageEmbed } from 'discord.js';
 
 class FurAffinity extends BaseSite {
     identifier = 'FurAffinity';
 
-    pattern = /https?:\/\/(www\.)?furaffinity\.net\/(?:view|full)\/(?<id>\d+)/;
+    pattern =
+        /https?:\/\/(www\.)?furaffinity\.net\/(?:view|full)\/(?<id>\d+)/gim;
 
-    async process(match: RegExpMatchArray): Promise<ProcessResponse | false> {
+    async process(
+        match: RegExpMatchArray,
+        source: Message | null
+    ): Promise<ProcessResponse | false> {
         const message: ProcessResponse = {
             embeds: [],
             files: [],
