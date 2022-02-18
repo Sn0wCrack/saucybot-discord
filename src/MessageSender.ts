@@ -131,7 +131,7 @@ class MessageSender {
             embedUrls.push(embed.image.url.replace('attachment://', ''));
         }
 
-        if (embed?.image?.url) {
+        if (embed?.video?.url) {
             embedUrls.push(embed.video.url.replace('attachment://', ''));
         }
 
