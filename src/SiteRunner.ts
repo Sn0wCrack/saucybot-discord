@@ -34,8 +34,6 @@ class SiteRunner {
 
             embedCount += matches.length;
 
-            console.log(site.identifier, matches.length, embedCount);
-
             // If we go over our maximum embed limit, return the results now and display everything we've matched
             if (embedCount > maximumEmbeds) {
                 return results;
