@@ -9,6 +9,8 @@ import got from 'got';
 import { URL } from 'url';
 import { DateTime } from 'luxon';
 import { delay } from '../Helpers';
+import CacheManager from '../CacheManager';
+import Logger from '../Logger';
 
 class TwitterVideo extends BaseSite {
     identifier = 'Twitter';
@@ -37,14 +39,9 @@ class TwitterVideo extends BaseSite {
         match: RegExpMatchArray,
         source: Message | null
     ): Promise<ProcessResponse | false> {
-        const results = await this.api.tweets.statusesShow({
-            id: match.groups.id,
-            include_entities: true,
-            trim_user: false,
-            tweet_mode: 'extended',
-        });
+        const tweet = await this.getTweet(match);
 
-        const hasVideo = results?.extended_entities?.media.find((item) =>
+        const hasVideo = tweet?.extended_entities?.media.find((item) =>
             ['video', 'animated_gif'].includes(item.type)
         );
 
@@ -68,13 +65,34 @@ class TwitterVideo extends BaseSite {
         // Only try and embed this twitter link if one of the following is true:
         //  - Discord has failed to create an embed for Twitter
         //  - The result is "sensitive" and it has a video, as Discord often fails to play these inline
-        if (hasTwitterEmbed || (hasVideo && !results.possibly_sensitive)) {
+        if (hasTwitterEmbed || (hasVideo && !tweet.possibly_sensitive)) {
             return Promise.resolve(false);
         }
 
         return hasVideo
-            ? this.handleVideo(results)
-            : this.handleRegular(results, match[0]);
+            ? this.handleVideo(tweet)
+            : this.handleRegular(tweet, match[0]);
+    }
+
+    async getTweet(match: RegExpMatchArray): Promise<StatusesShow> {
+        const cacheKey = `twitter_tweet_${match.groups.id}`;
+        const cacheManager = await CacheManager.getInstance();
+
+        if (await cacheManager.has(cacheKey)) {
+            const cachedValue = await cacheManager.get(cacheKey);
+            return JSON.parse(cachedValue) as StatusesShow;
+        }
+
+        const results = await this.api.tweets.statusesShow({
+            id: match.groups.id,
+            include_entities: true,
+            trim_user: false,
+            tweet_mode: 'extended',
+        });
+
+        await cacheManager.set(cacheKey, JSON.stringify(results));
+
+        return Promise.resolve(results);
     }
 
     async handleVideo(status: StatusesShow): Promise<ProcessResponse | false> {

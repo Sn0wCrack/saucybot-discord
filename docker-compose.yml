@@ -5,3 +5,6 @@ services:
         env_file:
             - .env
         restart: unless-stopped
+    cache:
+        image: "redis:alpine"
+        restart: unless-stopped
