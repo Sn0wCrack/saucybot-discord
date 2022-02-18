@@ -27,7 +27,8 @@ class SiteRunner {
                 continue;
             }
 
-            // If the number of matches is greather than our maximum embed count, only get the first X elements instead
+            // If the number of matches would exceed our maximum embeds when added to our output
+            // instead only get the number of matches that would still fit within our maximum.
             if (embedCount + matches.length > maximumEmbeds) {
                 matches = matches.slice(0, maximumEmbeds - embedCount);
             }
