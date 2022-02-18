@@ -42,41 +42,50 @@ client.on('messageCreate', async (message) => {
             return;
         }
 
-        // TODO: Find a way to turn this into a "Promise.all" so we can match and process the links at the same time
+        const playbook: Array<Promise<void>> = [];
+
         for (const response of responses) {
             for (const match of response.matches) {
-                Logger.info(
-                    `Matched link "${match[0]}" to site ${response.site.identifier}`,
-                    identifier
-                );
-
-                const waitMessage = await message.reply(
-                    `Matched link to ${response.site.identifier}, please wait...`
-                );
-
-                // Always ensure, even if there's an exception from processing
-                // that we delete our waiting message
-                try {
-                    const processed = await response.site.process(
-                        match,
-                        message
+                const promise = new Promise<void>(async (resolve) => {
+                    Logger.info(
+                        `Matched link "${match[0]}" to site ${response.site.identifier}`,
+                        identifier
                     );
 
-                    // If we failed to process the image, remove the wait message and return
-                    if (processed === false) {
-                        waitMessage.delete();
-                        return;
+                    const waitMessage = await message.reply(
+                        `Matched link to ${response.site.identifier}, please wait...`
+                    );
+
+                    // Always ensure, even if there's an exception from processing
+                    // that we delete our waiting message
+                    try {
+                        const processed = await response.site.process(
+                            match,
+                            message
+                        );
+
+                        // If we failed to process the image, remove the wait message and return
+                        if (processed === false) {
+                            waitMessage.delete();
+                            return;
+                        }
+
+                        await sender.send(message, processed);
+
+                        await waitMessage.delete();
+                    } catch (ex) {
+                        await waitMessage.delete();
+                        Logger.error(ex?.message, identifier);
                     }
 
-                    await sender.send(message, processed);
+                    return resolve();
+                });
 
-                    await waitMessage.delete();
-                } catch (ex) {
-                    await waitMessage.delete();
-                    throw ex;
-                }
+                playbook.push(promise);
             }
         }
+
+        Promise.all(playbook);
     } catch (ex) {
         Logger.error(ex?.message, identifier);
     }
@@ -106,23 +115,33 @@ client.on('interactionCreate', async (interaction) => {
             return;
         }
 
+        const playbook: Array<Promise<void>> = [];
+
         for (const response of responses) {
             for (const match of response.matches) {
-                Logger.info(
-                    `Matched message "${match[0]}" to site ${response.site.identifier}`,
-                    identifier
-                );
+                const promise = new Promise<void>(async (resolve) => {
+                    Logger.info(
+                        `Matched message "${match[0]}" to site ${response.site.identifier}`,
+                        identifier
+                    );
 
-                const processed = await response.site.process(match, null);
+                    const processed = await response.site.process(match, null);
 
-                if (!processed) {
-                    interaction.editReply('Provided URL cannot be sauced');
-                    return;
-                }
+                    if (!processed) {
+                        interaction.editReply('Provided URL cannot be sauced');
+                        return;
+                    }
 
-                await sender.send(interaction, processed);
+                    await sender.send(interaction, processed);
+
+                    return resolve();
+                });
+
+                playbook.push(promise);
             }
         }
+
+        Promise.all(playbook);
     } catch (ex) {
         interaction.editReply('Provided URL cannot be sauced');
         Logger.error(ex?.message, identifier);
