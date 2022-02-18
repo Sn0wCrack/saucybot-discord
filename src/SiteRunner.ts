@@ -17,11 +17,28 @@ class SiteRunner {
     async process(message: string): Promise<Array<RunnerResponse> | false> {
         const results = [];
 
+        let embedCount = 0;
+        const maximumEmbeds = Environment.get('MAXIMUM_EMBEDS', 5) as number;
+
         for (const site of this.sites) {
-            const matches = Array.from(site.match(message));
+            let matches = Array.from(site.match(message));
 
             if (matches.length === 0) {
                 continue;
+            }
+
+            // If the number of matches is greather than our maximum embed count, only get the first X elements instead
+            if (embedCount + matches.length > maximumEmbeds) {
+                matches = matches.slice(0, maximumEmbeds - embedCount);
+            }
+
+            embedCount += matches.length;
+
+            console.log(site.identifier, matches.length, embedCount);
+
+            // If we go over our maximum embed limit, return the results now and display everything we've matched
+            if (embedCount > maximumEmbeds) {
+                return results;
             }
 
             results.push({

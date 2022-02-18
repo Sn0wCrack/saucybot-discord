@@ -47,13 +47,14 @@ class TwitterVideo extends BaseSite {
             ['video', 'animated_gif'].includes(item.type)
         );
 
+        const hasTwitterEmbed = source?.embeds?.find((item) => {
+            return item.url.includes('twitter.com');
+        });
+
         // Only try and embed this twitter link if one of the following is true:
-        //  - Discord has failed to create an embed
+        //  - Discord has failed to create an embed for Twitter
         //  - The result is "sensitive" and it has a video, as Discord often fails to play these inline
-        if (
-            source?.embeds?.length > 0 ||
-            (hasVideo && !results.possibly_sensitive)
-        ) {
+        if (hasTwitterEmbed || (hasVideo && !results.possibly_sensitive)) {
             return Promise.resolve(false);
         }
 

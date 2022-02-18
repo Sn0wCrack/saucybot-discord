@@ -42,17 +42,6 @@ client.on('messageCreate', async (message) => {
             return;
         }
 
-        // If we're trying to embed too many links, don't so as to not cause too much load
-        const totalEmbeds = responses.reduce((carry, response) => {
-            return carry + response.matches.length;
-        }, 0);
-
-        const maximumEmbeds = Environment.get('MAXIMUM_EMBEDS', 5) as number;
-
-        if (totalEmbeds >= maximumEmbeds) {
-            return;
-        }
-
         // In order to process our messages simulataneously we build up an array of Promises.
         // We then run Promse.all over this array to roughly execute
         const playbook: Array<Promise<void>> = [];
@@ -125,17 +114,6 @@ client.on('interactionCreate', async (interaction) => {
         // If the response is false, then we didn't find anything.
         if (responses === false) {
             interaction.editReply('Provided URL cannot be sauced');
-            return;
-        }
-
-        // If we're trying to embed too many links, don't so as to not cause too much load
-        const totalEmbeds = responses.reduce((carry, response) => {
-            return carry + response.matches.length;
-        }, 0);
-
-        const maximumEmbeds = Environment.get('MAXIMUM_EMBEDS', 5) as number;
-
-        if (totalEmbeds >= maximumEmbeds) {
             return;
         }
 
