@@ -11,7 +11,7 @@ import { URL } from 'url';
 class ArtStation extends BaseSite {
     identifier = 'ArtStation';
 
-    pattern = /https?:\/\/(www\.)?artstation.com\/artwork\/(?<hash>\S+)/i;
+    pattern = /https?:\/\/(www\.)?artstation.com\/artwork\/(?<hash>\S+)/gim;
 
     async process(match: RegExpMatchArray): Promise<ProcessResponse | false> {
         const message: ProcessResponse = {

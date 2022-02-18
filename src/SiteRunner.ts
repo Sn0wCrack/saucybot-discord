@@ -14,21 +14,23 @@ class SiteRunner {
         );
     }
 
-    async process(message: string): Promise<RunnerResponse | false> {
-        for (const site of this.sites) {
-            const match = site.match(message);
+    async process(message: string): Promise<Array<RunnerResponse> | false> {
+        const results = [];
 
-            if (!match) {
+        for (const site of this.sites) {
+            const matches = Array.from(site.match(message));
+
+            if (matches.length === 0) {
                 continue;
             }
 
-            return Promise.resolve({
-                site: site,
-                match: match,
+            results.push({
+                site,
+                matches,
             });
         }
 
-        return Promise.resolve(false);
+        return Promise.resolve(results.length > 0 ? results : false);
     }
 }
 

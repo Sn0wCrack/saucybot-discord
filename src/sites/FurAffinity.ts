@@ -6,7 +6,8 @@ import { MessageEmbed } from 'discord.js';
 class FurAffinity extends BaseSite {
     identifier = 'FurAffinity';
 
-    pattern = /https?:\/\/(www\.)?furaffinity\.net\/(?:view|full)\/(?<id>\d+)/;
+    pattern =
+        /https?:\/\/(www\.)?furaffinity\.net\/(?:view|full)\/(?<id>\d+)/gim;
 
     async process(match: RegExpMatchArray): Promise<ProcessResponse | false> {
         const message: ProcessResponse = {

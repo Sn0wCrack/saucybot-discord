@@ -10,7 +10,7 @@ class HentaiFoundry extends BaseSite {
     identifier = 'Hentai Foundry';
 
     pattern =
-        /https:?\/\/(www\.)?hentai-foundry\.com\/pictures\/user\/(?<user>.*)\/(?<id>\d+)\/(?<slug>\S+)/i;
+        /https:?\/\/(www\.)?hentai-foundry\.com\/pictures\/user\/(?<user>.*)\/(?<id>\d+)\/(?<slug>\S+)/gim;
 
     color = 0xff67a2;
 

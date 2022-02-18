@@ -21,7 +21,7 @@ import { URL } from 'url';
 class Pixiv extends BaseSite {
     identifier = 'Pixiv';
 
-    pattern = /https?:\/\/(www\.)?pixiv.net\/.*artworks\/(?<id>\d+)/i;
+    pattern = /https?:\/\/(www\.)?pixiv.net\/.*artworks\/(?<id>\d+)/gim;
 
     private api: PixivWeb;
 

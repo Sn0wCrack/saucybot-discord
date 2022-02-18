@@ -8,11 +8,11 @@ import { DateTime } from 'luxon';
 class E621 extends BaseSite {
     identifier = 'E621';
 
-    pattern = /https?:\/\/(www\.)?e621.net\/posts\/(?<id>\d+)/i;
+    pattern = /https?:\/\/(www\.)?e621.net\/posts\/(?<id>\d+)/gim;
 
     color = 0x00549e;
 
-    async process(match: RegExpMatchArray): Promise<ProcessResponse | false> {
+    async process(match: RegExpExecArray): Promise<ProcessResponse | false> {
         const message: ProcessResponse = {
             embeds: [],
             files: [],

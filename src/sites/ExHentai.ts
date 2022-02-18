@@ -12,7 +12,7 @@ class ExHentai extends BaseSite {
     identifier = 'ExHentai';
 
     pattern =
-        /https?:\/\/(www\.)?e[x-]hentai.org\/g\/(?<id>\d+)\/(?<hash>\S+)/i;
+        /https?:\/\/(www\.)?e[x-]hentai.org\/g\/(?<id>\d+)\/(?<hash>\S+)/gim;
 
     color = 0x660611;
 

@@ -12,7 +12,7 @@ class TwitterVideo extends BaseSite {
     identifier = 'Twitter Video';
 
     pattern =
-        /https?:\/\/(www\.)?twitter\.com\/(?<user>.*)\/status\/(?<id>\S+)(\?\=.*)?/i;
+        /https?:\/\/(www\.)?twitter\.com\/(?<user>.*)\/status\/(?<id>\S+)(\?\=.*)?/gim;
 
     color = 0x1da1f2;
 
@@ -32,6 +32,8 @@ class TwitterVideo extends BaseSite {
     }
 
     async process(match: RegExpMatchArray): Promise<ProcessResponse | false> {
+        console.debug(match);
+
         const results = await this.api.tweets.statusesShow({
             id: match.groups.id,
             include_entities: true,

@@ -9,7 +9,7 @@ class Newgrounds extends BaseSite {
     identifier = 'Newgrounds';
 
     pattern =
-        /https?:\/\/(www\.)?newgrounds\.com\/art\/view\/(?<user>.*)\/(?<slug>\S+)/i;
+        /https?:\/\/(www\.)?newgrounds\.com\/art\/view\/(?<user>.*)\/(?<slug>\S+)/gim;
 
     color = 0xfff17a;
 

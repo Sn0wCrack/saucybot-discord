@@ -34,40 +34,46 @@ client.on('messageCreate', async (message) => {
         return;
     }
 
+    console.log(message.embeds);
+
     try {
-        const response = await runner.process(message.content);
+        const responses = await runner.process(message.content);
 
         // If the response is false, then we didn't find anything.
-        if (response === false) {
+        if (responses === false) {
             return;
         }
 
-        Logger.info(
-            `Matched link "${response.match[0]}" to site ${response.site.identifier}`,
-            identifier
-        );
+        for (const response of responses) {
+            for (const match of response.matches) {
+                Logger.info(
+                    `Matched link "${match[0]}" to site ${response.site.identifier}`,
+                    identifier
+                );
 
-        const waitMessage = await message.reply(
-            `Matched link to ${response.site.identifier}, please wait...`
-        );
+                const waitMessage = await message.reply(
+                    `Matched link to ${response.site.identifier}, please wait...`
+                );
 
-        // Always ensure, even if there's an exception from processing
-        // that we delete our waiting message
-        try {
-            const processed = await response.site.process(response.match);
+                // Always ensure, even if there's an exception from processing
+                // that we delete our waiting message
+                try {
+                    const processed = await response.site.process(match);
 
-            // If we failed to process the image, remove the wait message and return
-            if (processed === false) {
-                waitMessage.delete();
-                return;
+                    // If we failed to process the image, remove the wait message and return
+                    if (processed === false) {
+                        waitMessage.delete();
+                        return;
+                    }
+
+                    await sender.send(message, processed);
+
+                    await waitMessage.delete();
+                } catch (ex) {
+                    await waitMessage.delete();
+                    throw ex;
+                }
             }
-
-            await sender.send(message, processed);
-
-            await waitMessage.delete();
-        } catch (ex) {
-            await waitMessage.delete();
-            throw ex;
         }
     } catch (ex) {
         Logger.error(ex?.message, identifier);
@@ -88,29 +94,33 @@ client.on('interactionCreate', async (interaction) => {
     interaction.deferReply();
 
     try {
-        const response = await runner.process(
+        const responses = await runner.process(
             interaction.options.getString('url')
         );
 
         // If the response is false, then we didn't find anything.
-        if (response === false) {
+        if (responses === false) {
             interaction.editReply('Provided URL cannot be sauced');
             return;
         }
 
-        Logger.info(
-            `Matched message "${response.match[0]}" to site ${response.site.identifier}`,
-            identifier
-        );
+        for (const response of responses) {
+            for (const match of response.matches) {
+                Logger.info(
+                    `Matched message "${match[0]}" to site ${response.site.identifier}`,
+                    identifier
+                );
 
-        const processed = await response.site.process(response.match);
+                const processed = await response.site.process(match);
 
-        if (!processed) {
-            interaction.editReply('Provided URL cannot be sauced');
-            return;
+                if (!processed) {
+                    interaction.editReply('Provided URL cannot be sauced');
+                    return;
+                }
+
+                await sender.send(interaction, processed);
+            }
         }
-
-        await sender.send(interaction, processed);
     } catch (ex) {
         interaction.editReply('Provided URL cannot be sauced');
         Logger.error(ex?.message, identifier);
