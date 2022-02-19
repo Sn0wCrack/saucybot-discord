@@ -26,11 +26,21 @@ class CacheManager {
     }
 
     public async connect() {
+        if (!this.client) {
+            return Promise.resolve();
+        }
+
         return this.client.connect();
     }
 
-    public has(key: string) {
-        return this.client.exists(key);
+    public async has(key: string): Promise<boolean> {
+        if (!this.client) {
+            return Promise.resolve(false);
+        }
+
+        const result = await this.client.exists(key);
+
+        return Promise.resolve(result === 1);
     }
 
     public get(key: string) {
@@ -38,7 +48,31 @@ class CacheManager {
     }
 
     public set(key: string, value: string, expireIn = 86400) {
+        if (!this.client) {
+            Promise.resolve();
+        }
+
         return this.client.setEx(key, expireIn, value);
+    }
+
+    public async remember(
+        key: string,
+        value: string | (() => Promise<string>),
+        expireIn = 86400
+    ): Promise<string> {
+        const exists = await this.has(key);
+
+        if (exists) {
+            return this.get(key);
+        }
+
+        if (typeof value === 'function') {
+            value = await value();
+        }
+
+        await this.set(key, value, expireIn);
+
+        return Promise.resolve(value);
     }
 }
 

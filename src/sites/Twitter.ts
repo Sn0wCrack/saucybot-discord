@@ -15,7 +15,7 @@ class TwitterVideo extends BaseSite {
     identifier = 'Twitter';
 
     pattern =
-        /https?:\/\/(www\.)?twitter\.com\/(?<user>.*)\/status\/(?<id>\S+)(\?\=.*)?/gim;
+        /https?:\/\/(www\.)?twitter\.com\/(?<user>.*)\/status\/(?<id>\d+)(\?\=.*)?/gim;
 
     color = 0x1da1f2;
 
@@ -77,21 +77,18 @@ class TwitterVideo extends BaseSite {
         const cacheKey = `twitter_tweet_${match.groups.id}`;
         const cacheManager = await CacheManager.getInstance();
 
-        const exists = await cacheManager.has(cacheKey);
+        const cachedValue = await cacheManager.remember(cacheKey, async () => {
+            const results = await this.api.tweets.statusesShow({
+                id: match.groups.id,
+                include_entities: true,
+                trim_user: false,
+                tweet_mode: 'extended',
+            });
 
-        if (exists === 1) {
-            const cachedValue = await cacheManager.get(cacheKey);
-            return JSON.parse(cachedValue) as StatusesShow;
-        }
-
-        const results = await this.api.tweets.statusesShow({
-            id: match.groups.id,
-            include_entities: true,
-            trim_user: false,
-            tweet_mode: 'extended',
+            return Promise.resolve(JSON.stringify(results));
         });
 
-        await cacheManager.set(cacheKey, JSON.stringify(results));
+        const results = JSON.parse(cachedValue) as StatusesShow;
 
         return Promise.resolve(results);
     }
