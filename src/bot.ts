@@ -47,11 +47,14 @@ client.on('messageCreate', async (message) => {
         return;
     }
 
-    const canSendReply = message.guild.me
-        .permissionsIn(message.channel as TextChannel)
-        .has('SEND_MESSAGES');
+    const permissions = message.guild.me.permissionsIn(
+        message.channel as TextChannel
+    );
 
-    if (canSendReply === false) {
+    if (
+        !permissions.has('SEND_MESSAGES') ||
+        !permissions.has('SEND_MESSAGES_IN_THREADS')
+    ) {
         return;
     }
 
@@ -127,11 +130,14 @@ client.on('interactionCreate', async (interaction) => {
         return;
     }
 
-    const canSendReply = interaction.guild.me
-        .permissionsIn(interaction.channel as TextChannel)
-        .has('SEND_MESSAGES');
+    const permissions = interaction.guild.me.permissionsIn(
+        interaction.channel as TextChannel
+    );
 
-    if (canSendReply === false) {
+    if (
+        !permissions.has('SEND_MESSAGES') ||
+        !permissions.has('SEND_MESSAGES_IN_THREADS')
+    ) {
         return;
     }
 
