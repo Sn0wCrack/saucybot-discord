@@ -149,7 +149,7 @@ class TwitterVideo extends BaseSite {
             author: {
                 name: `${status.user.name} (@${status.user.screen_name})`,
                 iconURL: status.user.profile_image_url_https,
-                url: status.user.url,
+                url: `https://twitter.com/${status.user.screen_name}`,
             },
             fields: [
                 {

@@ -7,6 +7,7 @@ import { Message, MessageEmbed } from 'discord.js';
 import { convert } from 'html-to-text';
 import { CookieJar } from 'tough-cookie';
 import Environment from '../Environment';
+import CacheManager from '../CacheManager';
 
 class ExHentai extends BaseSite {
     identifier = 'ExHentai';
@@ -51,9 +52,14 @@ class ExHentai extends BaseSite {
             'https://exhentai.org'
         );
 
-        const response = await got.get(url, { cookieJar: jar });
+        const body = await this.getPage(
+            url,
+            match.groups.id,
+            match.groups.hash,
+            jar
+        );
 
-        const $ = cheerio.load(response.body);
+        const $ = cheerio.load(body);
 
         const title = $('.gm h1#gn');
         const image = $('.gm #gd1 > div');
@@ -99,7 +105,7 @@ class ExHentai extends BaseSite {
             },
             author: {
                 name: authorLink.text(),
-                url: `${authorLink.attr('href')}`,
+                url: authorLink.attr('href'),
             },
             fields: [
                 {
@@ -126,6 +132,23 @@ class ExHentai extends BaseSite {
         message.embeds.push(embed);
 
         return Promise.resolve(message);
+    }
+
+    async getPage(
+        url: string,
+        id: string,
+        hash: string,
+        jar: CookieJar
+    ): Promise<string> {
+        const cacheKey = `ehentai.gallery_${id}_${hash}`;
+        const cacheManager = await CacheManager.getInstance();
+
+        const cachedValue = await cacheManager.remember(cacheKey, async () => {
+            const response = await got.get(url, { cookieJar: jar });
+            return Promise.resolve(response.body);
+        });
+
+        return Promise.resolve(cachedValue);
     }
 }
 

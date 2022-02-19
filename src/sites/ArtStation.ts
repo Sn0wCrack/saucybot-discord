@@ -22,8 +22,7 @@ class ArtStation extends BaseSite {
             files: [],
         };
 
-        /* eslint-disable  @typescript-eslint/no-explicit-any */
-        const response: ArtStationProject = await got
+        const response = await got
             .get(
                 `https://www.artstation.com/projects/${match.groups.hash}.json`,
                 {
@@ -34,7 +33,7 @@ class ArtStation extends BaseSite {
                     },
                 }
             )
-            .json();
+            .json<ArtStationProject>();
 
         // Discord embeds the first ArtStation item, so if there's only one, ignore the request
         if (response.assets.length == 1) {
@@ -47,9 +46,9 @@ class ArtStation extends BaseSite {
             message.text = `This is part of a ${response.assets.length} image set.`;
         }
 
-        const coverFileName = path.basename(
-            new URL(response.cover_url).pathname
-        );
+        const parsed = new URL(response.cover_url);
+
+        const coverFileName = path.basename(parsed.pathname);
 
         const assets = response.assets.slice(1, limit);
 
