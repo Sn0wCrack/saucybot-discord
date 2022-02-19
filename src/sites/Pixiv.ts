@@ -140,7 +140,6 @@ class Pixiv extends BaseSite {
 
         const file = await this.getFile(metadata.body.originalSrc);
 
-        // Because the attachment can be a stirng or buffer, we have to type cast to any, as string can't go to buffer automatically
         const zip = new AdmZip(file.attachment as Buffer);
 
         const basePath = path.join(os.tmpdir(), details.body.id.toString());
@@ -207,9 +206,9 @@ class Pixiv extends BaseSite {
         return concat;
     }
 
-    async ffmpeg(input: string, output: string): Promise<boolean> {
+    async ffmpeg(input: string, output: string): Promise<void> {
         // This is required as fluent-ffmpeg doesn't support promises unfortunately
-        return new Promise<boolean>((resolve, reject) => {
+        return new Promise<void>((resolve, reject) => {
             ffmpeg({ cwd: path.dirname(input) })
                 .input(input)
                 .inputFormat('concat')
@@ -220,7 +219,7 @@ class Pixiv extends BaseSite {
                 // This ensures h264 can actually encode the output
                 .videoFilter('pad=ceil(iw/2)*2:ceil(ih/2)*2')
                 .on('error', (err) => reject(err))
-                .on('end', () => resolve(true))
+                .on('end', () => resolve())
                 .save(output);
         });
     }

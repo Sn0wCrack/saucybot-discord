@@ -32,10 +32,6 @@ class CacheManager {
     }
 
     public async connect() {
-        if (!this.client.isOpen) {
-            return Promise.resolve();
-        }
-
         return this.client.connect();
     }
 

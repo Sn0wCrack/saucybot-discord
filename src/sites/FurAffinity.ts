@@ -2,6 +2,7 @@ import BaseSite from './BaseSite';
 import ProcessResponse from './ProcessResponse';
 import got from 'got';
 import { Message, MessageEmbed } from 'discord.js';
+import CacheManager from '../CacheManager';
 
 class FurAffinity extends BaseSite {
     identifier = 'FurAffinity';
@@ -18,11 +19,7 @@ class FurAffinity extends BaseSite {
             files: [],
         };
 
-        const response: BawkSubmission = await got
-            .get(`https://bawk.space/fapi/submission/${match.groups.id}`, {
-                responseType: 'json',
-            })
-            .json();
+        const response = await this.getSubmission(match.groups.id);
 
         const embed = new MessageEmbed({
             title: response.title,
@@ -40,6 +37,25 @@ class FurAffinity extends BaseSite {
         message.embeds.push(embed);
 
         return Promise.resolve(message);
+    }
+
+    async getSubmission(id: string): Promise<BawkSubmission> {
+        const cacheKey = `furaffinity.submission_${id}`;
+        const cacheManager = await CacheManager.getInstance();
+
+        const cachedValue = await cacheManager.remember(cacheKey, async () => {
+            const results = await got
+                .get(`https://bawk.space/fapi/submission/${id}`, {
+                    responseType: 'json',
+                })
+                .json<BawkSubmission>();
+
+            return Promise.resolve(JSON.stringify(results));
+        });
+
+        const results = JSON.parse(cachedValue) as BawkSubmission;
+
+        return Promise.resolve(results);
     }
 }
 

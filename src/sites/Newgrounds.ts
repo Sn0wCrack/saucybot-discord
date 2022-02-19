@@ -4,6 +4,7 @@ import cheerio from 'cheerio';
 import got from 'got';
 import { Message, MessageEmbed } from 'discord.js';
 import { convert } from 'html-to-text';
+import CacheManager from '../CacheManager';
 
 class Newgrounds extends BaseSite {
     identifier = 'Newgrounds';
@@ -24,9 +25,13 @@ class Newgrounds extends BaseSite {
 
         const url = match[0];
 
-        const response = await got.get(url);
+        const body = await this.getPage(
+            url,
+            match.groups.user,
+            match.groups.slug
+        );
 
-        const $ = cheerio.load(response.body);
+        const $ = cheerio.load(body);
 
         const title = $('.body-guts .column.wide.right .pod-head h2');
         const image = $('.pod-body .image #portal_item_view img');
@@ -80,6 +85,18 @@ class Newgrounds extends BaseSite {
         message.embeds.push(embed);
 
         return Promise.resolve(message);
+    }
+
+    async getPage(url: string, user: string, slug: string): Promise<string> {
+        const cacheKey = `newgrounds.art_${user}_${slug}`;
+        const cacheManager = await CacheManager.getInstance();
+
+        const cachedValue = await cacheManager.remember(cacheKey, async () => {
+            const response = await got.get(url);
+            return Promise.resolve(response.body);
+        });
+
+        return Promise.resolve(cachedValue);
     }
 }
 

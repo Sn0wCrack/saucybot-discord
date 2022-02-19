@@ -143,7 +143,7 @@ class TwitterVideo extends BaseSite {
 
         const embed = new MessageEmbed({
             url: url,
-            timestamp: time.toMillis(),
+            timestamp: time.toUTC().toMillis(),
             color: this.color,
             description: status.full_text,
             author: {

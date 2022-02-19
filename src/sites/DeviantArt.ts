@@ -119,31 +119,35 @@ class DeviantArt extends BaseSite {
 
         const url = match[0];
 
-        const response: oEmbedReponse = await got
-            .get(OMEBED_URL, {
-                searchParams: { url: url },
-                headers: {
-                    'User-Agent': `SaucyBot/${version}`,
+        try {
+            const response: oEmbedReponse = await got
+                .get(OMEBED_URL, {
+                    searchParams: { url: url },
+                    headers: {
+                        'User-Agent': `SaucyBot/${version}`,
+                    },
+                })
+                .json<oEmbedReponse>();
+
+            const embed = new MessageEmbed({
+                title: response.title,
+                url: url,
+                color: this.color,
+                image: {
+                    url: response.url,
                 },
-            })
-            .json<oEmbedReponse>();
+                author: {
+                    name: response.author_name,
+                    url: response.author_url,
+                },
+            });
 
-        const embed = new MessageEmbed({
-            title: response.title,
-            url: url,
-            color: this.color,
-            image: {
-                url: response.url,
-            },
-            author: {
-                name: response.author_name,
-                url: response.author_url,
-            },
-        });
+            message.embeds.push(embed);
 
-        message.embeds.push(embed);
-
-        return Promise.resolve(message);
+            return Promise.resolve(message);
+        } catch (ex) {
+            return Promise.resolve(false);
+        }
     }
 }
 

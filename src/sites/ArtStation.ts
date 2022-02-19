@@ -7,6 +7,7 @@ import path from 'path';
 import { Message, MessageEmbed } from 'discord.js';
 import { DateTime } from 'luxon';
 import { URL } from 'url';
+import CacheManager from '../CacheManager';
 
 class ArtStation extends BaseSite {
     identifier = 'ArtStation';
@@ -22,18 +23,7 @@ class ArtStation extends BaseSite {
             files: [],
         };
 
-        const response = await got
-            .get(
-                `https://www.artstation.com/projects/${match.groups.hash}.json`,
-                {
-                    responseType: 'json',
-                    headers: {
-                        'User-Agent': `SaucyBot/${version}`,
-                        Referer: 'https://www.artstation.com/',
-                    },
-                }
-            )
-            .json<ArtStationProject>();
+        const response = await this.getProject(match.groups.hash);
 
         // Discord embeds the first ArtStation item, so if there's only one, ignore the request
         if (response.assets.length == 1) {
@@ -96,6 +86,29 @@ class ArtStation extends BaseSite {
         }
 
         return Promise.resolve(message);
+    }
+
+    async getProject(hash: string): Promise<ArtStationProject> {
+        const cacheKey = `artstation.project_${hash}`;
+        const cacheManager = await CacheManager.getInstance();
+
+        const cachedValue = await cacheManager.remember(cacheKey, async () => {
+            const results = await await got
+                .get(`https://www.artstation.com/projects/${hash}.json`, {
+                    responseType: 'json',
+                    headers: {
+                        'User-Agent': `SaucyBot/${version}`,
+                        Referer: 'https://www.artstation.com/',
+                    },
+                })
+                .json<ArtStationProject>();
+
+            return Promise.resolve(JSON.stringify(results));
+        });
+
+        const results = JSON.parse(cachedValue) as ArtStationProject;
+
+        return Promise.resolve(results);
     }
 }
 
