@@ -9,12 +9,13 @@ import got from 'got';
 import { URL } from 'url';
 import { DateTime } from 'luxon';
 import { delay } from '../Helpers';
+import CacheManager from '../CacheManager';
 
 class TwitterVideo extends BaseSite {
     identifier = 'Twitter';
 
     pattern =
-        /https?:\/\/(www\.)?twitter\.com\/(?<user>.*)\/status\/(?<id>\S+)(\?\=.*)?/gim;
+        /https?:\/\/(www\.)?twitter\.com\/(?<user>.*)\/status\/(?<id>\d+)(\?\=.*)?/gim;
 
     color = 0x1da1f2;
 
@@ -37,14 +38,9 @@ class TwitterVideo extends BaseSite {
         match: RegExpMatchArray,
         source: Message | null
     ): Promise<ProcessResponse | false> {
-        const results = await this.api.tweets.statusesShow({
-            id: match.groups.id,
-            include_entities: true,
-            trim_user: false,
-            tweet_mode: 'extended',
-        });
+        const tweet = await this.getTweet(match.groups?.id);
 
-        const hasVideo = results?.extended_entities?.media.find((item) =>
+        const hasVideo = tweet?.extended_entities?.media.find((item) =>
             ['video', 'animated_gif'].includes(item.type)
         );
 
@@ -68,13 +64,33 @@ class TwitterVideo extends BaseSite {
         // Only try and embed this twitter link if one of the following is true:
         //  - Discord has failed to create an embed for Twitter
         //  - The result is "sensitive" and it has a video, as Discord often fails to play these inline
-        if (hasTwitterEmbed || (hasVideo && !results.possibly_sensitive)) {
+        if (hasTwitterEmbed || (hasVideo && !tweet.possibly_sensitive)) {
             return Promise.resolve(false);
         }
 
         return hasVideo
-            ? this.handleVideo(results)
-            : this.handleRegular(results, match[0]);
+            ? this.handleVideo(tweet)
+            : this.handleRegular(tweet, match[0]);
+    }
+
+    async getTweet(id: string): Promise<StatusesShow> {
+        const cacheKey = `twitter.tweet_${id}`;
+        const cacheManager = await CacheManager.getInstance();
+
+        const cachedValue = await cacheManager.remember(cacheKey, async () => {
+            const results = await this.api.tweets.statusesShow({
+                id: id,
+                include_entities: true,
+                trim_user: false,
+                tweet_mode: 'extended',
+            });
+
+            return Promise.resolve(JSON.stringify(results));
+        });
+
+        const results = JSON.parse(cachedValue) as StatusesShow;
+
+        return Promise.resolve(results);
     }
 
     async handleVideo(status: StatusesShow): Promise<ProcessResponse | false> {

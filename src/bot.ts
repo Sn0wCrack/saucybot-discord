@@ -82,7 +82,7 @@ client.on('messageCreate', async (message) => {
                         // If we failed to process the image, remove the wait message and return
                         if (processed === false) {
                             waitMessage.delete();
-                            return;
+                            return resolve();
                         }
 
                         await sender.send(message, processed);
@@ -144,9 +144,9 @@ client.on('interactionCreate', async (interaction) => {
 
                     const processed = await response.site.process(match, null);
 
-                    if (!processed) {
+                    if (processed === false) {
                         interaction.editReply('Provided URL cannot be sauced');
-                        return;
+                        return resolve();
                     }
 
                     await sender.send(interaction, processed);

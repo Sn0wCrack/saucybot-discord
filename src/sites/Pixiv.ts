@@ -17,6 +17,7 @@ import {
 import { IllustType } from 'pixiv-web-api/dist/IllustType';
 import Logger from '../Logger';
 import { URL } from 'url';
+import CacheManager from '../CacheManager';
 
 class Pixiv extends BaseSite {
     identifier = 'Pixiv';
@@ -43,13 +44,27 @@ class Pixiv extends BaseSite {
 
         const id = parseInt(match.groups.id);
 
-        const response = await this.api.illustDetails(id);
+        const response = await this.getIllustrationDetails(id);
 
         if (response.body.illustType == IllustType.Ugoira) {
             return this.processUgoira(response);
         }
 
         return this.processImage(response);
+    }
+
+    async getIllustrationDetails(id: number): Promise<IllustDetailsResponse> {
+        const cacheKey = `pixiv.post_${id}}`;
+        const cacheManager = await CacheManager.getInstance();
+
+        const cachedValue = await cacheManager.remember(cacheKey, async () => {
+            const results = await this.api.illustDetails(id);
+            return Promise.resolve(JSON.stringify(results));
+        });
+
+        const results = JSON.parse(cachedValue) as IllustDetailsResponse;
+
+        return Promise.resolve(results);
     }
 
     async processImage(
