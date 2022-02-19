@@ -1,4 +1,4 @@
-import discord, { Intents } from 'discord.js';
+import discord, { Intents, TextChannel } from 'discord.js';
 import dotenv from 'dotenv';
 import Environment from './Environment';
 import Logger from './Logger';
@@ -44,6 +44,14 @@ client.on('messageCreate', async (message) => {
 
     // If the message is sorrounded by < > it'll be ignored.
     if (message.content.match(/(<|\|\|)(?!@|#|:|a:).*(>|\|\|)/)) {
+        return;
+    }
+
+    const canSendReply = message.guild.me
+        .permissionsIn(message.channel as TextChannel)
+        .has('SEND_MESSAGES');
+
+    if (canSendReply === false) {
         return;
     }
 
@@ -116,6 +124,14 @@ client.on('interactionCreate', async (interaction) => {
     const { commandName } = interaction;
 
     if (commandName !== 'sauce') {
+        return;
+    }
+
+    const canSendReply = interaction.guild.me
+        .permissionsIn(interaction.channel as TextChannel)
+        .has('SEND_MESSAGES');
+
+    if (canSendReply === false) {
         return;
     }
 
