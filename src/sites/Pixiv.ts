@@ -54,7 +54,7 @@ class Pixiv extends BaseSite {
     }
 
     async getIllustrationDetails(id: number): Promise<IllustDetailsResponse> {
-        const cacheKey = `pixiv.post_${id}}`;
+        const cacheKey = `pixiv.post_${id}`;
         const cacheManager = await CacheManager.getInstance();
 
         const cachedValue = await cacheManager.remember(cacheKey, async () => {
