@@ -38,7 +38,7 @@ class TwitterVideo extends BaseSite {
         match: RegExpMatchArray,
         source: Message | null
     ): Promise<ProcessResponse | false> {
-        const tweet = await this.getTweet(match);
+        const tweet = await this.getTweet(match.groups?.id);
 
         const hasVideo = tweet?.extended_entities?.media.find((item) =>
             ['video', 'animated_gif'].includes(item.type)
@@ -73,13 +73,13 @@ class TwitterVideo extends BaseSite {
             : this.handleRegular(tweet, match[0]);
     }
 
-    async getTweet(match: RegExpMatchArray): Promise<StatusesShow> {
-        const cacheKey = `twitter_tweet_${match.groups.id}`;
+    async getTweet(id: string): Promise<StatusesShow> {
+        const cacheKey = `twitter.tweet_${id}`;
         const cacheManager = await CacheManager.getInstance();
 
         const cachedValue = await cacheManager.remember(cacheKey, async () => {
             const results = await this.api.tweets.statusesShow({
-                id: match.groups.id,
+                id: id,
                 include_entities: true,
                 trim_user: false,
                 tweet_mode: 'extended',

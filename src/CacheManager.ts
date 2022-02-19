@@ -1,5 +1,6 @@
 import * as Redis from 'redis';
 import Environment from './Environment';
+import Logger from './Logger';
 
 class CacheManager {
     private static instance: CacheManager;
@@ -19,14 +20,19 @@ class CacheManager {
     public static async getInstance(): Promise<CacheManager> {
         if (!CacheManager.instance) {
             CacheManager.instance = new CacheManager();
-            await CacheManager.instance.connect();
+
+            try {
+                await CacheManager.instance.connect();
+            } catch (ex) {
+                Logger.error(ex?.message);
+            }
         }
 
         return Promise.resolve(CacheManager.instance);
     }
 
     public async connect() {
-        if (!this.client) {
+        if (!this.client.isOpen) {
             return Promise.resolve();
         }
 
@@ -34,7 +40,7 @@ class CacheManager {
     }
 
     public async has(key: string): Promise<boolean> {
-        if (!this.client) {
+        if (!this.client.isOpen) {
             return Promise.resolve(false);
         }
 
@@ -43,13 +49,17 @@ class CacheManager {
         return Promise.resolve(result === 1);
     }
 
-    public get(key: string) {
+    public async get(key: string): Promise<string> {
+        if (!this.client.isOpen) {
+            return Promise.resolve('');
+        }
+
         return this.client.get(key);
     }
 
     public set(key: string, value: string, expireIn = 86400) {
-        if (!this.client) {
-            Promise.resolve();
+        if (!this.client.isOpen) {
+            return Promise.resolve();
         }
 
         return this.client.setEx(key, expireIn, value);
