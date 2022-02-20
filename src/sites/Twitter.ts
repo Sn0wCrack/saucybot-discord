@@ -64,13 +64,16 @@ class TwitterVideo extends BaseSite {
         // Only try and embed this twitter link if one of the following is true:
         //  - Discord has failed to create an embed for Twitter
         //  - The result is "sensitive" and it has a video, as Discord often fails to play these inline
-        if (hasTwitterEmbed || (hasVideo && !tweet.possibly_sensitive)) {
+
+        if (hasVideo && !tweet.possibly_sensitive) {
+            return this.handleVideo(tweet);
+        }
+
+        if (hasTwitterEmbed) {
             return Promise.resolve(false);
         }
 
-        return hasVideo
-            ? this.handleVideo(tweet)
-            : this.handleRegular(tweet, match[0]);
+        return this.handleRegular(tweet, match[0]);
     }
 
     async getTweet(id: string): Promise<StatusesShow> {
