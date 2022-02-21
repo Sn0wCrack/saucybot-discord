@@ -31,6 +31,7 @@ class TwitterVideo extends BaseSite {
             accessTokenSecret: Environment.get(
                 'TWITTER_ACCESS_SECRET'
             ) as string,
+            disableCache: true,
         });
     }
 

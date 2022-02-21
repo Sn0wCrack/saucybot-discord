@@ -8,3 +8,8 @@ services:
     cache:
         image: "redis:alpine"
         restart: unless-stopped
+        volumes:
+            - cache:/data
+
+volumes:
+    cache:
