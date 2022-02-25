@@ -66,7 +66,7 @@ class TwitterVideo extends BaseSite {
         //  - Discord has failed to create an embed for Twitter
         //  - The result is "sensitive" and it has a video, as Discord often fails to play these inline
 
-        if (hasVideo && !tweet.possibly_sensitive) {
+        if (hasVideo && tweet.possibly_sensitive) {
             return this.handleVideo(tweet);
         }
 
