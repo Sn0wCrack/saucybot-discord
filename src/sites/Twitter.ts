@@ -10,6 +10,7 @@ import { URL } from 'url';
 import { DateTime } from 'luxon';
 import { delay } from '../Helpers';
 import CacheManager from '../CacheManager';
+import { Media } from 'twitter-api-client/dist/interfaces/types/StatusesShowTypes';
 
 class TwitterVideo extends BaseSite {
     identifier = 'Twitter';
@@ -41,9 +42,7 @@ class TwitterVideo extends BaseSite {
     ): Promise<ProcessResponse | false> {
         const tweet = await this.getTweet(match.groups?.id);
 
-        const hasVideo = tweet?.extended_entities?.media.find((item) =>
-            ['video', 'animated_gif'].includes(item.type)
-        );
+        const videoMedia = await this.findVideoElement(tweet);
 
         let hasTwitterEmbed: MessageEmbed | null | undefined = null;
 
@@ -66,8 +65,8 @@ class TwitterVideo extends BaseSite {
         //  - Discord has failed to create an embed for Twitter
         //  - The result is "sensitive" and it has a video, as Discord often fails to play these inline
 
-        if (hasVideo && tweet.possibly_sensitive) {
-            return this.handleVideo(tweet);
+        if (videoMedia && tweet.possibly_sensitive) {
+            return this.handleVideo(videoMedia);
         }
 
         if (hasTwitterEmbed) {
@@ -77,7 +76,43 @@ class TwitterVideo extends BaseSite {
         return this.handleRegular(tweet, match[0]);
     }
 
-    async getTweet(id: string): Promise<StatusesShow> {
+    private async findVideoElement(tweet: StatusesShow) {
+        const video = tweet?.extended_entities?.media.find((item) =>
+            ['video', 'animated_gif'].includes(item.type)
+        );
+
+        if (!video && tweet.is_quote_status) {
+            const quotedTweet = await this.getTweet(tweet.quoted_status_id_str);
+
+            const quotedVideo = quotedTweet?.extended_entities?.media.find(
+                (item) => ['video', 'animated_gif'].includes(item.type)
+            );
+
+            return Promise.resolve(quotedVideo);
+        }
+
+        return Promise.resolve(video);
+    }
+
+    private async findPhotoElement(tweet: StatusesShow) {
+        const photo = tweet?.extended_entities?.media.find((item) =>
+            ['photo'].includes(item.type)
+        );
+
+        if (!photo && tweet.is_quote_status) {
+            const quotedTweet = await this.getTweet(tweet.quoted_status_id_str);
+
+            const quotedPhoto = quotedTweet?.extended_entities?.media.find(
+                (item) => ['photo'].includes(item.type)
+            );
+
+            return Promise.resolve(quotedPhoto);
+        }
+
+        return Promise.resolve(photo);
+    }
+
+    private async getTweet(id: string): Promise<StatusesShow> {
         const cacheKey = `twitter.tweet_${id}`;
         const cacheManager = await CacheManager.getInstance();
 
@@ -97,11 +132,7 @@ class TwitterVideo extends BaseSite {
         return Promise.resolve(results);
     }
 
-    async handleVideo(status: StatusesShow): Promise<ProcessResponse | false> {
-        const video = status?.extended_entities?.media.find((item) =>
-            ['video', 'animated_gif'].includes(item.type)
-        );
-
+    private async handleVideo(video: Media): Promise<ProcessResponse | false> {
         if (!video) {
             return Promise.resolve(false);
         }
@@ -127,7 +158,7 @@ class TwitterVideo extends BaseSite {
         return Promise.resolve(message);
     }
 
-    async handleRegular(
+    private async handleRegular(
         status: StatusesShow,
         url: string
     ): Promise<ProcessResponse | false> {
@@ -136,9 +167,7 @@ class TwitterVideo extends BaseSite {
             files: [],
         };
 
-        const photo = status?.extended_entities?.media.find((item) =>
-            ['photo'].includes(item.type)
-        );
+        const photo = await this.findPhotoElement(status);
 
         const time = DateTime.fromFormat(
             status.created_at,
@@ -186,7 +215,9 @@ class TwitterVideo extends BaseSite {
      *
      * @param urls a list of urls from highest quality to lowest quality
      */
-    async determineHighestQuality(urls: string[]): Promise<string | false> {
+    private async determineHighestQuality(
+        urls: string[]
+    ): Promise<string | false> {
         for (const url of urls) {
             const response = await got.head(url);
 
@@ -198,7 +229,7 @@ class TwitterVideo extends BaseSite {
         return Promise.resolve(false);
     }
 
-    async getFile(url: string): Promise<FileOptions> {
+    private async getFile(url: string): Promise<FileOptions> {
         const response = await got.get(url).buffer();
 
         const parsed = new URL(url);
