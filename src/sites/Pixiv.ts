@@ -142,7 +142,11 @@ class Pixiv extends BaseSite {
 
         const zip = new AdmZip(file.attachment as Buffer);
 
-        const basePath = path.join(os.tmpdir(), details.body.id.toString());
+        const basePath = path.join(
+            os.tmpdir(),
+            'pixiv',
+            details.body.id.toString()
+        );
 
         const concatFilePath = path.join(basePath, 'ffconcat');
 
@@ -173,11 +177,13 @@ class Pixiv extends BaseSite {
             }
         });
 
-        // Snake case and remove hyphens from title
-        const fileName = `${details.body.title
+        const title = details.body.title
             .toLowerCase()
             .replace('-', '')
-            .replace(/\s+/g, '_')}_ugoira.${format}`;
+            .replace(/\s+/g, '_');
+
+        // Snake case and remove hyphens from title
+        const fileName = `${title}_ugoira.${format}`;
 
         message.files.push({
             attachment: video,
