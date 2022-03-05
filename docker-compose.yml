@@ -6,7 +6,7 @@ services:
             - .env
         restart: unless-stopped
     cache:
-        image: "redis:alpine"
+        image: "redis:6-alpine"
         restart: unless-stopped
         volumes:
             - cache:/data

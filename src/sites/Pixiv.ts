@@ -22,7 +22,7 @@ import CacheManager from '../CacheManager';
 class Pixiv extends BaseSite {
     identifier = 'Pixiv';
 
-    pattern = /https?:\/\/(www\.)?pixiv.net\/.*artworks\/(?<id>\d+)/gim;
+    pattern = /https?:\/\/(www\.)?pixiv\.net\/.*artworks\/(?<id>\d+)/gim;
 
     private api: PixivWeb;
 

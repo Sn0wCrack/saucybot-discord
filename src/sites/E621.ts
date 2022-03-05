@@ -9,7 +9,7 @@ import CacheManager from '../CacheManager';
 class E621 extends BaseSite {
     identifier = 'E621';
 
-    pattern = /https?:\/\/(www\.)?e621.net\/posts\/(?<id>\d+)/gim;
+    pattern = /https?:\/\/(www\.)?e621\.net\/posts\/(?<id>\d+)/gim;
 
     color = 0x00549e;
 

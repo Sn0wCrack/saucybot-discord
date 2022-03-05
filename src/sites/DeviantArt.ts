@@ -18,7 +18,7 @@ class DeviantArt extends BaseSite {
     identifier = 'DeviantArt';
 
     pattern =
-        /https?:\/\/(www\.)?deviantart.com\/(?<author>\S+)\/art\/(?<slug>\S+)/gim;
+        /https?:\/\/(www\.)?deviantart\.com\/(?<author>\S+)\/art\/(?<slug>\S+)/gim;
 
     color = 0x00e59b;
 

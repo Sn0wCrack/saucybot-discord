@@ -12,7 +12,7 @@ import CacheManager from '../CacheManager';
 class ArtStation extends BaseSite {
     identifier = 'ArtStation';
 
-    pattern = /https?:\/\/(www\.)?artstation.com\/artwork\/(?<hash>\S+)/gim;
+    pattern = /https?:\/\/(www\.)?artstation\.com\/artwork\/(?<hash>\S+)/gim;
 
     async process(
         match: RegExpMatchArray,
