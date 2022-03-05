@@ -26,13 +26,33 @@ class FurAffinity extends BaseSite {
             title: response.title,
             url: match[0],
             color: this.color,
+            timestamp: response.posted_at,
+            description: response.description,
             image: {
-                url: response.image_url,
+                url: response.download,
             },
             author: {
-                name: response.author,
+                name: response.profile_name,
+                url: response.profile,
                 iconURL: response.avatar,
             },
+            fields: [
+                {
+                    name: 'Views',
+                    value: response.views ?? '0',
+                    inline: true,
+                },
+                {
+                    name: 'Favorites',
+                    value: response.favorites ?? '0',
+                    inline: true,
+                },
+                {
+                    name: 'Comments',
+                    value: response.comments ?? '0',
+                    inline: true,
+                },
+            ],
         });
 
         message.embeds.push(embed);
@@ -40,24 +60,24 @@ class FurAffinity extends BaseSite {
         return Promise.resolve(message);
     }
 
-    async getSubmission(id: string): Promise<BawkSubmission> {
+    async getSubmission(id: string): Promise<FAExportSubmission> {
         const cacheKey = `furaffinity.submission_${id}`;
         const cacheManager = await CacheManager.getInstance();
 
         const cachedValue = await cacheManager.remember(cacheKey, async () => {
             const results = await got
-                .get(`https://bawk.space/fapi/submission/${id}`, {
+                .get(`https://faexport.spangle.org.uk/submission/${id}.json`, {
                     responseType: 'json',
                     headers: {
                         'User-Agent': `SaucyBot/${version}`,
                     },
                 })
-                .json<BawkSubmission>();
+                .json<FAExportSubmission>();
 
             return Promise.resolve(JSON.stringify(results));
         });
 
-        const results = JSON.parse(cachedValue) as BawkSubmission;
+        const results = JSON.parse(cachedValue) as FAExportSubmission;
 
         return Promise.resolve(results);
     }
@@ -69,6 +89,21 @@ interface BawkSubmission {
     image_url: string;
     rating: string;
     title: string;
+}
+
+interface FAExportSubmission {
+    title: string;
+    description: string;
+    name: string;
+    profile: string;
+    profile_name: string;
+    avatar: string;
+    download: string;
+    full: string;
+    posted_at: string;
+    views: string;
+    comments: string;
+    favorites: string;
 }
 
 export default FurAffinity;
