@@ -1,6 +1,7 @@
 import BaseSite from './BaseSite';
 import ProcessResponse from './ProcessResponse';
 import got from 'got';
+import { version } from '../../package.json';
 import { Message, MessageEmbed } from 'discord.js';
 import CacheManager from '../CacheManager';
 
@@ -47,6 +48,9 @@ class FurAffinity extends BaseSite {
             const results = await got
                 .get(`https://bawk.space/fapi/submission/${id}`, {
                     responseType: 'json',
+                    headers: {
+                        'User-Agent': `SaucyBot/${version}`,
+                    },
                 })
                 .json<BawkSubmission>();
 

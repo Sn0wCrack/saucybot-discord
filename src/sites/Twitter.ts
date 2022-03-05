@@ -12,7 +12,7 @@ import { delay } from '../Helpers';
 import CacheManager from '../CacheManager';
 import { Media } from 'twitter-api-client/dist/interfaces/types/StatusesShowTypes';
 
-class TwitterVideo extends BaseSite {
+class Twitter extends BaseSite {
     identifier = 'Twitter';
 
     pattern =
@@ -243,4 +243,4 @@ class TwitterVideo extends BaseSite {
     }
 }
 
-export default TwitterVideo;
+export default Twitter;

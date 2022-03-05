@@ -5,6 +5,7 @@ import cheerio from 'cheerio';
 import got from 'got';
 import { Message, MessageEmbed } from 'discord.js';
 import { DateTime } from 'luxon';
+import CacheManager from '../CacheManager';
 
 class HentaiFoundry extends BaseSite {
     identifier = 'Hentai Foundry';
@@ -15,6 +16,16 @@ class HentaiFoundry extends BaseSite {
     color = 0xff67a2;
 
     baseUrl = 'https://www.hentai-foundry.com';
+
+    jar: CookieJar;
+
+    constructor() {
+        super();
+
+        this.jar = new CookieJar();
+
+        got.get(`${this.baseUrl}/?enterAgree=1`, { cookieJar: this.jar });
+    }
 
     async process(
         match: RegExpMatchArray,
@@ -27,13 +38,13 @@ class HentaiFoundry extends BaseSite {
 
         const url = match[0];
 
-        const jar = new CookieJar();
+        const response = await this.getPage(
+            url,
+            match.groups.id,
+            match.groups.slug
+        );
 
-        await got.get(`${this.baseUrl}/?enterAgree=1`, { cookieJar: jar });
-
-        const response = await got.get(url, { cookieJar: jar });
-
-        const $ = cheerio.load(response.body);
+        const $ = cheerio.load(response);
 
         const title = $('.imageTitle');
         const description = $('.picDescript');
@@ -96,6 +107,18 @@ class HentaiFoundry extends BaseSite {
         message.embeds.push(embed);
 
         return Promise.resolve(message);
+    }
+
+    async getPage(url: string, id: string, slug: string): Promise<string> {
+        const cacheKey = `hentaifoundry.picture_${id}_${slug}`;
+        const cacheManager = await CacheManager.getInstance();
+
+        const cachedValue = await cacheManager.remember(cacheKey, async () => {
+            const response = await got.get(url, { cookieJar: this.jar });
+            return Promise.resolve(response.body);
+        });
+
+        return Promise.resolve(cachedValue);
     }
 }
 

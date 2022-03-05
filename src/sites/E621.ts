@@ -4,6 +4,7 @@ import { version } from '../../package.json';
 import BaseSite from './BaseSite';
 import { EmbedField, Message, MessageEmbed } from 'discord.js';
 import { DateTime } from 'luxon';
+import CacheManager from '../CacheManager';
 
 class E621 extends BaseSite {
     identifier = 'E621';
@@ -23,16 +24,7 @@ class E621 extends BaseSite {
 
         const url = match[0];
 
-        /* eslint-disable  @typescript-eslint/no-explicit-any */
-        const response: E621Post = await got
-            .get(`https://e621.net/posts/${match.groups.id}.json`, {
-                responseType: 'json',
-                headers: {
-                    'User-Agent': `SaucyBot/${version}`,
-                    Referer: 'https://e621.net/',
-                },
-            })
-            .json();
+        const response: E621Post = await this.getPost(match.groups.id);
 
         // If our meta tags contain "animated", then we prefix the post with "[ANIM]"
         // This indicates similar to the site itself the content is animated
@@ -109,6 +101,27 @@ class E621 extends BaseSite {
         message.embeds.push(embed);
 
         return Promise.resolve(message);
+    }
+
+    async getPost(id: string): Promise<E621Post> {
+        const cacheKey = `e621.post_${id}`;
+        const cacheManager = await CacheManager.getInstance();
+
+        const cachedValue = await cacheManager.remember(cacheKey, async () => {
+            const results = await got.get(`https://e621.net/posts/${id}.json`, {
+                responseType: 'json',
+                headers: {
+                    'User-Agent': `SaucyBot/${version}`,
+                    Referer: 'https://e621.net/',
+                },
+            });
+
+            return Promise.resolve(JSON.stringify(results));
+        });
+
+        const results = JSON.parse(cachedValue) as E621Post;
+
+        return Promise.resolve(results);
     }
 }
 

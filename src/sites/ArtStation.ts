@@ -93,7 +93,7 @@ class ArtStation extends BaseSite {
         const cacheManager = await CacheManager.getInstance();
 
         const cachedValue = await cacheManager.remember(cacheKey, async () => {
-            const results = await await got
+            const results = await got
                 .get(`https://www.artstation.com/projects/${hash}.json`, {
                     responseType: 'json',
                     headers: {
