@@ -23,8 +23,6 @@ class HentaiFoundry extends BaseSite {
         super();
 
         this.jar = new CookieJar();
-
-        got.get(`${this.baseUrl}/?enterAgree=1`, { cookieJar: this.jar });
     }
 
     async process(
@@ -35,6 +33,8 @@ class HentaiFoundry extends BaseSite {
             embeds: [],
             files: [],
         };
+
+        await got.get(`${this.baseUrl}/?enterAgree=1`, { cookieJar: this.jar });
 
         const url = match[0];
 
@@ -93,12 +93,12 @@ class HentaiFoundry extends BaseSite {
             fields: [
                 {
                     name: 'Views',
-                    value: views.text(),
+                    value: views.text() ?? '0',
                     inline: true,
                 },
                 {
                     name: 'Votes',
-                    value: votes.text(),
+                    value: votes.text() ?? '0',
                     inline: true,
                 },
             ],

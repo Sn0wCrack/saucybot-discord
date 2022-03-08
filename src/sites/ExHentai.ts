@@ -110,12 +110,12 @@ class ExHentai extends BaseSite {
             fields: [
                 {
                     name: 'Language',
-                    value: language.text().trim(),
+                    value: language.text().trim() ?? 'N/A',
                     inline: true,
                 },
                 {
                     name: 'Pages',
-                    value: pages.text().replace('pages', '').trim(),
+                    value: pages.text().replace('pages', '').trim() ?? 'N/A',
                     inline: true,
                 },
                 {
