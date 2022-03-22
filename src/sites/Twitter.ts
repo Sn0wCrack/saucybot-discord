@@ -10,7 +10,6 @@ import { URL } from 'url';
 import { DateTime } from 'luxon';
 import { delay } from '../Helpers';
 import CacheManager from '../CacheManager';
-import { Media } from 'twitter-api-client/dist/interfaces/types/StatusesShowTypes';
 
 class Twitter extends BaseSite {
     identifier = 'Twitter';
@@ -66,7 +65,7 @@ class Twitter extends BaseSite {
         //  - The result is "sensitive" and it has a video, as Discord often fails to play these inline
 
         if (videoMedia && tweet.possibly_sensitive) {
-            return this.handleVideo(videoMedia);
+            return this.handleVideo(tweet, match[0], !!hasTwitterEmbed);
         }
 
         if (hasTwitterEmbed) {
@@ -112,6 +111,24 @@ class Twitter extends BaseSite {
         return Promise.resolve(photo);
     }
 
+    private async findAllPhotoElements(tweet: StatusesShow) {
+        const photos = tweet?.extended_entities?.media.filter((item) =>
+            ['photo'].includes(item.type)
+        );
+
+        if (!photos && tweet.is_quote_status) {
+            const quotedTweet = await this.getTweet(tweet.quoted_status_id_str);
+
+            const quotedPhotos = quotedTweet?.extended_entities?.media.filter(
+                (item) => ['photo'].includes(item.type)
+            );
+
+            return Promise.resolve(quotedPhotos);
+        }
+
+        return Promise.resolve(photos);
+    }
+
     private async getTweet(id: string): Promise<StatusesShow> {
         const cacheKey = `twitter.tweet_${id}`;
         const cacheManager = await CacheManager.getInstance();
@@ -132,7 +149,13 @@ class Twitter extends BaseSite {
         return Promise.resolve(results);
     }
 
-    private async handleVideo(video: Media): Promise<ProcessResponse | false> {
+    private async handleVideo(
+        status: StatusesShow,
+        url: string,
+        makeEmbed = false
+    ): Promise<ProcessResponse | false> {
+        const video = await this.findVideoElement(status);
+
         if (!video) {
             return Promise.resolve(false);
         }
@@ -155,6 +178,43 @@ class Twitter extends BaseSite {
             files: [videoFile],
         };
 
+        if (makeEmbed) {
+            const time = DateTime.fromFormat(
+                status.created_at,
+                'ccc LLL d HH:mm:ss ZZZ y'
+            );
+
+            const embed = new MessageEmbed({
+                url: url,
+                timestamp: time.toUTC().toMillis(),
+                color: this.color,
+                description: status.full_text,
+                author: {
+                    name: `${status.user.name} (@${status.user.screen_name})`,
+                    iconURL: status.user.profile_image_url_https,
+                    url: `https://twitter.com/${status.user.screen_name}`,
+                },
+                fields: [
+                    {
+                        name: 'Likes',
+                        value: status.favorite_count.toString(),
+                        inline: true,
+                    },
+                    {
+                        name: 'Retweets',
+                        value: status.retweet_count.toString(),
+                        inline: true,
+                    },
+                ],
+                footer: {
+                    iconURL: TWITTER_ICON_URL,
+                    text: 'Twitter',
+                },
+            });
+
+            message.embeds.push(embed);
+        }
+
         return Promise.resolve(message);
     }
 
@@ -167,45 +227,47 @@ class Twitter extends BaseSite {
             files: [],
         };
 
-        const photo = await this.findPhotoElement(status);
+        const photos = await this.findAllPhotoElements(status);
 
         const time = DateTime.fromFormat(
             status.created_at,
             'ccc LLL d HH:mm:ss ZZZ y'
         );
 
-        const embed = new MessageEmbed({
-            url: url,
-            timestamp: time.toUTC().toMillis(),
-            color: this.color,
-            description: status.full_text,
-            author: {
-                name: `${status.user.name} (@${status.user.screen_name})`,
-                iconURL: status.user.profile_image_url_https,
-                url: `https://twitter.com/${status.user.screen_name}`,
-            },
-            fields: [
-                {
-                    name: 'Likes',
-                    value: status.favorite_count.toString(),
-                    inline: true,
+        for (const photo of photos) {
+            const embed = new MessageEmbed({
+                url: url,
+                timestamp: time.toUTC().toMillis(),
+                color: this.color,
+                description: status.full_text,
+                author: {
+                    name: `${status.user.name} (@${status.user.screen_name})`,
+                    iconURL: status.user.profile_image_url_https,
+                    url: `https://twitter.com/${status.user.screen_name}`,
                 },
-                {
-                    name: 'Retweets',
-                    value: status.retweet_count.toString(),
-                    inline: true,
+                fields: [
+                    {
+                        name: 'Likes',
+                        value: status.favorite_count.toString(),
+                        inline: true,
+                    },
+                    {
+                        name: 'Retweets',
+                        value: status.retweet_count.toString(),
+                        inline: true,
+                    },
+                ],
+                image: {
+                    url: photo?.media_url_https ?? '',
                 },
-            ],
-            image: {
-                url: photo?.media_url_https ?? '',
-            },
-            footer: {
-                iconURL: TWITTER_ICON_URL,
-                text: 'Twitter',
-            },
-        });
+                footer: {
+                    iconURL: TWITTER_ICON_URL,
+                    text: 'Twitter',
+                },
+            });
 
-        message.embeds.push(embed);
+            message.embeds.push(embed);
+        }
 
         return Promise.resolve(message);
     }
