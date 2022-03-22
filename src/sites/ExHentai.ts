@@ -4,10 +4,10 @@ import cheerio from 'cheerio';
 import got from 'got';
 import { DateTime } from 'luxon';
 import { Message, MessageEmbed } from 'discord.js';
-import { convert } from 'html-to-text';
 import { CookieJar } from 'tough-cookie';
 import Environment from '../Environment';
 import CacheManager from '../CacheManager';
+import { processDescription } from '../Helpers';
 
 class ExHentai extends BaseSite {
     identifier = 'ExHentai';
@@ -86,16 +86,10 @@ class ExHentai extends BaseSite {
 
         const authorLink = $('.gm #gmid #gdn a');
 
-        let descriptionText = convert(description.html());
-
-        if (descriptionText.length > 300) {
-            descriptionText = descriptionText.substring(0, 300) + '...';
-        }
-
         const embed = new MessageEmbed({
             title: title.text(),
             url: url,
-            description: descriptionText,
+            description: processDescription(description.html()),
             color: this.color,
             timestamp: DateTime.fromFormat(posted.text(), 'yyyy-MM-dd HH:mm')
                 .toUTC()

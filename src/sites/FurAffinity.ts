@@ -3,8 +3,8 @@ import ProcessResponse from './ProcessResponse';
 import got from 'got';
 import { version } from '../../package.json';
 import { Message, MessageEmbed } from 'discord.js';
-import { convert } from 'html-to-text';
 import CacheManager from '../CacheManager';
+import { processDescription } from '../Helpers';
 
 class FurAffinity extends BaseSite {
     identifier = 'FurAffinity';
@@ -23,18 +23,12 @@ class FurAffinity extends BaseSite {
 
         const response = await this.getSubmission(match.groups.id);
 
-        let descriptionText = convert(response.description);
-
-        if (descriptionText.length > 300) {
-            descriptionText = descriptionText.substring(0, 300) + '...';
-        }
-
         const embed = new MessageEmbed({
             title: response.title,
             url: match[0],
             color: this.color,
             timestamp: response.posted_at,
-            description: descriptionText,
+            description: processDescription(response.description),
             image: {
                 url: response.download,
             },

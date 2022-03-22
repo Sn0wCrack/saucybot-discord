@@ -6,6 +6,7 @@ import got from 'got';
 import { Message, MessageEmbed } from 'discord.js';
 import { DateTime } from 'luxon';
 import CacheManager from '../CacheManager';
+import { processDescription } from '../Helpers';
 
 class HentaiFoundry extends BaseSite {
     identifier = 'Hentai Foundry';
@@ -66,21 +67,13 @@ class HentaiFoundry extends BaseSite {
         const authorLink = $('#descriptionBox .boxbody a');
         const authorImage = $('#descriptionBox .boxbody a img');
 
-        let descriptionText = description.text();
-
-        // Since Discord has a maximum character limit of 6000, and some HF descriptions are long
-        // We simply trim the description after 300 characters to max sure we can send the embed properly
-        if (descriptionText.length > 300) {
-            descriptionText = descriptionText.substring(0, 300) + '...';
-        }
-
         const embed = new MessageEmbed({
             title: title.text(),
             url: url,
             timestamp: DateTime.fromISO(postedAt.attr('datetime'))
                 .toUTC()
                 .toMillis(),
-            description: descriptionText,
+            description: processDescription(description.text()),
             color: this.color,
             image: {
                 url: `https:${image.attr('src')}`,
