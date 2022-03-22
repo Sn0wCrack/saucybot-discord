@@ -65,7 +65,7 @@ class Twitter extends BaseSite {
         //  - The result is "sensitive" and it has a video, as Discord often fails to play these inline
 
         if (videoMedia && tweet.possibly_sensitive) {
-            return this.handleVideo(tweet, match[0], !!hasTwitterEmbed);
+            return this.handleVideo(tweet, match[0], hasTwitterEmbed !== null);
         }
 
         if (hasTwitterEmbed) {
@@ -193,6 +193,9 @@ class Twitter extends BaseSite {
                     name: `${status.user.name} (@${status.user.screen_name})`,
                     iconURL: status.user.profile_image_url_https,
                     url: `https://twitter.com/${status.user.screen_name}`,
+                },
+                video: {
+                    url: `attachment://${videoFile.name}`,
                 },
                 fields: [
                     {

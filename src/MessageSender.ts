@@ -136,8 +136,8 @@ class MessageSender {
         }
 
         // Only send attachments that are related to this embed
-        const files = response.files.filter(
-            (item) => !embedUrls.includes(item.name)
+        const files = response.files.filter((item) =>
+            embedUrls.includes(item.name)
         );
 
         messages.push({
