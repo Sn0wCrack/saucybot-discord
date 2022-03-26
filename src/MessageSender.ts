@@ -5,7 +5,7 @@ import {
     MessagePayload,
     CommandInteraction,
 } from 'discord.js';
-import { MAX_FILESIZE } from './Constants';
+import { MAX_EMBEDS_PER_MESSAGE, MAX_FILESIZE } from './Constants';
 import Logger from './Logger';
 import ProcessResponse from './sites/ProcessResponse';
 
@@ -155,12 +155,24 @@ class MessageSender {
     private async handleMultipleEmbeds(
         response: ProcessResponse
     ): Promise<MessageTypes> {
-        const messages: MessageTypes = [
-            {
-                content: response.text,
-                embeds: response.embeds,
-            },
-        ];
+        const messages: MessageTypes = [];
+
+        if (response.text) {
+            messages.push(response.text);
+        }
+
+        // Chunk up embeds into maximum 4 per message
+        for (
+            let i = 0;
+            i < response.embeds.length;
+            i += MAX_EMBEDS_PER_MESSAGE
+        ) {
+            const chunk = response.embeds.slice(i, i + MAX_EMBEDS_PER_MESSAGE);
+
+            messages.push({
+                embeds: chunk,
+            });
+        }
 
         return Promise.resolve(messages);
     }

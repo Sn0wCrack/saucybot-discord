@@ -8,6 +8,7 @@ import { Message, MessageEmbed } from 'discord.js';
 import { DateTime } from 'luxon';
 import { URL } from 'url';
 import CacheManager from '../CacheManager';
+import { htmlToText } from 'html-to-text';
 
 class ArtStation extends BaseSite {
     identifier = 'ArtStation';
@@ -30,9 +31,9 @@ class ArtStation extends BaseSite {
             return Promise.resolve(false);
         }
 
-        const limit = Environment.get('ARTSTATION_POST_LIMIT', 5) as number;
+        const limit = Environment.get('ARTSTATION_POST_LIMIT', 8) as number;
 
-        if (response.assets.length > limit) {
+        if (response.assets.length - 1 > limit) {
             message.text = `This is part of a ${response.assets.length} image set.`;
         }
 
@@ -40,21 +41,21 @@ class ArtStation extends BaseSite {
 
         const coverFileName = path.basename(parsed.pathname);
 
-        const assets = response.assets.slice(1, limit);
+        const assets = response.assets
+            .slice(1)
+            .filter((asset) => ['image', 'cover'].includes(asset.asset_type))
+            .slice(0, limit);
+
+        console.log(response.assets.length, assets.length);
 
         for (const asset of assets) {
-            // If this asset isn't an image, skip over it as we can only display those for now
-            if (!['image', 'cover'].includes(asset.asset_type)) {
-                continue;
-            }
-
             // If this is the same as the cover, skip it.
             if (asset.image_url.includes(coverFileName)) {
                 continue;
             }
 
             const embed = new MessageEmbed({
-                title: asset.title ? asset.title : response.title,
+                title: htmlToText(response.title),
                 url: response.permalink,
                 color: this.color,
                 timestamp: DateTime.fromISO(response.published_at)

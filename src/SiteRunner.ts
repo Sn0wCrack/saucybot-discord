@@ -18,7 +18,7 @@ class SiteRunner {
         const results = [];
 
         let embedCount = 0;
-        const maximumEmbeds = Environment.get('MAXIMUM_EMBEDS', 5) as number;
+        const maximumEmbeds = Environment.get('MAXIMUM_EMBEDS', 8) as number;
 
         for (const site of this.sites) {
             let matches = Array.from(site.match(message));
