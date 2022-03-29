@@ -1,0 +1,41 @@
+{
+  "Serilog": {
+    "MinimumLevel": {
+      "Default": "Information",
+      "Override": {
+        "Microsoft": "Information",
+        "Microsoft.Hosting.Lifetime": "Information"
+      }
+    }
+  },
+  "Bot": {
+    "DiscordToken": "",
+    "DisabledSites": [],
+    "MaximumEmbeds": 5
+  },
+  "Sites": {
+    "ArtStation": {
+      "PostLimit": 5
+    },
+    "Pixiv": {
+      "Login": "",
+      "Password": "",
+      "Cookie": "",
+      "PostLimit": 5,
+      "UgoiraFormat": "mp4",
+      "UgoiraBitrate": 200
+    },
+    "Twitter": {
+      "ApiKey": "",
+      "ApiSecret": "",
+      "AccessToken": "",
+      "AccessSecret": "",
+      "BearerToken": "",
+      "Delay": 1350
+    },
+    "DeviantArt": {
+      "ClientId": 0,
+      "ClientSecret": ""
+    }
+  }
+}
