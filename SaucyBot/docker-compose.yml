@@ -1,7 +1,10 @@
 version: "3.8"
 services:
     bot:
-        build: .
+        build: 
+            context: .
+            args:
+                CONFIGURATION: "${CONFIGURATION}"
         env_file:
             - .env
         volumes:
