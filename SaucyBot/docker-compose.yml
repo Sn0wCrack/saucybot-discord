@@ -4,6 +4,9 @@ services:
         build: .
         env_file:
             - .env
+        volumes:
+            - ./appsettings.json:/app/appsettings.json
+            - ./appsettings.Development.json:/app/appsettings.Development.json
         restart: unless-stopped
     cache:
         image: "redis:6-alpine"
