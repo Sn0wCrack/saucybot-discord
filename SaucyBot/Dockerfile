@@ -3,10 +3,10 @@ WORKDIR /app
 
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 WORKDIR /src
-COPY ["SaucyBot/SaucyBot.csproj", "SaucyBot/"]
+COPY ["SaucyBot.csproj", "SaucyBot/"]
 RUN dotnet restore "SaucyBot/SaucyBot.csproj"
-COPY . .
-WORKDIR "/src/SaucyBot"
+COPY . SaucyBot/
+WORKDIR /src/SaucyBot
 RUN dotnet build "SaucyBot.csproj" -c Release -o /app/build
 
 FROM build AS publish

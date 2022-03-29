@@ -44,7 +44,7 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           push: true
-          context: .
+          context: ./SaucyBot
           file: ./SaucyBot/Dockerfile
           tags: ${{ steps.docker_meta.outputs.tags }}
           labels: ${{ steps.docker_meta.outputs.labels }}
