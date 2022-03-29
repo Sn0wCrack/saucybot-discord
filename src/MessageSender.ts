@@ -168,9 +168,34 @@ class MessageSender {
             i += MAX_EMBEDS_PER_MESSAGE
         ) {
             const chunk = response.embeds.slice(i, i + MAX_EMBEDS_PER_MESSAGE);
+            let files: FileOptions[] = [];
+
+            // Find attachments related to these embeds
+            for (const embed of chunk) {
+                const embedUrls: string[] = [];
+
+                if (embed?.image?.url) {
+                    embedUrls.push(
+                        embed.image.url.replace('attachment://', '')
+                    );
+                }
+
+                if (embed?.video?.url) {
+                    embedUrls.push(
+                        embed.video.url.replace('attachment://', '')
+                    );
+                }
+
+                const embedFiles = response.files.filter((item) =>
+                    embedUrls.includes(item.name)
+                );
+
+                files = files.concat(embedFiles);
+            }
 
             messages.push({
                 embeds: chunk,
+                files: files,
             });
         }
 
