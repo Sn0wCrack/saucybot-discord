@@ -1,10 +1,13 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.IO.Compression;
+using System.Text;
+using System.Text.RegularExpressions;
 using Discord;
 using Discord.WebSocket;
 using SaucyBot.Extensions;
 using SaucyBot.Library;
 using SaucyBot.Library.Sites.Pixiv;
 using SaucyBot.Site.Response;
+using Xabe.FFmpeg;
 
 namespace SaucyBot.Site;
 
@@ -49,11 +52,88 @@ public class Pixiv : BaseSite
         return await ProcessImage(response);
     }
 
-    private async Task<ProcessResponse?> ProcessUgoira(IllustrationDetailsResponse? illustrationDetails)
+    private async Task<ProcessResponse?> ProcessUgoira(IllustrationDetailsResponse illustrationDetails)
     {
         var response = new ProcessResponse();
 
+        var metadata = await _client.UgoiraMetadata(illustrationDetails.IllustrationDetails.Id);
+
+        if (metadata is null)
+        {
+            return null;
+        }
+
+        var file = await GetFile(metadata.UgoiraMetadata.OriginalSource);
+
+        var zip = new ZipArchive(file.Stream);
+
+        var basePath = Path.Join(
+            Path.GetTempPath(),
+            "pixiv",
+            illustrationDetails.IllustrationDetails.Id
+        );
+
+        var concatFile = Path.Join(basePath, "ffconcat");
+        
+        var format = _configuration.GetSection("Sites:Pixiv:UgoiraFormat").Get<string>();
+
+        var videoFile = Path.Join(basePath, $"ugoira.{format}");
+        
+        zip.ExtractToDirectory(basePath, true);
+        
+        await File.WriteAllTextAsync(concatFile, BuildConcatFile(metadata.UgoiraMetadata.Frames));
+
+        try
+        {
+            var result = await RenderUgoiraVideo(concatFile, videoFile);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("{Message}", ex.Message);
+            return null;
+        }
+        
+        response.Files.Add(
+            new FileAttachment(videoFile)    
+        );
+
         return response;
+    }
+
+    private string BuildConcatFile(List<UgoiraFrame> frames)
+    {
+        var builder = new StringBuilder("ffconcat version 1.0\n");
+
+        foreach (var frame in frames)
+        {
+            var delay = Math.Round(frame.Delay / 1000.0, 3);
+            
+            builder
+                .Append($"file {frame.File}\n")
+                .Append($"duration {delay}\n");
+        }
+
+        var lastFrame = frames.Last();
+
+        builder.Append($"file {lastFrame.File}\n");
+
+        return builder.ToString();
+    }
+
+
+    private async Task<IConversionResult> RenderUgoiraVideo(string concatFilePath, string videoFilePath)
+    {
+        var bitrate = _configuration.GetSection("Sites:Pixiv:UgoiraBitrate").Get<int>();
+        
+        var conversion = FFmpeg.Conversions.New()
+            .SetOverwriteOutput(true)
+            .AddParameter("-f concat", ParameterPosition.PreInput)
+            .AddParameter($"-i \"{concatFilePath}\"", ParameterPosition.PreInput)
+            .AddParameter($"-b:v {bitrate}k")
+            .AddParameter("-filter:v \"pad=ceil(iw/2)*2:ceil(ih/2)*2\"")
+            .SetOutput(videoFilePath);
+
+        return await conversion.Start();
     }
 
     private async Task<ProcessResponse?> ProcessImage(IllustrationDetailsResponse illustrationDetails)
