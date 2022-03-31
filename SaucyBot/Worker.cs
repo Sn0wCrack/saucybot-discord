@@ -15,8 +15,6 @@ public class Worker : BackgroundService
     
     private DiscordShardedClient? _client;
 
-    private Timer? _statusTimer;
-
     public Worker(
         ILogger<Worker> logger,
         IConfiguration configuration,
@@ -35,7 +33,8 @@ public class Worker : BackgroundService
     {
         var config = new DiscordSocketConfig()
         {
-            GatewayIntents = GatewayIntents.Guilds | GatewayIntents.GuildMessages
+            GatewayIntents = GatewayIntents.Guilds | GatewayIntents.GuildMessages,
+            MessageCacheSize = 0
         };
 
         _client = new DiscordShardedClient(config);
@@ -45,14 +44,6 @@ public class Worker : BackgroundService
 
         await _client.LoginAsync(TokenType.Bot, _configuration["Bot:DiscordToken"]);
         await _client.StartAsync();
-        
-        _statusTimer = new Timer(async _ =>
-        {
-            await _client.SetGameAsync($"Your Links... | Servers: {_client.Guilds.Count}", type: ActivityType.Watching);
-        },
-        null,
-        TimeSpan.FromSeconds(1),
-        TimeSpan.FromMinutes(1));
     }
 
     protected override Task ExecuteAsync(CancellationToken cancellationToken) => Task.CompletedTask;
@@ -69,6 +60,12 @@ public class Worker : BackgroundService
     private async Task HandleMessageAsync(SocketMessage socketMessage)
     {
         if (socketMessage is not SocketUserMessage message)
+        {
+            return;
+        }
+
+        // Ignore Messages from Bots (including this one) and Webhook
+        if (socketMessage.Author.IsBot || socketMessage.Author.IsWebhook)
         {
             return;
         }

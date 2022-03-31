@@ -63,7 +63,7 @@ public class Pixiv : BaseSite
             return null;
         }
 
-        var file = await GetFile(metadata.UgoiraMetadata.OriginalSource);
+        using var file = await GetFile(metadata.UgoiraMetadata.OriginalSource);
 
         var zip = new ZipArchive(file.Stream);
 
@@ -92,10 +92,25 @@ public class Pixiv : BaseSite
             _logger.LogError("{Message}", ex.Message);
             return null;
         }
+
+        var fileStream = new MemoryStream(
+            await File.ReadAllBytesAsync(videoFile)
+        );
+
+        var title = illustrationDetails.IllustrationDetails.Title
+            .ToLowerInvariant()
+            .Replace("-", "")
+            .Replace(" ", "_");
+
+        var fileName = $"{title}_ugoira.{format}";
+        
+        _logger.LogDebug("{Filename}", fileName);
         
         response.Files.Add(
-            new FileAttachment(videoFile)    
+            new FileAttachment(fileStream, fileName)
         );
+        
+        Directory.Delete(basePath, true);
 
         return response;
     }
