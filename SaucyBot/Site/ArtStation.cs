@@ -2,6 +2,7 @@
 using Discord;
 using Discord.WebSocket;
 using SaucyBot.Common;
+using SaucyBot.Extensions;
 using SaucyBot.Library;
 using SaucyBot.Library.Sites.ArtStation;
 using SaucyBot.Services;
@@ -59,9 +60,8 @@ public class ArtStation : BaseSite
         var assets = project.Assets
             .Where(asset => asset.Type is "image" or "cover" && !asset.ImageUrl.Contains(coverFileName))
             .ToList()
-            .GetRange(1, Math.Min(project.Assets.Count - 1, limit));
-            
-
+            .SafeSlice(0, limit);
+        
         foreach (var asset in assets)
         {
             var description = await Helper.ProcessDescription(project.Description);

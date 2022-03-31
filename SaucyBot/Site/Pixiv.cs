@@ -1,6 +1,7 @@
 ﻿using System.Text.RegularExpressions;
 using Discord;
 using Discord.WebSocket;
+using SaucyBot.Extensions;
 using SaucyBot.Library;
 using SaucyBot.Library.Sites.Pixiv;
 using SaucyBot.Site.Response;
@@ -88,7 +89,7 @@ public class Pixiv : BaseSite
 
         var postLimit = _configuration.GetSection("Sites:Pixiv:PostLimit").Get<int>();
 
-        var pages = response.IllustrationPages.GetRange(0, postLimit);
+        var pages = response.IllustrationPages.SafeSlice(0, postLimit);
 
         foreach (var page in pages)
         {

@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using SaucyBot.Extensions;
 using SaucyBot.Library;
 using SaucyBot.Site.Response;
 
@@ -23,36 +24,18 @@ public class MessageManager
             { } pr when pr.Embeds.Count > 1 => await HandleMultipleEmbeds(response),
             { } pr when pr.Embeds.Count == 1 => await HandleSingleEmbed(response),
             { } pr when pr.Files.Count >= 1 => await HandleFiles(response),
-            _ => new List<Message> { new(MessageType.Reply, response.Text ?? "") },
+            _ => new List<Message> { new(response.Text ?? "") },
         };
 
-        foreach (var message in messages)
+        foreach (var (content, embeds, fileAttachments) in messages)
         {
-            switch (message.Type)
-            {
-                case MessageType.File:
-                    await received.Channel.SendFilesAsync(
-                        message.Files,
-                        message.Content,
-                        allowedMentions: new AllowedMentions
-                        {
-                            MentionRepliedUser = false
-                        },
-                        messageReference: new MessageReference(received.Id)
-                    );
-                    break;
-                default:
-                case MessageType.Reply:
-                    await received.ReplyAsync(
-                        message.Content,
-                        allowedMentions: new AllowedMentions
-                        {
-                            MentionRepliedUser = false
-                        },
-                        embeds: message.Embeds?.ToArray()
-                    );
-                    break;
-            }
+            await received.Channel.SendFilesAsync(
+                fileAttachments,
+                content,
+                allowedMentions: AllowedMentions.None,
+                embeds: embeds?.ToArray(),
+                messageReference: new MessageReference(received.Id)
+            );
         }
     }
 
@@ -60,14 +43,14 @@ public class MessageManager
     {
         var messages = new List<Message>();
 
-        if (response.Text != null)
+        if (response.Text is not null)
         {
-            messages.Add(new Message(MessageType.Reply, response.Text));
+            messages.Add(new Message(response.Text));
         }
 
         if (response.Files.Count == 1)
         {
-            messages.Add(new Message(MessageType.File, Files: response.Files));
+            messages.Add(new Message(Files: response.Files));
 
             return Task.FromResult(messages);
         }
@@ -100,19 +83,26 @@ public class MessageManager
             segments[index].Add(file);
         }
 
-        foreach (var files in segments)
-        {
-            messages.Add(new Message(MessageType.File, Files: files));
-        }
-        
+        messages.AddRange(segments.Select(files => new Message(Files: files)));
+
         return Task.FromResult(messages);
     }
 
     private Task<List<Message>> HandleSingleEmbed(ProcessResponse response)
     {
         var messages = new List<Message>();
+
+        var embed = response.Embeds.First();
+
+        var files = GetRelatedFiles(embed, response.Files);
+
+        var message = new Message(
+            response.Text, 
+            new List<Embed> { embed },
+            files
+        );
         
-        messages.Add(new Message(MessageType.Reply, response.Text, response.Embeds));
+        messages.Add(message);
         
         return Task.FromResult(messages);
     }
@@ -120,22 +110,55 @@ public class MessageManager
     private Task<List<Message>> HandleMultipleEmbeds(ProcessResponse response)
     {
         var messages = new List<Message>();
-        
-        messages.Add(new Message(MessageType.Reply, response.Text, response.Embeds));
+
+        if (response.Text is not null)
+        {
+            messages.Add(new Message(response.Text));
+        }
+
+        for (var i = 0; i < response.Embeds.Count - 1; i += Constants.MaximumEmbedsPerMessage)
+        {
+            var chunk = response.Embeds.SafeSlice(i, i + Constants.MaximumEmbedsPerMessage);
+            var files = new List<FileAttachment>();
+
+            foreach (var embed in chunk)
+            {
+                var relatedFiles = GetRelatedFiles(embed, response.Files);
+                files.AddRange(relatedFiles);
+            }
+            
+            messages.Add(new Message(Embeds: chunk, Files: files));
+        }
         
         return Task.FromResult(messages);
     }
-}
 
-public enum MessageType
-{
-    Reply,
-    File
+    private List<FileAttachment> GetRelatedFiles(IEmbed embed, IEnumerable<FileAttachment> files)
+    {
+        var embedUrls = new List<string>();
+
+        if (embed.Image?.Url is not null)
+        {
+            embedUrls.Add(embed.Image?.Url.Replace("attachment://", ""));
+        }
+
+        if (embed.Video?.Url is not null)
+        {
+            embedUrls.Add(embed.Video?.Url.Replace("attachment://", ""));
+        }
+
+        return files
+            .Where(item => embedUrls.Contains(item.FileName))
+            .ToList();
+    }
 }
 
 public record Message(
-    MessageType Type,
     string? Content = null,
     List<Embed>? Embeds = null,
     List<FileAttachment>? Files = null
-);
+)
+{
+    public List<Embed> Embeds { get; } = Embeds ?? new List<Embed>();
+    public List<FileAttachment> Files { get; } = Files ?? new List<FileAttachment>();
+}
