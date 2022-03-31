@@ -28,7 +28,7 @@ public class FurAffinity : BaseSite
             match.Groups["id"].Value
         );
         
-        if (submission == null)
+        if (submission is null)
         {
             return null;
         }
