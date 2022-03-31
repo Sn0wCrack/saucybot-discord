@@ -4,6 +4,8 @@ namespace SaucyBot.Common;
 
 public static class Helper
 {
+    private const string Characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    
     public static async Task<string?> HtmlToPlainText(string html)
     {
         var parser = new HtmlParser();
@@ -22,5 +24,12 @@ public static class Helper
         }
 
         return description;
+    }
+
+    public static string RandomString(int length = 8)
+    {
+        var random = new Random();
+
+        return new string(Enumerable.Repeat(Characters, length).Select(s => s[random.Next(s.Length)]).ToArray());
     }
 }

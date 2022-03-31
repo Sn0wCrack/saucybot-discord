@@ -50,42 +50,47 @@ public class Worker : BackgroundService
 
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
-        if (_client != null)
+        if (_client is not null)
         {
             await _client.StopAsync();
             await _client.DisposeAsync();
         }
     }
 
-    private async Task HandleMessageAsync(SocketMessage socketMessage)
+    private Task HandleMessageAsync(SocketMessage socketMessage)
     {
-        if (socketMessage is not SocketUserMessage message)
+        Task.Run(async () =>
         {
-            return;
-        }
-
-        // Ignore Messages from Bots (including this one) and Webhook
-        if (socketMessage.Author.IsBot || socketMessage.Author.IsWebhook)
-        {
-            return;
-        }
-
-        var results = await _siteManager.Match(message.Content);
-
-        foreach (var (site, match) in results)
-        {
-            _logger.LogDebug("Matched link \"{Match}\" to site {Site}", match, site);
-
-            var response = await _siteManager.Process(site, match, message);
-
-            if (response is null)
+            if (socketMessage is not SocketUserMessage message)
             {
-                _logger.LogDebug("Failed to process match \"{Match}\" of site {Site}", match, site);
-                continue;
+                return;
             }
 
-            await _messageManager.Send(message, response);
-        }
+            // Ignore Messages from Bots (including this one) and Webhook
+            if (socketMessage.Author.IsBot || socketMessage.Author.IsWebhook)
+            {
+                return;
+            }
+
+            var results = await _siteManager.Match(message.Content);
+
+            foreach (var (site, match) in results)
+            {
+                _logger.LogDebug("Matched link \"{Match}\" to site {Site}", match, site);
+
+                var response = await _siteManager.Process(site, match, message);
+
+                if (response is null)
+                {
+                    _logger.LogDebug("Failed to process match \"{Match}\" of site {Site}", match, site);
+                    continue;
+                }
+
+                await _messageManager.Send(message, response);
+            }
+        });
+
+        return Task.CompletedTask;
     }
 
     private Task LogAsync(LogMessage message)

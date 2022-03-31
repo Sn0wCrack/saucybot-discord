@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Discord;
 using Discord.WebSocket;
+using SaucyBot.Common;
 using SaucyBot.Extensions;
 using SaucyBot.Library;
 using SaucyBot.Library.Sites.Pixiv;
@@ -70,7 +71,7 @@ public class Pixiv : BaseSite
         var basePath = Path.Join(
             Path.GetTempPath(),
             "pixiv",
-            illustrationDetails.IllustrationDetails.Id
+            $"{illustrationDetails.IllustrationDetails.Id}_{Helper.RandomString()}"
         );
 
         var concatFile = Path.Join(basePath, "ffconcat");
@@ -104,8 +105,6 @@ public class Pixiv : BaseSite
 
         var fileName = $"{title}_ugoira.{format}";
         
-        _logger.LogDebug("{Filename}", fileName);
-        
         response.Files.Add(
             new FileAttachment(fileStream, fileName)
         );
@@ -119,13 +118,13 @@ public class Pixiv : BaseSite
     {
         var builder = new StringBuilder("ffconcat version 1.0\n");
 
-        foreach (var frame in frames)
+        foreach (var (fileName, frameDelay) in frames)
         {
-            var delay = Math.Round(frame.Delay / 1000.0, 3);
+            var duration = Math.Round(frameDelay / 1000.0, 3);
             
             builder
-                .Append($"file {frame.File}\n")
-                .Append($"duration {delay}\n");
+                .Append($"file {fileName}\n")
+                .Append($"duration {duration}\n");
         }
 
         var lastFrame = frames.Last();
@@ -136,8 +135,7 @@ public class Pixiv : BaseSite
     }
 
 
-    private async Task<IConversionResult> RenderUgoiraVideo(string concatFilePath, string videoFilePath)
-    {
+    private async Task<IConversionResult> RenderUgoiraVideo(string concatFilePath, string videoFilePath) {
         var bitrate = _configuration.GetSection("Sites:Pixiv:UgoiraBitrate").Get<int>();
         
         var conversion = FFmpeg.Conversions.New()
