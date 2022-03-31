@@ -27,5 +27,5 @@ public class DatabaseManager
         }
     }
 
-    public DatabaseContext Context => CreateDatabaseContext();
+    public DatabaseContext Context() => CreateDatabaseContext();
 }
