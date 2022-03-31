@@ -1,6 +1,6 @@
 using Discord;
 using Discord.WebSocket;
-using SaucyBot.Library;
+using SaucyBot.Services;
 
 namespace SaucyBot;
 
@@ -8,22 +8,25 @@ public class Worker : BackgroundService
 {
     private readonly ILogger<Worker> _logger;
     private readonly IConfiguration _configuration;
-    
+
+    private readonly DatabaseManager _databaseManager;
     private readonly SiteManager _siteManager;
     private readonly MessageManager _messageManager;
     
     private DiscordShardedClient? _client;
 
-    private Timer _statusTimer;
+    private Timer? _statusTimer;
 
     public Worker(
         ILogger<Worker> logger,
         IConfiguration configuration,
+        DatabaseManager databaseManager,
         SiteManager siteManager,
         MessageManager messageManager
     ) {
         _logger = logger;
         _configuration = configuration;
+        _databaseManager = databaseManager;
         _siteManager = siteManager;
         _messageManager = messageManager;
     }
@@ -56,8 +59,11 @@ public class Worker : BackgroundService
 
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
-        await _client.StopAsync();
-        await _client.DisposeAsync();
+        if (_client != null)
+        {
+            await _client.StopAsync();
+            await _client.DisposeAsync();
+        }
     }
 
     private async Task HandleMessageAsync(SocketMessage socketMessage)
@@ -75,7 +81,7 @@ public class Worker : BackgroundService
 
             var response = await _siteManager.Process(site, match, message);
 
-            if (response == null)
+            if (response is null)
             {
                 _logger.LogDebug("Failed to process match \"{Match}\" of site {Site}", match, site);
                 continue;
@@ -85,7 +91,7 @@ public class Worker : BackgroundService
         }
     }
 
-    private async Task LogAsync(LogMessage message)
+    private Task LogAsync(LogMessage message)
     {
         var severity = message.Severity switch
         {
@@ -99,6 +105,7 @@ public class Worker : BackgroundService
         };
         
         _logger.Log(severity, message.Exception, "[{Source}] {Message}", message.Source, message.Message);
-        await Task.CompletedTask;
+
+        return Task.CompletedTask;
     }
 }

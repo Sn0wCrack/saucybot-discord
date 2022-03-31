@@ -8,14 +8,18 @@ services:
         env_file:
             - .env
         volumes:
-            - ./appsettings.json:/app/appsettings.json
             - ./appsettings.Development.json:/app/appsettings.Development.json
+        depends_on: 
+            - cache
+            - database
         restart: unless-stopped
+        
+    database:
+        image: mariadb:10.7
+        env_file:
+            - .env
+        restart: unless-stopped
+        
     cache:
         image: "redis:6-alpine"
         restart: unless-stopped
-        volumes:
-            - cache:/data
-
-volumes:
-    cache:

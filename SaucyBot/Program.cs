@@ -1,8 +1,9 @@
 using SaucyBot;
-using SaucyBot.Library;
+using SaucyBot.Database;
 using SaucyBot.Library.Sites.ArtStation;
 using SaucyBot.Library.Sites.FurAffinity;
 using SaucyBot.Library.Sites.Pixiv;
+using SaucyBot.Services;
 using SaucyBot.Site;
 using Serilog;
 
@@ -18,6 +19,8 @@ var host = Host.CreateDefaultBuilder(args)
     {
         services.AddSingleton<SiteManager>();
         services.AddSingleton<MessageManager>();
+        services.AddSingleton<DatabaseManager>();
+        
         services.AddSingleton<FaExportClient>();
         services.AddSingleton<PixivClient>();
         services.AddSingleton<ArtStationClient>();

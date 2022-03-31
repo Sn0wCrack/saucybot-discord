@@ -35,6 +35,11 @@ public class Pixiv : BaseSite
 
         var response = await _client.IllustrationDetails(id);
 
+        if (response is null)
+        {
+            return null;
+        }
+
         if (response.IllustrationDetails.Type == IllustrationType.Ugoira)
         {
             return await ProcessUgoira(response);
@@ -43,7 +48,7 @@ public class Pixiv : BaseSite
         return await ProcessImage(response);
     }
 
-    private async Task<ProcessResponse?> ProcessUgoira(IllustrationDetailsResponse illustrationDetails)
+    private async Task<ProcessResponse?> ProcessUgoira(IllustrationDetailsResponse? illustrationDetails)
     {
         var response = new ProcessResponse();
 
@@ -62,7 +67,7 @@ public class Pixiv : BaseSite
                 illustrationDetails.IllustrationDetails.IllustrationDetailsUrls.All
             );
 
-            if (url == null)
+            if (url is null)
             {
                 return message;
             }
@@ -76,6 +81,11 @@ public class Pixiv : BaseSite
 
         var response = await _client.IllustrationPages(illustrationDetails.IllustrationDetails.Id);
 
+        if (response is null)
+        {
+            return message;
+        }
+
         var postLimit = _configuration.GetSection("Sites:Pixiv:PostLimit").Get<int>();
 
         var pages = response.IllustrationPages.GetRange(0, postLimit);
@@ -84,7 +94,7 @@ public class Pixiv : BaseSite
         {
             var url = await DetermineHighestUsableQualityFile(page.IllustrationPagesUrls.All);
 
-            if (url == null)
+            if (url is null)
             {
                 continue;
             }
@@ -108,7 +118,7 @@ public class Pixiv : BaseSite
         {
             var response = await _client.PokeFile(url);
 
-            if (response.Content.Headers.ContentLength < Constants.MaximumFilesize)
+            if (response.Content.Headers.ContentLength < Constants.MaximumFileSize)
             {
                 return url;
             }

@@ -1,8 +1,10 @@
 ﻿using System.Text.RegularExpressions;
 using Discord;
 using Discord.WebSocket;
+using SaucyBot.Common;
 using SaucyBot.Library;
 using SaucyBot.Library.Sites.ArtStation;
+using SaucyBot.Services;
 using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site;
@@ -30,7 +32,7 @@ public class ArtStation : BaseSite
 
         var project = await _client.GetProject(match.Groups["hash"].Value);
 
-        if (project == null)
+        if (project is null)
         {
             return null;
         }
@@ -51,17 +53,17 @@ public class ArtStation : BaseSite
         var parsed = new Uri(project.CoverUrl);
 
         var coverFileName = Path.GetFileName(parsed.AbsolutePath);
+        
+        project.Assets.RemoveAt(0);
 
-        var assets = project.Assets.GetRange(1, Math.Min(project.Assets.Count - 1, limit));
+        var assets = project.Assets
+            .Where(asset => asset.Type is "image" or "cover" && !asset.ImageUrl.Contains(coverFileName))
+            .ToList()
+            .GetRange(1, Math.Min(project.Assets.Count - 1, limit));
+            
 
         foreach (var asset in assets)
         {
-            // If this asset isn't an image, skip over it as we can only display those for now
-            if (asset.Type is not ("image" or "cover") || asset.ImageUrl.Contains(coverFileName))
-            {
-                continue;
-            }
-
             var description = await Helper.ProcessDescription(project.Description);
 
             var embed = new EmbedBuilder

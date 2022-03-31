@@ -72,26 +72,21 @@ public class PixivClient
                      response.Contains("var dataLayer = [{ login: 'yes',");
     }
 
-    private async Task<bool> FormLogin()
-    {
-        return false;
-    }
-
-    public async Task<IllustrationDetailsResponse> IllustrationDetails(string id)
+    public async Task<IllustrationDetailsResponse?> IllustrationDetails(string id)
     {
         var response = await _client.GetStringAsync($"{WebApiUrl}/illust/{id}");
         
         return JsonSerializer.Deserialize<IllustrationDetailsResponse>(response);
     }
 
-    public async Task<IllustrationPagesResponse> IllustrationPages(string id)
+    public async Task<IllustrationPagesResponse?> IllustrationPages(string id)
     {
         var response = await _client.GetStringAsync($"{WebApiUrl}/illust/{id}/pages");
         
         return JsonSerializer.Deserialize<IllustrationPagesResponse>(response);
     }
 
-    public async Task<UgoiraMetadataResponse> UgoiraMetadata(string id)
+    public async Task<UgoiraMetadataResponse?> UgoiraMetadata(string id)
     {
         var response = await _client.GetStringAsync($"{WebApiUrl}/illust/{id}/ugoira_meta");
         
