@@ -18,6 +18,7 @@ import { IllustType } from 'pixiv-web-api/dist/IllustType';
 import Logger from '../Logger';
 import { URL } from 'url';
 import CacheManager from '../CacheManager';
+import { randomString } from '../Helpers';
 
 class Pixiv extends BaseSite {
     identifier = 'Pixiv';
@@ -145,7 +146,7 @@ class Pixiv extends BaseSite {
         const basePath = path.join(
             os.tmpdir(),
             'pixiv',
-            details.body.id.toString()
+            `${details.body.id.toString()}_${randomString()}`
         );
 
         const concatFilePath = path.join(basePath, 'ffconcat');
@@ -215,7 +216,7 @@ class Pixiv extends BaseSite {
     async ffmpeg(input: string, output: string): Promise<void> {
         // This is required as fluent-ffmpeg doesn't support promises unfortunately
         return new Promise<void>((resolve, reject) => {
-            ffmpeg({ cwd: path.dirname(input) })
+            const command = ffmpeg({ cwd: path.dirname(input) })
                 .input(input)
                 .inputFormat('concat')
                 .videoBitrate(
@@ -225,8 +226,9 @@ class Pixiv extends BaseSite {
                 // This ensures h264 can actually encode the output
                 .videoFilter('pad=ceil(iw/2)*2:ceil(ih/2)*2')
                 .on('error', (err) => reject(err))
-                .on('end', () => resolve())
-                .save(output);
+                .on('end', () => resolve());
+
+            command.save(output);
         });
     }
 

@@ -13,3 +13,16 @@ export function processDescription(description: string): string {
 
     return description;
 }
+
+export function randomString(length = 8): string {
+    const characters =
+        '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+    let result = '';
+
+    for (let i = length; i > 0; --i) {
+        result += characters[Math.floor(Math.random() * characters.length)];
+    }
+
+    return result;
+}
