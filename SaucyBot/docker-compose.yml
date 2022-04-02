@@ -18,6 +18,8 @@ services:
         image: mariadb:10.7
         env_file:
             - .env
+        ports:
+            - "3306:3306"
         restart: unless-stopped
         
     cache:

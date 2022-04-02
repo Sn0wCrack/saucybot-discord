@@ -17,6 +17,9 @@ var host = Host.CreateDefaultBuilder(args)
     })
     .ConfigureServices(services =>
     {
+        services.AddDbContext<DatabaseContext>(ServiceLifetime.Transient);
+        services.AddDbContextFactory<DatabaseContext>(lifetime: ServiceLifetime.Transient);
+        
         services.AddSingleton<SiteManager>();
         services.AddSingleton<MessageManager>();
         services.AddSingleton<DatabaseManager>();
