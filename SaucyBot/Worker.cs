@@ -31,10 +31,15 @@ public class Worker : BackgroundService
 
     public override async Task StartAsync(CancellationToken cancellationToken)
     {
+        await _databaseManager.EnsureAllMigrationsHaveRun();
+
         var config = new DiscordSocketConfig()
         {
             GatewayIntents = GatewayIntents.Guilds | GatewayIntents.GuildMessages,
-            MessageCacheSize = 0
+            MessageCacheSize = 50,
+            AlwaysDownloadUsers = false,
+            AlwaysResolveStickers = false,
+            AlwaysDownloadDefaultStickers = false,
         };
 
         _client = new DiscordShardedClient(config);
