@@ -31,6 +31,12 @@ namespace SaucyBot.Database.Migrations
                     table.PrimaryKey("pk_guild_configurations", x => x.id);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_guild_configurations_guild_id",
+                table: "guild_configurations",
+                column: "guild_id",
+                unique: true);
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)

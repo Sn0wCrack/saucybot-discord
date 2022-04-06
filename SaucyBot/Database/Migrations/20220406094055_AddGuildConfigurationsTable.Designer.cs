@@ -11,7 +11,7 @@ using SaucyBot.Database;
 namespace SaucyBot.Database.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20220402134300_AddGuildConfigurationsTable")]
+    [Migration("20220406094055_AddGuildConfigurationsTable")]
     partial class AddGuildConfigurationsTable
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -54,6 +54,10 @@ namespace SaucyBot.Database.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_guild_configurations");
+
+                    b.HasIndex("GuildId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_guild_configurations_guild_id");
 
                     b.ToTable("guild_configurations", (string)null);
                 });
