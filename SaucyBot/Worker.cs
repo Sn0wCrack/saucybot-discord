@@ -64,19 +64,19 @@ public class Worker : BackgroundService
 
     private Task HandleMessageAsync(SocketMessage socketMessage)
     {
+        if (socketMessage is not SocketUserMessage message)
+        {
+            return Task.CompletedTask;
+        }
+
+        // Ignore Messages from Bots (including this one) and Webhook
+        if (socketMessage.Author.IsBot || socketMessage.Author.IsWebhook)
+        {
+            return Task.CompletedTask;
+        }
+
         Task.Run(async () =>
         {
-            if (socketMessage is not SocketUserMessage message)
-            {
-                return;
-            }
-
-            // Ignore Messages from Bots (including this one) and Webhook
-            if (socketMessage.Author.IsBot || socketMessage.Author.IsWebhook)
-            {
-                return;
-            }
-
             var results = await _siteManager.Match(message.Content);
 
             foreach (var (site, match) in results)
