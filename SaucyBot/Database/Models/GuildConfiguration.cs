@@ -1,8 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.EntityFrameworkCore;
 using SaucyBot.Library;
 
 namespace SaucyBot.Database.Models;
 
+[Index(nameof(GuildId), IsUnique = true)]
 public class GuildConfiguration
 {
     [Key]

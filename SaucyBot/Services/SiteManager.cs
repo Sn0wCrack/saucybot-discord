@@ -16,12 +16,12 @@ public class SiteManager
     {
         _logger = logger;
         _configuration = configuration;
-        
-        var disabled = new List<string>(
-            _configuration.GetSection("Bot:DisabledSites").Get<string[]>()
-        );
 
-        var siteClasses = Assembly.GetExecutingAssembly().GetTypes()
+        var disabled = _configuration.GetSection("Bot:DisabledSites").Get<string[]>();
+
+        var siteClasses = Assembly
+            .GetExecutingAssembly()
+            .GetTypes()
             .Where(t => t.Namespace == "SaucyBot.Site" && t.IsClass && !t.IsAbstract && !t.IsNested)
             .ToList();
         
@@ -29,9 +29,7 @@ public class SiteManager
         {
             _logger.LogDebug("Attempting to start site module: {Site}", siteClass.ToString());
 
-            var instance = serviceProvider.GetService(siteClass) as BaseSite;
-
-            if (instance is null)
+            if (serviceProvider.GetService(siteClass) is not BaseSite instance)
             {
                 continue;
             }

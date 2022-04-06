@@ -53,6 +53,10 @@ namespace SaucyBot.Database.Migrations
                     b.HasKey("Id")
                         .HasName("pk_guild_configurations");
 
+                    b.HasIndex("GuildId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_guild_configurations_guild_id");
+
                     b.ToTable("guild_configurations", (string)null);
                 });
 #pragma warning restore 612, 618
