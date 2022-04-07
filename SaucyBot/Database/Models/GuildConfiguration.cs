@@ -14,6 +14,7 @@ public class GuildConfiguration
 
     public uint MaximumEmbeds { get; set; } = Constants.DefaultMaximumEmbeds;
     public uint MaximumPixivImages { get; set; } = Constants.DefaultMaximumPixivImages;
+    public uint MaximumArtStationImages { get; set; } = Constants.DefaultMaximumArtStationImages;
     public bool SendMatchedMessage { get; set; } = Constants.DefaultSendMatchedMessage;
 
     public DateTime? CreatedAt { get; set; } = DateTime.UtcNow;

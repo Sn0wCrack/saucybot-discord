@@ -77,7 +77,7 @@ public class Worker : BackgroundService
 
         Task.Run(async () =>
         {
-            var results = await _siteManager.Match(message.Content);
+            var results = await _siteManager.Match(message);
 
             foreach (var (site, match) in results)
             {

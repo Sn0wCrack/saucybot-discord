@@ -4,6 +4,7 @@ using SaucyBot.Library.Sites.ArtStation;
 using SaucyBot.Library.Sites.FurAffinity;
 using SaucyBot.Library.Sites.Pixiv;
 using SaucyBot.Services;
+using SaucyBot.Services.Cache;
 using SaucyBot.Site;
 using Serilog;
 
@@ -19,10 +20,18 @@ var host = Host.CreateDefaultBuilder(args)
     {
         services.AddDbContext<DatabaseContext>(ServiceLifetime.Transient);
         services.AddDbContextFactory<DatabaseContext>(lifetime: ServiceLifetime.Transient);
+
+        services.AddMemoryCache();
         
         services.AddSingleton<SiteManager>();
         services.AddSingleton<MessageManager>();
         services.AddSingleton<DatabaseManager>();
+        services.AddSingleton<CacheManager>();
+
+        services.AddSingleton<MemoryCacheDriver>();
+        services.AddSingleton<RedisCacheDriver>();
+
+        services.AddSingleton<GuildConfigurationManager>();
         
         services.AddSingleton<FaExportClient>();
         services.AddSingleton<PixivClient>();

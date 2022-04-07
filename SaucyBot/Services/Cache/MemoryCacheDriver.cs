@@ -1,60 +1,34 @@
-﻿namespace SaucyBot.Services.Cache;
+﻿using Microsoft.Extensions.Caching.Memory;
+
+namespace SaucyBot.Services.Cache;
 
 public class MemoryCacheDriver : ICacheDriver
 {
-    private readonly Dictionary<object, CacheEntry> _cache = new();
-
-    public Task<object?> Get(object key)
+    private readonly IMemoryCache _cache;
+    private readonly IConfiguration _configuration;
+    
+    public MemoryCacheDriver(IMemoryCache cache, IConfiguration configuration)
     {
-        var entry = _cache[key];
+        _cache = cache;
+        _configuration = configuration;
+    }
 
-        if (!entry.IsExpired())
-        {
-            return Task.FromResult(entry.Value);
-        }
-
-        _cache.Remove(key);
-        return Task.FromResult<>(null);
+    public Task<T?> Get<T>(object key)
+    {
+        return Task.FromResult(_cache.Get<T?>(key));
     }
 
     public Task<bool> Delete(object key)
     {
-        return Task.FromResult(_cache.Remove(key));
-    }
-
-    public Task<bool> Set(object key, object value, TimeSpan? expiry)
-    {
-        var entry = new CacheEntry(value, expiry);
-        _cache.Add(key, entry);
+        _cache.Remove(key);
 
         return Task.FromResult(true);
     }
-}
 
-public class CacheEntry
-{
-    public readonly object Value;
-
-    private readonly TimeSpan? _lifetime;
-
-    private readonly DateTimeOffset _createdAt;
-
-    public CacheEntry(object value, TimeSpan? lifetime)
+    public Task<bool> Set<T>(object key, T value, TimeSpan? expiry)
     {
-        Value = value;
-        _lifetime = lifetime;
-        _createdAt = DateTimeOffset.UtcNow;
-    }
+        _cache.Set(key, value);
 
-    public bool IsExpired()
-    {
-        if (_lifetime is null)
-        {
-            return false;
-        }
-
-        var expiry = _createdAt.Add(_lifetime);
-        
-        return (expiry >= DateTimeOffset.UtcNow);
+        return Task.FromResult(true);
     }
 }

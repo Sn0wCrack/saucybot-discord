@@ -39,6 +39,14 @@ public static class Constants
     public const int DefaultMaximumPixivImages = 5;
     
     /// <summary>
+    /// The default maximum number of ArtStation images to return for an ArtStation project.
+    ///
+    /// This is primarily used as a fallback value.
+    /// </summary>
+    public const int DefaultMaximumArtStationImages = 8;
+    
+    
+    /// <summary>
     /// The default setting for sending the "Matched to site X, please wait..." message for guilds.
     /// </summary>
     public const bool DefaultSendMatchedMessage = true;
