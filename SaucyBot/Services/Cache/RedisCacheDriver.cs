@@ -1,20 +1,49 @@
-﻿namespace SaucyBot.Services.Cache;
+﻿using System.Text.Json;
+using Microsoft.Extensions.Caching.Distributed;
+
+namespace SaucyBot.Services.Cache;
 
 public class RedisCacheDriver : ICacheDriver
 {
-
-    public Task<T?> Get<T>(object key)
+    private readonly IDistributedCache _cache;
+    
+    public RedisCacheDriver(IDistributedCache cache)
     {
-        throw new NotImplementedException();
+        _cache = cache;
     }
 
-    public Task<bool> Delete(object key)
+    public async Task<T?> Get<T>(object key)
     {
-        throw new NotImplementedException();
+        var value = await _cache.GetStringAsync(key.ToString());
+
+        return value is null ? default : JsonSerializer.Deserialize<T>(value);
     }
 
-    public Task<bool> Set<T>(object key, T value, TimeSpan? expiry)
+    public async Task<bool> Delete(object key)
     {
-        throw new NotImplementedException();
+        await _cache.RemoveAsync(key.ToString());
+
+        return true;
+    }
+
+    public async Task<T> Set<T>(object key, T value)
+    {
+        await _cache.SetStringAsync(key.ToString(), JsonSerializer.Serialize(value));
+
+        return value;
+    }
+
+    public async Task<T> Set<T>(object key, T value, TimeSpan expiry)
+    {
+        await _cache.SetStringAsync(
+            key.ToString(),
+            JsonSerializer.Serialize(value),
+            new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = expiry
+            }
+        );
+
+        return value;
     }
 }

@@ -56,30 +56,30 @@ public class SiteManager
     public async Task<List<SiteManagerProcessResult>> Match(SocketUserMessage message)
     {
         var results = new List<SiteManagerProcessResult>();
-
+        
         var embedCount = 0;
         var maximumEmbeds = _configuration.GetSection("Bot:MaximumEmbeds").Get<int>();
-        
+
         var guildConfiguration = await _guildConfigurationManager.GetByChannel(message.Channel);
 
         if (guildConfiguration is not null)
         {
-            maximumEmbeds = (int) guildConfiguration.MaximumEmbeds;
+            maximumEmbeds = (int)guildConfiguration.MaximumEmbeds;
         }
-        
+
         foreach (var (identifier, site) in _sites)
         {
-            if (!site.IsMatch(message.Content))
+            if (!site.IsMatch(message.CleanContent))
             {
                 continue;
             }
 
-            var matches = site.Match(message.Content);
+            var matches = site.Match(message.CleanContent);
 
             foreach (Match match in matches)
             {
                 results.Add(new SiteManagerProcessResult(identifier, match));
-                
+
                 embedCount++;
 
                 if (embedCount >= maximumEmbeds)

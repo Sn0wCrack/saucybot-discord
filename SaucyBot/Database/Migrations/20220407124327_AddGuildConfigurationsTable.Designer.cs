@@ -11,7 +11,7 @@ using SaucyBot.Database;
 namespace SaucyBot.Database.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20220406094055_AddGuildConfigurationsTable")]
+    [Migration("20220407124327_AddGuildConfigurationsTable")]
     partial class AddGuildConfigurationsTable
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -35,6 +35,10 @@ namespace SaucyBot.Database.Migrations
                     b.Property<ulong>("GuildId")
                         .HasColumnType("bigint unsigned")
                         .HasColumnName("guild_id");
+
+                    b.Property<uint>("MaximumArtStationImages")
+                        .HasColumnType("int unsigned")
+                        .HasColumnName("maximum_art_station_images");
 
                     b.Property<uint>("MaximumEmbeds")
                         .HasColumnType("int unsigned")

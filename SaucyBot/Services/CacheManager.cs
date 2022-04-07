@@ -43,8 +43,13 @@ public class CacheManager
     {
         return await _driver.Get<T>(key);
     }
+    
+    public async Task<T> Set<T>(object key, T value)
+    {
+        return await _driver.Set(key, value);
+    }
 
-    public async Task<bool> Set<T>(object key, T value, TimeSpan? expiry)
+    public async Task<T> Set<T>(object key, T value, TimeSpan expiry)
     {
         return await _driver.Set(key, value, expiry);
     }
