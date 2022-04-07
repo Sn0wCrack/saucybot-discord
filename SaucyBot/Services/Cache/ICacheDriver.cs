@@ -2,9 +2,9 @@
 
 public interface ICacheDriver
 {
-    public Task<object?> Get(object key);
+    public Task<T?> Get<T>(object key);
 
     public Task<bool> Delete(object key);
 
-    public Task<bool> Set(object key, object value, TimeSpan? expiry);
+    public Task<bool> Set<T>(object key, T value, TimeSpan? expiry);
 }

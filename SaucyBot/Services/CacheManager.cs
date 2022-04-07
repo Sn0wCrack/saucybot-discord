@@ -9,7 +9,7 @@ public class CacheManager
     private readonly IConfiguration _configuration;
     private readonly IServiceProvider _serviceProvider;
 
-    private ICacheDriver _driver;
+    private readonly ICacheDriver _driver;
     
     public CacheManager(ILogger<CacheManager> logger, IConfiguration configuration, IServiceProvider serviceProvider)
     {
@@ -39,12 +39,12 @@ public class CacheManager
         return instance;
     }
 
-    public async Task<object?> Get(object key)
+    public async Task<T?> Get<T>(object key)
     {
-        return await _driver.Get(key);
+        return await _driver.Get<T>(key);
     }
 
-    public async Task<bool> Set(object key, object value, TimeSpan? expiry)
+    public async Task<bool> Set<T>(object key, T value, TimeSpan? expiry)
     {
         return await _driver.Set(key, value, expiry);
     }
@@ -54,20 +54,20 @@ public class CacheManager
         return await _driver.Delete(key);
     }
 
-    public async Task<object?> Remember(object key, TimeSpan expiry, Func<object?> value)
+    public async Task<T?> Remember<T>(object key, TimeSpan expiry, Func<Task<T?>> value)
     {
-        var existing = await _driver.Get(key);
+        var existing = await Get<T>(key);
 
         if (existing is not null)
         {
             return existing;
         }
 
-        var store = value.Invoke();
+        var store = await value.Invoke();
 
         if (store is not null)
         {
-            await _driver.Set(key, store, expiry);
+            await Set<T>(key, store, expiry);
         }
 
         return store;

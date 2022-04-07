@@ -10,12 +10,19 @@ public class SiteManager
 {
     private readonly ILogger<SiteManager> _logger;
     private readonly IConfiguration _configuration;
+    private readonly GuildConfigurationManager _guildConfigurationManager;
+    
     private readonly Dictionary<string, BaseSite> _sites = new();
     
-    public SiteManager(ILogger<SiteManager> logger, IConfiguration configuration, IServiceProvider serviceProvider)
-    {
+    public SiteManager(
+        ILogger<SiteManager> logger,
+        IConfiguration configuration,
+        IServiceProvider serviceProvider,
+        GuildConfigurationManager guildConfigurationManager
+    ) {
         _logger = logger;
         _configuration = configuration;
+        _guildConfigurationManager = guildConfigurationManager;
 
         var disabled = _configuration.GetSection("Bot:DisabledSites").Get<string[]>();
 
@@ -46,21 +53,28 @@ public class SiteManager
 
     }
 
-    public Task<List<SiteManagerProcessResult>> Match(string message)
+    public async Task<List<SiteManagerProcessResult>> Match(SocketUserMessage message)
     {
         var results = new List<SiteManagerProcessResult>();
 
         var embedCount = 0;
         var maximumEmbeds = _configuration.GetSection("Bot:MaximumEmbeds").Get<int>();
         
+        var guildConfiguration = await _guildConfigurationManager.GetByChannel(message.Channel);
+
+        if (guildConfiguration is not null)
+        {
+            maximumEmbeds = (int) guildConfiguration.MaximumEmbeds;
+        }
+        
         foreach (var (identifier, site) in _sites)
         {
-            if (!site.IsMatch(message))
+            if (!site.IsMatch(message.Content))
             {
                 continue;
             }
 
-            var matches = site.Match(message);
+            var matches = site.Match(message.Content);
 
             foreach (Match match in matches)
             {
@@ -70,12 +84,12 @@ public class SiteManager
 
                 if (embedCount >= maximumEmbeds)
                 {
-                    return Task.FromResult(results);
+                    return results;
                 }
             }
         }
 
-        return Task.FromResult(results);
+        return results;
     }
 
     public async Task<ProcessResponse?> Process(string identifier, Match match, SocketUserMessage? message = null)

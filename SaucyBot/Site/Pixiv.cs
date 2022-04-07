@@ -7,6 +7,7 @@ using SaucyBot.Common;
 using SaucyBot.Extensions;
 using SaucyBot.Library;
 using SaucyBot.Library.Sites.Pixiv;
+using SaucyBot.Services;
 using SaucyBot.Site.Response;
 using Xabe.FFmpeg;
 
@@ -19,12 +20,18 @@ public class Pixiv : BaseSite
 
     private readonly PixivClient _client;
     private readonly ILogger<Pixiv> _logger;
+    private readonly GuildConfigurationManager _guildConfigurationManager;
     private readonly IConfiguration _configuration;
-    
-    public Pixiv(ILogger<Pixiv> logger, IConfiguration configuration, PixivClient client)
-    {
+
+    public Pixiv(
+        ILogger<Pixiv> logger,
+        IConfiguration configuration,
+        GuildConfigurationManager guildConfigurationManager,
+        PixivClient client
+    ) {
         _logger = logger;
         _configuration = configuration;
+        _guildConfigurationManager = guildConfigurationManager;
         _client = client;
     }
 
@@ -50,7 +57,7 @@ public class Pixiv : BaseSite
             return await ProcessUgoira(response);
         }
 
-        return await ProcessImage(response);
+        return await ProcessImage(response, message);
     }
 
     private async Task<ProcessResponse?> ProcessUgoira(IllustrationDetailsResponse illustrationDetails)
@@ -149,9 +156,9 @@ public class Pixiv : BaseSite
         return await conversion.Start();
     }
 
-    private async Task<ProcessResponse?> ProcessImage(IllustrationDetailsResponse illustrationDetails)
+    private async Task<ProcessResponse?> ProcessImage(IllustrationDetailsResponse illustrationDetails, SocketUserMessage? message)
     {
-        var message = new ProcessResponse();
+        var response = new ProcessResponse();
 
         var pageCount = illustrationDetails.IllustrationDetails.PageCount;
 
@@ -163,26 +170,36 @@ public class Pixiv : BaseSite
 
             if (url is null)
             {
-                return message;
+                return response;
             }
 
             var file = await GetFile(url);
             
-            message.Files.Add(file);
+            response.Files.Add(file);
 
-            return message;
+            return response;
         }
 
-        var response = await _client.IllustrationPages(illustrationDetails.IllustrationDetails.Id);
+        var illustrationPagesResponse = await _client.IllustrationPages(illustrationDetails.IllustrationDetails.Id);
 
-        if (response is null)
+        if (illustrationPagesResponse is null)
         {
-            return message;
+            return response;
         }
 
-        var postLimit = _configuration.GetSection("Sites:Pixiv:PostLimit").Get<int>();
+        var postLimit =  _configuration.GetSection("Sites:Pixiv:PostLimit").Get<int>();
 
-        var pages = response.IllustrationPages.SafeSlice(0, postLimit);
+        if (message is not null)
+        {
+            var guildConfiguration = await _guildConfigurationManager.GetByChannel(message.Channel);
+
+            if (guildConfiguration is not null)
+            {
+                postLimit = (int) guildConfiguration.MaximumPixivImages;
+            }
+        }
+
+        var pages = illustrationPagesResponse.IllustrationPages.SafeSlice(0, postLimit);
 
         foreach (var page in pages)
         {
@@ -195,15 +212,15 @@ public class Pixiv : BaseSite
 
             var file = await GetFile(url);
             
-            message.Files.Add(file);
+            response.Files.Add(file);
         }
 
         if (pageCount > postLimit)
         {
-            message.Text = $"This is part of a {pageCount} image set.";
+            response.Text = $"This is part of a {pageCount} image set.";
         }
 
-        return message;
+        return response;
     }
 
     private async Task<string?> DetermineHighestUsableQualityFile(IEnumerable<string> urls)
