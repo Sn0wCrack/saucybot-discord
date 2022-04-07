@@ -25,10 +25,17 @@ public class MemoryCacheDriver : ICacheDriver
         return Task.FromResult(true);
     }
 
-    public Task<bool> Set<T>(object key, T value, TimeSpan? expiry)
+    public Task<T> Set<T>(object key, T value)
     {
         _cache.Set(key, value);
 
-        return Task.FromResult(true);
+        return Task.FromResult(value);
+    }
+
+    public Task<T> Set<T>(object key, T value, TimeSpan expiry)
+    {
+        _cache.Set(key, value, expiry);
+
+        return Task.FromResult(value);
     }
 }

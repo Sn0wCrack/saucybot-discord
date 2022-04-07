@@ -77,21 +77,28 @@ public class Worker : BackgroundService
 
         Task.Run(async () =>
         {
-            var results = await _siteManager.Match(message);
-
-            foreach (var (site, match) in results)
+            try
             {
-                _logger.LogDebug("Matched link \"{Match}\" to site {Site}", match, site);
+                var results = await _siteManager.Match(message);
 
-                var response = await _siteManager.Process(site, match, message);
-
-                if (response is null)
+                foreach (var (site, match) in results)
                 {
-                    _logger.LogDebug("Failed to process match \"{Match}\" of site {Site}", match, site);
-                    continue;
-                }
+                    _logger.LogDebug("Matched link \"{Match}\" to site {Site}", match, site);
 
-                await _messageManager.Send(message, response);
+                    var response = await _siteManager.Process(site, match, message);
+
+                    if (response is null)
+                    {
+                        _logger.LogDebug("Failed to process match \"{Match}\" of site {Site}", match, site);
+                        continue;
+                    }
+
+                    await _messageManager.Send(message, response);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "{Message}", ex.Message);
             }
         });
 

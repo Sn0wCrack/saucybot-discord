@@ -22,6 +22,7 @@ namespace SaucyBot.Database.Migrations
                     guild_id = table.Column<ulong>(type: "bigint unsigned", nullable: false),
                     maximum_embeds = table.Column<uint>(type: "int unsigned", nullable: false),
                     maximum_pixiv_images = table.Column<uint>(type: "int unsigned", nullable: false),
+                    maximum_art_station_images = table.Column<uint>(type: "int unsigned", nullable: false),
                     send_matched_message = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     created_at = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     updated_at = table.Column<DateTime>(type: "datetime(6)", nullable: true)

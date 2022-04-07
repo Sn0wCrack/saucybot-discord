@@ -16,12 +16,18 @@ var host = Host.CreateDefaultBuilder(args)
             .Enrich.FromLogContext()
             .WriteTo.Console();
     })
-    .ConfigureServices(services =>
+    .ConfigureServices((context, services) =>
     {
+        var configuration = context.Configuration;
+        
         services.AddDbContext<DatabaseContext>(ServiceLifetime.Transient);
         services.AddDbContextFactory<DatabaseContext>(lifetime: ServiceLifetime.Transient);
 
         services.AddMemoryCache();
+        services.AddStackExchangeRedisCache(options =>
+        {
+            options.Configuration = configuration.GetSection("Cache:Redis:ConnectionString").Get<string>();
+        });
         
         services.AddSingleton<SiteManager>();
         services.AddSingleton<MessageManager>();

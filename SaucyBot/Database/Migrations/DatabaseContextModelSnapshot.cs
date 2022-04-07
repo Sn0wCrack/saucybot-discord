@@ -34,6 +34,10 @@ namespace SaucyBot.Database.Migrations
                         .HasColumnType("bigint unsigned")
                         .HasColumnName("guild_id");
 
+                    b.Property<uint>("MaximumArtStationImages")
+                        .HasColumnType("int unsigned")
+                        .HasColumnName("maximum_art_station_images");
+
                     b.Property<uint>("MaximumEmbeds")
                         .HasColumnType("int unsigned")
                         .HasColumnName("maximum_embeds");
