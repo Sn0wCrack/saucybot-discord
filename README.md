@@ -6,6 +6,7 @@ Saucybot
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/Sn0wCrack/saucybot-discord/CI)
 ![Version](https://img.shields.io/github/package-json/v/sn0wcrack/saucybot-discord)
 ![License](https://img.shields.io/github/license/sn0wcrack/saucybot-discord)
+[![Support me on Patreon](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Fshieldsio-patreon.vercel.app%2Fapi%3Fusername%3Dsaucybot%26type%3Dpatrons&style=flat)](https://patreon.com/saucybot)
 <a target="_blank" href="https://discord.gg/E642ScHyHj">![Discord Server](https://img.shields.io/discord/928546369935917076?color=5764f4&label=discord&logo=discord&logoColor=fff)</a>
 
 If you would like to add this bot to your server [click here](https://discordapp.com/api/oauth2/authorize?client_id=647368715742216193&permissions=67497024&scope=bot) and authorize it through your discord account.
