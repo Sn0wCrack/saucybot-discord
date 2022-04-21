@@ -31,7 +31,7 @@ public class PixivClient
         _cookieContainer.Add(new Cookie
         {
             Name = "PHPSESSID",
-            Value = _configuration["Sites:Pixiv:SessionCookie"],
+            Value = _configuration.GetSection("Sites:Pixiv:SessionCookie").Get<string>(),
             Domain = "pixiv.net",
             Path = "/",
             HttpOnly = false,

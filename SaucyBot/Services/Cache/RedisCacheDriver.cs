@@ -6,10 +6,18 @@ namespace SaucyBot.Services.Cache;
 public class RedisCacheDriver : ICacheDriver
 {
     private readonly IDistributedCache _cache;
-    
-    public RedisCacheDriver(IDistributedCache cache)
+    private readonly IConfiguration _configuration;
+
+    private readonly TimeSpan _defaultExpiry;
+
+    public RedisCacheDriver(IDistributedCache cache, IConfiguration configuration)
     {
         _cache = cache;
+        _configuration = configuration;
+
+        _defaultExpiry = TimeSpan.FromSeconds(
+            _configuration.GetSection("Cache:Redis:DefaultLifetime").Get<int>()
+        );
     }
 
     public async Task<T?> Get<T>(object key)
@@ -28,7 +36,14 @@ public class RedisCacheDriver : ICacheDriver
 
     public async Task<T> Set<T>(object key, T value)
     {
-        await _cache.SetStringAsync(key.ToString(), JsonSerializer.Serialize(value));
+        await _cache.SetStringAsync(
+            key.ToString(),
+            JsonSerializer.Serialize(value),
+            new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = _defaultExpiry
+            }
+        );
 
         return value;
     }

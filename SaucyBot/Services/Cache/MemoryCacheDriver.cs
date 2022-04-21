@@ -7,10 +7,16 @@ public class MemoryCacheDriver : ICacheDriver
     private readonly IMemoryCache _cache;
     private readonly IConfiguration _configuration;
     
+    private readonly TimeSpan _defaultExpiry;
+    
     public MemoryCacheDriver(IMemoryCache cache, IConfiguration configuration)
     {
         _cache = cache;
         _configuration = configuration;
+        
+        _defaultExpiry = TimeSpan.FromSeconds(
+            _configuration.GetSection("Cache:Memory:DefaultLifetime").Get<int>()
+        );
     }
 
     public Task<T?> Get<T>(object key)
@@ -27,7 +33,7 @@ public class MemoryCacheDriver : ICacheDriver
 
     public Task<T> Set<T>(object key, T value)
     {
-        _cache.Set(key, value);
+        _cache.Set(key, value, _defaultExpiry);
 
         return Task.FromResult(value);
     }
