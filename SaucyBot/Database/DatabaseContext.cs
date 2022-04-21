@@ -1,9 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SaucyBot.Database.Models;
+using SaucyBot.Library;
 
 namespace SaucyBot.Database;
 
-public class DatabaseContext: DbContext
+public class DatabaseContext : DbContext
 {
     private readonly string _connectionString;
     
@@ -29,5 +30,13 @@ public class DatabaseContext: DbContext
             .EnableSensitiveDataLogging()
             .EnableDetailedErrors();
         #endif
+    }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder
+            .Entity<GuildConfiguration>()
+            .Property(gc => gc.MaximumEmbeds)
+            .HasDefaultValue(Constants.DefaultMaximumEmbeds);
     }
 }

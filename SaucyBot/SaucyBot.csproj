@@ -7,6 +7,7 @@
         <UserSecretsId>dotnet-SaucyBot-D0ACED6D-FEE2-4051-BE18-0DBB03D798DB</UserSecretsId>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
         <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+        <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
         <RestoreLockedMode Condition="'$(ContinuousIntegrationBuild)' == 'true'">true</RestoreLockedMode>
     </PropertyGroup>
 

@@ -2,6 +2,7 @@ using SaucyBot;
 using SaucyBot.Database;
 using SaucyBot.Library.Sites.ArtStation;
 using SaucyBot.Library.Sites.FurAffinity;
+using SaucyBot.Library.Sites.HentaiFoundry;
 using SaucyBot.Library.Sites.Pixiv;
 using SaucyBot.Services;
 using SaucyBot.Services.Cache;
@@ -42,10 +43,12 @@ var host = Host.CreateDefaultBuilder(args)
         services.AddSingleton<FaExportClient>();
         services.AddSingleton<PixivClient>();
         services.AddSingleton<ArtStationClient>();
+        services.AddSingleton<HentaiFoundryClient>();
 
         services.AddSingleton<FurAffinity>();
         services.AddSingleton<Pixiv>();
         services.AddSingleton<ArtStation>();
+        services.AddSingleton<HentaiFoundry>();
 
         services.AddHostedService<Worker>();
     })

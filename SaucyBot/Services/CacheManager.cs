@@ -1,5 +1,4 @@
-﻿using System.Data.Entity.Core;
-using SaucyBot.Services.Cache;
+﻿using SaucyBot.Services.Cache;
 
 namespace SaucyBot.Services;
 
@@ -57,6 +56,25 @@ public class CacheManager
     public async Task<bool> Delete(object key)
     {
         return await _driver.Delete(key);
+    }
+
+    public async Task<T?> Remember<T>(object key, Func<Task<T?>> value)
+    {
+        var existing = await Get<T>(key);
+
+        if (existing is not null)
+        {
+            return existing;
+        }
+
+        var store = await value.Invoke();
+
+        if (store is not null)
+        {
+            await Set<T>(key, store);
+        }
+
+        return store;
     }
 
     public async Task<T?> Remember<T>(object key, TimeSpan expiry, Func<Task<T?>> value)

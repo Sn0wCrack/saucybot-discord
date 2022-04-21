@@ -29,7 +29,7 @@ public class SiteManager
         var siteClasses = Assembly
             .GetExecutingAssembly()
             .GetTypes()
-            .Where(t => t.Namespace == "SaucyBot.Site" && t.IsClass && !t.IsAbstract && !t.IsNested)
+            .Where(t => t.Namespace == "SaucyBot.Site" && t.IsClass && t.BaseType?.FullName == "SaucyBot.Site.BaseSite")
             .ToList();
         
         foreach (var siteClass in siteClasses)

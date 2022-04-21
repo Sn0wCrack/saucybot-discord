@@ -21,8 +21,8 @@ LABEL org.opencontainers.image.source="https://github.com/Sn0wCrack/saucybot-dis
 LABEL org.opencontainers.image.authors="Sn0wCrack"
 
 ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false \
-        LC_ALL=en_US.UTF-8 \
-        LANG=en_US.UTF-8
+    LC_ALL=en_US.UTF-8 \
+    LANG=en_US.UTF-8
 
 RUN set -xe; \
     apk add --no-cache --update \
