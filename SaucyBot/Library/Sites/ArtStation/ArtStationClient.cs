@@ -2,6 +2,7 @@
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using SaucyBot.Services;
 
 namespace SaucyBot.Library.Sites.ArtStation;
 
@@ -10,12 +11,14 @@ public class ArtStationClient
     private const string BaseUrl = "https://www.artstation.com";
     
     private readonly ILogger<ArtStationClient> _logger;
+    private readonly CacheManager _cache;
     
     private readonly HttpClient _client = new();
 
-    public ArtStationClient(ILogger<ArtStationClient> logger)
+    public ArtStationClient(ILogger<ArtStationClient> logger, CacheManager cacheManager)
     {
         _logger = logger;
+        _cache = cacheManager;
         
         _client.DefaultRequestHeaders.UserAgent.Add(
             new ProductInfoHeaderValue("SaucyBot", Assembly.GetEntryAssembly()?.GetName().Version?.ToString())    
@@ -27,9 +30,9 @@ public class ArtStationClient
 
     public async Task<Project?> GetProject(string hash)
     {
-        var response = await _client.GetStringAsync($"{BaseUrl}/projects/{hash}.json");
+        var response = await _cache.Remember($"artstation.project_{hash}", async () => await _client.GetStringAsync($"{BaseUrl}/projects/{hash}.json"));
 
-        return JsonSerializer.Deserialize<Project>(response);
+        return response is null ? null : JsonSerializer.Deserialize<Project>(response);
     }
 }
 

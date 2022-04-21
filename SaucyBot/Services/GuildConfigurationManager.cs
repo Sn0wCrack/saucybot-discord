@@ -28,7 +28,7 @@ public class GuildConfigurationManager
 
     public async Task<GuildConfiguration?> GetByGuildId(ulong guildId)
     {
-        var result = await _cache.Remember(CacheKey(guildId), TimeSpan.FromHours(1), async () =>
+        var result = await _cache.Remember(CacheKey(guildId), TimeSpan.FromDays(7), async () =>
         {
             return await _database
                 .Context()

@@ -2,6 +2,7 @@
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using SaucyBot.Services;
 
 namespace SaucyBot.Library.Sites.FurAffinity;
 
@@ -9,13 +10,18 @@ public class FaExportClient
 {
     private const string BaseUrl = "https://faexport.spangle.org.uk";
 
+    private readonly CacheManager _cache;
+    
     private readonly HttpClient _client = new();
 
-    public FaExportClient()
+    public FaExportClient(CacheManager cacheManager)
     {
+        _cache = cacheManager;
+        
         _client.DefaultRequestHeaders.UserAgent.Add(
             new ProductInfoHeaderValue("SaucyBot", Assembly.GetEntryAssembly()?.GetName().Version?.ToString())    
         );
+        
         _client.DefaultRequestHeaders.Accept.Add(
             new MediaTypeWithQualityHeaderValue("application/json")
         );
@@ -23,9 +29,9 @@ public class FaExportClient
 
     public async Task<FaExportSubmission?> GetSubmission(string identifier)
     {
-        var response = await _client.GetStringAsync($"{BaseUrl}/submission/{identifier}.json");
+        var response = await _cache.Remember($"furaffinity.post_{identifier}", async () => await _client.GetStringAsync($"{BaseUrl}/submission/{identifier}.json"));
 
-        return JsonSerializer.Deserialize<FaExportSubmission>(response);
+        return response is null ? null : JsonSerializer.Deserialize<FaExportSubmission>(response);
     }
 }
 

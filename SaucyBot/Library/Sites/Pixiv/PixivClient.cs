@@ -2,6 +2,7 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using SaucyBot.Services;
 
 namespace SaucyBot.Library.Sites.Pixiv;
 
@@ -16,17 +17,19 @@ public class PixivClient
 
     private readonly ILogger<PixivClient> _logger;
     private readonly IConfiguration _configuration;
+    private readonly CacheManager _cache;
 
     private readonly CookieContainer _cookieContainer = new();
-    private readonly HttpClientHandler _httpClientHandler;
     private readonly HttpClient _client;
 
     public PixivClient(
         ILogger<PixivClient> logger,
-        IConfiguration configuration
+        IConfiguration configuration,
+        CacheManager cacheManager
     ) {
         _logger = logger;
         _configuration = configuration;
+        _cache = cacheManager;
         
         _cookieContainer.Add(new Cookie
         {
@@ -38,17 +41,18 @@ public class PixivClient
             Secure = false
         });
 
-        _httpClientHandler = new HttpClientHandler
+        var httpClientHandler = new HttpClientHandler
         {
             CookieContainer = _cookieContainer,
             UseCookies = true,
             AllowAutoRedirect = true,
         };
 
-        _client = new HttpClient(_httpClientHandler);
+        _client = new HttpClient(httpClientHandler);
 
         _client.DefaultRequestHeaders.Add("User-Agent",
-            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36");
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36"
+        );
 
         _client.DefaultRequestHeaders.Referrer = _referrer;
         
@@ -74,23 +78,23 @@ public class PixivClient
 
     public async Task<IllustrationDetailsResponse?> IllustrationDetails(string id)
     {
-        var response = await _client.GetStringAsync($"{WebApiUrl}/illust/{id}");
-        
-        return JsonSerializer.Deserialize<IllustrationDetailsResponse>(response);
+        var response = await _cache.Remember($"pixiv.illustration_details_{id}", async () => await _client.GetStringAsync($"{WebApiUrl}/illust/{id}"));
+
+        return response is null ? null : JsonSerializer.Deserialize<IllustrationDetailsResponse>(response);
     }
 
     public async Task<IllustrationPagesResponse?> IllustrationPages(string id)
     {
-        var response = await _client.GetStringAsync($"{WebApiUrl}/illust/{id}/pages");
+        var response = await _cache.Remember($"pixiv.illustration_pages_{id}", async () => await _client.GetStringAsync($"{WebApiUrl}/illust/{id}/pages")); 
         
-        return JsonSerializer.Deserialize<IllustrationPagesResponse>(response);
+        return response is null ? null : JsonSerializer.Deserialize<IllustrationPagesResponse>(response);
     }
 
     public async Task<UgoiraMetadataResponse?> UgoiraMetadata(string id)
     {
-        var response = await _client.GetStringAsync($"{WebApiUrl}/illust/{id}/ugoira_meta");
+        var response = await _cache.Remember($"pixiv.ugoira_metadata_{id}", async () => await _client.GetStringAsync($"{WebApiUrl}/illust/{id}/ugoira_meta"));
         
-        return JsonSerializer.Deserialize<UgoiraMetadataResponse>(response);
+        return response is null ? null : JsonSerializer.Deserialize<UgoiraMetadataResponse>(response);
     }
 
     public async Task<HttpResponseMessage> PokeFile(string url)
