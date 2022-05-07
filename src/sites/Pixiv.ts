@@ -23,7 +23,8 @@ import { randomString } from '../Helpers';
 class Pixiv extends BaseSite {
     identifier = 'Pixiv';
 
-    pattern = /https?:\/\/(www\.)?pixiv\.net\/.*artworks\/(?<id>\d+)/gim;
+    pattern =
+        /https?:\/\/(www\.)?pixiv\.net\/(.*artworks\/(?<new_id>\d+)|member_illust.php\?(.*)?illust_id=(?<old_id>\d+))/gim;
 
     private api: PixivWeb;
 
@@ -43,7 +44,7 @@ class Pixiv extends BaseSite {
     ): Promise<ProcessResponse | false> {
         await this.api.login();
 
-        const id = parseInt(match.groups.id);
+        const id = parseInt(match.groups.new_id ?? match.groups.old_id);
 
         const response = await this.getIllustrationDetails(id);
 
