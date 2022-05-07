@@ -82,12 +82,9 @@ public class HentaiFoundryPicture
     public string? Title() => _document.QuerySelector(".imageTitle")?.TextContent;
     public string? Description() => _document.QuerySelector(".picDescript")?.TextContent;
     public string? ImageUrl() => $"https:{_document.QuerySelector("#picBox .boxbody img")?.GetAttribute("src")}";
-
     public string? AuthorName() => _document.QuerySelector("#descriptionBox .boxbody a img")?.GetAttribute("title");
-
     public string? AuthorUrl() =>
         $"{BaseUrl}{_document.QuerySelector("#descriptionBox .boxbody a")?.GetAttribute("href")}";
-
     public string? AuthorAvatarUrl() =>
         $"https:{_document.QuerySelector("#descriptionBox .boxbody a img")?.GetAttribute("src")}";
 
