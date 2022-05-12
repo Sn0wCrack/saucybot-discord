@@ -38,11 +38,13 @@ public class SiteManager
 
             if (serviceProvider.GetService(siteClass) is not BaseSite instance)
             {
+                _logger.LogDebug("Failed to start site module: {Site}", siteClass.ToString());
                 continue;
             }
 
             if (disabled.Contains(instance.Identifier))
             {
+                _logger.LogDebug("Did not start site module: {Site}, as it is disabled in configuration", siteClass.ToString());
                 continue;
             }
             
