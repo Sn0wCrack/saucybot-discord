@@ -49,6 +49,7 @@ var host = Host.CreateDefaultBuilder(args)
         services.AddSingleton<Pixiv>();
         services.AddSingleton<ArtStation>();
         services.AddSingleton<HentaiFoundry>();
+        services.AddSingleton<Twitter>();
 
         services.AddHostedService<Worker>();
     })
