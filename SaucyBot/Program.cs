@@ -50,6 +50,10 @@ var host = Host.CreateDefaultBuilder(args)
         services.AddSingleton<ArtStation>();
         services.AddSingleton<HentaiFoundry>();
         services.AddSingleton<Twitter>();
+        services.AddSingleton<DeviantArt>();
+        services.AddSingleton<E621>();
+        services.AddSingleton<ExHentai>();
+        services.AddSingleton<Newgrounds>();
 
         services.AddHostedService<Worker>();
     })
