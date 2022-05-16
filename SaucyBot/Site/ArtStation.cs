@@ -14,7 +14,7 @@ public class ArtStation : BaseSite
 {
     public override string Identifier => "ArtStation";
 
-    protected override string Pattern => @"https?:\/\/(www\.)?artstation\.com\/artwork\/(?<hash>\S+)";
+    protected override string Pattern => @"https?:\/\/(www\.)?artstation\.com\/artwork\/(?<hash>\S+)\/?";
 
     private readonly ILogger<ArtStation> _logger;
     private readonly IConfiguration _configuration;
@@ -95,6 +95,7 @@ public class ArtStation : BaseSite
                         IsInline = true,
                     },
                 },
+                Footer = new EmbedFooterBuilder { IconUrl = Constants.ArtStationIconUrl, Text = "ArtStation" },
             };
             
             response.Embeds.Add(embed.Build());

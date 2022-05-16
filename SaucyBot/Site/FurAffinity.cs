@@ -68,6 +68,7 @@ public class FurAffinity : BaseSite
                     IsInline = true,
                 }
             },
+            Footer = new EmbedFooterBuilder { Text = "FurAffinity" },
         };
         
         response.Embeds.Add(embed.Build());

@@ -19,6 +19,12 @@ public static class Constants
     /// </summary>
     public const string TwitterIconUrl =
         "https://images-ext-1.discordapp.net/external/bXJWV2Y_F3XSra_kEqIYXAAsI3m1meckfLhYuWzxIfI/https/abs.twimg.com/icons/apple-touch-icon-192x192.png";
+
+    public const string ArtStationIconUrl = "https://i.imgur.com/Wv9JJlS.png";
+
+    public const string EHentaiIconUrl = "https://i.imgur.com/PSEmcWO.png";
+
+    public const string HentaiFoundryIconUrl = "https://i.imgur.com/dOECfxG.png";
     
     #endregion
     

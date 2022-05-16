@@ -2,6 +2,7 @@
 using Discord;
 using Discord.WebSocket;
 using SaucyBot.Common;
+using SaucyBot.Library;
 using SaucyBot.Library.Sites.HentaiFoundry;
 using SaucyBot.Site.Response;
 
@@ -70,7 +71,8 @@ public class HentaiFoundry : BaseSite
                     Value = page.Votes(),
                     IsInline = true,
                 }
-            }
+            },
+            Footer = new EmbedFooterBuilder { IconUrl = Constants.HentaiFoundryIconUrl, Text = "HentaiFoundry" },
         };
         
         response.Embeds.Add(embed.Build());
