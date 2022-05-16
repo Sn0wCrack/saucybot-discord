@@ -14,7 +14,7 @@ public class Twitter : BaseSite
     public override string Identifier => "Twitter";
 
     protected override string Pattern =>
-        @"https?:\/\/(www\.)?twitter\.com\/(?<user>.*)\/status\/(?<id>\d+)(\?\=.*)?";
+        @"https?:\/\/(www\.|mobile\.)?twitter\.com\/(?<user>.*)\/status\/(?<id>\d+)(\?\=.*)?";
 
     protected override Color Color => new(0x1DA1F2);
 
@@ -127,7 +127,7 @@ public class Twitter : BaseSite
 
         var variants = video.VideoInfo.Variants
             .Where(item => item.Bitrate.HasValue)
-            .OrderBy(item => item.Bitrate.Value)
+            .OrderBy(item => item?.Bitrate ?? 0)
             .Select(item => item.Url);
 
         var variant = await DetermineHighestUsableQualityFile(variants);
