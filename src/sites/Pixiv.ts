@@ -24,7 +24,7 @@ class Pixiv extends BaseSite {
     identifier = 'Pixiv';
 
     pattern =
-        /https?:\/\/(www\.)?pixiv\.net\/(.*artworks\/(?<new_id>\d+)|member_illust.php\?(.*)?illust_id=(?<old_id>\d+))/gim;
+        /https?:\/\/(www\.)?pixiv\.net\/(.*artworks\/(?<new_id>\d+)|member_illust.php\?(.*)?illust_id=(?<old_id>\d+))\/?/gim;
 
     private api: PixivWeb;
 

@@ -10,7 +10,7 @@ class FurAffinity extends BaseSite {
     identifier = 'FurAffinity';
 
     pattern =
-        /https?:\/\/(www\.)?furaffinity\.net\/(?:view|full)\/(?<id>\d+)/gim;
+        /https?:\/\/(www\.)?furaffinity\.net\/(?:view|full)\/(?<id>\d+)\/?/gim;
 
     async process(
         match: RegExpMatchArray,
@@ -54,6 +54,9 @@ class FurAffinity extends BaseSite {
                     inline: true,
                 },
             ],
+            footer: {
+                text: 'FurAffinity',
+            },
         });
 
         message.embeds.push(embed);

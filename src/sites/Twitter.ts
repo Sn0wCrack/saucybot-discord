@@ -15,7 +15,7 @@ class Twitter extends BaseSite {
     identifier = 'Twitter';
 
     pattern =
-        /https?:\/\/(www\.)?twitter\.com\/(?<user>.*)\/status\/(?<id>\d+)(\?\=.*)?/gim;
+        /https?:\/\/(www\.|mobile\.)?twitter\.com\/(?<user>.*)\/status\/(?<id>\d+)(\?\=.*)?\/?/gim;
 
     color = 0x1da1f2;
 

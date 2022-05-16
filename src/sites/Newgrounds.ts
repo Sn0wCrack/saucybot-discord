@@ -10,7 +10,7 @@ class Newgrounds extends BaseSite {
     identifier = 'Newgrounds';
 
     pattern =
-        /https?:\/\/(www\.)?newgrounds\.com\/art\/view\/(?<user>.*)\/(?<slug>\S+)/gim;
+        /https?:\/\/(www\.)?newgrounds\.com\/art\/view\/(?<user>.*)\/(?<slug>\S+)\/?/gim;
 
     color = 0xfff17a;
 
@@ -74,6 +74,9 @@ class Newgrounds extends BaseSite {
                     inline: true,
                 },
             ],
+            footer: {
+                text: 'Newgrounds',
+            },
         });
 
         message.embeds.push(embed);

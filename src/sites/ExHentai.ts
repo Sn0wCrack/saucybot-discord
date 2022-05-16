@@ -8,12 +8,13 @@ import { CookieJar } from 'tough-cookie';
 import Environment from '../Environment';
 import CacheManager from '../CacheManager';
 import { processDescription } from '../Helpers';
+import { EHENTAI_ICON_URL } from '../Constants';
 
 class ExHentai extends BaseSite {
     identifier = 'ExHentai';
 
     pattern =
-        /https?:\/\/(www\.)?e[x-]hentai\.org\/g\/(?<id>\d+)\/(?<hash>\S+)/gim;
+        /https?:\/\/(www\.)?e[x-]hentai\.org\/g\/(?<id>\d+)\/(?<hash>\S+)\/?/gim;
 
     color = 0x660611;
 
@@ -121,6 +122,12 @@ class ExHentai extends BaseSite {
                     inline: true,
                 },
             ],
+            footer: {
+                iconURL: EHENTAI_ICON_URL,
+                text: url.toLowerCase().includes('exhentai')
+                    ? 'exhentai'
+                    : 'e-hentai',
+            },
         });
 
         message.embeds.push(embed);

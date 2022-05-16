@@ -9,11 +9,12 @@ import { DateTime } from 'luxon';
 import { URL } from 'url';
 import CacheManager from '../CacheManager';
 import { htmlToText } from 'html-to-text';
+import { ARTSTATION_ICON_URL } from '../Constants';
 
 class ArtStation extends BaseSite {
     identifier = 'ArtStation';
 
-    pattern = /https?:\/\/(www\.)?artstation\.com\/artwork\/(?<hash>\S+)/gim;
+    pattern = /https?:\/\/(www\.)?artstation\.com\/artwork\/(?<hash>\S+)\/?/gim;
 
     async process(
         match: RegExpMatchArray,
@@ -81,6 +82,10 @@ class ArtStation extends BaseSite {
                         inline: true,
                     },
                 ],
+                footer: {
+                    iconURL: ARTSTATION_ICON_URL,
+                    text: 'ArtStation',
+                },
             });
 
             message.embeds.push(embed);

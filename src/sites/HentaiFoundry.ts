@@ -7,12 +7,13 @@ import { Message, MessageEmbed } from 'discord.js';
 import { DateTime } from 'luxon';
 import CacheManager from '../CacheManager';
 import { processDescription } from '../Helpers';
+import { HENTAI_FOUNDRY_ICON_URL } from '../Constants';
 
 class HentaiFoundry extends BaseSite {
     identifier = 'Hentai Foundry';
 
     pattern =
-        /https:?\/\/(www\.)?hentai-foundry\.com\/pictures\/user\/(?<user>.*)\/(?<id>\d+)\/(?<slug>\S+)/gim;
+        /https:?\/\/(www\.)?hentai-foundry\.com\/pictures\/user\/(?<user>.*)\/(?<id>\d+)\/(?<slug>\S+)\/?/gim;
 
     color = 0xff67a2;
 
@@ -95,6 +96,10 @@ class HentaiFoundry extends BaseSite {
                     inline: true,
                 },
             ],
+            footer: {
+                iconURL: HENTAI_FOUNDRY_ICON_URL,
+                text: 'HentaiFoundry',
+            },
         });
 
         message.embeds.push(embed);

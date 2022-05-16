@@ -18,7 +18,7 @@ class DeviantArt extends BaseSite {
     identifier = 'DeviantArt';
 
     pattern =
-        /https?:\/\/(www\.)?deviantart\.com\/(?<author>\S+)\/art\/(?<slug>\S+)/gim;
+        /https?:\/\/(www\.)?deviantart\.com\/(?<author>\S+)\/art\/(?<slug>\S+)\/?/gim;
 
     color = 0x00e59b;
 
@@ -101,6 +101,9 @@ class DeviantArt extends BaseSite {
                         inline: true,
                     },
                 ],
+                footer: {
+                    text: 'DeviantArt',
+                },
             });
 
             message.embeds.push(embed);
@@ -139,6 +142,9 @@ class DeviantArt extends BaseSite {
                 author: {
                     name: response.author_name,
                     url: response.author_url,
+                },
+                footer: {
+                    text: 'DeviantArt',
                 },
             });
 
