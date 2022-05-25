@@ -53,10 +53,11 @@ class Twitter extends BaseSite {
             source = await source.fetch(true);
 
             hasTwitterEmbed = source.embeds?.find((item) => {
-                return (
+                const isFromTwitter =
                     item.url.includes('twitter.com') ||
-                    item.url.includes('t.co')
-                );
+                    item.url.includes('t.co');
+
+                return isFromTwitter && item.author !== null;
             });
         }
 
