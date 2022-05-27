@@ -150,6 +150,7 @@ public class Pixiv : BaseSite
             .AddParameter("-f concat", ParameterPosition.PreInput)
             .AddParameter($"-i \"{concatFilePath}\"", ParameterPosition.PreInput)
             .AddParameter($"-b:v {bitrate}k")
+            .AddParameter("-pix_fmt yuv420p")
             .AddParameter("-filter:v \"pad=ceil(iw/2)*2:ceil(ih/2)*2\"")
             .SetOutput(videoFilePath);
 
