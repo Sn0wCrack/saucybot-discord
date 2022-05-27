@@ -223,6 +223,9 @@ class Pixiv extends BaseSite {
                 .videoBitrate(
                     Environment.get('PIXIV_UGOIRA_BITRATE', 2000) as number
                 )
+                // Discord and various Browsers do not properly support yuv444 (4:4:4 chroma subsampling)
+                // so we have to always specify yuv420p as its the widely compatible pixel format.
+                .addOption('-pix_fmt yuv420p')
                 // Pad the video size to be divisble by two
                 // This ensures h264 can actually encode the output
                 .videoFilter('pad=ceil(iw/2)*2:ceil(ih/2)*2')
