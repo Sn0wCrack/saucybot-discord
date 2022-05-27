@@ -66,7 +66,11 @@ class Twitter extends BaseSite {
         //  - The result is "sensitive" and it has a video, as Discord often fails to play these inline
 
         if (videoMedia && tweet.possibly_sensitive) {
-            return this.handleVideo(tweet, match[0], hasTwitterEmbed === null);
+            return this.handleVideo(
+                tweet,
+                match[0],
+                hasTwitterEmbed === null || hasTwitterEmbed === undefined
+            );
         }
 
         if (hasTwitterEmbed) {
