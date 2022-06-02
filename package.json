@@ -1,6 +1,6 @@
 {
     "name": "@sn0wcrack/saucybot",
-    "version": "1.7.29",
+    "version": "1.7.30",
     "description": "A discord bot that fills in the gaps ",
     "repository": {},
     "author": "Sn0wCrack",
@@ -21,8 +21,8 @@
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "dependencies": {
-        "@sentry/node": "^6.17.9",
-        "@sentry/tracing": "^6.17.9",
+        "@sentry/node": "^7.0.0",
+        "@sentry/tracing": "^7.0.0",
         "@sn0wcrack/deviant": "^0.1.4",
         "adm-zip": "^0.5.5",
         "cheerio": "^1.0.0-rc.10",

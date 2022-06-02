@@ -54,10 +54,10 @@ class Twitter extends BaseSite {
 
             hasTwitterEmbed = source.embeds?.find((item) => {
                 const isFromTwitter =
-                    item.url.includes('twitter.com') ||
-                    item.url.includes('t.co');
+                    item?.url?.includes('twitter.com') ||
+                    item?.url?.includes('t.co');
 
-                return isFromTwitter && item.author !== null;
+                return isFromTwitter === true && item.author !== null;
             });
         }
 
@@ -241,6 +241,40 @@ class Twitter extends BaseSite {
             status.created_at,
             'ccc LLL d HH:mm:ss ZZZ y'
         );
+
+        if (!photos) {
+            const embed = new MessageEmbed({
+                url: url,
+                timestamp: time.toUTC().toMillis(),
+                color: this.color,
+                description: status.full_text,
+                author: {
+                    name: `${status.user.name} (@${status.user.screen_name})`,
+                    iconURL: status.user.profile_image_url_https,
+                    url: `https://twitter.com/${status.user.screen_name}`,
+                },
+                fields: [
+                    {
+                        name: 'Likes',
+                        value: status.favorite_count.toString(),
+                        inline: true,
+                    },
+                    {
+                        name: 'Retweets',
+                        value: status.retweet_count.toString(),
+                        inline: true,
+                    },
+                ],
+                footer: {
+                    iconURL: TWITTER_ICON_URL,
+                    text: 'Twitter',
+                },
+            });
+
+            message.embeds.push(embed);
+
+            return Promise.resolve(message);
+        }
 
         for (const photo of photos) {
             const embed = new MessageEmbed({
