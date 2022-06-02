@@ -68,7 +68,6 @@ class Twitter extends BaseSite {
         if (videoMedia && tweet.possibly_sensitive) {
             return this.handleVideo(
                 tweet,
-                match[0],
                 hasTwitterEmbed === null || hasTwitterEmbed === undefined
             );
         }
@@ -77,7 +76,7 @@ class Twitter extends BaseSite {
             return Promise.resolve(false);
         }
 
-        return this.handleRegular(tweet, match[0]);
+        return this.handleRegular(tweet);
     }
 
     private async findVideoElement(tweet: StatusesShow) {
@@ -156,7 +155,6 @@ class Twitter extends BaseSite {
 
     private async handleVideo(
         status: StatusesShow,
-        url: string,
         makeEmbed = false
     ): Promise<ProcessResponse | false> {
         const video = await this.findVideoElement(status);
@@ -190,7 +188,7 @@ class Twitter extends BaseSite {
             );
 
             const embed = new MessageEmbed({
-                url: url,
+                url: this.getUrlFromStatus(status),
                 timestamp: time.toUTC().toMillis(),
                 color: this.color,
                 description: status.full_text,
@@ -227,8 +225,7 @@ class Twitter extends BaseSite {
     }
 
     private async handleRegular(
-        status: StatusesShow,
-        url: string
+        status: StatusesShow
     ): Promise<ProcessResponse | false> {
         const message: ProcessResponse = {
             embeds: [],
@@ -244,7 +241,7 @@ class Twitter extends BaseSite {
 
         if (!photos) {
             const embed = new MessageEmbed({
-                url: url,
+                url: this.getUrlFromStatus(status),
                 timestamp: time.toUTC().toMillis(),
                 color: this.color,
                 description: status.full_text,
@@ -278,7 +275,7 @@ class Twitter extends BaseSite {
 
         for (const photo of photos) {
             const embed = new MessageEmbed({
-                url: url,
+                url: this.getUrlFromStatus(status),
                 timestamp: time.toUTC().toMillis(),
                 color: this.color,
                 description: status.full_text,
@@ -313,6 +310,9 @@ class Twitter extends BaseSite {
 
         return Promise.resolve(message);
     }
+
+    private getUrlFromStatus = (tweet: StatusesShow): string =>
+        `https://twitter.com/${tweet.user.screen_name}/status/${tweet.id_str}`;
 
     /**
      * Determines the highest quality of a video that can be posted to Discord inside of its size limit
