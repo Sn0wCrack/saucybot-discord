@@ -26,4 +26,7 @@ const manager = new ShardingManager(join(__dirname, 'bot.js'), {
 manager.on('shardCreate', (shard) =>
     Logger.info(`Launched Shard ${shard.id}`, 'Manager')
 );
-manager.spawn();
+
+manager.spawn().catch((err) => {
+    Logger.error(err.message, 'Manager');
+});
