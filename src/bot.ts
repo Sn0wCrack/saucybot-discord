@@ -202,14 +202,18 @@ client.once('ready', async () => {
         let guilds = 0;
 
         if (client.shard !== null) {
-            const results = await client.shard.fetchClientValues(
-                'guilds.cache.size'
-            );
+            try {
+                const results = await client.shard.broadcastEval(
+                    (client) => client.guilds.cache.size
+                );
 
-            guilds = results.reduce(
-                (acc: number, guildCount: number) => acc + guildCount,
-                0
-            ) as number;
+                guilds = results.reduce(
+                    (acc: number, guildCount: number) => acc + guildCount,
+                    0
+                ) as number;
+            } catch (ex) {
+                Logger.error(ex?.message, identifier);
+            }
         } else {
             guilds = client.guilds.cache.size;
         }
