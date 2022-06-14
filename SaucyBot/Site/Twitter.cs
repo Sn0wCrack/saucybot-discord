@@ -46,14 +46,19 @@ public class Twitter : BaseSite
         var hasTwitterEmbed = false;
         
         // If we have a message attached, we need to wait a bit for Discord to process the embed,
-        // we when need to refetch the message and see if an embed has been added in that time.
+        // we when need to refresh the message and see if an embed has been added in that time.
         if (message is not null)
         {
             await Task.Delay(TimeSpan.FromSeconds(_configuration.GetSection("Sites:Twitter:Delay").Get<double>()));
             
-            // TODO: Refetch message somehow, unsure on how to do that in Discord.NET
+            // TODO: Refresh message somehow, unsure on how to do that in Discord.NET
 
-            hasTwitterEmbed = message.Embeds.Any(item => item.Url.Contains("twitter.com") || item.Url.Contains("t.co"));
+            hasTwitterEmbed = message.Embeds.Any(item =>
+            {
+                var isTwitterEmbed = item.Url.Contains("twitter.com") || item.Url.Contains("t.co");
+
+                return isTwitterEmbed && item?.Author is not null;
+            });
         }
 
 
@@ -204,7 +209,7 @@ public class Twitter : BaseSite
         return await _httpClient.SendAsync(request);
     }
 
-    public async Task<FileAttachment> GetFile(string url)
+    private async Task<FileAttachment> GetFile(string url)
     {
         var response = await _httpClient.GetStreamAsync(url);
 
