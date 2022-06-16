@@ -90,7 +90,7 @@ public class HentaiFoundryPicture
 
     public DateTimeOffset? PostedAt()
     {
-        var datetime = _document.QuerySelector("#yw0 time")?.GetAttribute("datetime");
+        var datetime = _document.QuerySelector("#pictureGeneralInfoBox time")?.GetAttribute("datetime");
 
         if (datetime is null)
         {
@@ -102,20 +102,20 @@ public class HentaiFoundryPicture
     
     public string Views()
     {
-        var views = _document.QuerySelector("#yw0 b:contains('Views')")
-            ?.ParentElement
-            ?.NextElementSibling
-            ?.TextContent;
+        var views = _document.QuerySelector("#pictureGeneralInfoBox .boxbody .column span:contains('Views')")
+            ?.NextSibling
+            ?.TextContent
+            ?.Trim();
 
         return views ?? "0";
     }
 
     public string Votes()
     {
-        var votes = _document.QuerySelector("#yw0 b:contains('Vote Score')")
-            ?.ParentElement
-            ?.NextElementSibling
-            ?.TextContent;
+        var votes = _document.QuerySelector("#pictureGeneralInfoBox .boxbody .column span:contains('Vote Score')")
+            ?.NextSibling
+            ?.TextContent
+            ?.Trim();
 
         return votes ?? "0";
     }
