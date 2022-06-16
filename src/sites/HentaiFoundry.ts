@@ -53,17 +53,17 @@ class HentaiFoundry extends BaseSite {
         const image = $('#picBox .boxbody img');
 
         // We basically rely on the fact the posted at field is going to use this time element.
-        const postedAt = $('#yw0 time');
+        const postedAt = $('#pictureGeneralInfoBox time');
 
         // HF has no specific selectors for these elements, so we do this jank method
-        // That involves getting the label, going up one level (from the <b></b> tags)
-        // and then getting the next sibling
-        const views = $('#yw0 b:contains("Views")').parent().siblings().first();
+        // That involves finding the views label and then getting the next text node's content and trimming it
+        const views = $(
+            '#pictureGeneralInfoBox .boxbody .column span:contains("Views")'
+        )?.[0]?.next?.data?.trim();
 
-        const votes = $('#yw0 b:contains("Vote Score")')
-            .parent()
-            .siblings()
-            .first();
+        const votes = $(
+            '#pictureGeneralInfoBox .boxbody .column span:contains("Vote Score")'
+        )?.[0]?.next?.data?.trim();
 
         const authorLink = $('#descriptionBox .boxbody a');
         const authorImage = $('#descriptionBox .boxbody a img');
@@ -87,12 +87,12 @@ class HentaiFoundry extends BaseSite {
             fields: [
                 {
                     name: 'Views',
-                    value: views.text() ?? '0',
+                    value: views ?? '0',
                     inline: true,
                 },
                 {
                     name: 'Votes',
-                    value: votes.text() ?? '0',
+                    value: votes ?? '0',
                     inline: true,
                 },
             ],
