@@ -93,7 +93,7 @@ public class Pixiv : BaseSite
 
         try
         {
-            var result = await RenderUgoiraVideo(concatFile, videoFile);
+            await RenderUgoiraVideo(concatFile, videoFile);
         }
         catch (Exception ex)
         {
@@ -142,7 +142,7 @@ public class Pixiv : BaseSite
     }
 
 
-    private async Task<IConversionResult> RenderUgoiraVideo(string concatFilePath, string videoFilePath) {
+    private async Task RenderUgoiraVideo(string concatFilePath, string videoFilePath) {
         var bitrate = _configuration.GetSection("Sites:Pixiv:UgoiraBitrate").Get<int>();
         
         var conversion = FFmpeg.Conversions.New()
@@ -154,7 +154,7 @@ public class Pixiv : BaseSite
             .AddParameter("-filter:v \"pad=ceil(iw/2)*2:ceil(ih/2)*2\"")
             .SetOutput(videoFilePath);
 
-        return await conversion.Start();
+        await conversion.Start();
     }
 
     private async Task<ProcessResponse?> ProcessImage(IllustrationDetailsResponse illustrationDetails, SocketUserMessage? message)
