@@ -50,8 +50,10 @@ public class Twitter : BaseSite
         if (message is not null)
         {
             await Task.Delay(TimeSpan.FromSeconds(_configuration.GetSection("Sites:Twitter:Delay").Get<double>()));
-            
-            // TODO: Refresh message somehow, unsure on how to do that in Discord.NET
+
+            // NOTE: Discord.NET works a little interestingly, basically when a message updates the Bot learns of this change
+            // and then proceeds to update its internal cache, so while we're waiting around it should update the message cache
+            // automatically, so there's no need to refresh the message object.
 
             hasTwitterEmbed = message.Embeds.Any(item =>
             {
@@ -132,7 +134,7 @@ public class Twitter : BaseSite
 
         var variants = video.VideoInfo.Variants
             .Where(item => item.Bitrate.HasValue)
-            .OrderBy(item => item?.Bitrate ?? 0)
+            .OrderByDescending(item => item?.Bitrate ?? 0)
             .Select(item => item.Url);
 
         var variant = await DetermineHighestUsableQualityFile(variants);
@@ -201,8 +203,8 @@ public class Twitter : BaseSite
 
         return null;
     }
-    
-    public async Task<HttpResponseMessage> PokeFile(string url)
+
+    private async Task<HttpResponseMessage> PokeFile(string url)
     {
         using var request = new HttpRequestMessage(HttpMethod.Head, url);
         

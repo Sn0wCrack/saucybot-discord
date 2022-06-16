@@ -23,7 +23,7 @@
       "Cookie": "",
       "PostLimit": 5,
       "UgoiraFormat": "mp4",
-      "UgoiraBitrate": 200
+      "UgoiraBitrate": 2000
     },
     "Twitter": {
       "ApiKey": "",
@@ -31,7 +31,7 @@
       "AccessToken": "",
       "AccessSecret": "",
       "BearerToken": "",
-      "Delay": 1350
+      "Delay": "2.00"
     },
     "DeviantArt": {
       "ClientId": 0,
