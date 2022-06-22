@@ -2,6 +2,8 @@
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
 using SaucyBot.Database.Models;
+using SaucyBot.Extensions;
+using SaucyBot.Extensions.Database;
 
 namespace SaucyBot.Services;
 
@@ -28,13 +30,13 @@ public class GuildConfigurationManager
 
     public async Task<GuildConfiguration?> GetByGuildId(ulong guildId)
     {
-        var result = await _cache.Remember(CacheKey(guildId), TimeSpan.FromDays(7), async () =>
-        {
-            return await _database
+        var result = await _cache.Remember(
+            CacheKey(guildId), 
+            TimeSpan.FromDays(7),
+            async () => await _database
                 .Context()
-                .GuildConfigurations
-                .FirstOrDefaultAsync(gc => gc.GuildId == guildId);
-        });
+                .FindGuildConfigurationByGuildId(guildId)
+        );
 
         return result;
     }
