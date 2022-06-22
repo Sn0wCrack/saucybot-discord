@@ -59,15 +59,11 @@ public class SiteManager
     {
         var results = new List<SiteManagerProcessResult>();
         
-        var embedCount = 0;
-        var maximumEmbeds = _configuration.GetSection("Bot:MaximumEmbeds").Get<int>();
-
+        var embedCount = 0u;
+        
         var guildConfiguration = await _guildConfigurationManager.GetByChannel(message.Channel);
-
-        if (guildConfiguration is not null)
-        {
-            maximumEmbeds = (int)guildConfiguration.MaximumEmbeds;
-        }
+        
+        var maximumEmbeds = guildConfiguration?.MaximumEmbeds ?? _configuration.GetSection("Bot:MaximumEmbeds").Get<uint>();
 
         foreach (var (identifier, site) in _sites)
         {

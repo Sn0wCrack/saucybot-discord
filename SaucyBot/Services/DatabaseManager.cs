@@ -18,12 +18,14 @@ public class DatabaseManager
 
         var pendingMigrations = await context.Database.GetPendingMigrationsAsync();
 
-        if (pendingMigrations.Any())
+        var migrations = pendingMigrations as string[] ?? pendingMigrations.ToArray();
+        
+        if (migrations.Any())
         {
             await context.Database.MigrateAsync();
         }
 
-        return pendingMigrations.Count();
+        return migrations.Length;
     }
 
     private DatabaseContext CreateDatabaseContext()
