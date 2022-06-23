@@ -67,12 +67,14 @@ public class SiteManager
 
         foreach (var (identifier, site) in _sites)
         {
-            if (!site.IsMatch(message.CleanContent))
+            var content = message.CleanContent;
+            
+            if (!site.IsMatch(content))
             {
                 continue;
             }
 
-            var matches = site.Match(message.CleanContent);
+            var matches = site.Match(content);
 
             foreach (Match match in matches)
             {
