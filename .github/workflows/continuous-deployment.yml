@@ -29,7 +29,9 @@ jobs:
         with:
           images: ghcr.io/sn0wcrack/saucybot-discord
           tags: |
-            type=match,pattern=v(.*),group=1
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
       - uses: docker/setup-qemu-action@v1
       - uses: docker/setup-buildx-action@v1
       - name: 'Cache Buildx Cache'
