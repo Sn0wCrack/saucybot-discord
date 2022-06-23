@@ -29,7 +29,7 @@
         "discord.js": "^13.6.0",
         "dotenv": "^15.0.0",
         "fluent-ffmpeg": "^2.1.2",
-        "got": "^11.0.0",
+        "got": "^11.8.5",
         "html-to-text": "^8.0.0",
         "luxon": "^2.2.0",
         "picocolors": "^1.0.0",
