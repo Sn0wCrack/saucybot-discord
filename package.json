@@ -35,7 +35,6 @@
         "picocolors": "^1.0.0",
         "pixiv-web-api": "^0.1.5",
         "redis": "^4.1.0",
-        "rimraf": "^3.0.2",
         "tough-cookie": "^4.0.0",
         "twitter-api-client": "^1.5.2"
     },
@@ -46,7 +45,6 @@
         "@types/html-to-text": "^8.0.1",
         "@types/luxon": "^2.0.8",
         "@types/node": "^16.11.12",
-        "@types/rimraf": "^3.0.1",
         "@types/tough-cookie": "^4.0.1",
         "@types/ws": "^8.2.2",
         "@typescript-eslint/eslint-plugin": "^5.7.0",

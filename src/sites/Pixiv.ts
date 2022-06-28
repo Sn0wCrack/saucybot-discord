@@ -6,7 +6,6 @@ import Environment from '../Environment';
 import os from 'os';
 import AdmZip from 'adm-zip';
 import fs from 'fs/promises';
-import rimraf from 'rimraf';
 import ffmpeg from 'fluent-ffmpeg';
 import { MAX_FILESIZE } from '../Constants';
 import PixivWeb from 'pixiv-web-api';
@@ -204,11 +203,13 @@ class Pixiv extends BaseSite {
         const video = await fs.readFile(videoFilePath);
 
         // Remove all files in the temporary directory
-        rimraf(basePath, (err) => {
-            if (err) {
-                Logger.error(err);
-            }
-        });
+        try {
+            await fs.rm(basePath, { recursive: true });
+        } catch (ex) {
+            Logger.error(
+                `Failed to cleanup Pixiv temporary directory with error: ${ex?.message}`
+            );
+        }
 
         const title = details.body.title
             .toLowerCase()
