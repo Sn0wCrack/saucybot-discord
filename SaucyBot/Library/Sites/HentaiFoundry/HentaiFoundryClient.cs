@@ -50,7 +50,7 @@ public class HentaiFoundryClient
 
     public async Task<bool> Agree()
     {
-        var response = await _client.GetAsync($"{BaseUrl}/?enterAgree=1");
+        await _client.GetAsync($"{BaseUrl}/?enterAgree=1");
 
         return true;
     }
