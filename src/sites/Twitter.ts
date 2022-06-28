@@ -39,7 +39,15 @@ class Twitter extends BaseSite {
         match: RegExpMatchArray,
         source: Message | null
     ): Promise<ProcessResponse | false> {
+        if (!match.groups?.id) {
+            return Promise.resolve(false);
+        }
+
         const tweet = await this.getTweet(match.groups?.id);
+
+        if (!tweet) {
+            return Promise.resolve(false);
+        }
 
         const videoMedia = await this.findVideoElement(tweet);
 
@@ -54,8 +62,8 @@ class Twitter extends BaseSite {
 
             hasTwitterEmbed = source.embeds?.find((item) => {
                 const isFromTwitter =
-                    item?.url?.includes('twitter.com') ||
-                    item?.url?.includes('t.co');
+                    item.url?.includes('twitter.com') ||
+                    item.url?.includes('t.co');
 
                 return isFromTwitter === true && item.author !== null;
             });
@@ -84,7 +92,7 @@ class Twitter extends BaseSite {
             ['video', 'animated_gif'].includes(item.type)
         );
 
-        if (!video && tweet.is_quote_status) {
+        if (!video && tweet.is_quote_status && tweet.quoted_status_id_str) {
             const quotedTweet = await this.getTweet(tweet.quoted_status_id_str);
 
             const quotedVideo = quotedTweet?.extended_entities?.media.find(
@@ -102,7 +110,7 @@ class Twitter extends BaseSite {
             ['photo'].includes(item.type)
         );
 
-        if (!photo && tweet.is_quote_status) {
+        if (!photo && tweet.is_quote_status && tweet.quoted_status_id_str) {
             const quotedTweet = await this.getTweet(tweet.quoted_status_id_str);
 
             const quotedPhoto = quotedTweet?.extended_entities?.media.find(
@@ -120,7 +128,7 @@ class Twitter extends BaseSite {
             ['photo'].includes(item.type)
         );
 
-        if (!photos && tweet.is_quote_status) {
+        if (!photos && tweet.is_quote_status && tweet.quoted_status_id_str) {
             const quotedTweet = await this.getTweet(tweet.quoted_status_id_str);
 
             const quotedPhotos = quotedTweet?.extended_entities?.media.filter(
@@ -133,7 +141,7 @@ class Twitter extends BaseSite {
         return Promise.resolve(photos);
     }
 
-    private async getTweet(id: string): Promise<StatusesShow> {
+    private async getTweet(id: string | number): Promise<StatusesShow | null> {
         const cacheKey = `twitter.tweet_${id}`;
         const cacheManager = await CacheManager.getInstance();
 
@@ -148,6 +156,10 @@ class Twitter extends BaseSite {
             return Promise.resolve(JSON.stringify(results));
         });
 
+        if (!cachedValue) {
+            return Promise.resolve(null);
+        }
+
         const results = JSON.parse(cachedValue) as StatusesShow;
 
         return Promise.resolve(results);
@@ -159,13 +171,17 @@ class Twitter extends BaseSite {
     ): Promise<ProcessResponse | false> {
         const video = await this.findVideoElement(status);
 
-        if (!video) {
+        if (!video || !video.video_info) {
             return Promise.resolve(false);
         }
 
+        // Typescript isn't great at figuring out I just removed all of elements that don't have a bitrate
+        // so we have to do a non-null assertion here, and eslint also doesn't like that so we have to disable that check
+        // here as well, since it'll always be triggered...
         const variants = video.video_info.variants
-            .filter((item) => item?.bitrate !== undefined)
-            .sort((a, b) => b.bitrate - a.bitrate)
+            .filter((item) => item.bitrate !== undefined)
+            /* eslint-disable @typescript-eslint/no-non-null-assertion */
+            .sort((a, b) => b.bitrate! - a.bitrate!)
             .map((item) => item.url);
 
         const variant = await this.determineHighestQuality(variants);
@@ -324,6 +340,10 @@ class Twitter extends BaseSite {
     ): Promise<string | false> {
         for (const url of urls) {
             const response = await got.head(url);
+
+            if (!response.headers['content-length']) {
+                continue;
+            }
 
             if (parseInt(response.headers['content-length']) < MAX_FILESIZE) {
                 return Promise.resolve(url);

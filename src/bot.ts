@@ -47,14 +47,14 @@ client.on('messageCreate', async (message) => {
         return;
     }
 
-    const permissions = message.guild.me.permissionsIn(
+    const permissions = message.guild?.me?.permissionsIn(
         message.channel as TextChannel
     );
 
     if (
-        !permissions.has('SEND_MESSAGES') ||
-        !permissions.has('EMBED_LINKS') ||
-        !permissions.has('ATTACH_FILES')
+        !permissions?.has('SEND_MESSAGES') ||
+        !permissions?.has('EMBED_LINKS') ||
+        !permissions?.has('ATTACH_FILES')
     ) {
         return;
     }
@@ -131,14 +131,14 @@ client.on('interactionCreate', async (interaction) => {
         return;
     }
 
-    const permissions = interaction.guild.me.permissionsIn(
+    const permissions = interaction.guild?.me?.permissionsIn(
         interaction.channel as TextChannel
     );
 
     if (
-        !permissions.has('SEND_MESSAGES') ||
-        !permissions.has('EMBED_LINKS') ||
-        !permissions.has('ATTACH_FILES')
+        !permissions?.has('SEND_MESSAGES') ||
+        !permissions?.has('EMBED_LINKS') ||
+        !permissions?.has('ATTACH_FILES')
     ) {
         return;
     }
@@ -146,9 +146,14 @@ client.on('interactionCreate', async (interaction) => {
     interaction.deferReply();
 
     try {
-        const responses = await runner.process(
-            interaction.options.getString('url')
-        );
+        const url = interaction.options.getString('url');
+
+        if (!url) {
+            interaction.editReply('No URL appeared to be provided');
+            return;
+        }
+
+        const responses = await runner.process(url);
 
         // If the response is false, then we didn't find anything.
         if (responses === false) {
@@ -218,7 +223,7 @@ client.once('ready', async () => {
             guilds = client.guilds.cache.size;
         }
 
-        client.user.setActivity(`Your Links... | Servers: ${guilds}`, {
+        client.user?.setActivity(`Your Links... | Servers: ${guilds}`, {
             type: 'WATCHING',
         });
     }, 5000);

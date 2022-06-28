@@ -40,22 +40,33 @@ class Pixiv extends BaseSite {
 
     async process(
         match: RegExpMatchArray,
+        /* eslint-disable @typescript-eslint/no-unused-vars */
         source: Message | null
     ): Promise<ProcessResponse | false> {
         await this.api.login();
+
+        if (!match.groups?.new_id && !match.groups?.old_id) {
+            return Promise.resolve(false);
+        }
 
         const id = parseInt(match.groups.new_id ?? match.groups.old_id);
 
         const response = await this.getIllustrationDetails(id);
 
-        if (response.body.illustType == IllustType.Ugoira) {
+        if (!response) {
+            return Promise.resolve(false);
+        }
+
+        if (response.body?.illustType == IllustType.Ugoira) {
             return this.processUgoira(response);
         }
 
         return this.processImage(response);
     }
 
-    async getIllustrationDetails(id: number): Promise<IllustDetailsResponse> {
+    async getIllustrationDetails(
+        id: number
+    ): Promise<IllustDetailsResponse | null> {
         const cacheKey = `pixiv.illustration_${id}`;
         const cacheManager = await CacheManager.getInstance();
 
@@ -63,6 +74,10 @@ class Pixiv extends BaseSite {
             const results = await this.api.illustDetails(id);
             return Promise.resolve(JSON.stringify(results));
         });
+
+        if (!cachedValue) {
+            return Promise.resolve(null);
+        }
 
         const results = JSON.parse(cachedValue) as IllustDetailsResponse;
 
@@ -76,6 +91,10 @@ class Pixiv extends BaseSite {
             embeds: [],
             files: [],
         };
+
+        if (!details.body) {
+            return Promise.resolve(false);
+        }
 
         const pageCount = details.body.pageCount;
 
@@ -100,6 +119,10 @@ class Pixiv extends BaseSite {
         }
 
         const pagesDetails = await this.api.illustPages(details.body.id);
+
+        if (!pagesDetails.body) {
+            return Promise.resolve(false);
+        }
 
         const postLimit = Environment.get('PIXIV_POST_LIMIT', 5) as number;
 
@@ -138,7 +161,15 @@ class Pixiv extends BaseSite {
             files: [],
         };
 
+        if (!details.body) {
+            return Promise.resolve(false);
+        }
+
         const metadata = await this.api.ugoiraMetaData(details.body.id);
+
+        if (!metadata.body) {
+            return Promise.resolve(false);
+        }
 
         const file = await this.getFile(metadata.body.originalSrc);
 
@@ -244,6 +275,10 @@ class Pixiv extends BaseSite {
     async determineHighestQuality(urls: string[]): Promise<string | false> {
         for (const url of urls) {
             const response = await this.api.pokeFile(url);
+
+            if (!response.headers?.['content-length']) {
+                continue;
+            }
 
             if (parseInt(response.headers['content-length']) < MAX_FILESIZE) {
                 return Promise.resolve(url);

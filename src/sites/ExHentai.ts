@@ -20,12 +20,17 @@ class ExHentai extends BaseSite {
 
     async process(
         match: RegExpMatchArray,
+        /* eslint-disable @typescript-eslint/no-unused-vars */
         source: Message | null
     ): Promise<ProcessResponse | false> {
         const message: ProcessResponse = {
             embeds: [],
             files: [],
         };
+
+        if (!match.groups?.id || !match.groups?.hash) {
+            return Promise.resolve(false);
+        }
 
         const url = match[0];
 
@@ -60,14 +65,18 @@ class ExHentai extends BaseSite {
             jar
         );
 
+        if (!body) {
+            return Promise.resolve(false);
+        }
+
         const $ = cheerio.load(body);
 
         const title = $('.gm h1#gn');
         const image = $('.gm #gd1 > div');
         const description = $('div#comment_0');
 
-        const imageUrl = image.css('background').match(/url\((?<url>.*)\)/)
-            .groups['url'];
+        const imageUrl = image.css('background')?.match(/url\((?<url>.*)\)/)
+            ?.groups?.url;
 
         const metaContainer = $('.gm #gmid #gd3 #gdd tbody');
 
@@ -90,13 +99,13 @@ class ExHentai extends BaseSite {
         const embed = new MessageEmbed({
             title: title.text(),
             url: url,
-            description: processDescription(description.html()),
+            description: processDescription(description?.html() ?? ''),
             color: this.color,
             timestamp: DateTime.fromFormat(posted.text(), 'yyyy-MM-dd HH:mm')
                 .toUTC()
                 .toMillis(),
             image: {
-                url: imageUrl,
+                url: imageUrl ?? '',
             },
             author: {
                 name: authorLink.text(),
@@ -140,7 +149,7 @@ class ExHentai extends BaseSite {
         id: string,
         hash: string,
         jar: CookieJar
-    ): Promise<string> {
+    ): Promise<string | null> {
         const cacheKey = `ehentai.gallery_${id}_${hash}`;
         const cacheManager = await CacheManager.getInstance();
 
@@ -148,6 +157,10 @@ class ExHentai extends BaseSite {
             const response = await got.get(url, { cookieJar: jar });
             return Promise.resolve(response.body);
         });
+
+        if (!cachedValue) {
+            return Promise.resolve(null);
+        }
 
         return Promise.resolve(cachedValue);
     }

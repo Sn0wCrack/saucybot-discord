@@ -16,12 +16,17 @@ class Newgrounds extends BaseSite {
 
     async process(
         match: RegExpMatchArray,
+        /* eslint-disable @typescript-eslint/no-unused-vars */
         source: Message | null
     ): Promise<ProcessResponse | false> {
         const message: ProcessResponse = {
             embeds: [],
             files: [],
         };
+
+        if (!match.groups?.user || !match.groups?.slug) {
+            return Promise.resolve(false);
+        }
 
         const url = match[0];
 
@@ -30,6 +35,10 @@ class Newgrounds extends BaseSite {
             match.groups.user,
             match.groups.slug
         );
+
+        if (!body) {
+            return Promise.resolve(false);
+        }
 
         const $ = cheerio.load(body);
 
@@ -52,7 +61,7 @@ class Newgrounds extends BaseSite {
         const embed = new MessageEmbed({
             title: title.text(),
             url: url,
-            description: processDescription(description.html()),
+            description: processDescription(description?.html() ?? ''),
             color: this.color,
             image: {
                 url: image.attr('src'),
@@ -84,7 +93,11 @@ class Newgrounds extends BaseSite {
         return Promise.resolve(message);
     }
 
-    async getPage(url: string, user: string, slug: string): Promise<string> {
+    async getPage(
+        url: string,
+        user: string,
+        slug: string
+    ): Promise<string | null> {
         const cacheKey = `newgrounds.art_${user}_${slug}`;
         const cacheManager = await CacheManager.getInstance();
 
@@ -92,6 +105,10 @@ class Newgrounds extends BaseSite {
             const response = await got.get(url);
             return Promise.resolve(response.body);
         });
+
+        if (!cachedValue) {
+            return Promise.resolve(null);
+        }
 
         return Promise.resolve(cachedValue);
     }

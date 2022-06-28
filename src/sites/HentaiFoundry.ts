@@ -29,12 +29,17 @@ class HentaiFoundry extends BaseSite {
 
     async process(
         match: RegExpMatchArray,
+        /* eslint-disable @typescript-eslint/no-unused-vars */
         source: Message | null
     ): Promise<ProcessResponse | false> {
         const message: ProcessResponse = {
             embeds: [],
             files: [],
         };
+
+        if (!match.groups?.id || !match.groups?.slug) {
+            return Promise.resolve(false);
+        }
 
         await got.get(`${this.baseUrl}/?enterAgree=1`, { cookieJar: this.jar });
 
@@ -45,6 +50,10 @@ class HentaiFoundry extends BaseSite {
             match.groups.id,
             match.groups.slug
         );
+
+        if (!response) {
+            return Promise.resolve(false);
+        }
 
         const $ = cheerio.load(response);
 
@@ -71,7 +80,7 @@ class HentaiFoundry extends BaseSite {
         const embed = new MessageEmbed({
             title: title.text(),
             url: url,
-            timestamp: DateTime.fromISO(postedAt.attr('datetime'))
+            timestamp: DateTime.fromISO(postedAt?.attr('datetime') ?? '')
                 .toUTC()
                 .toMillis(),
             description: processDescription(description.text()),
@@ -107,7 +116,11 @@ class HentaiFoundry extends BaseSite {
         return Promise.resolve(message);
     }
 
-    async getPage(url: string, id: string, slug: string): Promise<string> {
+    async getPage(
+        url: string,
+        id: string,
+        slug: string
+    ): Promise<string | null> {
         const cacheKey = `hentaifoundry.picture_${id}_${slug}`;
         const cacheManager = await CacheManager.getInstance();
 
@@ -115,6 +128,10 @@ class HentaiFoundry extends BaseSite {
             const response = await got.get(url, { cookieJar: this.jar });
             return Promise.resolve(response.body);
         });
+
+        if (!cachedValue) {
+            return Promise.resolve(null);
+        }
 
         return Promise.resolve(cachedValue);
     }

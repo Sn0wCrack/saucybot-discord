@@ -14,6 +14,7 @@ class FurAffinity extends BaseSite {
 
     async process(
         match: RegExpMatchArray,
+        /* eslint-disable @typescript-eslint/no-unused-vars */
         source: Message | null
     ): Promise<ProcessResponse | false> {
         const message: ProcessResponse = {
@@ -21,7 +22,15 @@ class FurAffinity extends BaseSite {
             files: [],
         };
 
+        if (!match.groups?.id) {
+            return Promise.resolve(false);
+        }
+
         const response = await this.getSubmission(match.groups.id);
+
+        if (!response) {
+            return Promise.resolve(false);
+        }
 
         const embed = new MessageEmbed({
             title: response.title,
@@ -64,7 +73,7 @@ class FurAffinity extends BaseSite {
         return Promise.resolve(message);
     }
 
-    async getSubmission(id: string): Promise<FAExportSubmission> {
+    async getSubmission(id: string): Promise<FAExportSubmission | null> {
         const cacheKey = `furaffinity.submission_${id}`;
         const cacheManager = await CacheManager.getInstance();
 
@@ -81,18 +90,14 @@ class FurAffinity extends BaseSite {
             return Promise.resolve(JSON.stringify(results));
         });
 
+        if (!cachedValue) {
+            return Promise.resolve(null);
+        }
+
         const results = JSON.parse(cachedValue) as FAExportSubmission;
 
         return Promise.resolve(results);
     }
-}
-
-interface BawkSubmission {
-    author: string;
-    avatar: string;
-    image_url: string;
-    rating: string;
-    title: string;
 }
 
 interface FAExportSubmission {

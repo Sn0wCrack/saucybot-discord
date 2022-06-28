@@ -2,8 +2,8 @@ import {
     Message,
     MessageOptions,
     FileOptions,
-    MessagePayload,
     CommandInteraction,
+    InteractionReplyOptions,
 } from 'discord.js';
 import { MAX_EMBEDS_PER_MESSAGE, MAX_FILESIZE } from './Constants';
 import Logger from './Logger';
@@ -28,7 +28,7 @@ class MessageSender {
                 messages = await this.handleFiles(response);
                 break;
             default:
-                messages = [response.text];
+                messages = [response.text ?? ''];
                 break;
         }
 
@@ -125,6 +125,14 @@ class MessageSender {
 
         const embed = response.embeds.find((x) => x !== undefined);
 
+        if (!embed) {
+            messages.push({
+                content: response.text,
+            });
+
+            return Promise.resolve(messages);
+        }
+
         const embedUrls: string[] = [];
 
         if (embed?.image?.url) {
@@ -136,8 +144,8 @@ class MessageSender {
         }
 
         // Only send attachments that are related to this embed
-        const files = response.files.filter((item) =>
-            embedUrls.includes(item.name)
+        const files = response.files.filter(
+            (item) => item.name && embedUrls.includes(item.name)
         );
 
         messages.push({
@@ -174,20 +182,20 @@ class MessageSender {
             for (const embed of chunk) {
                 const embedUrls: string[] = [];
 
-                if (embed?.image?.url) {
+                if (embed.image?.url) {
                     embedUrls.push(
                         embed.image.url.replace('attachment://', '')
                     );
                 }
 
-                if (embed?.video?.url) {
+                if (embed.video?.url) {
                     embedUrls.push(
                         embed.video.url.replace('attachment://', '')
                     );
                 }
 
-                const embedFiles = response.files.filter((item) =>
-                    embedUrls.includes(item.name)
+                const embedFiles = response.files.filter(
+                    (item) => item.name && embedUrls.includes(item.name)
                 );
 
                 files = files.concat(embedFiles);
@@ -206,6 +214,6 @@ class MessageSender {
 /**
  * An amalgamation of all types that can be used to send messages to a channel
  */
-type MessageTypes = (MessageOptions | MessagePayload | string)[];
+type MessageTypes = ((MessageOptions & InteractionReplyOptions) | string)[];
 
 export default MessageSender;

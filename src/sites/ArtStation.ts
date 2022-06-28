@@ -18,6 +18,7 @@ class ArtStation extends BaseSite {
 
     async process(
         match: RegExpMatchArray,
+        /* eslint-disable @typescript-eslint/no-unused-vars */
         source: Message | null
     ): Promise<ProcessResponse | false> {
         const message: ProcessResponse = {
@@ -25,7 +26,15 @@ class ArtStation extends BaseSite {
             files: [],
         };
 
+        if (!match.groups?.hash) {
+            return Promise.resolve(false);
+        }
+
         const response = await this.getProject(match.groups.hash);
+
+        if (!response) {
+            return Promise.resolve(false);
+        }
 
         // Discord embeds the first ArtStation item, so if there's only one, ignore the request
         if (response.assets.length == 1) {
@@ -94,7 +103,7 @@ class ArtStation extends BaseSite {
         return Promise.resolve(message);
     }
 
-    async getProject(hash: string): Promise<ArtStationProject> {
+    async getProject(hash: string): Promise<ArtStationProject | null> {
         const cacheKey = `artstation.project_${hash}`;
         const cacheManager = await CacheManager.getInstance();
 
@@ -111,6 +120,10 @@ class ArtStation extends BaseSite {
 
             return Promise.resolve(JSON.stringify(results));
         });
+
+        if (!cachedValue) {
+            return Promise.resolve(null);
+        }
 
         const results = JSON.parse(cachedValue) as ArtStationProject;
 

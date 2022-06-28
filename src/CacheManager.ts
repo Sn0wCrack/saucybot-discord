@@ -32,11 +32,20 @@ class CacheManager {
     }
 
     public async connect() {
-        return this.client.connect();
+        return this.client?.connect();
+    }
+
+    private isConnected(): boolean {
+        // HACK: So, somehow node-redis' typescript definitions are broken, and isReady is not exposed
+        // so I have to tell TypeScript to ignore this line and all equivalent lines.
+        // Trust me when I say this code actually runs
+        /* eslint-disable @typescript-eslint/ban-ts-comment */
+        // @ts-ignore
+        return this.client.isOpen && this.client.isReady;
     }
 
     public async has(key: string): Promise<boolean> {
-        if (!this.client.isOpen) {
+        if (!this.isConnected()) {
             return Promise.resolve(false);
         }
 
@@ -45,16 +54,16 @@ class CacheManager {
         return Promise.resolve(result === 1);
     }
 
-    public async get(key: string): Promise<string> {
-        if (!this.client.isOpen) {
+    public async get(key: string): Promise<string | null> {
+        if (!this.isConnected()) {
             return Promise.resolve('');
         }
 
         return this.client.get(key);
     }
 
-    public set(key: string, value: string, expireIn = 86400) {
-        if (!this.client.isOpen) {
+    public async set(key: string, value: string, expireIn = 86400) {
+        if (!this.isConnected()) {
             return Promise.resolve();
         }
 
@@ -65,7 +74,7 @@ class CacheManager {
         key: string,
         value: string | (() => Promise<string>),
         expireIn = 86400
-    ): Promise<string> {
+    ): Promise<string | null> {
         const exists = await this.has(key);
 
         if (exists) {

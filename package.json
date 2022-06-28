@@ -1,6 +1,6 @@
 {
     "name": "@sn0wcrack/saucybot",
-    "version": "1.7.33",
+    "version": "1.7.34",
     "description": "A discord bot that fills in the gaps ",
     "repository": {},
     "author": "Sn0wCrack",
@@ -34,7 +34,7 @@
         "luxon": "^2.2.0",
         "picocolors": "^1.0.0",
         "pixiv-web-api": "^0.1.5",
-        "redis": "^4.0.3",
+        "redis": "^4.1.0",
         "rimraf": "^3.0.2",
         "tough-cookie": "^4.0.0",
         "twitter-api-client": "^1.5.2"

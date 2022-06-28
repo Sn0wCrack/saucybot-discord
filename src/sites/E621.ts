@@ -15,6 +15,7 @@ class E621 extends BaseSite {
 
     async process(
         match: RegExpMatchArray,
+        /* eslint-disable @typescript-eslint/no-unused-vars */
         source: Message | null
     ): Promise<ProcessResponse | false> {
         const message: ProcessResponse = {
@@ -22,14 +23,22 @@ class E621 extends BaseSite {
             files: [],
         };
 
+        if (!match.groups?.id) {
+            return Promise.resolve(false);
+        }
+
         const url = match[0];
 
-        const response: E621Post = await this.getPost(match.groups.id);
+        const response = await this.getPost(match.groups.id);
+
+        if (!response) {
+            return Promise.resolve(false);
+        }
 
         // If our meta tags contain "animated", then we prefix the post with "[ANIM]"
         // This indicates similar to the site itself the content is animated
         // Mostly to let the users know the content should be animated if it's not
-        const prefix: string = response.post.tags.meta.includes('animated')
+        const prefix: string = response.post.tags.meta?.includes('animated')
             ? '[ANIM]'
             : '';
 
@@ -46,7 +55,10 @@ class E621 extends BaseSite {
         const fields: EmbedField[] = [];
 
         // If we found the Artist in the tags, add their tag into the embed fields for credit
-        if (response.post.tags.artist.length >= 1) {
+        if (
+            response.post.tags.artist &&
+            response.post.tags.artist.length >= 1
+        ) {
             // Format them into Title Case from snake_case
             const value: string = response.post.tags.artist
                 .map((tag: string) => {
@@ -106,7 +118,7 @@ class E621 extends BaseSite {
         return Promise.resolve(message);
     }
 
-    async getPost(id: string): Promise<E621Post> {
+    async getPost(id: string): Promise<E621Post | null> {
         const cacheKey = `e621.post_${id}`;
         const cacheManager = await CacheManager.getInstance();
 
@@ -121,6 +133,10 @@ class E621 extends BaseSite {
 
             return Promise.resolve(JSON.stringify(results));
         });
+
+        if (!cachedValue) {
+            return Promise.resolve(null);
+        }
 
         const results = JSON.parse(cachedValue) as E621Post;
 

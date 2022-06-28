@@ -43,6 +43,7 @@ class DeviantArt extends BaseSite {
 
     async process(
         match: RegExpMatchArray,
+        /* eslint-disable @typescript-eslint/no-unused-vars */
         source: Message | null
     ): Promise<ProcessResponse | false> {
         const message: ProcessResponse = {
@@ -59,17 +60,21 @@ class DeviantArt extends BaseSite {
 
             const appUrl = $('meta[property="da:appurl"]').attr('content');
 
+            if (!appUrl) {
+                return Promise.resolve(false);
+            }
+
             const parsed = appUrl.match(
                 /DeviantArt:\/\/deviation\/(?<uuid>.*)/i
             );
 
-            if (!parsed.groups?.uuid) {
+            if (!parsed?.groups?.uuid) {
                 return Promise.resolve(false);
             }
 
             const deviation: DeviantionResponse = await this.api
                 .deviations()
-                .get(parsed.groups?.uuid);
+                .get(parsed.groups.uuid);
 
             const embed = new MessageEmbed({
                 title: deviation.title,
