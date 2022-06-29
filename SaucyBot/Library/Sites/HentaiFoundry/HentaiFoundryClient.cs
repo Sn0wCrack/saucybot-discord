@@ -105,7 +105,7 @@ public class HentaiFoundryPicture
         var views = _document.QuerySelector("#pictureGeneralInfoBox .boxbody .column span:contains('Views')")
             ?.NextSibling
             ?.TextContent
-            ?.Trim();
+            .Trim();
 
         return views ?? "0";
     }
@@ -115,7 +115,7 @@ public class HentaiFoundryPicture
         var votes = _document.QuerySelector("#pictureGeneralInfoBox .boxbody .column span:contains('Vote Score')")
             ?.NextSibling
             ?.TextContent
-            ?.Trim();
+            .Trim();
 
         return votes ?? "0";
     }
