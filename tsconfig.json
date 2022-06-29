@@ -1,29 +1,12 @@
 {
-  "compilerOptions": {
-      "strict": true,
-      "useUnknownInCatchVariables": false,
-      "module": "commonjs",
-      "esModuleInterop": true,
-      "allowSyntheticDefaultImports": true,
-      "resolveJsonModule": true,
-      "target": "es2017",
-      "noImplicitAny": true,
-      "moduleResolution": "node",
-      "sourceMap": true,
-      "outDir": "dist",
-      "baseUrl": ".",
-      "paths": {
-          "*": [
-              "node_modules/*",
-              "src/types/*"
-          ]
-      },
-      "typeRoots": [
-          "src/types",
-          "node_modules/@types"
-      ]
-  },
-  "include": [
-      "src/**/*"
-  ]
+    "extends": "@tsconfig/node16/tsconfig.json",
+    "compilerOptions": {
+        "useUnknownInCatchVariables": false,
+        "allowSyntheticDefaultImports": true,
+        "resolveJsonModule": true,
+        "sourceMap": true,
+        "outDir": "dist",
+        "baseUrl": "."
+    },
+    "include": ["src/**/*"]
 }

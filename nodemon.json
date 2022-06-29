@@ -1,6 +1,6 @@
 {
     "watch": ["src"],
-    "ext": ".ts,.js",
+    "ext": ".ts,.js,.mts,.mjs,.cts,.cjs,.json",
     "ignore": [],
-    "exec": "ts-node ./src/bot.ts"
+    "exec": "ts-node --esm ./src/bot.ts"
 }
