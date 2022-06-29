@@ -11,7 +11,8 @@ public class Worker : BackgroundService
 
     private readonly DatabaseManager _databaseManager;
     private readonly SiteManager _siteManager;
-    private readonly MessageManager _messageManager;
+
+    private readonly GuildConfigurationManager _guildConfigurationManager;
     
     private DiscordShardedClient? _client;
 
@@ -20,13 +21,13 @@ public class Worker : BackgroundService
         IConfiguration configuration,
         DatabaseManager databaseManager,
         SiteManager siteManager,
-        MessageManager messageManager
+        GuildConfigurationManager guildConfigurationManager
     ) {
         _logger = logger;
         _configuration = configuration;
         _databaseManager = databaseManager;
         _siteManager = siteManager;
-        _messageManager = messageManager;
+        _guildConfigurationManager = guildConfigurationManager;
     }
 
     public override async Task StartAsync(CancellationToken cancellationToken)
@@ -75,32 +76,7 @@ public class Worker : BackgroundService
             return Task.CompletedTask;
         }
 
-        Task.Run(async () =>
-        {
-            try
-            {
-                var results = await _siteManager.Match(message);
-
-                foreach (var (site, match) in results)
-                {
-                    _logger.LogDebug("Matched link \"{Match}\" to site {Site}", match, site);
-
-                    var response = await _siteManager.Process(site, match, message);
-
-                    if (response is null)
-                    {
-                        _logger.LogDebug("Failed to process match \"{Match}\" of site {Site}", match, site);
-                        continue;
-                    }
-
-                    await _messageManager.Send(message, response);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "{Message}", ex.Message);
-            }
-        });
+        Task.Run(async () => await _siteManager.Handle(message));
 
         return Task.CompletedTask;
     }

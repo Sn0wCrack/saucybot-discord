@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using System.Text.RegularExpressions;
+using Discord;
 using Discord.WebSocket;
 using SaucyBot.Site;
 using SaucyBot.Site.Response;
@@ -10,6 +11,7 @@ public class SiteManager
 {
     private readonly ILogger<SiteManager> _logger;
     private readonly IConfiguration _configuration;
+    private readonly MessageManager _messageManager;
     private readonly GuildConfigurationManager _guildConfigurationManager;
     
     private readonly Dictionary<string, BaseSite> _sites = new();
@@ -18,10 +20,12 @@ public class SiteManager
         ILogger<SiteManager> logger,
         IConfiguration configuration,
         IServiceProvider serviceProvider,
+        MessageManager messageManager,
         GuildConfigurationManager guildConfigurationManager
     ) {
         _logger = logger;
         _configuration = configuration;
+        _messageManager = messageManager;
         _guildConfigurationManager = guildConfigurationManager;
 
         var disabled = _configuration.GetSection("Bot:DisabledSites").Get<string[]>();
@@ -90,6 +94,73 @@ public class SiteManager
         }
 
         return results;
+    }
+
+    public async Task Handle(SocketUserMessage message)
+    {
+        var results = await Match(message);
+        
+        if (!results.Any())
+        {
+            return;
+        }
+        
+
+        foreach (var (site, match) in results)
+        {
+            _logger.LogDebug("Matched link \"{Match}\" to site {Site}", match, site);
+            
+            var matchedMessage = await SendMatchedMessage(message, site);
+
+            try
+            {
+                var response = await Process(site, match, message);
+
+                if (response is null)
+                {
+                    _logger.LogDebug("Failed to process match \"{Match}\" of site {Site}", match, site);
+
+                    if (matchedMessage is not null)
+                    {
+                        await matchedMessage.DeleteAsync();
+                    }
+
+                    continue;
+                }
+
+                await _messageManager.Send(message, response);
+
+                if (matchedMessage is not null)
+                {
+                    await matchedMessage.DeleteAsync();
+                }
+
+            }
+            catch (Exception ex)
+            {
+                if (matchedMessage is not null)
+                {
+                    await matchedMessage.DeleteAsync();
+                }
+                
+                _logger.LogError(ex, "{Message}", ex.Message);
+                
+            }
+        }
+
+        
+    }
+
+    private async Task<IUserMessage?> SendMatchedMessage(SocketUserMessage message, string site)
+    {
+        var guildConfiguration = await _guildConfigurationManager.GetByChannel(message.Channel);
+
+        if (guildConfiguration is null || !guildConfiguration.SendMatchedMessage)
+        {
+            return null;
+        }
+
+        return await message.ReplyAsync($"Matched link to {site}, please wait...", allowedMentions: AllowedMentions.None);
     }
 
     public async Task<ProcessResponse?> Process(string identifier, Match match, SocketUserMessage? message = null)
