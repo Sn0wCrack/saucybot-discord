@@ -156,27 +156,27 @@
       },
       "Sentry": {
         "type": "Direct",
-        "requested": "[3.18.0, )",
-        "resolved": "3.18.0",
-        "contentHash": "tQaH+nHPHXZr6GbBTRNiJsmG9dk6hbjPqn/epv2T3AaDojvKKhWGgggY2S7ehj0Ngh2taUQyn/yApQqy5/FU8Q=="
+        "requested": "[3.19.0, )",
+        "resolved": "3.19.0",
+        "contentHash": "AB2M8QGA9eGh1DN+mBpBMNPwHDRausGQscCbPZIkPYdXnkBYdKXUR+1AAYvAEJmGMEyGIjIfUhUuhwSPCR9Jjg=="
       },
       "Sentry.EntityFramework": {
         "type": "Direct",
-        "requested": "[3.18.0, )",
-        "resolved": "3.18.0",
-        "contentHash": "F8a2m0oJGhyFw6f6uB/q8BJTAWYlUojmJRKx//Ln17Mp/c0FXVmrG4VHHUAahx+v1PqW72LT2x2hCiyjWzLCSA==",
+        "requested": "[3.19.0, )",
+        "resolved": "3.19.0",
+        "contentHash": "8gRXhimePcxdZ6qA4MjyQZ8k4fGc9xP/wZgz16obCM3mP8Op5EDoC1n6CG17d3IPLGs989kiRWVHJopKzxtWhQ==",
         "dependencies": {
           "EntityFramework": "6.3.0",
-          "Sentry": "3.18.0"
+          "Sentry": "3.19.0"
         }
       },
       "Sentry.Serilog": {
         "type": "Direct",
-        "requested": "[3.18.0, )",
-        "resolved": "3.18.0",
-        "contentHash": "mdog5z0iQ3xLg2TwiWdZ54NgnxCyXYSotdfnF177+29nvXTNia/Wz3EdcnhgeZ1oQhrZQP2ASI7ddWFmqJNK6g==",
+        "requested": "[3.19.0, )",
+        "resolved": "3.19.0",
+        "contentHash": "fQe5a2mCrtKg7gnGqNqDGL+8nMCu7kPWIhDe9azFZoCqUwRHpT1GtI+ym8v6/Yo/UqyrQMpsxlaZ1h6Cqz/gQg==",
         "dependencies": {
-          "Sentry": "3.18.0",
+          "Sentry": "3.19.0",
           "Serilog": "2.10.0"
         }
       },
@@ -221,9 +221,9 @@
       },
       "StackExchange.Redis": {
         "type": "Direct",
-        "requested": "[2.6.45, )",
-        "resolved": "2.6.45",
-        "contentHash": "0O2iSJrJoOPMf0wjh0ZizkQHYpjPbHZ5CXFf9BmF5cvG5T9tOXxpH8fd9IvDMopWv1JUJ4CX2nXsV/OS95E/zg==",
+        "requested": "[2.6.48, )",
+        "resolved": "2.6.48",
+        "contentHash": "T0rLGogyT6Zny+IMrDx1Z8r4nA3B0C7EVo5SHNjzT4ndOn9aGKe5K7KTVx0y41WaWmfSWpaX7HrPl0tfZ4zuUw==",
         "dependencies": {
           "Pipelines.Sockets.Unofficial": "2.2.2",
           "System.Diagnostics.PerformanceCounter": "5.0.0"
