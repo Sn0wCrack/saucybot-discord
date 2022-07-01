@@ -2,8 +2,28 @@
 
 public static class ListExtensions
 {
+    /// <summary>
+    /// Port of the JavaScript array function "slice".
+    /// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/slice
+    ///
+    /// This functions is considered unsafe, as it will not constrain the range of the "to" to be inside the List.
+    /// </summary>
+    /// <param name="source">The List being operated upon.</param>
+    /// <param name="from">Zero-based index at which to start extraction.</param>
+    /// <param name="to">The index of the first element to exclude from the returned List.</param>
+    /// <returns>List</returns>
     public static List<T> Slice<T>(this List<T> source, int from, int to) => source.GetRange(from, to - from);
 
+    /// <summary>
+    /// Port of the JavaScript array function "slice".
+    /// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/slice
+    ///
+    /// This function is considered safe, as it will always constrain the range of the "to" to be inside the List.
+    /// </summary>
+    /// <param name="source">The List being operated upon.</param>
+    /// <param name="from">Zero-based index at which to start extraction.</param>
+    /// <param name="to">The index of the first element to exclude from the returned List.</param>
+    /// <returns>List</returns>
     public static List<T> SafeSlice<T>(this List<T> source, int from, int to)
     {
         var count = to > source.Count
@@ -13,6 +33,13 @@ public static class ListExtensions
         return source.GetRange(from, count);
     }
 
+    /// <summary>
+    /// Safely gets a range from a List
+    /// </summary>
+    /// <param name="source"></param>
+    /// <param name="index"></param>
+    /// <param name="count"></param>
+    /// <returns>List</returns>
     public static List<T> SafeGetRange<T>(this List<T> source, int index, int count)
     {
         if (count >= source.Count)
