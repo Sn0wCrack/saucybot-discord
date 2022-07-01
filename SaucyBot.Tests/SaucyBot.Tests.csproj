@@ -21,4 +21,12 @@
         </PackageReference>
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Integration\Library\Sites" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\SaucyBot\SaucyBot.csproj" />
+    </ItemGroup>
+
 </Project>
