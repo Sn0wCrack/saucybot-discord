@@ -7,8 +7,8 @@ namespace SaucyBot.Database;
 public class DatabaseContext : DbContext
 {
     private readonly string _connectionString;
-    
-    public DbSet<GuildConfiguration> GuildConfigurations { get; set; }
+
+    public DbSet<GuildConfiguration> GuildConfigurations => Set<GuildConfiguration>();
 
     public DatabaseContext(IConfiguration configuration)
     {

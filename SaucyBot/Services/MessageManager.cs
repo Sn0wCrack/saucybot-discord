@@ -139,12 +139,12 @@ public class MessageManager
 
         if (embed.Image?.Url is not null)
         {
-            embedUrls.Add(embed.Image?.Url.Replace("attachment://", ""));
+            embedUrls.Add(embed.Image?.Url.Replace("attachment://", "")!);
         }
 
         if (embed.Video?.Url is not null)
         {
-            embedUrls.Add(embed.Video?.Url.Replace("attachment://", ""));
+            embedUrls.Add(embed.Video?.Url.Replace("attachment://", "")!);
         }
 
         return files
