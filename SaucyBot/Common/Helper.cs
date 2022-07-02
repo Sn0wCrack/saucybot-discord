@@ -14,13 +14,13 @@ public static class Helper
         return document.Body?.TextContent;
     }
 
-    public static async Task<string> ProcessDescription(string description, int maxLength = 300)
+    public static async Task<string> ProcessDescription(string description, int maxLength = 300, string suffix = "...")
     {
         description = await HtmlToPlainText(description) ?? "";
         
         if (description.Length > maxLength)
         {
-            description = $"{description.AsSpan(0, maxLength)}...";
+            description = $"{description.AsSpan(0, maxLength)}{suffix}";
         }
 
         return description;
