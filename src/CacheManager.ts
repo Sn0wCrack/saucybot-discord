@@ -36,11 +36,6 @@ class CacheManager {
     }
 
     private isConnected(): boolean {
-        // HACK: So, somehow node-redis' typescript definitions are broken, and isReady is not exposed
-        // so I have to tell TypeScript to ignore this line and all equivalent lines.
-        // Trust me when I say this code actually runs
-        /* eslint-disable @typescript-eslint/ban-ts-comment */
-        // @ts-ignore
         return this.client.isOpen && this.client.isReady;
     }
 

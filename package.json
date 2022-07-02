@@ -34,7 +34,7 @@
         "luxon": "^2.2.0",
         "picocolors": "^1.0.0",
         "pixiv-web-api": "^0.1.5",
-        "redis": "^4.1.0",
+        "redis": "^4.1.1",
         "tough-cookie": "^4.0.0",
         "twitter-api-client": "^1.5.2"
     },
