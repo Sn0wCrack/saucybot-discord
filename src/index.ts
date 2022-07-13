@@ -21,13 +21,20 @@ Sentry.init({
 
 const manager = new ShardingManager(join(__dirname, 'bot.js'), {
     token: Environment.get('DISCORD_API_KEY') as string,
-    respawn: Environment.get('DISCORD_SHARD_RESPAWN', false) as boolean,
+    respawn: Environment.get('DISCORD_SHARD_RESPAWN', true) as boolean,
 });
 
 manager.on('shardCreate', (shard) =>
     Logger.info(`Launched Shard ${shard.id}`, 'Manager')
 );
 
-manager.spawn().catch((err) => {
-    Logger.error(err.message, 'Manager');
-});
+manager
+    .spawn({
+        timeout: Environment.get(
+            'DISCORD_SHARD_SPAWN_TIMEOUT',
+            30_000
+        ) as number,
+    })
+    .catch((err) => {
+        Logger.error(err.message, 'Manager');
+    });
