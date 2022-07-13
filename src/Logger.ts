@@ -4,6 +4,10 @@ import pc from 'picocolors';
 import { DateTime } from 'luxon';
 
 class Logger {
+    static dir(message: any): void {
+        console.dir(message);
+    }
+
     static fatal(message: any, source: string | number = ''): void {
         console.error(this.format(message, LogLevel.FATAL, source));
     }

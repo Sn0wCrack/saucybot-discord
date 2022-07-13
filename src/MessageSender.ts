@@ -11,7 +11,7 @@ import ProcessResponse from './sites/ProcessResponse';
 
 class MessageSender {
     async send(
-        recieved: Message | CommandInteraction,
+        received: Message | CommandInteraction,
         response: ProcessResponse
     ): Promise<void> {
         let messages: MessageTypes = [];
@@ -34,19 +34,19 @@ class MessageSender {
 
         for (const message of messages) {
             try {
-                if (recieved instanceof Message) {
-                    await recieved.reply(message);
+                if (received instanceof Message) {
+                    await received.reply(message);
                 }
 
                 // We use followUp as this is the only way to add multiple replies
-                // to the original interaction unfortunatley, far less intutative but it works
-                if (recieved instanceof CommandInteraction) {
-                    await recieved.followUp(message);
+                // to the original interaction unfortunately, far less intuitive, but it works
+                if (received instanceof CommandInteraction) {
+                    await received.followUp(message);
                 }
             } catch (ex) {
                 Logger.error(
                     ex.message,
-                    `Shard ${recieved.client.shard?.ids?.[0] ?? 0}`
+                    `Shard ${received.client.shard?.ids?.[0] ?? 0}`
                 );
             }
         }

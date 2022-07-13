@@ -65,7 +65,7 @@ class Twitter extends BaseSite {
                     item.url?.includes('twitter.com') ||
                     item.url?.includes('t.co');
 
-                return isFromTwitter === true && item.author !== null;
+                return isFromTwitter && item.author !== null;
             });
         }
 
@@ -175,8 +175,8 @@ class Twitter extends BaseSite {
             return Promise.resolve(false);
         }
 
-        // Typescript isn't great at figuring out I just removed all of elements that don't have a bitrate
-        // so we have to do a non-null assertion here, and eslint also doesn't like that so we have to disable that check
+        // Typescript isn't great at figuring out I just removed all elements that don't have a bitrate,
+        // so we have to do a non-null assertion here, and eslint also doesn't like that, so we have to disable that check
         // here as well, since it'll always be triggered...
         const variants = video.video_info.variants
             .filter((item) => item.bitrate !== undefined)
@@ -331,9 +331,9 @@ class Twitter extends BaseSite {
         `https://twitter.com/${tweet.user.screen_name}/status/${tweet.id_str}`;
 
     /**
-     * Determines the highest quality of a video that can be posted to Discord inside of its size limit
+     * Determines the highest quality of a video that can be posted to Discord inside its size limit
      *
-     * @param urls a list of urls from highest quality to lowest quality
+     * @param urls a list of urls from the highest quality to the lowest quality
      */
     private async determineHighestQuality(
         urls: string[]

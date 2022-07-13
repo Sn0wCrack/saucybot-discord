@@ -44,7 +44,7 @@ class E621 extends BaseSite {
 
         let imageUrl: string = response.post.file.url;
 
-        // TODO: When discord adds video embeds, revist this
+        // TODO: When discord adds video embeds, revisit this
         // If we're a webm or swf file, find the best fit for the image to embed
         if (['webm', 'swf'].includes(response.post.file.ext)) {
             imageUrl = response.post.sample.has

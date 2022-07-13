@@ -128,14 +128,14 @@ class DeviantArt extends BaseSite {
         const url = match[0];
 
         try {
-            const response: oEmbedReponse = await got
+            const response: oEmbedResponse = await got
                 .get(OMEBED_URL, {
                     searchParams: { url: url },
                     headers: {
                         'User-Agent': `SaucyBot/${version}`,
                     },
                 })
-                .json<oEmbedReponse>();
+                .json<oEmbedResponse>();
 
             const embed = new MessageEmbed({
                 title: response.title,
@@ -164,7 +164,7 @@ class DeviantArt extends BaseSite {
 
 export default DeviantArt;
 
-export interface oEmbedReponse {
+export interface oEmbedResponse {
     version: string;
     type: string;
     title: string;

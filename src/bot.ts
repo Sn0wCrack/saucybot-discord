@@ -42,7 +42,7 @@ client.on('messageCreate', async (message) => {
         return;
     }
 
-    // If the message is sorrounded by < > it'll be ignored.
+    // If the message is surrounded by < > it'll be ignored.
     if (message.content.match(/(<|\|\|)(?!@|#|:|a:).*(>|\|\|)/)) {
         return;
     }
@@ -67,8 +67,8 @@ client.on('messageCreate', async (message) => {
             return;
         }
 
-        // In order to process our messages simulataneously we build up an array of Promises.
-        // We then run Promse.all over this array to roughly execute
+        // In order to process our messages simultaneously we build up an array of Promises.
+        // We then run Promise.all over this array to roughly execute
         const playbook: Array<Promise<void>> = [];
 
         for (const response of responses) {
@@ -93,7 +93,7 @@ client.on('messageCreate', async (message) => {
 
                         // If we failed to process the image, remove the wait message and return
                         if (processed === false) {
-                            waitMessage.delete();
+                            await waitMessage.delete();
                             return resolve();
                         }
 
@@ -113,7 +113,7 @@ client.on('messageCreate', async (message) => {
             }
         }
 
-        Promise.all(playbook);
+        await Promise.all(playbook);
     } catch (ex) {
         Sentry.captureException(ex);
         Logger.error(ex?.message, identifier);
@@ -143,13 +143,13 @@ client.on('interactionCreate', async (interaction) => {
         return;
     }
 
-    interaction.deferReply();
+    await interaction.deferReply();
 
     try {
         const url = interaction.options.getString('url');
 
         if (!url) {
-            interaction.editReply('No URL appeared to be provided');
+            await interaction.editReply('No URL appeared to be provided');
             return;
         }
 
@@ -157,7 +157,7 @@ client.on('interactionCreate', async (interaction) => {
 
         // If the response is false, then we didn't find anything.
         if (responses === false) {
-            interaction.editReply('Provided URL cannot be sauced');
+            await interaction.editReply('Provided URL cannot be sauced');
             return;
         }
 
@@ -174,7 +174,9 @@ client.on('interactionCreate', async (interaction) => {
                     const processed = await response.site.process(match, null);
 
                     if (processed === false) {
-                        interaction.editReply('Provided URL cannot be sauced');
+                        await interaction.editReply(
+                            'Provided URL cannot be sauced'
+                        );
                         return resolve();
                     }
 
@@ -187,9 +189,9 @@ client.on('interactionCreate', async (interaction) => {
             }
         }
 
-        Promise.all(playbook);
+        await Promise.all(playbook);
     } catch (ex) {
-        interaction.editReply('Provided URL cannot be sauced');
+        await interaction.editReply('Provided URL cannot be sauced');
         Sentry.captureException(ex);
         Logger.error(ex?.message, identifier);
     }

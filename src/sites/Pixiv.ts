@@ -269,9 +269,9 @@ class Pixiv extends BaseSite {
     }
 
     /**
-     * Determines the highest quality of an image that can be posted to Discord inside of its size limit
+     * Determines the highest quality of an image that can be posted to Discord inside its size limit
      *
-     * @param urls a list of urls from highest quality to lowest quality
+     * @param urls a list of urls from the highest quality to the lowest quality
      */
     async determineHighestQuality(urls: string[]): Promise<string | false> {
         for (const url of urls) {

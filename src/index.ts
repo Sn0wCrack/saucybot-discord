@@ -21,6 +21,7 @@ Sentry.init({
 
 const manager = new ShardingManager(join(__dirname, 'bot.js'), {
     token: Environment.get('DISCORD_API_KEY') as string,
+    respawn: Environment.get('DISCORD_SHARD_RESPAWN', false) as boolean,
 });
 
 manager.on('shardCreate', (shard) =>
