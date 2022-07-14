@@ -13,7 +13,7 @@ public class HentaiFoundry : BaseSite
     public override string Identifier => "HentaiFoundry";
 
     protected override string Pattern =>
-        @"https:?\/\/(www\.)?hentai-foundry\.com\/pictures\/user\/(?<user>.*)\/(?<id>\d+)\/(?<slug>\S+)";
+        @"https:?\/\/(www\.)?hentai-foundry\.com\/pictures\/user\/(?<user>.*)\/(?<id>\d+)\/(?<slug>\S+)\/?";
 
     protected override Color Color => new(0xFF67A2);
 

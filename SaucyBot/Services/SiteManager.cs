@@ -105,7 +105,6 @@ public class SiteManager
             return;
         }
         
-
         foreach (var (site, match) in results)
         {
             _logger.LogDebug("Matched link \"{Match}\" to site {Site}", match, site);
@@ -134,7 +133,6 @@ public class SiteManager
                 {
                     await matchedMessage.DeleteAsync();
                 }
-
             }
             catch (Exception ex)
             {
@@ -143,12 +141,9 @@ public class SiteManager
                     await matchedMessage.DeleteAsync();
                 }
                 
-                _logger.LogError(ex, "{Message}", ex.Message);
-                
+                _logger.LogError(ex, "Exception occured processing or sending messages");
             }
         }
-
-        
     }
 
     private async Task<IUserMessage?> SendMatchedMessage(SocketUserMessage message, string site)

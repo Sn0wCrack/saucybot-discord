@@ -9,7 +9,7 @@ namespace SaucyBot.Site;
 public class FurAffinity : BaseSite
 {
     public override string Identifier => "FurAffinity";
-    protected override string Pattern => @"https?:\/\/(www\.)?furaffinity\.net\/(?:view|full)\/(?<id>\d+)";
+    protected override string Pattern => @"https?:\/\/(www\.)?furaffinity\.net\/(?:view|full)\/(?<id>\d+)\/?";
 
     private readonly ILogger<FurAffinity> _logger;
     private readonly FaExportClient _client;

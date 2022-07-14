@@ -12,22 +12,18 @@ public class Worker : BackgroundService
     private readonly DatabaseManager _databaseManager;
     private readonly SiteManager _siteManager;
 
-    private readonly GuildConfigurationManager _guildConfigurationManager;
-    
     private DiscordShardedClient? _client;
 
     public Worker(
         ILogger<Worker> logger,
         IConfiguration configuration,
         DatabaseManager databaseManager,
-        SiteManager siteManager,
-        GuildConfigurationManager guildConfigurationManager
+        SiteManager siteManager
     ) {
         _logger = logger;
         _configuration = configuration;
         _databaseManager = databaseManager;
         _siteManager = siteManager;
-        _guildConfigurationManager = guildConfigurationManager;
     }
 
     public override async Task StartAsync(CancellationToken cancellationToken)
@@ -48,7 +44,7 @@ public class Worker : BackgroundService
         _client.Log += LogAsync;
         _client.MessageReceived += HandleMessageAsync;
 
-        await _client.LoginAsync(TokenType.Bot, _configuration["Bot:DiscordToken"]);
+        await _client.LoginAsync(TokenType.Bot, _configuration.GetSection("Bot:DiscordToken").Get<string>());
         await _client.StartAsync();
     }
 

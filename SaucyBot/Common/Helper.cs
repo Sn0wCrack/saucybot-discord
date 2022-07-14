@@ -1,4 +1,5 @@
-﻿using AngleSharp.Html.Parser;
+﻿using AngleSharp;
+using AngleSharp.Html.Parser;
 
 namespace SaucyBot.Common;
 
@@ -11,7 +12,7 @@ public static class Helper
         var parser = new HtmlParser();
         var document = await parser.ParseDocumentAsync(html);
 
-        return document.Body?.TextContent;
+        return document.Body?.ToHtml(new PlainTextMarkupFormatter());
     }
 
     public static async Task<string> ProcessDescription(string description, int maxLength = 300, string suffix = "...")
