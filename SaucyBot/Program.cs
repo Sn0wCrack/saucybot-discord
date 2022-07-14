@@ -1,6 +1,9 @@
 using SaucyBot;
 using SaucyBot.Database;
 using SaucyBot.Library.Sites.ArtStation;
+using SaucyBot.Library.Sites.DeviantArt;
+using SaucyBot.Library.Sites.E621;
+using SaucyBot.Library.Sites.ExHentai;
 using SaucyBot.Library.Sites.FurAffinity;
 using SaucyBot.Library.Sites.HentaiFoundry;
 using SaucyBot.Library.Sites.Newgrounds;
@@ -46,6 +49,9 @@ var host = Host.CreateDefaultBuilder(args)
         services.AddSingleton<ArtStationClient>();
         services.AddSingleton<HentaiFoundryClient>();
         services.AddSingleton<NewgroundsClient>();
+        services.AddSingleton<ExHentaiClient>();
+        services.AddSingleton<DeviantArtClient>();
+        services.AddSingleton<E621Client>();
 
         services.AddSingleton<FurAffinity>();
         services.AddSingleton<Pixiv>();

@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.WebSocket;
 using SaucyBot.Extensions;
+using SaucyBot.Extensions.Discord;
 using SaucyBot.Library;
 using SaucyBot.Site.Response;
 
@@ -29,12 +30,11 @@ public class MessageManager
 
         foreach (var (content, embeds, fileAttachments) in messages)
         {
-            await received.Channel.SendFilesAsync(
+            await received.ReplyAsync(
                 fileAttachments,
                 content,
                 allowedMentions: AllowedMentions.None,
-                embeds: embeds?.ToArray(),
-                messageReference: new MessageReference(received.Id)
+                embeds: embeds?.ToArray()
             );
         }
     }

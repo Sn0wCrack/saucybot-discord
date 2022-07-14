@@ -44,6 +44,14 @@
           "System.Text.Encoding.CodePages": "6.0.0"
         }
       },
+      "AngleSharp.Css": {
+        "type": "Transitive",
+        "resolved": "0.16.4",
+        "contentHash": "Qj9kGhmMWakGL2iDJVsBAJNPEyf5YEsvOXoqVVw0ajamVTGqfjm87knvH/Wlssz49Z2yinVqlnbuzxICFr4t/Q==",
+        "dependencies": {
+          "AngleSharp": "0.16.1"
+        }
+      },
       "CoreTweet": {
         "type": "Transitive",
         "resolved": "1.0.0.483",
@@ -157,19 +165,19 @@
       },
       "Microsoft.Data.Sqlite.Core": {
         "type": "Transitive",
-        "resolved": "6.0.6",
-        "contentHash": "FGMTc3w380mXGBqygWtWIMJYwhckjZe6Ee0Eq9ClzspXuz87Ks8hey/f1g/gIUpV8/r0HirI2knhomcfuOMJrw==",
+        "resolved": "6.0.7",
+        "contentHash": "lB8T+Y/5pMDBf13dGnrQvZ9rfkZrvRY82FgVElWGIuIF3yFwYLR6475U4/IM+TNLPSk8SvTFBqdLN3gOm3suOQ==",
         "dependencies": {
           "SQLitePCLRaw.core": "2.0.6"
         }
       },
       "Microsoft.EntityFrameworkCore": {
         "type": "Transitive",
-        "resolved": "6.0.6",
-        "contentHash": "icy5aMdp9R984RGmbgZvcjEX9HYcwqF+6HXLFydL7PJBlc9eVVPRdBSFS9mCFwXyFl24x7xUORhZx/cSLvwH7Q==",
+        "resolved": "6.0.7",
+        "contentHash": "9BsvGSpTzxvqnxH19wLBFivK5TzWmsHZQc/1cQ4b2e+k85aIG9R4FYewQLHZdPrAxNQImXjTyW5nRI3s1rpt6A==",
         "dependencies": {
-          "Microsoft.EntityFrameworkCore.Abstractions": "6.0.6",
-          "Microsoft.EntityFrameworkCore.Analyzers": "6.0.6",
+          "Microsoft.EntityFrameworkCore.Abstractions": "6.0.7",
+          "Microsoft.EntityFrameworkCore.Analyzers": "6.0.7",
           "Microsoft.Extensions.Caching.Memory": "6.0.1",
           "Microsoft.Extensions.DependencyInjection": "6.0.0",
           "Microsoft.Extensions.Logging": "6.0.0",
@@ -179,39 +187,39 @@
       },
       "Microsoft.EntityFrameworkCore.Abstractions": {
         "type": "Transitive",
-        "resolved": "6.0.6",
-        "contentHash": "Z4Ep2LDUSSNjriin0wKH4jF4vsjQ2ICwC9/5ntDVShQqy1C8AmmE5oK25jfthEVSIosDhJoWCescV3xKa9kcpg=="
+        "resolved": "6.0.7",
+        "contentHash": "bjU0CkTqldgpVPTSj9M+R/3EaTz+u0jMeQMIC91YdGYDbpX/tAN5UYx+Ihzk4AtP8gmhburQUgMTdnmCE9c5sA=="
       },
       "Microsoft.EntityFrameworkCore.Analyzers": {
         "type": "Transitive",
-        "resolved": "6.0.6",
-        "contentHash": "EqBhW1bJnDw42CIGf/Dh1TbYXFUh53pghb5KGMTrxcNU6Ntfd8UEHs7LntZrMQrECrkhW7zBvfGvv9SbxOj5VQ=="
+        "resolved": "6.0.7",
+        "contentHash": "VAOrGma8mRspUb/9quwIr21UZVqfWOcRQqhcYNkHBUD7woenwFTBvntiC9h2Ebtvj/BrRfezqjaHpWVvPSg4dw=="
       },
       "Microsoft.EntityFrameworkCore.Relational": {
         "type": "Transitive",
-        "resolved": "6.0.6",
-        "contentHash": "sMFh4InretduD2ppxRJ9aArwDgg1EqUMp8iXaMoXn64eGW+8hyvuZGD3VdwJF6qQJWd4B6ns1/zkASR7MHOF2g==",
+        "resolved": "6.0.7",
+        "contentHash": "0uo4fPDHutMbd9AJJEKl2q/2fYuFGA8tEBE2fQeQFaNDd+F/aUjaXc1FUD84J7Wcax8WP40rZo1E0u9A0yPPZw==",
         "dependencies": {
-          "Microsoft.EntityFrameworkCore": "6.0.6",
+          "Microsoft.EntityFrameworkCore": "6.0.7",
           "Microsoft.Extensions.Configuration.Abstractions": "6.0.0"
         }
       },
       "Microsoft.EntityFrameworkCore.Sqlite": {
         "type": "Transitive",
-        "resolved": "6.0.6",
-        "contentHash": "059YKPRXJMUwaRbJAkJ15NB2tMmBRR8kYdimPSC4u3XyZajioCn2x37uKwF+iVXaBGnux2Ic5c8iQ3ltEQutng==",
+        "resolved": "6.0.7",
+        "contentHash": "HukwRx+19dkS1ITJHHHVDSpsD5Kjb+2AjFV6SfbAVIPzuXGHTXTlavjm2iq1VbZKH9JNoSnk3d3DleOGtqwpMQ==",
         "dependencies": {
-          "Microsoft.EntityFrameworkCore.Sqlite.Core": "6.0.6",
+          "Microsoft.EntityFrameworkCore.Sqlite.Core": "6.0.7",
           "SQLitePCLRaw.bundle_e_sqlite3": "2.0.6"
         }
       },
       "Microsoft.EntityFrameworkCore.Sqlite.Core": {
         "type": "Transitive",
-        "resolved": "6.0.6",
-        "contentHash": "+bAsYKPUZSM1zj1tNSnMqXckyjFmRCLCkqufwkjr3oAZmP+CKAURovbYr/Th26XOcEMgHx6CqsJ2VFyPweALvg==",
+        "resolved": "6.0.7",
+        "contentHash": "HkbLD+OzmpsxG6OSazh5kgXCR/YLqQA3IWC/vz/Qx+hmNVAIoHm8v/9YQNoryDzCvRYOHYiK5/oOLl6OG05R2g==",
         "dependencies": {
-          "Microsoft.Data.Sqlite.Core": "6.0.6",
-          "Microsoft.EntityFrameworkCore.Relational": "6.0.6",
+          "Microsoft.Data.Sqlite.Core": "6.0.7",
+          "Microsoft.EntityFrameworkCore.Relational": "6.0.7",
           "Microsoft.Extensions.DependencyModel": "6.0.0"
         }
       },
@@ -237,8 +245,8 @@
       },
       "Microsoft.Extensions.Caching.StackExchangeRedis": {
         "type": "Transitive",
-        "resolved": "6.0.6",
-        "contentHash": "bdVQpYm1hcHf0pyAypMjtDw3HjWQJ89UzloyyF1OBs56QlgA1naM498tP2Vjlho5vVRALMGPYzdRKCen8koubw==",
+        "resolved": "6.0.7",
+        "contentHash": "ost2Q2Hl+sxYTrIL5yfIEbhlxibeAjwNHFX10yjSZrYHr18fnkcVW77CXR47NdNLVqR/tkTKSwyH/NRS6D1R7A==",
         "dependencies": {
           "Microsoft.Extensions.Caching.Abstractions": "6.0.0",
           "Microsoft.Extensions.Options": "6.0.0",
@@ -821,8 +829,8 @@
       },
       "Serilog.Extensions.Hosting": {
         "type": "Transitive",
-        "resolved": "4.2.0",
-        "contentHash": "gT2keceCmPQR9EX0VpXQZvUgELdfE7yqJ7MOxBhm3WLCblcvRgswEOOTgok/DHObbM15A3V/DtF3VdVDQPIZzQ==",
+        "resolved": "5.0.0",
+        "contentHash": "Dea1bCvizIhPWwv/a9JdQRSrOyqE0L8XCtvq7BkBeM/cqlvZRqPKPyo7XqvrC80LG6Owb8fw1UiGeifOqM0cIw==",
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "3.1.8",
           "Microsoft.Extensions.Hosting.Abstractions": "3.1.8",
@@ -1829,20 +1837,21 @@
         "type": "Project",
         "dependencies": {
           "AngleSharp": "0.17.1",
+          "AngleSharp.Css": "0.16.4",
           "CoreTweet": "1.0.0.483",
           "Discord.Net": "3.7.2",
           "EFCore.NamingConventions": "6.0.0",
-          "Microsoft.EntityFrameworkCore": "6.0.6",
-          "Microsoft.EntityFrameworkCore.Sqlite": "6.0.6",
+          "Microsoft.EntityFrameworkCore": "6.0.7",
+          "Microsoft.EntityFrameworkCore.Sqlite": "6.0.7",
           "Microsoft.Extensions.Caching.Memory": "6.0.1",
-          "Microsoft.Extensions.Caching.StackExchangeRedis": "6.0.6",
+          "Microsoft.Extensions.Caching.StackExchangeRedis": "6.0.7",
           "Microsoft.Extensions.Hosting": "6.0.1",
           "Pomelo.EntityFrameworkCore.MySql": "6.0.1",
           "Sentry": "3.19.0",
           "Sentry.EntityFramework": "3.19.0",
           "Sentry.Serilog": "3.19.0",
           "Serilog": "2.11.0",
-          "Serilog.Extensions.Hosting": "4.2.0",
+          "Serilog.Extensions.Hosting": "5.0.0",
           "Serilog.Settings.Configuration": "3.3.0",
           "Serilog.Sinks.Console": "4.0.1",
           "StackExchange.Redis": "2.6.48",

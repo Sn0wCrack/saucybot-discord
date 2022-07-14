@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using AngleSharp.Dom;
 using AngleSharp.Html.Dom;
 using AngleSharp.Html.Parser;
 using SaucyBot.Services;
@@ -31,7 +32,9 @@ public class HentaiFoundryClient
         
         var httpClientHandler = new HttpClientHandler
         {
-            CookieContainer = _cookieContainer, UseCookies = true, AllowAutoRedirect = true,
+            CookieContainer = _cookieContainer,
+            UseCookies = true,
+            AllowAutoRedirect = true,
         };
 
         _client = new HttpClient(httpClientHandler);
@@ -80,7 +83,7 @@ public class HentaiFoundryPicture
     }
 
     public string? Title() => _document.QuerySelector(".imageTitle")?.TextContent;
-    public string? Description() => _document.QuerySelector(".picDescript")?.TextContent;
+    public string? Description() => _document.QuerySelector(".picDescript")?.GetInnerText();
     public string? ImageUrl() => $"https:{_document.QuerySelector("#picBox .boxbody img")?.GetAttribute("src")}";
     public string? AuthorName() => _document.QuerySelector("#descriptionBox .boxbody a img")?.GetAttribute("title");
     public string AuthorUrl() =>

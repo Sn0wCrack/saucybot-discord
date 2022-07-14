@@ -16,7 +16,7 @@ namespace SaucyBot.Site;
 public class Pixiv : BaseSite
 {
     public override string Identifier => "Pixiv";
-    protected override string Pattern => @"https?:\/\/(www\.)?pixiv\.net\/.*artworks\/(?<id>\d+)";
+    protected override string Pattern => @"https?:\/\/(www\.)?pixiv\.net\/.*artworks\/(?<id>\d+)\/?";
 
     private readonly PixivClient _client;
     private readonly ILogger<Pixiv> _logger;
