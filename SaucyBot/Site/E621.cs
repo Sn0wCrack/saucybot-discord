@@ -18,7 +18,7 @@ public class E621 : BaseSite
     private readonly ILogger<E621> _logger;
     private readonly E621Client _client;
 
-    public E621(ILogger<ExHentai> logger, E621Client client)
+    public E621(ILogger<E621> logger, E621Client client)
     {
         _logger = logger;
         _client = client;
