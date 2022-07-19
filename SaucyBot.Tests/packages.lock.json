@@ -829,8 +829,8 @@
       },
       "Serilog.Extensions.Hosting": {
         "type": "Transitive",
-        "resolved": "5.0.0",
-        "contentHash": "Dea1bCvizIhPWwv/a9JdQRSrOyqE0L8XCtvq7BkBeM/cqlvZRqPKPyo7XqvrC80LG6Owb8fw1UiGeifOqM0cIw==",
+        "resolved": "5.0.1",
+        "contentHash": "o0VUyt3npAqOJaZ6CiWLFeLYs3CYJwfcAqaUqprzsmj7qYIvorcn8cZLVR8AQX6vzX7gee2bD0sQeA17iO2/Aw==",
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "3.1.8",
           "Microsoft.Extensions.Hosting.Abstractions": "3.1.8",
@@ -1851,7 +1851,7 @@
           "Sentry.EntityFramework": "3.19.0",
           "Sentry.Serilog": "3.19.0",
           "Serilog": "2.11.0",
-          "Serilog.Extensions.Hosting": "5.0.0",
+          "Serilog.Extensions.Hosting": "5.0.1",
           "Serilog.Settings.Configuration": "3.3.0",
           "Serilog.Sinks.Console": "4.0.1",
           "StackExchange.Redis": "2.6.48",

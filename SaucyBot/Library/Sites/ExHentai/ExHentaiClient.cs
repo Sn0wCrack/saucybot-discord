@@ -21,6 +21,9 @@ public class ExHentaiClient
     private readonly CookieContainer _cookieContainer = new();
     private readonly HttpClient _client;
 
+    private const string ExHentaiDomain = "exhentai.org";
+    private const string EHentaiDomain = "e-hentai.org";
+
     public ExHentaiClient(
         ILogger<ExHentaiClient> logger,
         IConfiguration configuration,
@@ -29,6 +32,24 @@ public class ExHentaiClient
         _logger = logger;
         _configuration = configuration;
         _cache = cacheManager;
+        
+        _cookieContainer.Add(
+            new Cookie(
+                "ipb_member_id", 
+                _configuration.GetSection("Sites:ExHentai:Cookies:MemberId").Get<string>(),
+                "/",
+                ExHentaiDomain
+            )
+         );
+        
+        _cookieContainer.Add(
+            new Cookie(
+                "ipb_pass_hash", 
+                _configuration.GetSection("Sites:ExHentai:Cookies:PasswordHash").Get<string>(),
+                "/",
+                ExHentaiDomain
+            )
+        );
         
         var httpClientHandler = new HttpClientHandler
         {
@@ -51,22 +72,51 @@ public class ExHentaiClient
         );
     }
 
-    public async Task<ExHentaiGallery?> GetGallery(string url)
+    public async Task<ExHentaiGalleryPage?> GetGallery(ExHentaiGalleryRequest request)
     {
         var response = await _cache.Remember(
-            $"exhentai.gallery_{url}",
-            async () => await _client.GetStringAsync(url)
+            $"exhentai.gallery_{request.Id}_{request.Hash}",
+            async () => await _client.GetStringAsync(request.GetUrl())
         );
 
-        return response is null ? null : new ExHentaiGallery(response);
+        return response is null ? null : new ExHentaiGalleryPage(response);
     }
 }
 
-public class ExHentaiGallery
+public enum ExHentaiRequestMode
+{
+    EHentai,
+    ExHentai,
+}
+
+public abstract record ExHentaiRequest(ExHentaiRequestMode Mode)
+{
+    protected string GetBaseUrl()
+    {
+        return Mode switch
+        {
+            ExHentaiRequestMode.EHentai => "https://e-hentai.org",
+            ExHentaiRequestMode.ExHentai => "https://exhentai.org",
+            _ => throw new ArgumentOutOfRangeException()
+        };
+    }
+
+    public abstract string GetUrl();
+}
+
+public record ExHentaiGalleryRequest(ExHentaiRequestMode Mode, string Id, string Hash) : ExHentaiRequest(Mode)
+{
+    public override string GetUrl()
+    {
+        return $"{GetBaseUrl()}/g/{Id}/{Hash}";
+    }
+}
+
+public class ExHentaiGalleryPage
 {
     private readonly IHtmlDocument _document;
 
-    public ExHentaiGallery(string page)
+    public ExHentaiGalleryPage(string page)
     {
         var configuration = Configuration.Default.WithCss();
 
@@ -80,8 +130,16 @@ public class ExHentaiGallery
     public string? Title() => _document.QuerySelector(".gm h1#gn")?.TextContent;
     public string? Description() => _document.QuerySelector("div#comment_0")?.GetInnerText();
 
-    public string? Rating() => _document.QuerySelector("td#rating_label")?.TextContent.Replace("Average:", "");
+    public string? Rating() => _document.QuerySelector("td#rating_label")?.TextContent.Replace("Average:", "").Trim();
 
+    public string? Language() =>
+        MetaContainer()?.QuerySelector("tr > td:contains('Language:')")?.NextSibling?.TextContent;
+
+    public string? Length() =>
+        MetaContainer()?.QuerySelector("tr > td:contains('Length:')")?.NextSibling?.TextContent.Replace("pages", "").Trim();
+    
+    public string? AuthorName() => _document.QuerySelector(".gm #gmid #gdn a")?.TextContent;
+    
     public string? AuthorUrl() => _document.QuerySelector(".gm #gmid #gdn a")?.GetAttribute("href");
 
     public string? ImageUrl()
@@ -100,7 +158,7 @@ public class ExHentaiGallery
 
     public DateTimeOffset? PostedAt()
     {
-        var dateTime = MetaContainer()?.Closest("tr")?.FirstElementChild?.Closest(".gdt2")?.TextContent;
+        var dateTime = MetaContainer()?.QuerySelector("tr > td:contains('Posted:')")?.NextSibling?.TextContent;
 
         if (dateTime is null)
         {
