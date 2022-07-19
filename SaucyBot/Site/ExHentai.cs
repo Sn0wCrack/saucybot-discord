@@ -2,6 +2,7 @@
 using Discord;
 using Discord.WebSocket;
 using SaucyBot.Common;
+using SaucyBot.Library;
 using SaucyBot.Library.Sites.ExHentai;
 using SaucyBot.Site.Response;
 
@@ -28,7 +29,15 @@ public class ExHentai : BaseSite
     {
         var response = new ProcessResponse();
 
-        var page = await _client.GetGallery(match.Value);
+        var url = match.Value;
+
+        var request = new ExHentaiGalleryRequest(
+            url.ToLowerInvariant().Contains("exhentai") ? ExHentaiRequestMode.ExHentai : ExHentaiRequestMode.EHentai,
+            match.Groups["id"].Value,
+            match.Groups["hash"].Value
+        );
+
+        var page = await _client.GetGallery(request);
 
         if (page is null)
         {
@@ -39,10 +48,41 @@ public class ExHentai : BaseSite
         {
             Title = page.Title(),
             Description = await Helper.ProcessDescription(page.Description() ?? ""),
-            Url = match.Value,
+            Url = url,
             Color = this.Color,
             ImageUrl = page.ImageUrl(),
             Timestamp = page.PostedAt(),
+            Author = new EmbedAuthorBuilder
+            {
+                Name = page.AuthorName(),
+                Url = page.AuthorUrl(),
+            },
+            Fields = new List<EmbedFieldBuilder>
+            {
+                new()
+                {
+                    Name = "Language",
+                    Value = page.Language() ?? "N/A",
+                    IsInline = true,
+                },
+                new()
+                {
+                    Name = "Pages",
+                    Value = page.Length() ?? "N/A",
+                    IsInline = true,
+                },
+                new ()
+                {
+                    Name = "Rating",
+                    Value = $"{page.Rating()} / 5.00",
+                    IsInline = true,
+                }
+            },
+            Footer = new EmbedFooterBuilder
+            {
+                IconUrl = Constants.EHentaiIconUrl,
+                Text = url.ToLowerInvariant().Contains("exhentai") ? "exhentai" : "e-hentai",
+            }
         };
         
         response.Embeds.Add(embed.Build());
