@@ -52,6 +52,8 @@ var host = Host.CreateDefaultBuilder(args)
         services.AddSingleton<ExHentaiClient>();
         services.AddSingleton<DeviantArtClient>();
         services.AddSingleton<E621Client>();
+        services.AddSingleton<DeviantArtOpenEmbedClient>();
+        services.AddSingleton<DeviantArtClient>();
 
         services.AddSingleton<FurAffinity>();
         services.AddSingleton<Pixiv>();
