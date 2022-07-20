@@ -2,7 +2,7 @@
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Microsoft.AspNetCore.WebUtilities;
+using SaucyBot.Extensions;
 using SaucyBot.Services;
 
 
@@ -32,10 +32,8 @@ public class DeviantArtOpenEmbedClient
     public async Task<OpenEmbedResponse?> Get(string url)
     {
         var query = new Dictionary<string, string> { ["url"] = url };
-
-        var compiled = QueryHelpers.AddQueryString(EndpointUrl, query);
-
-        var response = await _cache.Remember($"deviantart.oembed_{url}", async () => await _client.GetStringAsync(compiled));
+        
+        var response = await _cache.Remember($"deviantart.oembed_{url}", async () => await _client.GetStringWithQueryStringAsync(EndpointUrl, query));
 
         return response is null ? null : JsonSerializer.Deserialize<OpenEmbedResponse>(response);
     }
