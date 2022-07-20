@@ -101,9 +101,9 @@ public record E621PostSample(
 
 public record E621PostTags(
     [property: JsonPropertyName("artist")]
-    string[]? Artist,
+    string[] Artist,
     [property: JsonPropertyName("meta")]
-    string[]? Meta
+    string[] Meta
 );
 
 public record E621PostScore(
