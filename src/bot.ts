@@ -58,6 +58,7 @@ client.on('messageCreate', async (message) => {
     );
 
     if (
+        !permissions?.has(PermissionFlagsBits.ReadMessageHistory) ||
         !permissions?.has(PermissionFlagsBits.SendMessages) ||
         !permissions?.has(PermissionFlagsBits.EmbedLinks) ||
         !permissions?.has(PermissionFlagsBits.AttachFiles)
@@ -142,6 +143,7 @@ client.on('interactionCreate', async (interaction) => {
     );
 
     if (
+        !permissions?.has(PermissionFlagsBits.ReadMessageHistory) ||
         !permissions?.has(PermissionFlagsBits.SendMessages) ||
         !permissions?.has(PermissionFlagsBits.EmbedLinks) ||
         !permissions?.has(PermissionFlagsBits.AttachFiles)
