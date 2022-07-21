@@ -67,7 +67,7 @@ class CacheManager {
 
     public async remember(
         key: string,
-        value: string | (() => Promise<string>),
+        value: string | null | (() => Promise<string | null>),
         expireIn = 86400
     ): Promise<string | null> {
         const exists = await this.has(key);
@@ -78,6 +78,10 @@ class CacheManager {
 
         if (typeof value === 'function') {
             value = await value();
+        }
+
+        if (value === null || value === undefined) {
+            return Promise.resolve(null);
         }
 
         await this.set(key, value, expireIn);

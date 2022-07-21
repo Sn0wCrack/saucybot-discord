@@ -1,7 +1,6 @@
 import discord, {
     ActivityType,
     GatewayIntentBits,
-    InteractionType,
     PermissionFlagsBits,
     TextChannel,
 } from 'discord.js';

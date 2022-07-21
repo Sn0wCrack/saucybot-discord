@@ -146,14 +146,18 @@ class Twitter extends BaseSite {
         const cacheManager = await CacheManager.getInstance();
 
         const cachedValue = await cacheManager.remember(cacheKey, async () => {
-            const results = await this.api.tweets.statusesShow({
-                id: id,
-                include_entities: true,
-                trim_user: false,
-                tweet_mode: 'extended',
-            });
+            try {
+                const results = await this.api.tweets.statusesShow({
+                    id: id,
+                    include_entities: true,
+                    trim_user: false,
+                    tweet_mode: 'extended',
+                });
 
-            return Promise.resolve(JSON.stringify(results));
+                return Promise.resolve(JSON.stringify(results));
+            } catch (ex) {
+                return Promise.resolve(null);
+            }
         });
 
         if (!cachedValue) {
