@@ -41,7 +41,8 @@ public class Worker : BackgroundService
 
         _client = new DiscordShardedClient(config);
         
-        _client.Log += LogAsync;
+        _client.Log += HandleLogAsync;
+        _client.ShardReady += HandleShardReadyAsync;
         _client.MessageReceived += HandleMessageAsync;
 
         await _client.LoginAsync(TokenType.Bot, _configuration.GetSection("Bot:DiscordToken").Get<string>());
@@ -77,8 +78,16 @@ public class Worker : BackgroundService
         return Task.CompletedTask;
     }
 
-    private Task LogAsync(LogMessage message)
+    private Task HandleShardReadyAsync(DiscordSocketClient client)
     {
+        _logger.LogInformation("[{Source}] {Message}", $"Shard {client.ShardId}", "Ready");
+
+        return Task.CompletedTask;
+    }
+
+    private Task HandleLogAsync(LogMessage message)
+    {
+
         var severity = message.Severity switch
         {
             LogSeverity.Critical => LogLevel.Critical,
