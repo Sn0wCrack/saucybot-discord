@@ -1,7 +1,7 @@
 import {
     Message,
     MessageOptions,
-    FileOptions,
+    AttachmentPayload,
     CommandInteraction,
     InteractionReplyOptions,
 } from 'discord.js';
@@ -78,7 +78,7 @@ class MessageSender {
         // We split up file messages into groups of files under the file size limit
         // This is faster than sending the images back one-by-one
 
-        const segments: FileOptions[][] = [];
+        const segments: AttachmentPayload[][] = [];
 
         for (const file of response.files) {
             if (segments.length === 0) {
@@ -135,12 +135,12 @@ class MessageSender {
 
         const embedUrls: string[] = [];
 
-        if (embed?.image?.url) {
-            embedUrls.push(embed.image.url.replace('attachment://', ''));
+        if (embed.data?.image?.url) {
+            embedUrls.push(embed.data.image.url.replace('attachment://', ''));
         }
 
-        if (embed?.video?.url) {
-            embedUrls.push(embed.video.url.replace('attachment://', ''));
+        if (embed.data?.video?.url) {
+            embedUrls.push(embed.data.video.url.replace('attachment://', ''));
         }
 
         // Only send attachments that are related to this embed
@@ -176,21 +176,21 @@ class MessageSender {
             i += MAX_EMBEDS_PER_MESSAGE
         ) {
             const chunk = response.embeds.slice(i, i + MAX_EMBEDS_PER_MESSAGE);
-            let files: FileOptions[] = [];
+            let files: AttachmentPayload[] = [];
 
             // Find attachments related to these embeds
             for (const embed of chunk) {
                 const embedUrls: string[] = [];
 
-                if (embed.image?.url) {
+                if (embed.data.image?.url) {
                     embedUrls.push(
-                        embed.image.url.replace('attachment://', '')
+                        embed.data.image.url.replace('attachment://', '')
                     );
                 }
 
-                if (embed.video?.url) {
+                if (embed.data.video?.url) {
                     embedUrls.push(
-                        embed.video.url.replace('attachment://', '')
+                        embed.data.video.url.replace('attachment://', '')
                     );
                 }
 

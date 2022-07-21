@@ -4,7 +4,7 @@ import got from 'got';
 import { version } from '../../package.json';
 import Environment from '../Environment';
 import path from 'path';
-import { Message, MessageEmbed } from 'discord.js';
+import { EmbedBuilder, Message } from 'discord.js';
 import { DateTime } from 'luxon';
 import { URL } from 'url';
 import CacheManager from '../CacheManager';
@@ -64,7 +64,7 @@ class ArtStation extends BaseSite {
                 continue;
             }
 
-            const embed = new MessageEmbed({
+            const embed = new EmbedBuilder({
                 title: htmlToText(response.title),
                 url: response.permalink,
                 color: this.color,

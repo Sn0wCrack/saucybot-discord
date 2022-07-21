@@ -3,7 +3,7 @@ import ProcessResponse from './ProcessResponse';
 import { TwitterClient, StatusesShow } from 'twitter-api-client';
 import Environment from '../Environment';
 import { MAX_FILESIZE, TWITTER_ICON_URL } from '../Constants';
-import { FileOptions, Message, MessageEmbed } from 'discord.js';
+import { AttachmentPayload, Message, EmbedBuilder, Embed } from 'discord.js';
 import path from 'path';
 import got from 'got';
 import { URL } from 'url';
@@ -51,7 +51,7 @@ class Twitter extends BaseSite {
 
         const videoMedia = await this.findVideoElement(tweet);
 
-        let hasTwitterEmbed: MessageEmbed | null | undefined = null;
+        let hasTwitterEmbed: Embed | null | undefined = null;
 
         // If we have a message attached, we need to wait a bit for Discord to process the embed,
         // we when need to refetch the message and see if an embed has been added in that time.
@@ -203,7 +203,7 @@ class Twitter extends BaseSite {
                 'ccc LLL d HH:mm:ss ZZZ y'
             );
 
-            const embed = new MessageEmbed({
+            const embed = new EmbedBuilder({
                 url: this.getUrlFromStatus(status),
                 timestamp: time.toUTC().toMillis(),
                 color: this.color,
@@ -256,7 +256,7 @@ class Twitter extends BaseSite {
         );
 
         if (!photos) {
-            const embed = new MessageEmbed({
+            const embed = new EmbedBuilder({
                 url: this.getUrlFromStatus(status),
                 timestamp: time.toUTC().toMillis(),
                 color: this.color,
@@ -290,7 +290,7 @@ class Twitter extends BaseSite {
         }
 
         for (const photo of photos) {
-            const embed = new MessageEmbed({
+            const embed = new EmbedBuilder({
                 url: this.getUrlFromStatus(status),
                 timestamp: time.toUTC().toMillis(),
                 color: this.color,
@@ -353,12 +353,12 @@ class Twitter extends BaseSite {
         return Promise.resolve(false);
     }
 
-    private async getFile(url: string): Promise<FileOptions> {
+    private async getFile(url: string): Promise<AttachmentPayload> {
         const response = await got.get(url).buffer();
 
         const parsed = new URL(url);
 
-        const file: FileOptions = {
+        const file: AttachmentPayload = {
             attachment: response,
             name: path.basename(parsed.pathname),
         };

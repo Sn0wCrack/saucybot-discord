@@ -1,7 +1,7 @@
-import { FileOptions, MessageEmbed } from 'discord.js';
+import { AttachmentPayload, EmbedBuilder } from 'discord.js';
 
 export default interface ProcessResponse {
-    embeds: Array<MessageEmbed>;
-    files: Array<FileOptions>;
+    embeds: Array<EmbedBuilder>;
+    files: Array<AttachmentPayload>;
     text?: string;
 }

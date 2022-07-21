@@ -3,7 +3,7 @@ import ProcessResponse from './ProcessResponse';
 import { CookieJar } from 'tough-cookie';
 import cheerio from 'cheerio';
 import got from 'got';
-import { Message, MessageEmbed } from 'discord.js';
+import { Message, EmbedBuilder } from 'discord.js';
 import { DateTime } from 'luxon';
 import CacheManager from '../CacheManager';
 import { processDescription } from '../Helpers';
@@ -77,10 +77,10 @@ class HentaiFoundry extends BaseSite {
         const authorLink = $('#descriptionBox .boxbody a');
         const authorImage = $('#descriptionBox .boxbody a img');
 
-        const embed = new MessageEmbed({
+        const embed = new EmbedBuilder({
             title: title.text(),
             url: url,
-            timestamp: DateTime.fromISO(postedAt?.attr('datetime') ?? '')
+            timestamp: DateTime.fromISO(postedAt.attr('datetime') ?? '')
                 .toUTC()
                 .toMillis(),
             description: processDescription(description.text()),
@@ -89,7 +89,7 @@ class HentaiFoundry extends BaseSite {
                 url: `https:${image.attr('src')}`,
             },
             author: {
-                name: authorImage.attr('title'),
+                name: authorImage.attr('title') ?? '',
                 url: `${this.baseUrl}${authorLink.attr('href')}`,
                 iconURL: `https:${authorImage.attr('src')}`,
             },

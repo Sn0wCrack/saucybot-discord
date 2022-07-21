@@ -2,7 +2,7 @@ import got from 'got';
 import ProcessResponse from './ProcessResponse';
 import { version } from '../../package.json';
 import BaseSite from './BaseSite';
-import { EmbedField, Message, MessageEmbed } from 'discord.js';
+import { EmbedField, Message, EmbedBuilder } from 'discord.js';
 import { DateTime } from 'luxon';
 import CacheManager from '../CacheManager';
 
@@ -96,7 +96,7 @@ class E621 extends BaseSite {
             inline: true,
         });
 
-        const embed = new MessageEmbed({
+        const embed = new EmbedBuilder({
             title: `${prefix} Post #${match.groups.id}`,
             url: url,
             color: this.color,

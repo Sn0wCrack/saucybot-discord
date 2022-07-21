@@ -3,7 +3,7 @@ import ProcessResponse from './ProcessResponse';
 import cheerio from 'cheerio';
 import got from 'got';
 import { DateTime } from 'luxon';
-import { Message, MessageEmbed } from 'discord.js';
+import { Message, EmbedBuilder } from 'discord.js';
 import { CookieJar } from 'tough-cookie';
 import Environment from '../Environment';
 import CacheManager from '../CacheManager';
@@ -96,7 +96,7 @@ class ExHentai extends BaseSite {
 
         const authorLink = $('.gm #gmid #gdn a');
 
-        const embed = new MessageEmbed({
+        const embed = new EmbedBuilder({
             title: title.text(),
             url: url,
             description: processDescription(description?.html() ?? ''),

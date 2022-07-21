@@ -1,4 +1,4 @@
-import { FileOptions, Message } from 'discord.js';
+import { AttachmentPayload, Message } from 'discord.js';
 import BaseSite from './BaseSite';
 import ProcessResponse from './ProcessResponse';
 import path from 'path';
@@ -289,12 +289,12 @@ class Pixiv extends BaseSite {
         return Promise.resolve(false);
     }
 
-    async getFile(url: string): Promise<FileOptions> {
+    async getFile(url: string): Promise<AttachmentPayload> {
         const response = await this.api.getFile(url);
 
         const parsed = new URL(url);
 
-        const file: FileOptions = {
+        const file: AttachmentPayload = {
             attachment: response,
             name: path.basename(parsed.pathname),
         };

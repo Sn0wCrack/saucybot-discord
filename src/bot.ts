@@ -1,4 +1,10 @@
-import discord, { Intents, TextChannel } from 'discord.js';
+import discord, {
+    ActivityType,
+    GatewayIntentBits,
+    InteractionType,
+    PermissionFlagsBits,
+    TextChannel,
+} from 'discord.js';
 import dotenv from 'dotenv';
 import Environment from './Environment';
 import Logger from './Logger';
@@ -8,10 +14,11 @@ import * as Sentry from '@sentry/node';
 
 dotenv.config();
 
-const intents = new Intents([
-    Intents.FLAGS.GUILDS,
-    Intents.FLAGS.GUILD_MESSAGES,
-]);
+const intents = [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+];
 
 const client = new discord.Client({
     intents: intents,
@@ -47,14 +54,14 @@ client.on('messageCreate', async (message) => {
         return;
     }
 
-    const permissions = message.guild?.me?.permissionsIn(
+    const permissions = message.guild?.members?.me?.permissionsIn(
         message.channel as TextChannel
     );
 
     if (
-        !permissions?.has('SEND_MESSAGES') ||
-        !permissions?.has('EMBED_LINKS') ||
-        !permissions?.has('ATTACH_FILES')
+        !permissions?.has(PermissionFlagsBits.SendMessages) ||
+        !permissions?.has(PermissionFlagsBits.EmbedLinks) ||
+        !permissions?.has(PermissionFlagsBits.AttachFiles)
     ) {
         return;
     }
@@ -121,7 +128,7 @@ client.on('messageCreate', async (message) => {
 });
 
 client.on('interactionCreate', async (interaction) => {
-    if (!interaction.isCommand()) {
+    if (!interaction.isChatInputCommand()) {
         return;
     }
 
@@ -131,14 +138,14 @@ client.on('interactionCreate', async (interaction) => {
         return;
     }
 
-    const permissions = interaction.guild?.me?.permissionsIn(
+    const permissions = interaction.guild?.members?.me?.permissionsIn(
         interaction.channel as TextChannel
     );
 
     if (
-        !permissions?.has('SEND_MESSAGES') ||
-        !permissions?.has('EMBED_LINKS') ||
-        !permissions?.has('ATTACH_FILES')
+        !permissions?.has(PermissionFlagsBits.SendMessages) ||
+        !permissions?.has(PermissionFlagsBits.EmbedLinks) ||
+        !permissions?.has(PermissionFlagsBits.AttachFiles)
     ) {
         return;
     }
@@ -202,6 +209,17 @@ client.on('error', async (error) => {
     Logger.error(error, identifier);
 });
 
+client.on('warn', async (warn) => {
+    Logger.warn(warn, identifier);
+});
+
+// Only register debug info
+if (Environment.isDevelopment()) {
+    client.on('debug', async (debug) => {
+        Logger.debug(debug, identifier);
+    });
+}
+
 client.once('ready', async () => {
     Logger.info('Ready', identifier);
 
@@ -226,7 +244,7 @@ client.once('ready', async () => {
         }
 
         client.user?.setActivity(`Your Links... | Servers: ${guilds}`, {
-            type: 'WATCHING',
+            type: ActivityType.Watching,
         });
     }, 5000);
 });

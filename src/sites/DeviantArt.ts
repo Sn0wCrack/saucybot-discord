@@ -9,7 +9,7 @@ import Deviant, {
 } from '@sn0wcrack/deviant';
 import cheerio from 'cheerio';
 import { DeviantionResponse } from '@sn0wcrack/deviant/dist/Responses';
-import { Message, MessageEmbed } from 'discord.js';
+import { Message, EmbedBuilder } from 'discord.js';
 import { DateTime } from 'luxon';
 
 const OMEBED_URL = 'https://backend.deviantart.com/oembed';
@@ -76,7 +76,7 @@ class DeviantArt extends BaseSite {
                 .deviations()
                 .get(parsed.groups.uuid);
 
-            const embed = new MessageEmbed({
+            const embed = new EmbedBuilder({
                 title: deviation.title,
                 url: url,
                 timestamp: DateTime.fromSeconds(
@@ -137,7 +137,7 @@ class DeviantArt extends BaseSite {
                 })
                 .json<oEmbedResponse>();
 
-            const embed = new MessageEmbed({
+            const embed = new EmbedBuilder({
                 title: response.title,
                 url: url,
                 color: this.color,

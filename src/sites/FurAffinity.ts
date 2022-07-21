@@ -2,7 +2,7 @@ import BaseSite from './BaseSite';
 import ProcessResponse from './ProcessResponse';
 import got from 'got';
 import { version } from '../../package.json';
-import { Message, MessageEmbed } from 'discord.js';
+import { Message, EmbedBuilder } from 'discord.js';
 import CacheManager from '../CacheManager';
 import { processDescription } from '../Helpers';
 
@@ -32,7 +32,7 @@ class FurAffinity extends BaseSite {
             return Promise.resolve(false);
         }
 
-        const embed = new MessageEmbed({
+        const embed = new EmbedBuilder({
             title: response.title,
             url: match[0],
             color: this.color,
