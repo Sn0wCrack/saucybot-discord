@@ -58,7 +58,12 @@ class Twitter extends BaseSite {
         if (source) {
             await delay(Environment.get('TWITTER_READ_DELAY', 1000) as number);
 
-            source = await source.fetch(true);
+            try {
+                source = await source.fetch(true);
+            } catch (ex) {
+                // If we've failed to refetch the message, it's probably deleted
+                return Promise.resolve(false);
+            }
 
             hasTwitterEmbed = source.embeds?.find((item) => {
                 const isFromTwitter =
@@ -156,6 +161,7 @@ class Twitter extends BaseSite {
 
                 return Promise.resolve(JSON.stringify(results));
             } catch (ex) {
+                // Generally this exception occurs when the tweet does not exist or cannot be viewed
                 return Promise.resolve(null);
             }
         });
