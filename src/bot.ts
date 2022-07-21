@@ -1,26 +1,19 @@
-import discord, {
-    ActivityType,
-    GatewayIntentBits,
-    PermissionFlagsBits,
-    TextChannel,
-} from 'discord.js';
+import discord, { ActivityType, TextChannel } from 'discord.js';
 import dotenv from 'dotenv';
 import Environment from './Environment';
 import Logger from './Logger';
 import MessageSender from './MessageSender';
 import SiteRunner from './SiteRunner';
 import * as Sentry from '@sentry/node';
+import {
+    REQUIRED_CHANNEL_PERMISSIONS,
+    REQUIRED_GATEWAY_INTENTS,
+} from './Constants';
 
 dotenv.config();
 
-const intents = [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-];
-
 const client = new discord.Client({
-    intents: intents,
+    intents: REQUIRED_GATEWAY_INTENTS,
     allowedMentions: { repliedUser: false },
 });
 
@@ -57,12 +50,7 @@ client.on('messageCreate', async (message) => {
         message.channel as TextChannel
     );
 
-    if (
-        !permissions?.has(PermissionFlagsBits.ReadMessageHistory) ||
-        !permissions?.has(PermissionFlagsBits.SendMessages) ||
-        !permissions?.has(PermissionFlagsBits.EmbedLinks) ||
-        !permissions?.has(PermissionFlagsBits.AttachFiles)
-    ) {
+    if (!permissions?.has(REQUIRED_CHANNEL_PERMISSIONS)) {
         return;
     }
 
@@ -142,12 +130,7 @@ client.on('interactionCreate', async (interaction) => {
         interaction.channel as TextChannel
     );
 
-    if (
-        !permissions?.has(PermissionFlagsBits.ReadMessageHistory) ||
-        !permissions?.has(PermissionFlagsBits.SendMessages) ||
-        !permissions?.has(PermissionFlagsBits.EmbedLinks) ||
-        !permissions?.has(PermissionFlagsBits.AttachFiles)
-    ) {
+    if (!permissions?.has(REQUIRED_CHANNEL_PERMISSIONS)) {
         return;
     }
 
