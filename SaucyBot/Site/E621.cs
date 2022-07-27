@@ -51,6 +51,20 @@ public class E621 : BaseSite
         }
 
         var fields = new List<EmbedFieldBuilder>();
+
+        if (post.Post.Tags.Artist.Length >= 1)
+        {
+            var artists = post.Post.Tags.Artist.Select(artist => artist.ToTitleCase());
+            
+            var value = string.Join(", ", artists);
+            
+            fields.Add(new EmbedFieldBuilder
+            {
+                Name = "Artist",
+                Value = value,
+                IsInline = true
+            });
+        }
         
         fields.Add(new EmbedFieldBuilder
         {
@@ -63,6 +77,8 @@ public class E621 : BaseSite
         {
             Title = $"{prefix} Post #{match.Groups["id"].Value}".Trim(),
             Url = url,
+            Color = this.Color,
+            Timestamp = DateTimeOffset.Parse(post.Post.CreatedAt),
             Description = post.Post.Description,
             ImageUrl = imageUrl,
             Fields = fields,

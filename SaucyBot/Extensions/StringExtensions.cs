@@ -1,4 +1,6 @@
-﻿namespace SaucyBot.Extensions;
+﻿using System.Globalization;
+
+namespace SaucyBot.Extensions;
 
 public static class StringExtensions
 {
@@ -6,4 +8,7 @@ public static class StringExtensions
     {
         return values.Contains(source);
     }
+    
+    public static string ToTitleCase(this string s) =>
+        CultureInfo.InvariantCulture.TextInfo.ToTitleCase(s.ToLowerInvariant());
 }

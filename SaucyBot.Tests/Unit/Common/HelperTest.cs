@@ -58,4 +58,14 @@ public class HelpersTest
 
         Assert.NotEqual(description, processed);
     }
+
+    [Fact]
+    public async void ProcessDescriptionWillRetainBreaks()
+    {
+        const string description = "Test<br>Test";
+
+        var processed = await Helper.ProcessDescription(description);
+
+        Assert.Contains("\n", processed);
+    }
 }

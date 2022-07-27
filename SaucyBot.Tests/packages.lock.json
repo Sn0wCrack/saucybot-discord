@@ -659,10 +659,10 @@
       },
       "Pomelo.EntityFrameworkCore.MySql": {
         "type": "Transitive",
-        "resolved": "6.0.1",
-        "contentHash": "sFIo5e9RmQoCTEvH6EeSV8ptmX3dw/6XgyD8R93X/i7A9+XCeG9KTjSNjrszVjVOtCu/eyvYqqcv2uZ/BHhlYA==",
+        "resolved": "6.0.2",
+        "contentHash": "KvlZ800CnEuEGnxj5OT1fCKGjQXxW5kpPlCP91JqBYG+2Z3927eqXmlX6LLKUt4swqE8ZsEQ+Zkpab8bqstf4g==",
         "dependencies": {
-          "Microsoft.EntityFrameworkCore.Relational": "[6.0.1, 7.0.0)",
+          "Microsoft.EntityFrameworkCore.Relational": "[6.0.7, 7.0.0)",
           "Microsoft.Extensions.DependencyInjection": "6.0.0",
           "MySqlConnector": "2.1.2"
         }
@@ -801,24 +801,24 @@
       },
       "Sentry": {
         "type": "Transitive",
-        "resolved": "3.19.0",
-        "contentHash": "AB2M8QGA9eGh1DN+mBpBMNPwHDRausGQscCbPZIkPYdXnkBYdKXUR+1AAYvAEJmGMEyGIjIfUhUuhwSPCR9Jjg=="
+        "resolved": "3.20.1",
+        "contentHash": "SkI+CaRmdi5W3JA2plmJpjCQ+P49EuoCODmvrcYUGqeWMGwqa8DJWyeUDpso1DD82wYzbQ0RioSAoxG3nUhzjQ=="
       },
       "Sentry.EntityFramework": {
         "type": "Transitive",
-        "resolved": "3.19.0",
-        "contentHash": "8gRXhimePcxdZ6qA4MjyQZ8k4fGc9xP/wZgz16obCM3mP8Op5EDoC1n6CG17d3IPLGs989kiRWVHJopKzxtWhQ==",
+        "resolved": "3.20.1",
+        "contentHash": "kSZGJNq51/l9mjEsMLs0rEAYoBcfNfANFnVm9InEzps+ru94B8qkNEmlB5iieXhHcR0+CKyggJDuiffYTF52aw==",
         "dependencies": {
           "EntityFramework": "6.3.0",
-          "Sentry": "3.19.0"
+          "Sentry": "3.20.1"
         }
       },
       "Sentry.Serilog": {
         "type": "Transitive",
-        "resolved": "3.19.0",
-        "contentHash": "fQe5a2mCrtKg7gnGqNqDGL+8nMCu7kPWIhDe9azFZoCqUwRHpT1GtI+ym8v6/Yo/UqyrQMpsxlaZ1h6Cqz/gQg==",
+        "resolved": "3.20.1",
+        "contentHash": "EnI28R+xIZhwCsWTUAKFjy0eAHm9AqI+5Zp6Oh5wWtXhj2OVk4EKx/wUBBzj6H2pVl/B+xidM2EdGCymyEQo4A==",
         "dependencies": {
-          "Sentry": "3.19.0",
+          "Sentry": "3.20.1",
           "Serilog": "2.10.0"
         }
       },
@@ -1846,10 +1846,10 @@
           "Microsoft.Extensions.Caching.Memory": "6.0.1",
           "Microsoft.Extensions.Caching.StackExchangeRedis": "6.0.7",
           "Microsoft.Extensions.Hosting": "6.0.1",
-          "Pomelo.EntityFrameworkCore.MySql": "6.0.1",
-          "Sentry": "3.19.0",
-          "Sentry.EntityFramework": "3.19.0",
-          "Sentry.Serilog": "3.19.0",
+          "Pomelo.EntityFrameworkCore.MySql": "6.0.2",
+          "Sentry": "3.20.1",
+          "Sentry.EntityFramework": "3.20.1",
+          "Sentry.Serilog": "3.20.1",
           "Serilog": "2.11.0",
           "Serilog.Extensions.Hosting": "5.0.1",
           "Serilog.Settings.Configuration": "3.3.0",
