@@ -6,15 +6,15 @@ using SaucyBot.Services;
 
 namespace SaucyBot.Library.Sites.FurAffinity;
 
-public class FaExportClient
+public class FaExportClient : IFurAffinityClient
 {
     private const string BaseUrl = "https://faexport.spangle.org.uk";
 
-    private readonly CacheManager _cache;
+    private readonly ICacheManager _cache;
     
     private readonly HttpClient _client = new();
 
-    public FaExportClient(CacheManager cacheManager)
+    public FaExportClient(ICacheManager cacheManager)
     {
         _cache = cacheManager;
         
