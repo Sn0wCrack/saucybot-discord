@@ -37,14 +37,14 @@ var host = Host.CreateDefaultBuilder(args)
         services.AddSingleton<SiteManager>();
         services.AddSingleton<MessageManager>();
         services.AddSingleton<DatabaseManager>();
-        services.AddSingleton<CacheManager>();
+        services.AddSingleton<ICacheManager, CacheManager>();
 
         services.AddSingleton<MemoryCacheDriver>();
         services.AddSingleton<RedisCacheDriver>();
 
         services.AddSingleton<GuildConfigurationManager>();
         
-        services.AddSingleton<FaExportClient>();
+        services.AddSingleton<IFurAffinityClient, FaExportClient>();
         services.AddSingleton<PixivClient>();
         services.AddSingleton<ArtStationClient>();
         services.AddSingleton<HentaiFoundryClient>();

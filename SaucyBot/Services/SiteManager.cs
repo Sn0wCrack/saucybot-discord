@@ -113,7 +113,7 @@ public class SiteManager
 
             try
             {
-                var response = await Process(site, match, message);
+                var response = await _sites[site].Process(match, message);
 
                 if (response is null)
                 {
@@ -156,11 +156,6 @@ public class SiteManager
         }
 
         return await message.ReplyAsync($"Matched link to {site}, please wait...", allowedMentions: AllowedMentions.None);
-    }
-
-    public async Task<ProcessResponse?> Process(string identifier, Match match, SocketUserMessage? message = null)
-    {
-        return await _sites[identifier].Process(match, message);
     }
 }
 

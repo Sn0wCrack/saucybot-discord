@@ -2,7 +2,7 @@
 
 namespace SaucyBot.Services;
 
-public class CacheManager
+public class CacheManager : ICacheManager
 {
     private readonly ILogger<CacheManager> _logger;
     private readonly IConfiguration _configuration;

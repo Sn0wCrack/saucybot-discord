@@ -1,8 +1,6 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using SaucyBot.Extensions;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace SaucyBot.Tests.Unit.Extensions;
 

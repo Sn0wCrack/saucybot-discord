@@ -12,9 +12,9 @@ public class FurAffinity : BaseSite
     protected override string Pattern => @"https?:\/\/(www\.)?furaffinity\.net\/(?:view|full)\/(?<id>\d+)\/?";
 
     private readonly ILogger<FurAffinity> _logger;
-    private readonly FaExportClient _client;
+    private readonly IFurAffinityClient _client;
 
-    public FurAffinity(ILogger<FurAffinity> logger, FaExportClient client)
+    public FurAffinity(ILogger<FurAffinity> logger, IFurAffinityClient client)
     {
         _logger = logger;
         _client = client;
