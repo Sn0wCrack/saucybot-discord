@@ -37,8 +37,6 @@ class DeviantArt extends BaseSite {
         };
 
         this.api = new Deviant(auth, http);
-
-        this.api.authorize();
     }
 
     async process(
@@ -54,6 +52,8 @@ class DeviantArt extends BaseSite {
         const url = match[0];
 
         try {
+            await this.api.authorize();
+
             const response = await got.get(url);
 
             const $ = cheerio.load(response.body);
