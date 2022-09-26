@@ -1,7 +1,6 @@
 import discord, {
     ActivityType,
     PermissionFlagsBits,
-    PermissionsBitField,
     TextChannel,
 } from 'discord.js';
 import dotenv from 'dotenv';
