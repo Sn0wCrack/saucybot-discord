@@ -1,4 +1,9 @@
-import discord, { ActivityType, TextChannel } from 'discord.js';
+import discord, {
+    ActivityType,
+    PermissionFlagsBits,
+    PermissionsBitField,
+    TextChannel,
+} from 'discord.js';
 import dotenv from 'dotenv';
 import Environment from './Environment';
 import Logger from './Logger';
@@ -94,11 +99,18 @@ client.on('messageCreate', async (message) => {
 
                         await sender.send(message, processed);
 
+                        // If we have the permission to manage messages, suppress any embeds on the original post
+                        if (
+                            permissions?.has(PermissionFlagsBits.ManageMessages)
+                        ) {
+                            await message.suppressEmbeds();
+                        }
+
                         await waitMessage.delete();
                     } catch (ex) {
-                        await waitMessage.delete();
                         Sentry.captureException(ex);
                         Logger.error(ex?.message, identifier);
+                        await waitMessage.delete();
                     }
 
                     return resolve();

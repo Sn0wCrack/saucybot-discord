@@ -1,9 +1,9 @@
 import {
     Message,
-    MessageOptions,
+    BaseMessageOptions,
     AttachmentPayload,
     CommandInteraction,
-    InteractionReplyOptions,
+    MessagePayload,
 } from 'discord.js';
 import { MAX_EMBEDS_PER_MESSAGE, MAX_FILESIZE } from './Constants';
 import Logger from './Logger';
@@ -214,6 +214,6 @@ class MessageSender {
 /**
  * An amalgamation of all types that can be used to send messages to a channel
  */
-type MessageTypes = ((MessageOptions & InteractionReplyOptions) | string)[];
+type MessageTypes = (MessagePayload | BaseMessageOptions | string)[];
 
 export default MessageSender;
