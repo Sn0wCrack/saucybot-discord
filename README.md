@@ -29,10 +29,20 @@ If you would like to add this bot to your server [click here](https://discordapp
   * E(x-)Hentai - Creates an embed to preview cover art, title, current score, etc.
     * NOTE: Live version only supports e-hentai.org right now
 
-Installion
+Installation
 ----------
 
-TODO
+Clone repo
+
+    git pull https://github.com/Sn0wCrack/saucybot-discord.git && cd saucybot-discord
+
+Make a copy of the .env.example file, name it .env and edit the variables to suit your configuration.
+
+    cp .env.example .env && nano .env
+
+Pull the latest docker image, point it to the .env file, create container and run as a service.
+
+    docker run -d --env-file .env ghcr.io/sn0wcrack/saucybot-discord:latest
 
 FAQ
 ---
