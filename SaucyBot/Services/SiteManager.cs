@@ -129,6 +129,11 @@ public class SiteManager
 
                 await _messageManager.Send(message, response);
 
+                if (message.Embeds.Count >= 1)
+                {
+                    await message.ModifyAsync(x => x.Flags = MessageFlags.SuppressEmbeds);
+                }
+
                 if (matchedMessage is not null)
                 {
                     await matchedMessage.DeleteAsync();

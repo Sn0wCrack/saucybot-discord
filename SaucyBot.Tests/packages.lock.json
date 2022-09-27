@@ -79,29 +79,29 @@
       },
       "Discord.Net": {
         "type": "Transitive",
-        "resolved": "3.8.0",
-        "contentHash": "sZD2xupS+9GD5n0hrg0i31bC8KszAt+S9COr3Z526vt0CE2TwIdohUjsOK6Pao7Hrl58Nf0BL9+j7iZZz+0VjQ==",
+        "resolved": "3.8.1",
+        "contentHash": "0Ed385FnrcN/4iH4a4nLwXZjRNT00ZK9VmYgE1Gefq/+A5FhjquGDgBdFn43H7u8pM1pHW0xP8iwiqjrtl0vpA==",
         "dependencies": {
-          "Discord.Net.Commands": "3.8.0",
-          "Discord.Net.Core": "3.8.0",
-          "Discord.Net.Interactions": "3.8.0",
-          "Discord.Net.Rest": "3.8.0",
-          "Discord.Net.WebSocket": "3.8.0",
-          "Discord.Net.Webhook": "3.8.0"
+          "Discord.Net.Commands": "3.8.1",
+          "Discord.Net.Core": "3.8.1",
+          "Discord.Net.Interactions": "3.8.1",
+          "Discord.Net.Rest": "3.8.1",
+          "Discord.Net.WebSocket": "3.8.1",
+          "Discord.Net.Webhook": "3.8.1"
         }
       },
       "Discord.Net.Commands": {
         "type": "Transitive",
-        "resolved": "3.8.0",
-        "contentHash": "NaeScuFoL8O7QfeDxWGiBRAd13Qajn2iWl6MS5HdCFFfKWjNrCmo7v6STap8uN7PyID/14dwFDzCNCudRArJRg==",
+        "resolved": "3.8.1",
+        "contentHash": "EUqmEfwji9lb1eGTSzGC9dIXwsz1OUAJ+H6bCq2tXCcbvttkcZpXY1W4kwp91faDUxFFrvSXNYzVy4rTjnQ/ug==",
         "dependencies": {
-          "Discord.Net.Core": "3.8.0"
+          "Discord.Net.Core": "3.8.1"
         }
       },
       "Discord.Net.Core": {
         "type": "Transitive",
-        "resolved": "3.8.0",
-        "contentHash": "anq5FvYE5Uls7zIbMJt6IT9yXndoJpPh/fMiNhFDMqgzQlZtCoOODGHcHtG50hDNn777kYTpWPQ8Q0UosqHjWQ==",
+        "resolved": "3.8.1",
+        "contentHash": "HFN6NqOUIKarSEg3+ZqeaoL+3dMfcNyJX8niztHYFGORuXAdpaGo97TLePxfuOHz7cCLNKOlBuMUcnJBSy1gtA==",
         "dependencies": {
           "Newtonsoft.Json": "13.0.1",
           "System.Collections.Immutable": "5.0.0",
@@ -111,12 +111,12 @@
       },
       "Discord.Net.Interactions": {
         "type": "Transitive",
-        "resolved": "3.8.0",
-        "contentHash": "rbnSyD6GqNledBVzbjtkhIsnmoz8tKt2vTzEkNg4d4h8Q2Eh066Co5oVSO7jNH07ugT8kyZSdW87Q60YrrD7+w==",
+        "resolved": "3.8.1",
+        "contentHash": "F/J12Kz6ALx4WXKwQnoyLleMfEnAWZdMnZKrtux4VwguEtUWzthPCLSlJqgBYOh6W51Npw5/1hV6hJPcWwBF8g==",
         "dependencies": {
-          "Discord.Net.Core": "3.8.0",
-          "Discord.Net.Rest": "3.8.0",
-          "Discord.Net.WebSocket": "3.8.0",
+          "Discord.Net.Core": "3.8.1",
+          "Discord.Net.Rest": "3.8.1",
+          "Discord.Net.WebSocket": "3.8.1",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "5.0.0",
           "System.Collections.Immutable": "5.0.0",
           "System.Reactive": "5.0.0"
@@ -124,28 +124,28 @@
       },
       "Discord.Net.Rest": {
         "type": "Transitive",
-        "resolved": "3.8.0",
-        "contentHash": "D8CGSkWqeRg3D8ZawthWdwKFHPVhdYB8dxltT5wAgN5op6lZd8BjEzCCOlsDrnIGcah3BkOnVqgPk1u0SBxqWw==",
+        "resolved": "3.8.1",
+        "contentHash": "0MFQwuvlvPXAm/U/AHqwlD3s35/uHB7PzaNTWpRIBuZIoV+9cH4seigSfXe6c6TzIQcNk+1jQs/udOf4WWzKOA==",
         "dependencies": {
-          "Discord.Net.Core": "3.8.0"
+          "Discord.Net.Core": "3.8.1"
         }
       },
       "Discord.Net.Webhook": {
         "type": "Transitive",
-        "resolved": "3.8.0",
-        "contentHash": "5TZavUm1OqZKWr98JH1J9dZNixu32Kylz+9iL2czvR+IfdfpG6UXr40qk79Po6WLjWHmtBEpULVwSN11otTG3g==",
+        "resolved": "3.8.1",
+        "contentHash": "f1YKcHdicawBXZhZmkw8WEOZ2S3TA7xgygG4m5+DC1yA2gukz5F3wNWmACz4nXjRPwQlNbZA2yWoceulQrj5/A==",
         "dependencies": {
-          "Discord.Net.Core": "3.8.0",
-          "Discord.Net.Rest": "3.8.0"
+          "Discord.Net.Core": "3.8.1",
+          "Discord.Net.Rest": "3.8.1"
         }
       },
       "Discord.Net.WebSocket": {
         "type": "Transitive",
-        "resolved": "3.8.0",
-        "contentHash": "DOPGQLqyf2km0UyOcLxeV6TP4WA2f18aWJAaU4TxInYMqAVSOZVaQfB0bBf307uNNlYqCE6loYwrysH8zQNbpQ==",
+        "resolved": "3.8.1",
+        "contentHash": "lM4pITVCP1U44F/zBsBoKfKxzK73ONcv2oR48EcxZ+tni/BcCVX8HZlH5/6Dej7ijEHTkvuxKttqp80MROdXGg==",
         "dependencies": {
-          "Discord.Net.Core": "3.8.0",
-          "Discord.Net.Rest": "3.8.0"
+          "Discord.Net.Core": "3.8.1",
+          "Discord.Net.Rest": "3.8.1"
         }
       },
       "EFCore.NamingConventions": {
@@ -1853,26 +1853,26 @@
       "saucybot": {
         "type": "Project",
         "dependencies": {
-          "AngleSharp": "0.17.1",
-          "AngleSharp.Css": "0.16.4",
-          "CoreTweet": "1.0.0.483",
-          "Discord.Net": "3.8.0",
-          "EFCore.NamingConventions": "6.0.0",
-          "Microsoft.EntityFrameworkCore": "6.0.8",
-          "Microsoft.EntityFrameworkCore.Sqlite": "6.0.8",
-          "Microsoft.Extensions.Caching.Memory": "6.0.1",
-          "Microsoft.Extensions.Caching.StackExchangeRedis": "6.0.8",
-          "Microsoft.Extensions.Hosting": "6.0.1",
-          "Pomelo.EntityFrameworkCore.MySql": "6.0.2",
-          "Sentry": "3.21.0",
-          "Sentry.EntityFramework": "3.21.0",
-          "Sentry.Serilog": "3.21.0",
-          "Serilog": "2.11.0",
-          "Serilog.Extensions.Hosting": "5.0.1",
-          "Serilog.Settings.Configuration": "3.3.0",
-          "Serilog.Sinks.Console": "4.0.1",
-          "StackExchange.Redis": "2.6.48",
-          "Xabe.FFmpeg": "5.2.0"
+          "AngleSharp": "[0.17.1, )",
+          "AngleSharp.Css": "[0.16.4, )",
+          "CoreTweet": "[1.0.0.483, )",
+          "Discord.Net": "[3.8.1, )",
+          "EFCore.NamingConventions": "[6.0.0, )",
+          "Microsoft.EntityFrameworkCore": "[6.0.8, )",
+          "Microsoft.EntityFrameworkCore.Sqlite": "[6.0.8, )",
+          "Microsoft.Extensions.Caching.Memory": "[6.0.1, )",
+          "Microsoft.Extensions.Caching.StackExchangeRedis": "[6.0.8, )",
+          "Microsoft.Extensions.Hosting": "[6.0.1, )",
+          "Pomelo.EntityFrameworkCore.MySql": "[6.0.2, )",
+          "Sentry": "[3.21.0, )",
+          "Sentry.EntityFramework": "[3.21.0, )",
+          "Sentry.Serilog": "[3.21.0, )",
+          "Serilog": "[2.11.0, )",
+          "Serilog.Extensions.Hosting": "[5.0.1, )",
+          "Serilog.Settings.Configuration": "[3.3.0, )",
+          "Serilog.Sinks.Console": "[4.0.1, )",
+          "StackExchange.Redis": "[2.6.48, )",
+          "Xabe.FFmpeg": "[5.2.0, )"
         }
       }
     }
