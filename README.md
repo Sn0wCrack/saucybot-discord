@@ -159,7 +159,7 @@ FAQ
 ---
 
 ### Question: There is terminology I don't understand, can you please explain it to me?
-**Answer:** A list of terms I use relating to the SaucyBot, Discord Bots or Discord itself can be found on [this page](https://github.com/Sn0wCrack/saucybot-discord/wiki/Glossary)
+**Answer:** A list of terms I use relating to SaucyBot, Discord Bots or Discord itself can be found on [this page](https://github.com/Sn0wCrack/saucybot-discord/wiki/Glossary)
 
 ### Question: Can I adjust the number of images embed by Pixiv or ArtStation?
 **Answer:** Currently this is not supported if you are using the publicly hosted version of SaucyBot.
