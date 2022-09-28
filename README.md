@@ -1,4 +1,4 @@
-Saucybot
+SaucyBot
 ========
 
 > A discord bot that fills in the gaps for art sites without proper inline embeds.
@@ -11,7 +11,7 @@ Saucybot
 
 If you would like to add this bot to your server [click here](https://discordapp.com/api/oauth2/authorize?client_id=647368715742216193&permissions=67497024&scope=bot) and authorize it through your discord account.
 
-* Currently Supports:
+* Currently, Supports:
   * ArtStation - Embeds up to X extra images (X is configurable, default 5)
   * Twitter - Embeds posts when native embeds fail
     * NOTE: May not always work as expected due to API rate limits
@@ -20,24 +20,158 @@ If you would like to add this bot to your server [click here](https://discordapp
   * DeviantArt - Embeds main image or thumbnail, includes more information than built-in embed
   * Hentai Foundry - Creates embed as none exists for site.
   * Pixiv - Posts up to X images of the set (X is configurable, default 5)
-    * Pixiv Ugoira - Uploads a video with correct framerate and frametiming (Video format is configurable, requires ffmpeg)
+    * Pixiv Ugoira - Uploads a video with correct framerate and frame-timing (Video format is configurable, requires ffmpeg)
   * FurAffinity - Creates image embed as none exists for site
-  * Newgrounds - Creates embed for site as image isn't fully embeded, this also displays the rating the image has.
-    * NOTE: Doesn't support embeding videos
+  * Newgrounds - Creates embed for site as image isn't fully embedded, this also displays the rating the image has.
+    * NOTE: Doesn't support embedding videos
   * e621 - Creates an embed similar to what discord embeds but with higher quality image and slightly more information
     * NOTE: This is disabled on live version as I think it doesn't add much right now
   * E(x-)Hentai - Creates an embed to preview cover art, title, current score, etc.
     * NOTE: Live version only supports e-hentai.org right now
 
-Installion
+Installation
 ----------
 
-TODO
+### Production Docker (recommended)
+
+Prerequisites:
+ - Docker (https://docs.docker.com/get-docker/)
+
+#### Windows
+
+Save the following two files to the same folder, preferably named `SaucyBot`:
+ - [docker-compose.yml](https://raw.githubusercontent.com/Sn0wCrack/saucybot-discord/master/docker-compose.prod.yml)
+ - [.env](https://raw.githubusercontent.com/Sn0wCrack/saucybot-discord/master/.env.example)
+
+Ensure these are saved in the same folder and are saved as `docker-compose.yml` amd `.env` respectively.
+
+I would also recommend ensuring the full file path to these files contains no spaces.
+
+Open `.env` in a text editor of your choice and adjust the values based on the meaning of these values described on [this page](https://github.com/Sn0wCrack/saucybot-discord/wiki/Environment-Variable-Values).
+
+Please ensure that if you do not intend to use a site in your instance of the bot that you add that site name to the `DISABLED_SITES` environment value.
+
+Once the `.env` file has been adjusted open a terminal in the location you have saved your `docker-compose.yml` and `.env` and run the following:
+
+```shell
+docker-compose up -d
+```
+
+You should see output to your terminal window indicating that is downloading the required docker images and starting them.
+
+You can check how your instance is running inside the application called `Docker Desktop` under the `Containers` link in the left-hand sidebar.
+
+#### macOS
+
+Prerequisites:
+- Docker (https://docs.docker.com/get-docker/)
+
+#### Windows
+
+Save the following two files to the same folder, preferably named `SaucyBot`:
+- [docker-compose.yml](https://raw.githubusercontent.com/Sn0wCrack/saucybot-discord/master/docker-compose.prod.yml)
+- [.env](https://raw.githubusercontent.com/Sn0wCrack/saucybot-discord/master/.env.example)
+
+Ensure these are saved in the same folder and are saved as `docker-compose.yml` amd `.env` respectively.
+
+I would also recommend ensuring the full file path to these files contains no spaces.
+
+Open `.env` in a text editor of your choice and adjust the values based on the meaning of these values described on [this page](https://github.com/Sn0wCrack/saucybot-discord/wiki/Environment-Variable-Values).
+
+Please ensure that if you do not intend to use a site in your instance of the bot that you add that site name to the `DISABLED_SITES` environment value.
+
+Once the `.env` file has been adjusted open a terminal in the location you have saved your `docker-compose.yml` and `.env` and run the following:
+
+```shell
+docker-compose up -d
+```
+
+You should see output to your terminal window indicating that is downloading the required docker images and starting them.
+
+You can check how your instance is running inside the application called `Docker Desktop` under the `Containers` link in the left-hand sidebar.
+
+#### Linux
+
+Prerequisites:
+- Docker (https://docs.docker.com/get-docker/)
+
+#### Windows
+
+Save the following two files to the same folder, preferably named `SaucyBot`:
+- [docker-compose.yml](https://raw.githubusercontent.com/Sn0wCrack/saucybot-discord/master/docker-compose.prod.yml)
+- [.env](https://raw.githubusercontent.com/Sn0wCrack/saucybot-discord/master/.env.example)
+
+Ensure these are saved in the same folder and are saved as `docker-compose.yml` amd `.env` respectively.
+
+I would also recommend ensuring the full file path to these files contains no spaces.
+
+Open `.env` in a text editor of your choice and adjust the values based on the meaning of these values described on [this page](https://github.com/Sn0wCrack/saucybot-discord/wiki/Environment-Variable-Values).
+
+Please ensure that if you do not intend to use a site in your instance of the bot that you add that site name to the `DISABLED_SITES` environment value.
+
+Once the `.env` file has been adjusted open a terminal in the location you have saved your `docker-compose.yml` and `.env` and run the following:
+
+```shell
+docker-compose up -d
+```
+
+You should see output to your terminal window indicating that is downloading the required docker images and starting them.
+
+You can check how your instance is running inside the application called `Docker Desktop` under the `Containers` link in the left-hand sidebar.
+
+
+### Development Docker
+
+Prerequisites:
+ - git (https://git-scm.com/)
+   - If you're on Windows use https://desktop.github.com/ or https://www.gitkraken.com/
+ - Docker (https://docs.docker.com/get-docker/)
+
+<!-- TODO: Improve this section -->
+
+Clone Repository
+
+Run the following command:
+```shell
+docker-compose -f docker-compose.dev.yml up -d
+```
+
+### Standalone
+
+Prerequisites:
+ - git (https://git-scm.com/)
+    - If you're on Windows use https://desktop.github.com/ or https://www.gitkraken.com/
+ - nodejs (https://nodejs.org/en/)
+ - yarn (https://yarnpkg.com/)
+
+<!-- TODO: Improve this section -->
+
+Clone Repository
+
+Run the following commands:
+```shell
+yarn install
+yarn start
+```
+
 
 FAQ
 ---
 
-TODO
+### Question: There is terminology I don't understand, can you please explain it to me?
+**Answer:** A list of terms I use relating to the SaucyBot, Discord Bots or Discord itself can be found on [this page](https://github.com/Sn0wCrack/saucybot-discord/wiki/Glossary)
+
+### Question: Can I adjust the number of images embed by Pixiv or ArtStation?
+**Answer:** Currently this is not supported if you are using the publicly hosted version of SaucyBot.
+This will be something that will hopefully be configurable in SaucyBot v2 when that is completed.
+
+### Question: Can I adjust the sites SaucyBot embeds on my server?
+**Answer:** Currently this is not supported if you are using the publicly hosted version of SaucyBot.
+This will be something that will hopefully be configurable in SaucyBot v2 when that is completed.
+
+### Question: Can I have SaucyBot ignore certain channels?
+**Answer:** This is not something SaucyBot needs to do itself and can be accomplished in Discord, you are able adjust the permissions on that channel and remove the SaucyBot groups permission to view that channel.
+If you have provided Administrator privileges to SaucyBot that override that value, I would **highly suggest** removing SaucyBot from any additional groups that provide it with escalated privileges it does not require.
 
 Credits
 -------
