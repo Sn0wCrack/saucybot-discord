@@ -8,15 +8,15 @@ using SaucyBot.Services;
 
 namespace SaucyBot.Library.Sites.DeviantArt;
 
-public class DeviantArtOpenEmbedClient
+public sealed class DeviantArtOpenEmbedClient
 {
     private const string EndpointUrl = "https://backend.deviantart.com/oembed";
 
-    private readonly CacheManager _cache;
+    private readonly ICacheManager _cache;
     
     private readonly HttpClient _client = new();
 
-    public DeviantArtOpenEmbedClient(CacheManager cacheManager)
+    public DeviantArtOpenEmbedClient(ICacheManager cacheManager)
     {
         _cache = cacheManager;
         
@@ -41,7 +41,7 @@ public class DeviantArtOpenEmbedClient
 
 #region Response Types
 
-public record OpenEmbedResponse(
+public sealed record OpenEmbedResponse(
     [property: JsonPropertyName("version")]
     string Version,
     [property: JsonPropertyName("type")]

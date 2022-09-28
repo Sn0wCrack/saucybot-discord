@@ -3,7 +3,7 @@ using Microsoft.Extensions.Caching.Distributed;
 
 namespace SaucyBot.Services.Cache;
 
-public class RedisCacheDriver : ICacheDriver
+public sealed class RedisCacheDriver : ICacheDriver
 {
     private readonly IDistributedCache _cache;
     private readonly IConfiguration _configuration;

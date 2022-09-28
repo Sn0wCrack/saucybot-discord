@@ -2,7 +2,7 @@
 
 namespace SaucyBot.Services.Cache;
 
-public class MemoryCacheDriver : ICacheDriver
+public sealed class MemoryCacheDriver : ICacheDriver
 {
     private readonly IMemoryCache _cache;
     private readonly IConfiguration _configuration;

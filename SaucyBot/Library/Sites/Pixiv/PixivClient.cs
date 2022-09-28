@@ -6,7 +6,7 @@ using SaucyBot.Services;
 
 namespace SaucyBot.Library.Sites.Pixiv;
 
-public class PixivClient
+public sealed class PixivClient
 {
     private const string BaseUrl = "https://www.pixiv.net";
     private const string LoginPageUrl = "https://accounts.pixiv.net/login";
@@ -17,7 +17,7 @@ public class PixivClient
 
     private readonly ILogger<PixivClient> _logger;
     private readonly IConfiguration _configuration;
-    private readonly CacheManager _cache;
+    private readonly ICacheManager _cache;
 
     private readonly CookieContainer _cookieContainer = new();
     private readonly HttpClient _client;
@@ -25,7 +25,7 @@ public class PixivClient
     public PixivClient(
         ILogger<PixivClient> logger,
         IConfiguration configuration,
-        CacheManager cacheManager
+        ICacheManager cacheManager
     ) {
         _logger = logger;
         _configuration = configuration;
@@ -117,7 +117,7 @@ public class PixivClient
 }
 
 #region Response Types
-public record IllustrationDetailsResponse(
+public sealed record IllustrationDetailsResponse(
     [property: JsonPropertyName("error")]
     bool Error,
     [property: JsonPropertyName("message")]
@@ -135,7 +135,7 @@ public enum IllustrationType
     Ugoira = 2,
 }
 
-public record IllustrationDetails(
+public sealed record IllustrationDetails(
     [property: JsonPropertyName("id")]
     string Id,
     [property: JsonPropertyName("title")]
@@ -150,7 +150,7 @@ public record IllustrationDetails(
     int PageCount
 );
 
-public record IllustrationDetailsUrls(
+public sealed record IllustrationDetailsUrls(
     [property: JsonPropertyName("mini")]
     string Mini,
     [property: JsonPropertyName("thumb")]
@@ -163,7 +163,7 @@ public record IllustrationDetailsUrls(
     string Original
 )
 {
-    public string[] All => new[] { Original, Regular, Small, Thumbnail, Mini };
+    public IEnumerable<string> All => new[] { Original, Regular, Small, Thumbnail, Mini };
 };
 
 public record IllustrationPagesResponse(
@@ -175,7 +175,7 @@ public record IllustrationPagesResponse(
     List<IllustrationPages> IllustrationPages
 );
 
-public record IllustrationPages(
+public sealed record IllustrationPages(
     [property: JsonPropertyName("urls")]
     IllustrationPagesUrls IllustrationPagesUrls,
     [property: JsonPropertyName("width")]
@@ -184,7 +184,7 @@ public record IllustrationPages(
     int Height
 );
 
-public record IllustrationPagesUrls(
+public sealed record IllustrationPagesUrls(
     [property: JsonPropertyName("thumb_mini")]
     string Thumbnail,
     [property: JsonPropertyName("small")]
@@ -195,10 +195,10 @@ public record IllustrationPagesUrls(
     string Original
 )
 {
-    public string[] All => new[] { Original, Regular, Small, Thumbnail };
+    public IEnumerable<string> All => new[] { Original, Regular, Small, Thumbnail };
 };
 
-public record UgoiraMetadataResponse(
+public sealed record UgoiraMetadataResponse(
     [property: JsonPropertyName("error")]
     bool Error,
     [property: JsonPropertyName("message")]
@@ -207,7 +207,7 @@ public record UgoiraMetadataResponse(
     UgoiraMetadata UgoiraMetadata
 );
 
-public record UgoiraMetadata(
+public sealed record UgoiraMetadata(
     [property: JsonPropertyName("frames")]
     List<UgoiraFrame> Frames,
     [property: JsonPropertyName("mime_type")]
@@ -218,7 +218,7 @@ public record UgoiraMetadata(
     string Source
 );
 
-public record UgoiraFrame(
+public sealed record UgoiraFrame(
     [property: JsonPropertyName("file")]
     string File,
     [property: JsonPropertyName("delay")]

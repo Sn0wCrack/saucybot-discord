@@ -3,7 +3,7 @@ using AngleSharp.Dom;
 
 namespace SaucyBot.Common;
 
-public class PlainTextMarkupFormatter : IMarkupFormatter
+public sealed class PlainTextMarkupFormatter : IMarkupFormatter
 {
     public String Text(ICharacterData text)
     {

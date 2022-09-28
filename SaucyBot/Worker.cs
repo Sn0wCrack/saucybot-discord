@@ -1,10 +1,11 @@
 using Discord;
 using Discord.WebSocket;
+using SaucyBot.Library;
 using SaucyBot.Services;
 
 namespace SaucyBot;
 
-public class Worker : BackgroundService
+public sealed class Worker : BackgroundService
 {
     private readonly ILogger<Worker> _logger;
     private readonly IConfiguration _configuration;
@@ -32,7 +33,7 @@ public class Worker : BackgroundService
 
         var config = new DiscordSocketConfig()
         {
-            GatewayIntents = GatewayIntents.Guilds | GatewayIntents.GuildMessages,
+            GatewayIntents = Constants.RequiredGatewayIntents,
             MessageCacheSize = 50,
             AlwaysDownloadUsers = false,
             AlwaysResolveStickers = false,

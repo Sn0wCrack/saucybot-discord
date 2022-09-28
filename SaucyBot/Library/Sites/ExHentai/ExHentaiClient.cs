@@ -12,11 +12,11 @@ using IConfiguration = Microsoft.Extensions.Configuration.IConfiguration;
 
 namespace SaucyBot.Library.Sites.ExHentai;
 
-public class ExHentaiClient
+public sealed class ExHentaiClient
 {
     private readonly ILogger<ExHentaiClient> _logger;
     private readonly IConfiguration _configuration;
-    private readonly CacheManager _cache;
+    private readonly ICacheManager _cache;
 
     private readonly CookieContainer _cookieContainer = new();
     private readonly HttpClient _client;
@@ -27,7 +27,7 @@ public class ExHentaiClient
     public ExHentaiClient(
         ILogger<ExHentaiClient> logger,
         IConfiguration configuration,
-        CacheManager cacheManager
+        ICacheManager cacheManager
     )  {
         _logger = logger;
         _configuration = configuration;
@@ -104,7 +104,7 @@ public abstract record ExHentaiRequest(ExHentaiRequestMode Mode)
     public abstract string GetUrl();
 }
 
-public record ExHentaiGalleryRequest(ExHentaiRequestMode Mode, string Id, string Hash) : ExHentaiRequest(Mode)
+public sealed record ExHentaiGalleryRequest(ExHentaiRequestMode Mode, string Id, string Hash) : ExHentaiRequest(Mode)
 {
     public override string GetUrl()
     {
@@ -112,7 +112,7 @@ public record ExHentaiGalleryRequest(ExHentaiRequestMode Mode, string Id, string
     }
 }
 
-public class ExHentaiGalleryPage
+public sealed class ExHentaiGalleryPage
 {
     private readonly IHtmlDocument _document;
 

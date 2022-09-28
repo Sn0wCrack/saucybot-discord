@@ -1,6 +1,6 @@
 ﻿namespace SaucyBot.Library.Sites.DeviantArt;
 
-public class DeviantArtClient
+public sealed class DeviantArtClient
 {
     
 }

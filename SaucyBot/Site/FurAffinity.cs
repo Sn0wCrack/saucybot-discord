@@ -6,7 +6,7 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site;
 
-public class FurAffinity : BaseSite
+public sealed class FurAffinity : BaseSite
 {
     public override string Identifier => "FurAffinity";
     protected override string Pattern => @"https?:\/\/(www\.)?furaffinity\.net\/(?:view|full)\/(?<id>\d+)\/?";

@@ -6,7 +6,7 @@ using SaucyBot.Services;
 
 namespace SaucyBot.Library.Sites.FurAffinity;
 
-public class FaExportClient : IFurAffinityClient
+public sealed class FaExportClient : IFurAffinityClient
 {
     private const string BaseUrl = "https://faexport.spangle.org.uk";
 
@@ -36,7 +36,7 @@ public class FaExportClient : IFurAffinityClient
 }
 
 #region Response Types
-public record FaExportSubmission(
+public sealed record FaExportSubmission(
     [property: JsonPropertyName("title")]
     string Title,
     [property: JsonPropertyName("description")]

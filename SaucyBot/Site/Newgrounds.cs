@@ -7,7 +7,7 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site;
 
-public class Newgrounds : BaseSite
+public sealed class Newgrounds : BaseSite
 {
     public override string Identifier => "Newgrounds";
 

@@ -8,7 +8,7 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site;
 
-public class HentaiFoundry : BaseSite
+public sealed class HentaiFoundry : BaseSite
 {
     public override string Identifier => "HentaiFoundry";
 

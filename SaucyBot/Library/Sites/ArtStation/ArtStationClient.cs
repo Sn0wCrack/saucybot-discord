@@ -6,16 +6,16 @@ using SaucyBot.Services;
 
 namespace SaucyBot.Library.Sites.ArtStation;
 
-public class ArtStationClient
+public sealed class ArtStationClient : IArtStationClient
 {
     private const string BaseUrl = "https://www.artstation.com";
     
     private readonly ILogger<ArtStationClient> _logger;
-    private readonly CacheManager _cache;
+    private readonly ICacheManager _cache;
     
     private readonly HttpClient _client = new();
 
-    public ArtStationClient(ILogger<ArtStationClient> logger, CacheManager cacheManager)
+    public ArtStationClient(ILogger<ArtStationClient> logger, ICacheManager cacheManager)
     {
         _logger = logger;
         _cache = cacheManager;
@@ -38,7 +38,7 @@ public class ArtStationClient
 
 #region Response Types
 
-public record Project(
+public sealed record Project(
     [property: JsonPropertyName("id")]
     ulong Id,
     [property: JsonPropertyName("title")]

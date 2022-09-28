@@ -5,7 +5,7 @@ using SaucyBot.Library;
 namespace SaucyBot.Database.Models;
 
 [Index(nameof(GuildId), IsUnique = true)]
-public class GuildConfiguration
+public sealed class GuildConfiguration
 {
     [Key]
     public uint Id { get; set; }
