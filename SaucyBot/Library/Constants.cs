@@ -1,4 +1,6 @@
-﻿namespace SaucyBot.Library;
+﻿using Discord;
+
+namespace SaucyBot.Library;
 
 public static class Constants
 {
@@ -31,6 +33,14 @@ public static class Constants
     #endregion
     
     #region Bot
+
+    public const GatewayIntents RequiredGatewayIntents =
+        GatewayIntents.Guilds | GatewayIntents.GuildMessages | GatewayIntents.MessageContent;
+
+    public const ChannelPermission RequiredChannelPermissions = ChannelPermission.ReadMessageHistory |
+                                                                 ChannelPermission.SendMessages |
+                                                                 ChannelPermission.EmbedLinks |
+                                                                 ChannelPermission.AttachFiles;
 
     /// <summary>
     /// The default maximum number of embeds to attempt to send in a single processing run.

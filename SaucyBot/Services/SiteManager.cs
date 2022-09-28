@@ -7,7 +7,7 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Services;
 
-public class SiteManager
+public sealed class SiteManager
 {
     private readonly ILogger<SiteManager> _logger;
     private readonly IConfiguration _configuration;

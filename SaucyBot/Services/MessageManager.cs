@@ -7,7 +7,7 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Services;
 
-public class MessageManager
+public sealed class MessageManager
 {
     private readonly ILogger<MessageManager> _logger;
     private readonly IConfiguration _configuration;
@@ -20,13 +20,7 @@ public class MessageManager
 
     public async Task Send(SocketUserMessage received, ProcessResponse response)
     {
-        var messages = response switch
-        {
-            { } pr when pr.Embeds.Count > 1 => await HandleMultipleEmbeds(response),
-            { } pr when pr.Embeds.Count == 1 => await HandleSingleEmbed(response),
-            { } pr when pr.Files.Count >= 1 => await HandleFiles(response),
-            _ => new List<Message> { new(response.Text ?? "") },
-        };
+        var messages = await PartitionMessages(response);
 
         foreach (var (content, embeds, fileAttachments) in messages)
         {
@@ -37,6 +31,17 @@ public class MessageManager
                 embeds: embeds?.ToArray()
             );
         }
+    }
+
+    public async Task<List<Message>> PartitionMessages(ProcessResponse response)
+    {
+        return response switch
+        {
+            { } pr when pr.Embeds.Count > 1 => await HandleMultipleEmbeds(response),
+            { } pr when pr.Embeds.Count == 1 => await HandleSingleEmbed(response),
+            { } pr when pr.Files.Count >= 1 => await HandleFiles(response),
+            _ => new List<Message> { new(response.Text ?? "") },
+        };
     }
 
     private Task<List<Message>> HandleFiles(ProcessResponse response)

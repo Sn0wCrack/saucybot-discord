@@ -4,7 +4,7 @@ using SaucyBot.Library;
 
 namespace SaucyBot.Database;
 
-public class DatabaseContext : DbContext
+public sealed class DatabaseContext : DbContext
 {
     private readonly string _connectionString;
 

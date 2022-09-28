@@ -9,7 +9,7 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site;
 
-public class Twitter : BaseSite
+public sealed class Twitter : BaseSite
 {
     public override string Identifier => "Twitter";
 
@@ -20,11 +20,11 @@ public class Twitter : BaseSite
 
     private readonly ILogger<Twitter> _logger;
     private readonly IConfiguration _configuration;
-    private readonly CacheManager _cache;
+    private readonly ICacheManager _cache;
     private readonly HttpClient _httpClient;
     private readonly Tokens _client;
 
-    public Twitter(ILogger<Twitter> logger, IConfiguration configuration, CacheManager cache)
+    public Twitter(ILogger<Twitter> logger, IConfiguration configuration, ICacheManager cache)
     {
         _logger = logger;
         _configuration = configuration;

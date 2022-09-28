@@ -8,7 +8,7 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site;
 
-public class DeviantArt : BaseSite
+public sealed class DeviantArt : BaseSite
 {
     public override string Identifier => "DeviantArt";
 

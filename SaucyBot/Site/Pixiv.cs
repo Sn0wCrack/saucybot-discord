@@ -13,7 +13,7 @@ using Xabe.FFmpeg;
 
 namespace SaucyBot.Site;
 
-public class Pixiv : BaseSite
+public sealed class Pixiv : BaseSite
 {
     public override string Identifier => "Pixiv";
     protected override string Pattern => @"https?:\/\/(www\.)?pixiv\.net\/.*artworks\/(?<id>\d+)\/?";

@@ -8,20 +8,20 @@ using SaucyBot.Services;
 
 namespace SaucyBot.Library.Sites.Newgrounds;
 
-public class NewgroundsClient
+public sealed class NewgroundsClient
 {
     private const string BaseUrl = "https://www.newgrounds.com";
     
     private readonly ILogger<NewgroundsClient> _logger;
     private readonly IConfiguration _configuration;
-    private readonly CacheManager _cache;
+    private readonly ICacheManager _cache;
 
     private readonly HttpClient _client = new();
 
     public NewgroundsClient(
         ILogger<NewgroundsClient> logger,
         IConfiguration configuration,
-        CacheManager cacheManager
+        ICacheManager cacheManager
     ) {
         _logger = logger;
         _configuration = configuration;
@@ -49,7 +49,7 @@ public class NewgroundsClient
     }
 }
 
-public class NewgroundsArt
+public sealed class NewgroundsArt
 {
     private readonly IHtmlDocument _document;
     

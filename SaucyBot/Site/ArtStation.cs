@@ -10,7 +10,7 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site;
 
-public class ArtStation : BaseSite
+public sealed class ArtStation : BaseSite
 {
     public override string Identifier => "ArtStation";
 
@@ -18,9 +18,9 @@ public class ArtStation : BaseSite
 
     private readonly ILogger<ArtStation> _logger;
     private readonly IConfiguration _configuration;
-    private readonly ArtStationClient _client;
+    private readonly IArtStationClient _client;
 
-    public ArtStation(ILogger<ArtStation> logger, IConfiguration configuration, ArtStationClient client)
+    public ArtStation(ILogger<ArtStation> logger, IConfiguration configuration, IArtStationClient client)
     {
         _logger = logger;
         _configuration = configuration;

@@ -10,11 +10,11 @@ public class E621Client
 {
     private const string BaseUrl = "https://e621.net";
 
-    private readonly CacheManager _cache;
+    private readonly ICacheManager _cache;
     
     private readonly HttpClient _client = new();
     
-    public E621Client(CacheManager cacheManager)
+    public E621Client(ICacheManager cacheManager)
     {
         _cache = cacheManager;
         

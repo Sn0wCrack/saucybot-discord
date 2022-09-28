@@ -10,13 +10,13 @@ using SaucyBot.Services;
 
 namespace SaucyBot.Library.Sites.HentaiFoundry;
 
-public class HentaiFoundryClient
+public sealed class HentaiFoundryClient
 {
     private const string BaseUrl = "https://www.hentai-foundry.com";
     
     private readonly ILogger<HentaiFoundryClient> _logger;
     private readonly IConfiguration _configuration;
-    private readonly CacheManager _cache;
+    private readonly ICacheManager _cache;
 
     private readonly CookieContainer _cookieContainer = new();
     private readonly HttpClient _client;
@@ -24,7 +24,7 @@ public class HentaiFoundryClient
     public HentaiFoundryClient(
         ILogger<HentaiFoundryClient> logger,
         IConfiguration configuration,
-        CacheManager cacheManager
+        ICacheManager cacheManager
     ) {
         _logger = logger;
         _configuration = configuration;
@@ -69,7 +69,7 @@ public class HentaiFoundryClient
     }
 }
 
-public class HentaiFoundryPicture
+public sealed class HentaiFoundryPicture
 {
     private const string BaseUrl = "https://www.hentai-foundry.com";
     

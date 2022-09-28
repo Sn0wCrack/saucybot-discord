@@ -46,7 +46,7 @@ var host = Host.CreateDefaultBuilder(args)
         
         services.AddSingleton<IFurAffinityClient, FaExportClient>();
         services.AddSingleton<PixivClient>();
-        services.AddSingleton<ArtStationClient>();
+        services.AddSingleton<IArtStationClient, ArtStationClient>();
         services.AddSingleton<HentaiFoundryClient>();
         services.AddSingleton<NewgroundsClient>();
         services.AddSingleton<ExHentaiClient>();
