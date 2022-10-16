@@ -37,7 +37,7 @@ Installation
 Prerequisites:
  - Docker (https://docs.docker.com/get-docker/)
 
-#### Windows
+#### Windows, macOS and Linux
 
 Save the following two files to the same folder, preferably named `SaucyBot`:
  - [docker-compose.yml](https://raw.githubusercontent.com/Sn0wCrack/saucybot-discord/master/docker-compose.prod.yml)
@@ -59,66 +59,7 @@ docker-compose up -d
 
 You should see output to your terminal window indicating that is downloading the required docker images and starting them.
 
-You can check how your instance is running inside the application called `Docker Desktop` under the `Containers` link in the left-hand sidebar.
-
-#### macOS
-
-Prerequisites:
-- Docker (https://docs.docker.com/get-docker/)
-
-#### Windows
-
-Save the following two files to the same folder, preferably named `SaucyBot`:
-- [docker-compose.yml](https://raw.githubusercontent.com/Sn0wCrack/saucybot-discord/master/docker-compose.prod.yml)
-- [.env](https://raw.githubusercontent.com/Sn0wCrack/saucybot-discord/master/.env.example)
-
-Ensure these are saved in the same folder and are saved as `docker-compose.yml` amd `.env` respectively.
-
-I would also recommend ensuring the full file path to these files contains no spaces.
-
-Open `.env` in a text editor of your choice and adjust the values based on the meaning of these values described on [this page](https://github.com/Sn0wCrack/saucybot-discord/wiki/Environment-Variable-Values).
-
-Please ensure that if you do not intend to use a site in your instance of the bot that you add that site name to the `DISABLED_SITES` environment value.
-
-Once the `.env` file has been adjusted open a terminal in the location you have saved your `docker-compose.yml` and `.env` and run the following:
-
-```shell
-docker-compose up -d
-```
-
-You should see output to your terminal window indicating that is downloading the required docker images and starting them.
-
-You can check how your instance is running inside the application called `Docker Desktop` under the `Containers` link in the left-hand sidebar.
-
-#### Linux
-
-Prerequisites:
-- Docker (https://docs.docker.com/get-docker/)
-
-#### Windows
-
-Save the following two files to the same folder, preferably named `SaucyBot`:
-- [docker-compose.yml](https://raw.githubusercontent.com/Sn0wCrack/saucybot-discord/master/docker-compose.prod.yml)
-- [.env](https://raw.githubusercontent.com/Sn0wCrack/saucybot-discord/master/.env.example)
-
-Ensure these are saved in the same folder and are saved as `docker-compose.yml` amd `.env` respectively.
-
-I would also recommend ensuring the full file path to these files contains no spaces.
-
-Open `.env` in a text editor of your choice and adjust the values based on the meaning of these values described on [this page](https://github.com/Sn0wCrack/saucybot-discord/wiki/Environment-Variable-Values).
-
-Please ensure that if you do not intend to use a site in your instance of the bot that you add that site name to the `DISABLED_SITES` environment value.
-
-Once the `.env` file has been adjusted open a terminal in the location you have saved your `docker-compose.yml` and `.env` and run the following:
-
-```shell
-docker-compose up -d
-```
-
-You should see output to your terminal window indicating that is downloading the required docker images and starting them.
-
-You can check how your instance is running inside the application called `Docker Desktop` under the `Containers` link in the left-hand sidebar.
-
+If you are on Windows or macOS, you can check how your instance is running inside the application called `Docker Desktop` under the `Containers` link in the left-hand sidebar.
 
 ### Development Docker
 
