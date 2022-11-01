@@ -74,19 +74,17 @@ class Twitter extends BaseSite {
             });
         }
 
+        const shouldEmbedVideo = videoMedia && tweet.possibly_sensitive;
+
         // Only try and embed this twitter link if one of the following is true:
         //  - Discord has failed to create an embed for Twitter
         //  - The result is "sensitive" and it has a video, as Discord often fails to play these inline
 
-        if (videoMedia && tweet.possibly_sensitive) {
-            return this.handleVideo(tweet, true);
-        }
-
-        if (hasTwitterEmbed) {
+        if (hasTwitterEmbed && !shouldEmbedVideo) {
             return Promise.resolve(false);
         }
 
-        return this.handleRegular(tweet);
+        return videoMedia ? this.handleVideo(tweet) : this.handleRegular(tweet);
     }
 
     private async findVideoElement(tweet: StatusesShow) {
@@ -173,8 +171,7 @@ class Twitter extends BaseSite {
     }
 
     private async handleVideo(
-        status: StatusesShow,
-        makeEmbed = false
+        status: StatusesShow
     ): Promise<ProcessResponse | false> {
         const video = await this.findVideoElement(status);
 
@@ -204,45 +201,43 @@ class Twitter extends BaseSite {
             files: [videoFile],
         };
 
-        if (makeEmbed) {
-            const time = DateTime.fromFormat(
-                status.created_at,
-                'ccc LLL d HH:mm:ss ZZZ y'
-            );
+        const time = DateTime.fromFormat(
+            status.created_at,
+            'ccc LLL d HH:mm:ss ZZZ y'
+        );
 
-            const embed = new EmbedBuilder({
-                url: this.getUrlFromStatus(status),
-                timestamp: time.toUTC().toMillis(),
-                color: this.color,
-                description: status.full_text,
-                author: {
-                    name: `${status.user.name} (@${status.user.screen_name})`,
-                    iconURL: status.user.profile_image_url_https,
-                    url: `https://twitter.com/${status.user.screen_name}`,
+        const embed = new EmbedBuilder({
+            url: this.getUrlFromStatus(status),
+            timestamp: time.toUTC().toMillis(),
+            color: this.color,
+            description: status.full_text,
+            author: {
+                name: `${status.user.name} (@${status.user.screen_name})`,
+                iconURL: status.user.profile_image_url_https,
+                url: `https://twitter.com/${status.user.screen_name}`,
+            },
+            video: {
+                url: `attachment://${videoFile.name}`,
+            },
+            fields: [
+                {
+                    name: 'Likes',
+                    value: status.favorite_count.toString(),
+                    inline: true,
                 },
-                video: {
-                    url: `attachment://${videoFile.name}`,
+                {
+                    name: 'Retweets',
+                    value: status.retweet_count.toString(),
+                    inline: true,
                 },
-                fields: [
-                    {
-                        name: 'Likes',
-                        value: status.favorite_count.toString(),
-                        inline: true,
-                    },
-                    {
-                        name: 'Retweets',
-                        value: status.retweet_count.toString(),
-                        inline: true,
-                    },
-                ],
-                footer: {
-                    iconURL: TWITTER_ICON_URL,
-                    text: 'Twitter',
-                },
-            });
+            ],
+            footer: {
+                iconURL: TWITTER_ICON_URL,
+                text: 'Twitter',
+            },
+        });
 
-            message.embeds.push(embed);
-        }
+        message.embeds.push(embed);
 
         return Promise.resolve(message);
     }
