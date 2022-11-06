@@ -20,6 +20,14 @@ export const REQUIRED_CHANNEL_PERMISSIONS = [
     PermissionFlagsBits.AttachFiles,
 ];
 
+export const REQUIRED_THREAD_PERMISSIONS = [
+    PermissionFlagsBits.ReadMessageHistory,
+    PermissionFlagsBits.SendMessages,
+    PermissionFlagsBits.SendMessagesInThreads,
+    PermissionFlagsBits.EmbedLinks,
+    PermissionFlagsBits.AttachFiles,
+];
+
 export const REQUIRED_GATEWAY_INTENTS = [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,

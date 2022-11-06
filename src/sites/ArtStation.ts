@@ -36,34 +36,17 @@ class ArtStation extends BaseSite {
             return Promise.resolve(false);
         }
 
-        // Discord embeds the first ArtStation item, so if there's only one, ignore the request
-        if (response.assets.length == 1) {
-            return Promise.resolve(false);
-        }
-
         const limit = Environment.get('ARTSTATION_POST_LIMIT', 8) as number;
 
         if (response.assets.length - 1 > limit) {
             message.text = `This is part of a ${response.assets.length} image set.`;
         }
 
-        const parsed = new URL(response.cover_url);
-
-        const coverFileName = path.basename(parsed.pathname);
-
         const assets = response.assets
-            .slice(1)
             .filter((asset) => ['image', 'cover'].includes(asset.asset_type))
             .slice(0, limit);
 
-        console.log(response.assets.length, assets.length);
-
         for (const asset of assets) {
-            // If this is the same as the cover, skip it.
-            if (asset.image_url.includes(coverFileName)) {
-                continue;
-            }
-
             const embed = new EmbedBuilder({
                 title: htmlToText(response.title),
                 url: response.permalink,

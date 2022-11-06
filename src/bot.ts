@@ -12,6 +12,7 @@ import * as Sentry from '@sentry/node';
 import {
     REQUIRED_CHANNEL_PERMISSIONS,
     REQUIRED_GATEWAY_INTENTS,
+    REQUIRED_THREAD_PERMISSIONS,
 } from './Constants';
 
 dotenv.config();
@@ -54,7 +55,12 @@ client.on('messageCreate', async (message) => {
         message.channel as TextChannel
     );
 
-    if (!permissions?.has(REQUIRED_CHANNEL_PERMISSIONS)) {
+    if (
+        (message.channel.isTextBased() &&
+            !permissions?.has(REQUIRED_CHANNEL_PERMISSIONS)) ||
+        (message.channel.isThread() &&
+            !permissions?.has(REQUIRED_THREAD_PERMISSIONS))
+    ) {
         return;
     }
 
@@ -141,7 +147,12 @@ client.on('interactionCreate', async (interaction) => {
         interaction.channel as TextChannel
     );
 
-    if (!permissions?.has(REQUIRED_CHANNEL_PERMISSIONS)) {
+    if (
+        (interaction.channel?.isTextBased() &&
+            !permissions?.has(REQUIRED_CHANNEL_PERMISSIONS)) ||
+        (interaction.channel?.isThread() &&
+            !permissions?.has(REQUIRED_THREAD_PERMISSIONS))
+    ) {
         return;
     }
 
