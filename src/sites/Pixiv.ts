@@ -42,7 +42,10 @@ class Pixiv extends BaseSite {
         /* eslint-disable @typescript-eslint/no-unused-vars */
         source: Message | null
     ): Promise<ProcessResponse | false> {
-        await this.api.login();
+        // NOTE: Cloudflare is currently breaking getting user information
+        // however fetching images still appears to function just fine
+        // so this will just be ignored for now.
+        // await this.api.login();
 
         if (!match.groups?.new_id && !match.groups?.old_id) {
             return Promise.resolve(false);
