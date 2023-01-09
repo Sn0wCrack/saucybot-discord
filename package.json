@@ -31,7 +31,7 @@
         "fluent-ffmpeg": "^2.1.2",
         "got": "^11.8.5",
         "html-to-text": "^8.0.0",
-        "luxon": "^2.2.0",
+        "luxon": "^2.5.2",
         "picocolors": "^1.0.0",
         "pixiv-web-api": "^0.1.5",
         "redis": "^4.1.1",
