@@ -69,8 +69,8 @@ public sealed class Worker : BackgroundService
             return Task.CompletedTask;
         }
 
-        // Ignore Messages from Bots (including this one) and Webhook
-        if (socketMessage.Author.IsBot || socketMessage.Author.IsWebhook)
+        // Ignore Messages created by SaucyBot
+        if (socketMessage.Author == _client?.CurrentUser)
         {
             return Task.CompletedTask;
         }
