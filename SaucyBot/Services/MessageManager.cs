@@ -21,14 +21,20 @@ public sealed class MessageManager
     public async Task Send(SocketUserMessage received, ProcessResponse response)
     {
         var messages = await PartitionMessages(response);
-
-        foreach (var (content, embeds, fileAttachments) in messages)
+        
+        foreach (var message in messages)
         {
+            if (message.IsEmpty())
+            {
+                _logger.LogDebug("Empty message was created from: {OriginalMessage}", received.Content);
+                continue;
+            }
+            
             await received.ReplyAsync(
-                fileAttachments,
-                content,
+                message.Files,
+                message.Content,
                 allowedMentions: AllowedMentions.None,
-                embeds: embeds?.ToArray()
+                embeds: message.Embeds.ToArray()
             );
         }
     }
@@ -166,4 +172,9 @@ public record Message(
 {
     public List<Embed> Embeds { get; } = Embeds ?? new List<Embed>();
     public List<FileAttachment> Files { get; } = Files ?? new List<FileAttachment>();
+
+    public bool IsEmpty()
+    {
+        return Content is null or "" && !Embeds.Any() && !Files.Any();
+    }
 }
