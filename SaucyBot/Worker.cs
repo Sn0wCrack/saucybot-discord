@@ -81,7 +81,7 @@ public sealed class Worker : BackgroundService
 
     private Task HandleShardReadyAsync(DiscordSocketClient client)
     {
-        _logger.LogInformation("[{Source}] {Message}", $"Shard {client.ShardId}", "Ready");
+        _logger.LogInformation("[{Source}] {Message}", $"Shard #{client.ShardId}", "Ready");
 
         return Task.CompletedTask;
     }

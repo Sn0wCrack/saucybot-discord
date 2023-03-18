@@ -21,7 +21,7 @@ public sealed class CacheManager : ICacheManager
 
     private ICacheDriver CreateDriver()
     {
-        var driver = _configuration.GetSection("Cache:Driver").Get<string>();
+        var driver = _configuration.GetSection("Cache:Driver").Get<string>() ?? "memory";
 
         var driverType = driver.ToLowerInvariant().Trim() switch
         {

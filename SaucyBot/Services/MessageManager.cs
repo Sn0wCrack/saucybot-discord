@@ -37,9 +37,9 @@ public sealed class MessageManager
     {
         return response switch
         {
-            { } pr when pr.Embeds.Count > 1 => await HandleMultipleEmbeds(response),
-            { } pr when pr.Embeds.Count == 1 => await HandleSingleEmbed(response),
-            { } pr when pr.Files.Count >= 1 => await HandleFiles(response),
+            { Embeds.Count: > 1 } => await HandleMultipleEmbeds(response),
+            { Embeds.Count: 1 } => await HandleSingleEmbed(response),
+            { Files.Count: >= 1 } => await HandleFiles(response),
             _ => new List<Message> { new(response.Text ?? "") },
         };
     }
