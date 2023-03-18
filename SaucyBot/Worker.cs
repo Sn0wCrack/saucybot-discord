@@ -35,6 +35,7 @@ public sealed class Worker : BackgroundService
         {
             GatewayIntents = Constants.RequiredGatewayIntents,
             MessageCacheSize = 50,
+            ConnectionTimeout = _configuration.GetSection("Bot:ConnectionTimeout").Get<int>(),
             AlwaysDownloadUsers = false,
             AlwaysResolveStickers = false,
             AlwaysDownloadDefaultStickers = false,
