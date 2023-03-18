@@ -12,7 +12,7 @@ public sealed class DatabaseContext : DbContext
 
     public DatabaseContext(IConfiguration configuration)
     {
-        _connectionString = configuration.GetSection("Database:ConnectionString").Get<string>();
+        _connectionString = configuration.GetSection("Database:ConnectionString").Get<string>() ?? "";
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)

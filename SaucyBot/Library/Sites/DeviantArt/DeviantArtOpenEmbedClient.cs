@@ -59,14 +59,6 @@ public sealed record OpenEmbedResponse(
     [property: JsonPropertyName("provider_url")]
     string ProviderUrl,
     [property: JsonPropertyName("thumbnail_url")]
-    string ThumbnailUrl,
-    [property: JsonPropertyName("thumbnail_width")]
-    int ThumbnailWidth,
-    [property: JsonPropertyName("thumbnail_height")]
-    int ThumbnailHeight,
-    [property: JsonPropertyName("width")]
-    int Width,
-    [property: JsonPropertyName("height")]
-    int Height
+    string ThumbnailUrl
 );
 #endregion

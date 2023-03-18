@@ -40,25 +40,13 @@ public sealed class ArtStation : BaseSite
 
         var limit = _configuration.GetSection("Sites:ArtStation:PostLimit").Get<int>();
 
-        // Discord embeds the first ArtStation item, so if there's only one, ignore the request
-        if (project.Assets.Count == 1)
-        {
-            return null;
-        }
-
         if (project.Assets.Count > limit)
         {
             response.Text = $"This is part of a {project.Assets.Count} image set.";
         }
 
-        var parsed = new Uri(project.CoverUrl);
-
-        var coverFileName = Path.GetFileName(parsed.AbsolutePath);
-        
-        project.Assets.RemoveAt(0);
-
         var assets = project.Assets
-            .Where(asset => asset.Type is "image" or "cover" && !asset.ImageUrl.Contains(coverFileName))
+            .Where(asset => asset.Type is "image" or "cover")
             .ToList()
             .SafeSlice(0, limit);
         
