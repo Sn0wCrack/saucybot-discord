@@ -42,6 +42,9 @@ public static class Constants
                                                                  ChannelPermission.EmbedLinks |
                                                                  ChannelPermission.AttachFiles;
 
+    public const ChannelPermission RequiredThreadPermissions =
+        RequiredChannelPermissions | ChannelPermission.SendMessagesInThreads; 
+    
     /// <summary>
     /// The default maximum number of embeds to attempt to send in a single processing run.
     ///
