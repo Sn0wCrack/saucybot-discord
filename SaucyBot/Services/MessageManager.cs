@@ -105,12 +105,10 @@ public sealed class MessageManager
 
         var embed = response.Embeds.First();
 
-        var files = GetRelatedFiles(embed, response.Files);
-
         var message = new Message(
             response.Text, 
             new List<Embed> { embed },
-            files
+            response.Files
         );
         
         messages.Add(message);

@@ -2,6 +2,7 @@
 using CoreTweet;
 using Discord;
 using Discord.WebSocket;
+using SaucyBot.Common;
 using SaucyBot.Extensions;
 using SaucyBot.Library;
 using SaucyBot.Services;
@@ -43,6 +44,15 @@ public sealed class Twitter : BaseSite
     
     public override async Task<ProcessResponse?> Process(Match match, SocketUserMessage? message = null)
     {
+        var id = long.Parse(match.Groups["id"].Value);
+        
+        var tweet = await GetTweet(id);
+        
+        if (tweet is null)
+        {
+            return null;
+        }
+        
         var hasTwitterEmbed = false;
         
         // If we have a message attached, we need to wait a bit for Discord to process the embed,
@@ -59,37 +69,26 @@ public sealed class Twitter : BaseSite
             {
                 var isTwitterEmbed = item.Url.Contains("twitter.com") || item.Url.Contains("t.co");
 
-                return isTwitterEmbed && item?.Author is not null;
+                return isTwitterEmbed && item.Author is not null;
             });
         }
 
-
-        var id = long.Parse(match.Groups["id"].Value);
-        
-        var tweet = await GetTweet(id);
-
-        if (tweet is null)
-        {
-            return null;
-        }
-        
         var videoMedia = await FindVideoElement(tweet);
 
+        var shouldEmbedVideo = videoMedia is not null && (tweet.PossiblySensitive ?? false);
+        
         // Only try and embed this twitter link if one of the following is true:
         //  - Discord has failed to create an embed for Twitter
         //  - The result is "sensitive" and it has a video, as Discord often fails to play these inline
 
-        if (videoMedia is not null && (tweet.PossiblySensitive ?? false))
-        {
-            return await HandleVideo(tweet, match.Value, !hasTwitterEmbed);
-        }
-
-        if (hasTwitterEmbed)
+        if (hasTwitterEmbed && !shouldEmbedVideo)
         {
             return null;
         }
-
-        return await HandleRegular(tweet, match.Value);
+        
+        return videoMedia is not null 
+            ? await HandleVideo(tweet, match.Value)
+            : await HandleRegular(tweet, match.Value);
     }
 
     private Task<MediaEntity?> FindVideoElement(StatusResponse status)
@@ -121,7 +120,7 @@ public sealed class Twitter : BaseSite
         return Task.FromResult(photos);
     }
 
-    private async Task<ProcessResponse?> HandleVideo(StatusResponse status, string url, bool makeEmbed = false)
+    private async Task<ProcessResponse?> HandleVideo(StatusResponse status, string url)
     {
         var response = new ProcessResponse();
         
@@ -148,18 +147,13 @@ public sealed class Twitter : BaseSite
         
         response.Files.Add(videoFile);
 
-        if (!makeEmbed)
-        {
-            return response;
-        }
-        
         // TODO: When Discord add video embeds, come back here and add that
         var embed = new EmbedBuilder
         {
             Url = url,
             Timestamp = status.CreatedAt,
             Color = this.Color,
-            Description = status.FullText,
+            Description = await Helper.HtmlToPlainText(status.FullText),
             Author = new EmbedAuthorBuilder
             {
                 Name = $"{status.User.Name} (@{status.User.ScreenName}",
@@ -183,7 +177,7 @@ public sealed class Twitter : BaseSite
             },
             Footer = new EmbedFooterBuilder { IconUrl = Constants.TwitterIconUrl, Text = "Twitter" },
         };
-        
+
         response.Embeds.Add(embed.Build());
 
         return response;
@@ -245,7 +239,7 @@ public sealed class Twitter : BaseSite
                 Url = url,
                 Timestamp = status.CreatedAt,
                 Color = this.Color,
-                Description = status.FullText,
+                Description = await Helper.HtmlToPlainText(status.FullText),
                 Author = new EmbedAuthorBuilder
                 {
                     Name = $"{status.User.Name} (@{status.User.ScreenName}",
