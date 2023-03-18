@@ -80,7 +80,7 @@ public sealed class HentaiFoundryPicture
     }
 
     public string? Title() => _document.QuerySelector(".imageTitle")?.TextContent;
-    public string? Description() => _document.QuerySelector(".picDescript")?.GetInnerText();
+    public string? Description() => _document.QuerySelector(".picDescript")?.TextContent;
     public string? ImageUrl() => $"https:{_document.QuerySelector("#picBox .boxbody img")?.GetAttribute("src")}";
     public string? AuthorName() => _document.QuerySelector("#descriptionBox .boxbody a img")?.GetAttribute("title");
     public string AuthorUrl() =>

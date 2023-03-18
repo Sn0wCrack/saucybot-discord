@@ -118,17 +118,13 @@ public sealed class ExHentaiGalleryPage
 
     public ExHentaiGalleryPage(string page)
     {
-        var configuration = Configuration.Default.WithCss();
-
-        var context = BrowsingContext.New(configuration);
-        
-        var parser = new HtmlParser(default, context);
+        var parser = new HtmlParser();
 
         _document = parser.ParseDocument(page);
     }
 
     public string? Title() => _document.QuerySelector(".gm h1#gn")?.TextContent;
-    public string? Description() => _document.QuerySelector("div#comment_0")?.GetInnerText();
+    public string? Description() => _document.QuerySelector("div#comment_0")?.TextContent;
 
     public string? Rating() => _document.QuerySelector("td#rating_label")?.TextContent.Replace("Average:", "").Trim();
 
