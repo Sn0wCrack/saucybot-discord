@@ -98,6 +98,13 @@ public sealed class SiteManager
 
     public async Task Handle(SocketUserMessage message)
     {
+        var hasNeededPermissions = await HasPermissionsToCreateEmbed(message);
+
+        if (!hasNeededPermissions)
+        {
+            return;
+        }
+        
         var results = await Match(message);
         
         if (!results.Any())
@@ -161,6 +168,11 @@ public sealed class SiteManager
         }
 
         return await message.ReplyAsync($"Matched link to {site}, please wait...", allowedMentions: AllowedMentions.None);
+    }
+
+    private async Task<bool> HasPermissionsToCreateEmbed(SocketUserMessage message)
+    {
+        return true;
     }
 }
 
