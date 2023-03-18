@@ -12,8 +12,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AngleSharp" Version="0.17.1" />
-        <PackageReference Include="AngleSharp.Css" Version="0.17.0" />
+        <PackageReference Include="AngleSharp" Version="1.0.1" />
         <PackageReference Include="CoreTweet" Version="1.0.0.483" />
         <PackageReference Include="Discord.Net" Version="3.9.0" />
         <PackageReference Include="EFCore.NamingConventions" Version="7.0.2" />
