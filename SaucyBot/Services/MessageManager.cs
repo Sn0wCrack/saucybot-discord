@@ -26,7 +26,7 @@ public sealed class MessageManager
         {
             if (message.IsEmpty())
             {
-                _logger.LogDebug("Empty message was created from: {OriginalMessage}", received.Content);
+                _logger.LogDebug("Empty message was created from: \"{OriginalMessage}\"", received.Content);
                 continue;
             }
             
