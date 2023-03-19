@@ -51,13 +51,10 @@ public sealed class Pixiv : BaseSite
         {
             return null;
         }
-
-        if (response.IllustrationDetails.Type == IllustrationType.Ugoira)
-        {
-            return await ProcessUgoira(response);
-        }
-
-        return await ProcessImage(response, message);
+        
+        return response.IllustrationDetails.Type == IllustrationType.Ugoira
+            ? await ProcessUgoira(response)
+            : await ProcessImage(response, message);
     }
 
     private async Task<ProcessResponse?> ProcessUgoira(IllustrationDetailsResponse illustrationDetails)
