@@ -17,11 +17,13 @@ public sealed class ExHentai : BaseSite
     protected override string Pattern => @"https?:\/\/(www\.)?e[x-]hentai\.org\/g\/(?<id>\d+)\/(?<hash>\S+)\/?";
 
     private readonly ILogger<ExHentai> _logger;
+    private readonly IConfiguration _configuration;
     private readonly ExHentaiClient _client;
 
-    public ExHentai(ILogger<ExHentai> logger, ExHentaiClient client)
+    public ExHentai(ILogger<ExHentai> logger, IConfiguration configuration, ExHentaiClient client)
     {
         _logger = logger;
+        _configuration = configuration;
         _client = client;
     }
     
@@ -31,8 +33,17 @@ public sealed class ExHentai : BaseSite
 
         var url = match.Value;
 
+        var isExHentaiLink = url.ToLowerInvariant().Contains("exhentai");
+
+        if (
+            isExHentaiLink &&
+            !IsConfiguredToEmbedExHentaiLinks()
+        ) {
+            return null;
+        }
+
         var request = new ExHentaiGalleryRequest(
-            url.ToLowerInvariant().Contains("exhentai") ? ExHentaiRequestMode.ExHentai : ExHentaiRequestMode.EHentai,
+            isExHentaiLink ? ExHentaiRequestMode.ExHentai : ExHentaiRequestMode.EHentai,
             match.Groups["id"].Value,
             match.Groups["hash"].Value
         );
@@ -41,7 +52,7 @@ public sealed class ExHentai : BaseSite
 
         if (page is null)
         {
-            return response;
+            return null;
         }
 
         var embed = new EmbedBuilder
@@ -81,12 +92,20 @@ public sealed class ExHentai : BaseSite
             Footer = new EmbedFooterBuilder
             {
                 IconUrl = Constants.EHentaiIconUrl,
-                Text = url.ToLowerInvariant().Contains("exhentai") ? "exhentai" : "e-hentai",
+                Text = isExHentaiLink ? "exhentai" : "e-hentai",
             }
         };
         
         response.Embeds.Add(embed.Build());
 
         return response;
+    }
+
+    private bool IsConfiguredToEmbedExHentaiLinks()
+    {
+        var memberId = _configuration.GetSection("Sites:ExHentai:Cookies:MemberId").Get<string?>();
+        var passwordHash = _configuration.GetSection("Sites:ExHentai:Cookies:PasswordHash").Get<string?>();
+
+        return memberId is not null or "" && passwordHash is not null or "";
     }
 }
