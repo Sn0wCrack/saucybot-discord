@@ -14,8 +14,8 @@ public sealed class Newgrounds : BaseSite
     protected override Color Color => new(0xFFF17A);
     protected override string Pattern => @"https?:\/\/(www\.)?newgrounds\.com\/art\/view\/(?<user>.*)\/(?<slug>\S+)\/?";
 
-    private ILogger<Newgrounds> _logger;
-    private NewgroundsClient _client;
+    private readonly ILogger<Newgrounds> _logger;
+    private readonly NewgroundsClient _client;
 
     public Newgrounds(ILogger<Newgrounds> logger, NewgroundsClient client)
     {

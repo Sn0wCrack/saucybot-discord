@@ -40,7 +40,7 @@ public sealed class HentaiFoundry : BaseSite
 
         if (page is null)
         {
-            return response;
+            return null;
         }
 
         var embed = new EmbedBuilder
