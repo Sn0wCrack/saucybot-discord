@@ -142,20 +142,17 @@ public sealed partial class SiteManager
                 {
                     await message.ModifyAsync(x => x.Flags = MessageFlags.SuppressEmbeds);
                 }
-
-                if (matchedMessage is not null)
-                {
-                    await matchedMessage.DeleteAsync();
-                }
             }
             catch (Exception ex)
+            {
+                _logger.LogError(ex, "Exception occured processing or sending messages");
+            }
+            finally
             {
                 if (matchedMessage is not null)
                 {
                     await matchedMessage.DeleteAsync();
                 }
-                
-                _logger.LogError(ex, "Exception occured processing or sending messages");
             }
         }
     }
@@ -176,13 +173,11 @@ public sealed partial class SiteManager
     {
         if (HasIgnoreMessageTagsInContent(message))
         {
-            _logger.LogDebug("Message ignored due to having ignore message tags");
             return false;
         }
 
         if (!HasPermissionsToCreateEmbed(message))
         {
-            _logger.LogDebug("Message ignored due to not having sufficient permissions to create embed and messages");
             return false;
         }
 
