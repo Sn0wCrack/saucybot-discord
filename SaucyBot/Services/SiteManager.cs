@@ -16,7 +16,7 @@ public sealed partial class SiteManager
     
     private readonly Dictionary<string, BaseSite> _sites = new();
     
-    [GeneratedRegex(@"(<|\\|\\|)(?!@|#|:|a:).*(>|\\|\\|)", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"(<|\|\|)(?!@|#|:|a:).*(>|\|\|)", RegexOptions.IgnoreCase)]
     private static partial Regex IgnoreContentRegex();
     
     public SiteManager(
@@ -176,11 +176,13 @@ public sealed partial class SiteManager
     {
         if (HasIgnoreMessageTagsInContent(message))
         {
+            _logger.LogDebug("Message ignored due to having ignore message tags");
             return false;
         }
 
         if (!HasPermissionsToCreateEmbed(message))
         {
+            _logger.LogDebug("Message ignored due to not having sufficient permissions to create embed and messages");
             return false;
         }
 

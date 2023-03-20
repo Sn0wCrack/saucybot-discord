@@ -69,8 +69,8 @@ public sealed class Worker : BackgroundService
             return Task.CompletedTask;
         }
 
-        // Ignore Messages created by SaucyBot
-        if (socketMessage.Author == _client?.CurrentUser)
+        // Ignore Messages created by the Bot itself
+        if (socketMessage.Author.Id == _client?.CurrentUser.Id)
         {
             return Task.CompletedTask;
         }
