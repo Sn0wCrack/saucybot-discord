@@ -7,7 +7,7 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Services;
 
-public sealed class SiteManager
+public sealed partial class SiteManager
 {
     private readonly ILogger<SiteManager> _logger;
     private readonly IConfiguration _configuration;
@@ -15,6 +15,9 @@ public sealed class SiteManager
     private readonly GuildConfigurationManager _guildConfigurationManager;
     
     private readonly Dictionary<string, BaseSite> _sites = new();
+    
+    [GeneratedRegex(@"(<|\\|\\|)(?!@|#|:|a:).*(>|\\|\\|)", RegexOptions.IgnoreCase)]
+    private static partial Regex IgnoreContentRegex();
     
     public SiteManager(
         ILogger<SiteManager> logger,
@@ -98,10 +101,9 @@ public sealed class SiteManager
 
     public async Task Handle(SocketUserMessage message)
     {
-        var hasNeededPermissions = await HasPermissionsToCreateEmbed(message);
-
-        if (!hasNeededPermissions)
+        if (!ShouldProcessMessage(message))
         {
+            _logger.LogDebug("Message was ignored with content: \"{Message}\"", message.Content);
             return;
         }
         
@@ -170,8 +172,29 @@ public sealed class SiteManager
         return await message.ReplyAsync($"Matched link to {site}, please wait...", allowedMentions: AllowedMentions.None);
     }
 
-    private async Task<bool> HasPermissionsToCreateEmbed(SocketUserMessage message)
+    private bool ShouldProcessMessage(SocketUserMessage message)
     {
+        if (HasIgnoreMessageTagsInContent(message))
+        {
+            return false;
+        }
+
+        if (!HasPermissionsToCreateEmbed(message))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool HasIgnoreMessageTagsInContent(SocketUserMessage message)
+    {
+        return IgnoreContentRegex().IsMatch(message.Content);
+    }
+    
+    private bool HasPermissionsToCreateEmbed(SocketUserMessage message)
+    {
+        // TODO: Implement checking Guild and Channel permissions to see if I can send messages in the first place
         return true;
     }
 }
