@@ -3,7 +3,6 @@ using System.Text.RegularExpressions;
 using Discord;
 using Discord.WebSocket;
 using SaucyBot.Site;
-using SaucyBot.Site.Response;
 
 namespace SaucyBot.Services;
 
