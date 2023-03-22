@@ -71,10 +71,10 @@ public sealed partial class SiteManager
         
         var maximumEmbeds = guildConfiguration?.MaximumEmbeds ?? _configuration.GetSection("Bot:MaximumEmbeds").Get<uint>();
 
+        var content = message.CleanContent;
+        
         foreach (var (identifier, site) in _sites)
         {
-            var content = message.CleanContent;
-            
             if (!site.IsMatch(content))
             {
                 continue;
