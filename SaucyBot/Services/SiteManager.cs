@@ -75,11 +75,6 @@ public sealed partial class SiteManager
         
         foreach (var (identifier, site) in _sites)
         {
-            if (!site.IsMatch(content))
-            {
-                continue;
-            }
-
             var matches = site.Match(content);
 
             foreach (Match match in matches)
