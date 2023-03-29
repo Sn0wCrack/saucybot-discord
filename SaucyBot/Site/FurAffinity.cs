@@ -1,6 +1,7 @@
 ﻿using System.Text.RegularExpressions;
 using Discord;
 using Discord.WebSocket;
+using SaucyBot.Common;
 using SaucyBot.Library.Sites.FurAffinity;
 using SaucyBot.Site.Response;
 
@@ -36,7 +37,7 @@ public sealed class FurAffinity : BaseSite
         var embed = new EmbedBuilder()
         {
             Title = submission.Title,
-            Description = submission.Description,
+            Description = await Helper.ProcessDescription(submission.Description),
             Color = Color,
             Url = submission.Link,
             ImageUrl = submission.Download,
