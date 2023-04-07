@@ -18,16 +18,16 @@ public sealed class Pixiv : BaseSite
     public override string Identifier => "Pixiv";
     protected override string Pattern => @"https?:\/\/(www\.)?pixiv\.net\/.*artworks\/(?<id>\d+)\/?";
 
-    private readonly PixivClient _client;
+    private readonly IPixivClient _client;
     private readonly ILogger<Pixiv> _logger;
-    private readonly GuildConfigurationManager _guildConfigurationManager;
+    private readonly IGuildConfigurationManager _guildConfigurationManager;
     private readonly IConfiguration _configuration;
 
     public Pixiv(
         ILogger<Pixiv> logger,
         IConfiguration configuration,
-        GuildConfigurationManager guildConfigurationManager,
-        PixivClient client
+        IGuildConfigurationManager guildConfigurationManager,
+        IPixivClient client
     ) {
         _logger = logger;
         _configuration = configuration;

@@ -42,18 +42,17 @@ var host = Host.CreateDefaultBuilder(args)
         services.AddSingleton<MemoryCacheDriver>();
         services.AddSingleton<RedisCacheDriver>();
 
-        services.AddSingleton<GuildConfigurationManager>();
+        services.AddSingleton<IGuildConfigurationManager, GuildConfigurationManager>();
         
         services.AddSingleton<IFurAffinityClient, FaExportClient>();
-        services.AddSingleton<PixivClient>();
+        services.AddSingleton<IPixivClient, PixivClient>();
         services.AddSingleton<IArtStationClient, ArtStationClient>();
         services.AddSingleton<HentaiFoundryClient>();
         services.AddSingleton<NewgroundsClient>();
         services.AddSingleton<ExHentaiClient>();
-        services.AddSingleton<DeviantArtClient>();
-        services.AddSingleton<E621Client>();
         services.AddSingleton<DeviantArtOpenEmbedClient>();
         services.AddSingleton<DeviantArtClient>();
+        services.AddSingleton<E621Client>();
 
         services.AddSingleton<FurAffinity>();
         services.AddSingleton<Pixiv>();

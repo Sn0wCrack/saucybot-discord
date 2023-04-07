@@ -34,7 +34,7 @@ public sealed class FurAffinity : BaseSite
             return null;
         }
 
-        var embed = new EmbedBuilder()
+        var embed = new EmbedBuilder
         {
             Title = submission.Title,
             Description = await Helper.ProcessDescription(submission.Description),

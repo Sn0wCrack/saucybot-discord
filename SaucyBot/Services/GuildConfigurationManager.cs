@@ -7,7 +7,7 @@ using SaucyBot.Extensions.Database;
 
 namespace SaucyBot.Services;
 
-public sealed class GuildConfigurationManager
+public sealed class GuildConfigurationManager : IGuildConfigurationManager
 {
     private readonly DatabaseManager _database;
     private readonly ICacheManager _cache;

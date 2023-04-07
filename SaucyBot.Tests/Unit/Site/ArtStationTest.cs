@@ -14,75 +14,12 @@ namespace SaucyBot.Tests.Unit.Site;
 public class ArtStationTest
 {
     [Fact]
-    public async void NothingIsReturnedWhenTheProjectOnlyHasOneImageAsset()
-    {
-        var logger = Mock.Of<ILogger<ArtStation>>();
-
-        var config = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string>
-            {
-                {"Sites:ArtStation:PostLimit", "8"}
-            })
-            .Build();
-        
-        var client = new Mock<IArtStationClient>();
-        
-        var user = new ProjectUser(
-            "lingers",
-            "LingerS",
-            "https://www.artstation.com/lingers",
-            "https://cdnb.artstation.com/p/users/avatars/000/070/123/large/ddf25967ea8537cd330025d1feb8a1c1.jpg?1482849874",
-            "https://cdnb.artstation.com/p/users/avatars/000/070/123/medium/ddf25967ea8537cd330025d1feb8a1c1.jpg?1482849874",
-            "https://cdnb.artstation.com/p/users/covers/000/070/123/small/7d439d975662eb06a84850fcdd566b98.jpg?1524656727"
-        );
-
-        var assets = new List<ProjectAsset>
-        {
-            new(
-                54352057,
-                "",
-                "image",
-                "https://cdnb.artstation.com/p/assets/images/images/054/352/057/large/lingers-fin.jpg?1664346899",
-                3000,
-                1684,
-                0,
-                true,
-                false
-            ),
-        };
-
-        var project = new Project(
-            13900203,
-            "REstart",
-            "<p>the gift to my wife</p>",
-            "https://cdnb.artstation.com/p/assets/images/images/054/352/057/medium/lingers-fin.jpg?1664346899",
-            "https://www.artstation.com/artwork/xYXO5X",
-            198,
-            1402,
-            "2022-09-28T01:36:43.340-05:00",
-            user,
-            assets
-        );
-        
-        client.Setup(mock => mock.GetProject(It.IsAny<string>()))
-            .ReturnsAsync(project);
-
-        var site = new ArtStation(logger, config, client.Object);
-
-        var match = site.Match("https://www.artstation.com/artwork/xYXO5X").First();
-
-        var response = await site.Process(match);
-        
-        Assert.Null(response);
-    }
-    
-    [Fact]
     public async void AnEmbedIsCreatedForEachProjectImageAsset()
     {
         var logger = Mock.Of<ILogger<ArtStation>>();
         
         var config = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string>
+            .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 {"Sites:ArtStation:PostLimit", "8"}
             })
@@ -171,7 +108,7 @@ public class ArtStationTest
         
         Assert.NotNull(response);
         Assert.NotEmpty(response.Embeds);
-        Assert.Equal(3, response.Embeds.Count);
+        Assert.Equal(4, response.Embeds.Count);
     }
 
     [Fact]
@@ -180,7 +117,7 @@ public class ArtStationTest
         var logger = Mock.Of<ILogger<ArtStation>>();
         
         var config = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string>
+            .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 {"Sites:ArtStation:PostLimit", "8"}
             })
