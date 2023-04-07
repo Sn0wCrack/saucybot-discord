@@ -14,7 +14,7 @@
     <ItemGroup>
         <PackageReference Include="AngleSharp" Version="1.0.1" />
         <PackageReference Include="CoreTweet" Version="1.0.0.483" />
-        <PackageReference Include="Discord.Net" Version="3.9.0" />
+        <PackageReference Include="Discord.Net" Version="3.10.0" />
         <PackageReference Include="EFCore.NamingConventions" Version="7.0.2" />
         <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.4" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.4">
@@ -37,7 +37,7 @@
         <PackageReference Include="Serilog.Extensions.Hosting" Version="5.0.1" />
         <PackageReference Include="Serilog.Settings.Configuration" Version="3.4.0" />
         <PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
-        <PackageReference Include="StackExchange.Redis" Version="2.6.96" />
+        <PackageReference Include="StackExchange.Redis" Version="2.6.104" />
         <PackageReference Include="Xabe.FFmpeg" Version="5.2.6" />
     </ItemGroup>
 

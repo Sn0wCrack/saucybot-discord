@@ -6,7 +6,7 @@ using SaucyBot.Services;
 
 namespace SaucyBot.Library.Sites.Pixiv;
 
-public sealed class PixivClient
+public sealed class PixivClient : IPixivClient
 {
     private const string BaseUrl = "https://www.pixiv.net";
     private const string LoginPageUrl = "https://accounts.pixiv.net/login";
