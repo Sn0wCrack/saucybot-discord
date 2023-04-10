@@ -12,13 +12,13 @@ public sealed class DatabaseManager
         _provider = provider;
     }
 
-    public async Task<int?> EnsureAllMigrationsHaveRun()
+    public async Task<int> EnsureAllMigrationsHaveRun()
     {
         await using var context = Context();
 
         var pendingMigrations = await context.Database.GetPendingMigrationsAsync();
 
-        var migrations = pendingMigrations as string[] ?? pendingMigrations.ToArray();
+        var migrations = pendingMigrations.ToArray();
         
         if (migrations.Any())
         {

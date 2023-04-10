@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -16,6 +17,8 @@ public class PixivTest
     [Fact]
     public async void AFileIsCreatedForEachImageWithinMultiImagePost()
     {
+        // Post: https://www.pixiv.net/en/artworks/106848609
+        
         var logger = Mock.Of<ILogger<Pixiv>>();
         
         var config = new ConfigurationBuilder()
@@ -46,25 +49,45 @@ public class PixivTest
 
         var illustrationPages = new List<IllustrationPages>
         {
-            new IllustrationPages(
-                new IllustrationPagesUrls("", "", "", ""),
-                0,
-                0
+            new(
+                new IllustrationPagesUrls(
+                    "https://i.pximg.net/c/128x128/img-master/img/2023/04/04/06/00/11/106848609_p0_square1200.jpg", 
+                    "https://i.pximg.net/c/540x540_70/img-master/img/2023/04/04/06/00/11/106848609_p0_master1200.jpg", 
+                    "https://i.pximg.net/img-master/img/2023/04/04/06/00/11/106848609_p0_master1200.jpg", 
+                    "https://i.pximg.net/img-original/img/2023/04/04/06/00/11/106848609_p0.jpg"
+                ),
+                1296,
+                2366
             ),
-            new IllustrationPages(
-                new IllustrationPagesUrls("", "", "", ""),
-                0,
-                0
+            new(
+                new IllustrationPagesUrls(
+                    "https://i.pximg.net/c/128x128/img-master/img/2023/04/04/06/00/11/106848609_p1_square1200.jpg", 
+                    "https://i.pximg.net/c/540x540_70/img-master/img/2023/04/04/06/00/11/106848609_p1_master1200.jpg", 
+                    "https://i.pximg.net/img-master/img/2023/04/04/06/00/11/106848609_p1_master1200.jpg", 
+                    "https://i.pximg.net/img-original/img/2023/04/04/06/00/11/106848609_p1.jpg"
+                ),
+                1296,
+                2366
             ),
-            new IllustrationPages(
-                new IllustrationPagesUrls("", "", "", ""),
-                0,
-                0
+            new(
+                new IllustrationPagesUrls(
+                    "https://i.pximg.net/c/128x128/img-master/img/2023/04/04/06/00/11/106848609_p2_square1200.jpg", 
+                    "https://i.pximg.net/c/540x540_70/img-master/img/2023/04/04/06/00/11/106848609_p2_master1200.jpg", 
+                    "https://i.pximg.net/img-master/img/2023/04/04/06/00/11/106848609_p2_master1200.jpg", 
+                    "https://i.pximg.net/img-original/img/2023/04/04/06/00/11/106848609_p2.jpg"
+                ),
+                972,
+                1775
             ),
-            new IllustrationPages(
-                new IllustrationPagesUrls("", "", "", ""),
-                0,
-                0
+            new(
+                new IllustrationPagesUrls(
+                    "https://i.pximg.net/c/128x128/img-master/img/2023/04/04/06/00/11/106848609_p3_square1200.jpg", 
+                    "https://i.pximg.net/c/540x540_70/img-master/img/2023/04/04/06/00/11/106848609_p3_master1200.jpg", 
+                    "https://i.pximg.net/img-master/img/2023/04/04/06/00/11/106848609_p3_master1200.jpg", 
+                    "https://i.pximg.net/img-original/img/2023/04/04/06/00/11/106848609_p3.jpg"
+                ),
+                1134,
+                2037
             ),
         };
 
@@ -73,12 +96,18 @@ public class PixivTest
             "Test Response",
             illustrationPages
         );
+        
+        client.Setup(mock => mock.Login())
+            .ReturnsAsync(true);
 
         client.Setup(mock => mock.IllustrationDetails(It.IsAny<string>()))
             .ReturnsAsync((IllustrationDetailsResponse?) illustrationDetailsResponse);
 
         client.Setup(mock => mock.IllustrationPages(It.IsAny<string>()))
             .ReturnsAsync((IllustrationPagesResponse?) illustrationPagesResponse);
+        
+        client.Setup(mock => mock.PokeFile(It.IsAny<string>()))
+            .ReturnsAsync(new HttpResponseMessage());
 
         client.Setup(mock => mock.GetFile(It.IsAny<string>()))
             .ReturnsAsync(new MemoryStream());
@@ -94,7 +123,9 @@ public class PixivTest
 
         var response = await site.Process(match);
         
-        Assert.Null(response);
+        Assert.NotNull(response);
+        Assert.NotEmpty(response.Files);
+        Assert.Equal(4, response.Files.Count);
     }
     
     [Fact]

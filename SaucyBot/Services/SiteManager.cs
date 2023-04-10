@@ -11,7 +11,7 @@ public sealed partial class SiteManager
     private readonly ILogger<SiteManager> _logger;
     private readonly IConfiguration _configuration;
     private readonly MessageManager _messageManager;
-    private readonly GuildConfigurationManager _guildConfigurationManager;
+    private readonly IGuildConfigurationManager _guildConfigurationManager;
     
     private readonly Dictionary<string, BaseSite> _sites = new();
     
@@ -23,7 +23,7 @@ public sealed partial class SiteManager
         IConfiguration configuration,
         IServiceProvider serviceProvider,
         MessageManager messageManager,
-        GuildConfigurationManager guildConfigurationManager
+        IGuildConfigurationManager guildConfigurationManager
     ) {
         _logger = logger;
         _configuration = configuration;
@@ -93,7 +93,44 @@ public sealed partial class SiteManager
         return results;
     }
 
-    public async Task Handle(SocketUserMessage message)
+    public async Task<List<SiteManagerProcessResult>> Match(SocketSlashCommand command)
+    {
+        var results = new List<SiteManagerProcessResult>();
+        
+        var embedCount = 0u;
+        
+        var guildConfiguration = await _guildConfigurationManager.GetByChannel(command.Channel);
+        
+        var maximumEmbeds = guildConfiguration?.MaximumEmbeds ?? _configuration.GetSection("Bot:MaximumEmbeds").Get<uint>();
+
+        var content = (string?) command.Data.Options.First().Value;
+
+        if (content is null)
+        {
+            return results;
+        }
+        
+        foreach (var (identifier, site) in _sites)
+        {
+            var matches = site.Match(content);
+
+            foreach (Match match in matches)
+            {
+                results.Add(new SiteManagerProcessResult(identifier, match));
+
+                embedCount++;
+
+                if (embedCount >= maximumEmbeds)
+                {
+                    return results;
+                }
+            }
+        }
+
+        return results;
+    }
+
+    public async Task HandleMessage(SocketUserMessage message)
     {
         if (!ShouldProcessMessage(message))
         {
@@ -148,6 +185,46 @@ public sealed partial class SiteManager
         }
     }
 
+    public async Task HandleCommand(SocketSlashCommand command)
+    {
+        if (!ShouldProcessCommand(command))
+        {
+            _logger.LogDebug("Command was ignored with content: \"{Message}\"", command.Data.ToString());
+            return;
+        }
+
+        await command.DeferAsync();
+        
+        var results = await Match(command);
+        
+        if (!results.Any())
+        {
+            return;
+        }
+        
+        foreach (var (site, match) in results)
+        {
+            _logger.LogDebug("Matched link \"{Match}\" to site {Site}", match, site);
+            
+            try
+            {
+                var response = await _sites[site].Process(match);
+
+                if (response is null)
+                {
+                    _logger.LogDebug("Failed to process match \"{Match}\" of site {Site}", match, site);
+                    continue;
+                }
+
+                await _messageManager.Send(command, response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Exception occured processing or sending messages");
+            }
+        }
+    }
+
     private async Task<IUserMessage?> SendMatchedMessage(SocketUserMessage message, string site)
     {
         var guildConfiguration = await _guildConfigurationManager.GetByChannel(message.Channel);
@@ -175,12 +252,28 @@ public sealed partial class SiteManager
         return true;
     }
 
+    private bool ShouldProcessCommand(SocketSlashCommand command)
+    {
+        if (!HasPermissionsToCreateEmbed(command))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
     private bool HasIgnoreMessageTagsInContent(SocketUserMessage message)
     {
         return IgnoreContentRegex().IsMatch(message.Content);
     }
     
     private bool HasPermissionsToCreateEmbed(SocketUserMessage message)
+    {
+        // TODO: Implement checking Guild and Channel permissions to see if I can send messages in the first place
+        return true;
+    }
+    
+    private bool HasPermissionsToCreateEmbed(SocketSlashCommand message)
     {
         // TODO: Implement checking Guild and Channel permissions to see if I can send messages in the first place
         return true;

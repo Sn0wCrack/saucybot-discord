@@ -12,7 +12,7 @@ using IConfiguration = Microsoft.Extensions.Configuration.IConfiguration;
 
 namespace SaucyBot.Library.Sites.ExHentai;
 
-public sealed class ExHentaiClient
+public sealed class ExHentaiClient : IExHentaiClient
 {
     private readonly ILogger<ExHentaiClient> _logger;
     private readonly IConfiguration _configuration;

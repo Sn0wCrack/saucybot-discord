@@ -6,12 +6,11 @@ namespace SaucyBot.Extensions.Database;
 
 public static class GuildConfigurationExtensions
 {
-    public static async Task<GuildConfiguration> FindGuildConfigurationByGuildId(
+    public static async Task<GuildConfiguration> FindOrCreateGuildConfigurationByGuildId(
         this DatabaseContext context,
         ulong guildId
-    )
-    {
-        var config = await context.GuildConfigurations.FirstOrDefaultAsync(gc => gc.GuildId == guildId);
+    ) {
+        var config = await context.Set<GuildConfiguration>().FirstOrDefaultAsync(gc => gc.GuildId == guildId);
 
         if (config is not null)
         {

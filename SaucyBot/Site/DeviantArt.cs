@@ -18,10 +18,10 @@ public sealed class DeviantArt : BaseSite
 
     private readonly ILogger<DeviantArt> _logger;
     private readonly IConfiguration _configuration;
-    private readonly DeviantArtClient _client;
-    private readonly DeviantArtOpenEmbedClient _openEmbedClient;
+    private readonly IDeviantArtClient _client;
+    private readonly IDeviantArtOpenEmbedClient _openEmbedClient;
     
-    public DeviantArt(ILogger<DeviantArt> logger, IConfiguration configuration, DeviantArtClient client, DeviantArtOpenEmbedClient openEmbedClient)
+    public DeviantArt(ILogger<DeviantArt> logger, IConfiguration configuration, IDeviantArtClient client, IDeviantArtOpenEmbedClient openEmbedClient)
     {
         _logger = logger;
         _configuration = configuration;

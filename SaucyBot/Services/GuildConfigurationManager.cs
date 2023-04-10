@@ -35,7 +35,7 @@ public sealed class GuildConfigurationManager : IGuildConfigurationManager
             TimeSpan.FromDays(7),
             async () => await _database
                 .Context()
-                .FindGuildConfigurationByGuildId(guildId)
+                .FindOrCreateGuildConfigurationByGuildId(guildId)
         );
 
         return result;

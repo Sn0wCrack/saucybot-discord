@@ -6,7 +6,7 @@ using SaucyBot.Services;
 
 namespace SaucyBot.Library.Sites.E621;
 
-public class E621Client
+public class E621Client : IE621Client
 {
     private const string BaseUrl = "https://e621.net";
 
