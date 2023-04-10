@@ -8,7 +8,7 @@ using SaucyBot.Services;
 
 namespace SaucyBot.Library.Sites.DeviantArt;
 
-public sealed class DeviantArtOpenEmbedClient
+public sealed class DeviantArtOpenEmbedClient : IDeviantArtOpenEmbedClient
 {
     private const string EndpointUrl = "https://backend.deviantart.com/oembed";
 

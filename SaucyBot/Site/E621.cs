@@ -16,9 +16,9 @@ public sealed class E621 : BaseSite
     protected override Color Color => new (0x00549E);
     
     private readonly ILogger<E621> _logger;
-    private readonly E621Client _client;
+    private readonly IE621Client _client;
 
-    public E621(ILogger<E621> logger, E621Client client)
+    public E621(ILogger<E621> logger, IE621Client client)
     {
         _logger = logger;
         _client = client;

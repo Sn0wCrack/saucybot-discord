@@ -15,9 +15,9 @@ public sealed class Newgrounds : BaseSite
     protected override string Pattern => @"https?:\/\/(www\.)?newgrounds\.com\/art\/view\/(?<user>.*)\/(?<slug>\S+)\/?";
 
     private readonly ILogger<Newgrounds> _logger;
-    private readonly NewgroundsClient _client;
+    private readonly INewgroundsClient _client;
 
-    public Newgrounds(ILogger<Newgrounds> logger, NewgroundsClient client)
+    public Newgrounds(ILogger<Newgrounds> logger, INewgroundsClient client)
     {
         _logger = logger;
         _client = client;

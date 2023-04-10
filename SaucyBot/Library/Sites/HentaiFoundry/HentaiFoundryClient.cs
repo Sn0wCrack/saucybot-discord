@@ -7,7 +7,7 @@ using SaucyBot.Services;
 
 namespace SaucyBot.Library.Sites.HentaiFoundry;
 
-public sealed class HentaiFoundryClient
+public sealed class HentaiFoundryClient : IHentaiFoundryClient
 {
     private const string BaseUrl = "https://www.hentai-foundry.com";
     
@@ -81,12 +81,13 @@ public sealed class HentaiFoundryPicture
 
     public string? Title() => _document.QuerySelector(".imageTitle")?.TextContent;
     public string? Description() => _document.QuerySelector(".picDescript")?.TextContent;
-    public string? ImageUrl() => $"https:{_document.QuerySelector("#picBox .boxbody img")?.GetAttribute("src")}";
+    public string? ImageSrc() => _document.QuerySelector("#picBox .boxbody img")?.GetAttribute("src");
+    public string? ImageUrl() => ImageSrc() is null ? null : $"https:{ImageSrc()}";
     public string? AuthorName() => _document.QuerySelector("#descriptionBox .boxbody a img")?.GetAttribute("title");
-    public string AuthorUrl() =>
-        $"{BaseUrl}{_document.QuerySelector("#descriptionBox .boxbody a")?.GetAttribute("href")}";
-    public string? AuthorAvatarUrl() =>
-        $"https:{_document.QuerySelector("#descriptionBox .boxbody a img")?.GetAttribute("src")}";
+    public string? AuthorSrc() => _document.QuerySelector("#descriptionBox .boxbody a")?.GetAttribute("href");
+    public string? AuthorUrl() => AuthorSrc() is null ? null : $"{BaseUrl}{AuthorSrc()}";
+    public string? AuthorAvatarSrc() => _document.QuerySelector("#descriptionBox .boxbody a img")?.GetAttribute("src");
+    public string? AuthorAvatarUrl() => AuthorAvatarSrc() is null ? null : $"https:{AuthorAvatarSrc()}";
 
     public DateTimeOffset? PostedAt()
     {

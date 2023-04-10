@@ -47,12 +47,12 @@ var host = Host.CreateDefaultBuilder(args)
         services.AddSingleton<IFurAffinityClient, FaExportClient>();
         services.AddSingleton<IPixivClient, PixivClient>();
         services.AddSingleton<IArtStationClient, ArtStationClient>();
-        services.AddSingleton<HentaiFoundryClient>();
-        services.AddSingleton<NewgroundsClient>();
-        services.AddSingleton<ExHentaiClient>();
-        services.AddSingleton<DeviantArtOpenEmbedClient>();
-        services.AddSingleton<DeviantArtClient>();
-        services.AddSingleton<E621Client>();
+        services.AddSingleton<IHentaiFoundryClient, HentaiFoundryClient>();
+        services.AddSingleton<INewgroundsClient, NewgroundsClient>();
+        services.AddSingleton<IExHentaiClient, ExHentaiClient>();
+        services.AddSingleton<IDeviantArtOpenEmbedClient, DeviantArtOpenEmbedClient>();
+        services.AddSingleton<IDeviantArtClient, DeviantArtClient>();
+        services.AddSingleton<IE621Client, E621Client>();
 
         services.AddSingleton<FurAffinity>();
         services.AddSingleton<Pixiv>();

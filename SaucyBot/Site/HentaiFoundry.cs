@@ -18,9 +18,9 @@ public sealed class HentaiFoundry : BaseSite
     protected override Color Color => new(0xFF67A2);
 
     private readonly ILogger<HentaiFoundry> _logger;
-    private readonly HentaiFoundryClient _client;
+    private readonly IHentaiFoundryClient _client;
 
-    public HentaiFoundry(ILogger<HentaiFoundry> logger, HentaiFoundryClient client)
+    public HentaiFoundry(ILogger<HentaiFoundry> logger, IHentaiFoundryClient client)
     {
         _logger = logger;
         _client = client;

@@ -18,9 +18,9 @@ public sealed class ExHentai : BaseSite
 
     private readonly ILogger<ExHentai> _logger;
     private readonly IConfiguration _configuration;
-    private readonly ExHentaiClient _client;
+    private readonly IExHentaiClient _client;
 
-    public ExHentai(ILogger<ExHentai> logger, IConfiguration configuration, ExHentaiClient client)
+    public ExHentai(ILogger<ExHentai> logger, IConfiguration configuration, IExHentaiClient client)
     {
         _logger = logger;
         _configuration = configuration;

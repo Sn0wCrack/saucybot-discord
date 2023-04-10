@@ -39,6 +39,27 @@ public sealed class MessageManager
         }
     }
 
+    public async Task Send(SocketSlashCommand received, ProcessResponse response)
+    {
+        var messages = await PartitionMessages(response);
+        
+        foreach (var message in messages)
+        {
+            if (message.IsEmpty())
+            {
+                _logger.LogDebug("Empty message was created from: \"{OriginalMessage}\"", received.Data.ToString());
+                continue;
+            }
+
+            await received.FollowupWithFilesAsync(
+                message.Files,
+                message.Content,
+                allowedMentions: AllowedMentions.None,
+                embeds: message.Embeds.ToArray()
+            );
+        }
+    }
+
     public async Task<List<Message>> PartitionMessages(ProcessResponse response)
     {
         return response switch

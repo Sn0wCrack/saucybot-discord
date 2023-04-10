@@ -46,6 +46,7 @@ public sealed class Worker : BackgroundService
         _client.Log += HandleLogAsync;
         _client.ShardReady += HandleShardReadyAsync;
         _client.MessageReceived += HandleMessageAsync;
+        _client.SlashCommandExecuted += HandleSlashCommandAsync;
 
         await _client.LoginAsync(TokenType.Bot, _configuration.GetSection("Bot:DiscordToken").Get<string>());
         await _client.StartAsync();
@@ -62,6 +63,13 @@ public sealed class Worker : BackgroundService
         }
     }
 
+    private Task HandleSlashCommandAsync(SocketSlashCommand socketSlashCommand)
+    {
+        Task.Run(async () => await _siteManager.HandleCommand(socketSlashCommand));
+        
+        return Task.CompletedTask;
+    }
+
     private Task HandleMessageAsync(SocketMessage socketMessage)
     {
         if (socketMessage is not SocketUserMessage message)
@@ -75,7 +83,7 @@ public sealed class Worker : BackgroundService
             return Task.CompletedTask;
         }
 
-        Task.Run(async () => await _siteManager.Handle(message));
+        Task.Run(async () => await _siteManager.HandleMessage(message));
 
         return Task.CompletedTask;
     }

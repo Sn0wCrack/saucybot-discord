@@ -8,7 +8,7 @@ using SaucyBot.Services;
 
 namespace SaucyBot.Library.Sites.Newgrounds;
 
-public sealed class NewgroundsClient
+public sealed class NewgroundsClient : INewgroundsClient
 {
     private const string BaseUrl = "https://www.newgrounds.com";
     
