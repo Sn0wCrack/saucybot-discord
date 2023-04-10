@@ -72,6 +72,11 @@ public sealed partial class SiteManager
         var maximumEmbeds = guildConfiguration?.MaximumEmbeds ?? _configuration.GetSection("Bot:MaximumEmbeds").Get<uint>();
 
         var content = message.CleanContent;
+
+        if (content is null)
+        {
+            return results;
+        }
         
         foreach (var (identifier, site) in _sites)
         {
@@ -187,18 +192,20 @@ public sealed partial class SiteManager
 
     public async Task HandleCommand(SocketSlashCommand command)
     {
+        await command.DeferAsync();
+        
         if (!ShouldProcessCommand(command))
         {
             _logger.LogDebug("Command was ignored with content: \"{Message}\"", command.Data.ToString());
+            await command.FollowupAsync("Failed to process provided URL or do not have correct permissions in Channel", ephemeral: true);
             return;
         }
-
-        await command.DeferAsync();
         
         var results = await Match(command);
         
         if (!results.Any())
         {
+            await command.FollowupAsync("Provided URL cannot be sauced", ephemeral: true);
             return;
         }
         
@@ -213,6 +220,7 @@ public sealed partial class SiteManager
                 if (response is null)
                 {
                     _logger.LogDebug("Failed to process match \"{Match}\" of site {Site}", match, site);
+                    await command.FollowupAsync("Failed to create embed information for provided URL", ephemeral: true);
                     continue;
                 }
 
@@ -221,6 +229,7 @@ public sealed partial class SiteManager
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Exception occured processing or sending messages");
+                await command.FollowupAsync("Failed to create embed information for provided URL", ephemeral: true);
             }
         }
     }

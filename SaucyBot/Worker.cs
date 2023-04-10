@@ -64,7 +64,7 @@ public sealed class Worker : BackgroundService
     }
 
     private Task HandleSlashCommandAsync(SocketSlashCommand socketSlashCommand)
-    {
+    {   
         Task.Run(async () => await _siteManager.HandleCommand(socketSlashCommand));
         
         return Task.CompletedTask;
@@ -88,11 +88,43 @@ public sealed class Worker : BackgroundService
         return Task.CompletedTask;
     }
 
-    private Task HandleShardReadyAsync(DiscordSocketClient client)
+    private async Task HandleShardReadyAsync(DiscordSocketClient client)
     {
         _logger.LogInformation("[{Source}] {Message}", $"Shard #{client.ShardId}", "Ready");
 
-        return Task.CompletedTask;
+        if (client.ShardId == 0)
+        {
+            await CreateSlashCommands(client);
+            _logger.LogDebug("Created or Updated Slash Commands");
+        }
+    }
+
+    private async Task CreateSlashCommands(DiscordSocketClient client)
+    {
+        var applicationCommandProperties = new List<ApplicationCommandProperties>();
+        
+        try
+        {
+            var sauceCommand = new SlashCommandBuilder();
+            sauceCommand.WithName("sauce")
+                .WithDescription("Create an embed from the provided URL");
+
+            var sauceOption = new SlashCommandOptionBuilder();
+            sauceOption.WithName("url")
+                .WithDescription("The URL to create the embed from")
+                .WithType(ApplicationCommandOptionType.String)
+                .WithRequired(true);
+            
+            sauceCommand.AddOption(sauceOption);
+            
+            applicationCommandProperties.Add(sauceCommand.Build());
+
+            await client.BulkOverwriteGlobalApplicationCommandsAsync(applicationCommandProperties.ToArray());
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("Failed to create global application commands with message: {Message}", ex.Message);
+        }
     }
 
     private Task HandleLogAsync(LogMessage message)
