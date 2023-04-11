@@ -13,7 +13,7 @@ using SaucyBot.Services.Cache;
 using SaucyBot.Site;
 using Serilog;
 
-var host = Host.CreateDefaultBuilder(args)
+await Host.CreateDefaultBuilder(args)
     .UseSerilog((context, configuration) =>
     {
         configuration
@@ -66,6 +66,6 @@ var host = Host.CreateDefaultBuilder(args)
 
         services.AddHostedService<Worker>();
     })
-    .Build();
-
-await host.RunAsync();
+    .UseConsoleLifetime()
+    .Build()
+    .RunAsync();
