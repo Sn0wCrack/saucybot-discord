@@ -9,7 +9,7 @@ public static class Constants
     /// <summary>
     /// The maximum file size that Discord allows to be uploaded.
     /// </summary>
-    public const long MaximumFileSize = 8_388_119;
+    public const long MaximumFileSize = 8_388_119; // 24_117_248
 
     /// <summary>
     /// The maximum number of embeds that Discord allows per message.
