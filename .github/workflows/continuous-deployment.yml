@@ -1,25 +1,12 @@
 name: 'Production Continuous Deployment'
 
 on:
-  push:
-    tags: 'v*'
+  release:
+    types: [released]
 
 jobs:
-  release:
-    name: 'Create Release'
-    runs-on: ubuntu-latest
-    steps:
-      - name: 'Create Release'
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ github.ref }}
-          name: Release ${{ github.ref_name }}
-          draft: false
-          prerelease: false
-  
   package:
     name: 'Publish Container'
-    needs: release
     runs-on: ubuntu-latest
     steps:
       # Setup working environment for Docker
@@ -41,10 +28,10 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
           registry: ghcr.io
       - name: 'Build and Publish'
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           push: true
-          context: .
+          context: ./SaucyBot
           tags: ${{ steps.docker_meta.outputs.tags }}
           labels: ${{ steps.docker_meta.outputs.labels }}
           cache-from: type=gha
