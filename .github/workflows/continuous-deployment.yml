@@ -29,6 +29,8 @@ jobs:
           registry: ghcr.io
       - name: 'Build and Publish'
         uses: docker/build-push-action@v4
+        env:
+          CONFIGURATION: Release
         with:
           push: true
           context: ./SaucyBot
@@ -36,6 +38,7 @@ jobs:
           labels: ${{ steps.docker_meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: CONFIGURATION=Release
           
   deploy:
     name: 'Deploy'
