@@ -3,7 +3,7 @@ name: 'Continuous Integration'
 on:
   workflow_dispatch:
   push:
-    branches: ['develop/v2']
+    branches: ['v2']
     paths:
       - '**.cs'
       - '**.csproj'
@@ -11,7 +11,7 @@ on:
     tags-ignore:
       - 'v*'
   pull_request:
-    branches: ['develop/v2']
+    branches: ['v2']
     paths:
       - '**.cs'
       - '**.csproj'
