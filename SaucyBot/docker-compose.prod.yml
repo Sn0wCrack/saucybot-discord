@@ -4,7 +4,7 @@ services:
         build: 
             context: .
             args:
-                CONFIGURATION: "production"
+                CONFIGURATION: "Release"
         env_file:
             - .env
         volumes:

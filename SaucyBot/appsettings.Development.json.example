@@ -4,7 +4,8 @@
       "Default": "Information",
       "Override": {
         "Microsoft": "Information",
-        "Microsoft.Hosting.Lifetime": "Information"
+        "Microsoft.Hosting.Lifetime": "Information",
+        "Microsoft.EntityFrameworkCore": "Information"
       }
     }
   },
@@ -13,6 +14,19 @@
     "DisabledSites": [],
     "MaximumEmbeds": 5
   },
+  "Database": {
+    "ConnectionString": "server=database;user=root;password=secret;database=bot"
+  },
+  "Cache": {
+    "Driver": "Redis",
+    "Redis": {
+        "DefaultLifetime": 3600,
+        "ConnectionString": "cache:6379"
+    },
+    "Memory": {
+        "DefaultLifetime": 3600
+    }
+  }
   "Sites": {
     "ArtStation": {
       "PostLimit": 5
