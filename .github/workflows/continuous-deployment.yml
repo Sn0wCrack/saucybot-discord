@@ -49,7 +49,7 @@ jobs:
           labels: ${{ steps.docker_meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-  
+          
   deploy:
     name: 'Deploy'
     needs: package

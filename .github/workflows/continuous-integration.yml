@@ -3,42 +3,50 @@ name: 'Continuous Integration'
 on:
   workflow_dispatch:
   push:
-    branches: [ master ]
+    branches: ['develop/v2']
     paths:
-      - '**.ts'
-      - '**.json'
-      - '.eslintignore'
-      - '.prettierrc'
+      - '**.cs'
+      - '**.csproj'
+      - '**.sln'
     tags-ignore:
       - 'v*'
   pull_request:
-    branches: [ master ]
+    branches: ['develop/v2']
     paths:
-      - '**.ts'
-      - '**.json'
-      - '.eslintignore'
-      - '.prettierrc'
+      - '**.cs'
+      - '**.csproj'
+      - '**.sln'
+
 jobs:
   build:
+    name: 'Build and Test'
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        node-version: [ 'lts/*', 'latest' ]
+        dotnet-version: ['7.x']
 
     steps:
       - uses: actions/checkout@v3
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+      
+      - name: Setup .NET Core SDK ${{ matrix.dotnet-version }}
+        uses: actions/setup-dotnet@v3
         with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'yarn'
-      - run: yarn install --frozen-lockfile
-      - name: Run linter
-        run: yarn lint:check
-        env:
-          CI: true
-      - name: Run build
-        run: yarn build
-        env:
-          CI: true
+          dotnet-version: ${{ matrix.dotnet-version }}
+
+      - uses: actions/cache@v3
+        with:
+          path: ~/.nuget/packages
+          # Look to see if there is a cache hit for the corresponding requirements file
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget
+
+      - name: Install Dependencies
+        run: dotnet restore
+        
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+        
+      - name: Test
+        run: dotnet test --no-restore --verbosity normal

@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SaucyBot", "SaucyBot\SaucyBot.csproj", "{6A457AD7-E0E4-4E69-9479-0CF9106E1AF0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SaucyBot.Tests", "SaucyBot.Tests\SaucyBot.Tests.csproj", "{7796E52D-DDBA-425B-BD2F-77BE0F3454DE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6A457AD7-E0E4-4E69-9479-0CF9106E1AF0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6A457AD7-E0E4-4E69-9479-0CF9106E1AF0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6A457AD7-E0E4-4E69-9479-0CF9106E1AF0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6A457AD7-E0E4-4E69-9479-0CF9106E1AF0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7796E52D-DDBA-425B-BD2F-77BE0F3454DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7796E52D-DDBA-425B-BD2F-77BE0F3454DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7796E52D-DDBA-425B-BD2F-77BE0F3454DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7796E52D-DDBA-425B-BD2F-77BE0F3454DE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
