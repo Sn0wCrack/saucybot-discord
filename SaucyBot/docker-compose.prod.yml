@@ -1,0 +1,41 @@
+version: "3.9"
+services:
+    bot:
+        build: 
+            context: .
+            args:
+                CONFIGURATION: "production"
+        env_file:
+            - .env
+        volumes:
+            - ./appsettings.json:/app/appsettings.json
+        depends_on: 
+            - cache
+            - database
+        restart: unless-stopped
+        
+    database:
+        image: mariadb:10
+        env_file:
+            - .env
+        ports:
+            - "3306:3306"
+        volumes:
+            - database:/var/lib/mysql
+        restart: unless-stopped
+        healthcheck:
+            test: 'mysqladmin ping -h 127.0.0.1 -u "$MYSQL_USER" --password="$MYSQL_PASSWORD"'
+            timeout: 20s
+            retries: 10
+        
+    cache:
+        image: "redis:7-alpine"
+        ports:
+            - "6379:6379"
+        volumes:
+            - cache:/data
+        restart: unless-stopped
+
+volumes: 
+    cache:
+    database:
