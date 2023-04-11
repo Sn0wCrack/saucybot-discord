@@ -4,7 +4,7 @@ SaucyBot
 > A discord bot that fills in the gaps for art sites without proper inline embeds.
 
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/Sn0wCrack/saucybot-discord/CI)
-![Version](https://img.shields.io/github/package-json/v/sn0wcrack/saucybot-discord)
+![Version](https://img.shields.io/github/v/release/Sn0wCrack/saucybot-discord)
 ![License](https://img.shields.io/github/license/sn0wcrack/saucybot-discord)
 [![Support me on Patreon](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Fshieldsio-patreon.vercel.app%2Fapi%3Fusername%3Dsaucybot%26type%3Dpatrons&style=flat)](https://patreon.com/saucybot)
 <a target="_blank" href="https://discord.gg/E642ScHyHj">![Discord Server](https://img.shields.io/discord/928546369935917076?color=5764f4&label=discord&logo=discord&logoColor=fff)</a>
