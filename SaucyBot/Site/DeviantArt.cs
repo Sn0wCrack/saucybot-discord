@@ -5,7 +5,6 @@ using SaucyBot.Library;
 using SaucyBot.Library.Sites.DeviantArt;
 using SaucyBot.Site.Response;
 
-
 namespace SaucyBot.Site;
 
 public sealed class DeviantArt : BaseSite

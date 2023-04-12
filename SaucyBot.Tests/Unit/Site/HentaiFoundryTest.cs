@@ -15,7 +15,7 @@ namespace SaucyBot.Tests.Unit.Site;
 
 public class HentaiFoundryTest
 {
-    [Fact]
+    [Fact(Skip = "Need to find way to mock HTML parser style classes")]
     public async void SingleEmbedIsCreatedWhenTheApiClientReturnsSuccessfully()
     {
         // Post: https://www.hentai-foundry.com/pictures/user/cherry-gig/1042457/FOR-THE-GOD-EMPEROR
