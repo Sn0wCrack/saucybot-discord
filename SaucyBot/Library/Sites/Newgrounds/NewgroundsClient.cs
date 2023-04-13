@@ -64,7 +64,7 @@ public sealed class NewgroundsArt
 
     public string? Description() => _document.QuerySelector("#author_comments")?.InnerHtml;
     
-    public string? ImageUrl() => _document.QuerySelector(".pod-body .image #portal_item_view img")?.GetAttribute("src");
+    public string? ImageUrl() => _document.QuerySelector(".pod-body .image img")?.GetAttribute("src");
 
     public string Views() =>
         _document.QuerySelector(".sidestats dt:contains('Views')")?.NextElementSibling?.TextContent ?? "0";

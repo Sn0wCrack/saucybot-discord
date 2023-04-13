@@ -32,13 +32,7 @@ public sealed class PlainTextMarkupFormatter : IMarkupFormatter
 
     public String OpenTag(IElement element, Boolean selfClosing)
     {
-        return element.LocalName switch
-        {
-            "p" => "\n\n",
-            "br" => "\n",
-            "span" => " ",
-            _ => String.Empty
-        };
+        return String.Empty;
     }
 
     public String CloseTag(IElement element, Boolean selfClosing)
