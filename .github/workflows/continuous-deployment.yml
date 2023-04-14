@@ -30,6 +30,7 @@ jobs:
       - name: 'Build and Publish'
         uses: docker/build-push-action@v4
         env:
+          RELEASE_VERSION: ${{ github.ref_name }}
           CONFIGURATION: Release
         with:
           push: true
