@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using Discord;
 using Discord.WebSocket;
 using SaucyBot.Site.Response;

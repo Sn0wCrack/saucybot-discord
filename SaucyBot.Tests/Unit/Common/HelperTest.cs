@@ -59,13 +59,24 @@ public class HelpersTest
         Assert.NotEqual(description, processed);
     }
 
-    [Fact]
-    public async void ProcessDescriptionWillRetainBreaks()
+    [Theory]
+    [InlineData("<p>Test</p>Test")]
+    [InlineData("Test<br>Test")]
+    public async void ProcessDescriptionWillRetainBreaksAndParagraphs(string description)
     {
-        const string description = "Test<br>Test";
+        var processed = await Helper.ProcessDescription(description);
+
+        Assert.Contains("\n", processed);
+    }
+    
+    [Fact]
+    public async void ProcessDescriptionWillRetainBreaksAndRemoveExistingNewLines()
+    {
+        const string description = "Test\n<br>Test";
 
         var processed = await Helper.ProcessDescription(description);
 
         Assert.Contains("\n", processed);
+        Assert.DoesNotContain("\n\n", processed);
     }
 }

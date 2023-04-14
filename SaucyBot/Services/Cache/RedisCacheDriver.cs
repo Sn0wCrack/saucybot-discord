@@ -22,22 +22,43 @@ public sealed class RedisCacheDriver : ICacheDriver
 
     public async Task<T?> Get<T>(object key)
     {
-        var value = await _cache.GetStringAsync(key.ToString());
+        var keyAsString = key.ToString();
+
+        if (keyAsString is null)
+        {
+            throw new Exception("Key could not be converted to a string correctly");
+        }
+        
+        var value = await _cache.GetStringAsync(keyAsString);
 
         return value is null ? default : JsonSerializer.Deserialize<T>(value);
     }
 
     public async Task<bool> Delete(object key)
     {
-        await _cache.RemoveAsync(key.ToString());
+        var keyAsString = key.ToString();
+
+        if (keyAsString is null)
+        {
+            throw new Exception("Key could not be converted to a string correctly");
+        }
+        
+        await _cache.RemoveAsync(keyAsString);
 
         return true;
     }
 
     public async Task<T> Set<T>(object key, T value)
     {
+        var keyAsString = key.ToString();
+
+        if (keyAsString is null)
+        {
+            throw new Exception("Key could not be converted to a string correctly");
+        }
+        
         await _cache.SetStringAsync(
-            key.ToString(),
+            keyAsString,
             JsonSerializer.Serialize(value),
             new DistributedCacheEntryOptions
             {
@@ -50,8 +71,15 @@ public sealed class RedisCacheDriver : ICacheDriver
 
     public async Task<T> Set<T>(object key, T value, TimeSpan expiry)
     {
+        var keyAsString = key.ToString();
+
+        if (keyAsString is null)
+        {
+            throw new Exception("Key could not be converted to a string correctly");
+        }
+        
         await _cache.SetStringAsync(
-            key.ToString(),
+            keyAsString,
             JsonSerializer.Serialize(value),
             new DistributedCacheEntryOptions
             {

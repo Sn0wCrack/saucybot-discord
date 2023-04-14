@@ -11,6 +11,12 @@ public static class Helper
     
     public static async Task<string?> HtmlToPlainText(string html)
     {
+        // Since HTML does not respect newlines, we need to remove them before processing to ensure
+        // our plaintext has the exact number of newlines that would be displayed on the site or thereabouts at least.
+        html = html
+            .Replace("\n", "")
+            .Replace("\r", "");
+        
         var parser = new HtmlParser();
         var document = await parser.ParseDocumentAsync(html);
 
@@ -31,9 +37,7 @@ public static class Helper
 
     public static string RandomString(int length = 8)
     {
-        var random = new Random();
-
-        return new string(Enumerable.Repeat(Characters, length).Select(s => s[random.Next(s.Length)]).ToArray());
+        return new string(Enumerable.Repeat(Characters, length).Select(s => s[Random.Shared.Next(s.Length)]).ToArray());
     }
 
     /// <summary>

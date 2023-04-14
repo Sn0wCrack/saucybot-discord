@@ -1,44 +1,50 @@
 <Project Sdk="Microsoft.NET.Sdk.Worker">
 
-    <PropertyGroup>
-        <TargetFramework>net7.0</TargetFramework>
-        <Nullable>enable</Nullable>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <UserSecretsId>dotnet-SaucyBot-D0ACED6D-FEE2-4051-BE18-0DBB03D798DB</UserSecretsId>
-        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-        <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
-        <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
-        <RestoreLockedMode Condition="'$(ContinuousIntegrationBuild)' == 'true'">true</RestoreLockedMode>
-    </PropertyGroup>
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>dotnet-SaucyBot-D0ACED6D-FEE2-4051-BE18-0DBB03D798DB</UserSecretsId>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+    <RestoreLockedMode Condition="'$(ContinuousIntegrationBuild)' == 'true'">true</RestoreLockedMode>
+  </PropertyGroup>
 
-    <ItemGroup>
-        <PackageReference Include="AngleSharp" Version="1.0.1" />
-        <PackageReference Include="CoreTweet" Version="1.0.0.483" />
-        <PackageReference Include="Discord.Net" Version="3.10.0" />
-        <PackageReference Include="EFCore.NamingConventions" Version="7.0.2" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.5" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.5">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="7.0.5" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="7.0.5">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
-        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="7.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="7.0.5" />
-        <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.1" />
-        <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="7.0.0" />
-        <PackageReference Include="Serilog" Version="2.12.0" />
-        <PackageReference Include="Serilog.Extensions.Hosting" Version="5.0.1" />
-        <PackageReference Include="Serilog.Settings.Configuration" Version="3.4.0" />
-        <PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
-        <PackageReference Include="StackExchange.Redis" Version="2.6.104" />
-        <PackageReference Include="Xabe.FFmpeg" Version="5.2.6" />
-    </ItemGroup>
+  <PropertyGroup>
+    <Version Condition="'$(RELEASE_VERSION)' != ''">$(RELEASE_VERSION)</Version>
+    <VersionPrefix Condition="'$(RELEASE_VERSION)' == ''">0.0.0</VersionPrefix>
+    <VersionSuffix Condition="'$(RELEASE_VERSION)' == ''">$([System.DateTime]::UtcNow.ToString(`yyyy-MM-dd`))</VersionSuffix>
+  </PropertyGroup>
 
-    <ItemGroup>
-      <Folder Include="Database\Migrations" />
-    </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="AngleSharp" Version="1.0.1" />
+    <PackageReference Include="CoreTweet" Version="1.0.0.483" />
+    <PackageReference Include="Discord.Net" Version="3.10.0" />
+    <PackageReference Include="EFCore.NamingConventions" Version="7.0.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.5" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.5">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="7.0.5" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="7.0.5">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="7.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.1" />
+    <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="7.0.0" />
+    <PackageReference Include="Serilog" Version="2.12.0" />
+    <PackageReference Include="Serilog.Extensions.Hosting" Version="5.0.1" />
+    <PackageReference Include="Serilog.Settings.Configuration" Version="3.4.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
+    <PackageReference Include="StackExchange.Redis" Version="2.6.104" />
+    <PackageReference Include="Xabe.FFmpeg" Version="5.2.6" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Database\Migrations" />
+  </ItemGroup>
 </Project>
