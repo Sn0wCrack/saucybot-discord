@@ -81,7 +81,7 @@ public sealed class Worker : BackgroundService
     {
         var config = new DiscordSocketConfig()
         {
-            ShardId = _configuration.GetSection("Bot:ShardId").Get<int?>() ?? 1,
+            ShardId = _configuration.GetSection("Bot:ShardId").Get<int?>() ?? 0,
             GatewayIntents = Constants.RequiredGatewayIntents,
             MessageCacheSize = _configuration.GetSection("Bot:MessageCacheSize").Get<int?>() ?? 100,
             ConnectionTimeout = _configuration.GetSection("Bot:ConnectionTimeout").Get<int?>() ?? 30000,
@@ -93,6 +93,7 @@ public sealed class Worker : BackgroundService
         var client = new DiscordSocketClient(config);
         
         client.Log += HandleLogAsync;
+        client.Ready += HandleSocketClientReadyAsync;
         client.MessageReceived += HandleMessageAsync;
         client.SlashCommandExecuted += HandleSlashCommandAsync;
 
@@ -122,6 +123,22 @@ public sealed class Worker : BackgroundService
         Task.Run(async () => await _siteManager.HandleMessage(message));
 
         return Task.CompletedTask;
+    }
+
+    private async Task HandleSocketClientReadyAsync()
+    {
+        if (_client is not DiscordSocketClient client)
+        {
+            return;
+        }
+        
+        _logger.LogInformation("[{Source}] {Message}", $"Shard #{client.ShardId}", "Ready");
+
+        if (client.ShardId == 0)
+        {
+            await CreateSlashCommands(client);
+            _logger.LogDebug("Created or Updated Slash Commands");
+        }
     }
 
     private async Task HandleShardReadyAsync(DiscordSocketClient client)
