@@ -13,7 +13,7 @@ public sealed class Worker : BackgroundService
     private readonly DatabaseManager _databaseManager;
     private readonly SiteManager _siteManager;
 
-    private DiscordShardedClient? _client;
+    private BaseSocketClient? _client;
 
     public Worker(
         ILogger<Worker> logger,
@@ -31,22 +31,14 @@ public sealed class Worker : BackgroundService
     {
         await _databaseManager.EnsureAllMigrationsHaveRun();
 
-        var config = new DiscordSocketConfig()
-        {
-            GatewayIntents = Constants.RequiredGatewayIntents,
-            MessageCacheSize = _configuration.GetSection("Bot:MessageCacheSize").Get<int?>() ?? 100,
-            ConnectionTimeout = _configuration.GetSection("Bot:ConnectionTimeout").Get<int?>() ?? 30000,
-            AlwaysDownloadUsers = false,
-            AlwaysResolveStickers = false,
-            AlwaysDownloadDefaultStickers = false,
-        };
+        var shardMode = _configuration.GetSection("Bot:ShardMode").Get<string?>() ?? "Automatic";
 
-        _client = new DiscordShardedClient(config);
-        
-        _client.Log += HandleLogAsync;
-        _client.ShardReady += HandleShardReadyAsync;
-        _client.MessageReceived += HandleMessageAsync;
-        _client.SlashCommandExecuted += HandleSlashCommandAsync;
+        _client = shardMode.ToLowerInvariant() switch
+        {
+            "automatic" => this.SetupShardedSocketClient(),
+            "manual" => this.SetupSocketClient(),
+            _ => this.SetupShardedSocketClient(),
+        };
 
         await _client.LoginAsync(TokenType.Bot, _configuration.GetSection("Bot:DiscordToken").Get<string>());
         await _client.StartAsync();
@@ -61,6 +53,50 @@ public sealed class Worker : BackgroundService
             await _client.StopAsync();
             await _client.DisposeAsync();
         }
+    }
+
+    private DiscordShardedClient SetupShardedSocketClient()
+    {
+        var config = new DiscordSocketConfig()
+        {
+            GatewayIntents = Constants.RequiredGatewayIntents,
+            MessageCacheSize = _configuration.GetSection("Bot:MessageCacheSize").Get<int?>() ?? 100,
+            ConnectionTimeout = _configuration.GetSection("Bot:ConnectionTimeout").Get<int?>() ?? 30000,
+            AlwaysDownloadUsers = false,
+            AlwaysResolveStickers = false,
+            AlwaysDownloadDefaultStickers = false,
+        };
+
+        var client = new DiscordShardedClient(config);
+        
+        client.Log += HandleLogAsync;
+        client.ShardReady += HandleShardReadyAsync;
+        client.MessageReceived += HandleMessageAsync;
+        client.SlashCommandExecuted += HandleSlashCommandAsync;
+
+        return client;
+    }
+
+    private DiscordSocketClient SetupSocketClient()
+    {
+        var config = new DiscordSocketConfig()
+        {
+            ShardId = _configuration.GetSection("Bot:ShardId").Get<int?>() ?? 1,
+            GatewayIntents = Constants.RequiredGatewayIntents,
+            MessageCacheSize = _configuration.GetSection("Bot:MessageCacheSize").Get<int?>() ?? 100,
+            ConnectionTimeout = _configuration.GetSection("Bot:ConnectionTimeout").Get<int?>() ?? 30000,
+            AlwaysDownloadUsers = false,
+            AlwaysResolveStickers = false,
+            AlwaysDownloadDefaultStickers = false,
+        };
+
+        var client = new DiscordSocketClient(config);
+        
+        client.Log += HandleLogAsync;
+        client.MessageReceived += HandleMessageAsync;
+        client.SlashCommandExecuted += HandleSlashCommandAsync;
+
+        return client;
     }
 
     private Task HandleSlashCommandAsync(SocketSlashCommand socketSlashCommand)
