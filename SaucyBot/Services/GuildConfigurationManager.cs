@@ -41,5 +41,5 @@ public sealed class GuildConfigurationManager : IGuildConfigurationManager
         return result;
     }
 
-    private string CacheKey(ulong guildId) => $"database.guild_configuration_{guildId}";
+    private static string CacheKey(ulong guildId) => $"database.guild_configuration_{guildId}";
 }

@@ -50,23 +50,7 @@ public sealed class RedisCacheDriver : ICacheDriver
 
     public async Task<T> Set<T>(object key, T value)
     {
-        var keyAsString = key.ToString();
-
-        if (keyAsString is null)
-        {
-            throw new Exception("Key could not be converted to a string correctly");
-        }
-        
-        await _cache.SetStringAsync(
-            keyAsString,
-            JsonSerializer.Serialize(value),
-            new DistributedCacheEntryOptions
-            {
-                AbsoluteExpirationRelativeToNow = _defaultExpiry
-            }
-        );
-
-        return value;
+        return await Set(key, value, _defaultExpiry);
     }
 
     public async Task<T> Set<T>(object key, T value, TimeSpan expiry)
