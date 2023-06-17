@@ -8,6 +8,7 @@ using SaucyBot.Library.Sites.FurAffinity;
 using SaucyBot.Library.Sites.HentaiFoundry;
 using SaucyBot.Library.Sites.Newgrounds;
 using SaucyBot.Library.Sites.Pixiv;
+using SaucyBot.Library.Sites.Twitter;
 using SaucyBot.Services;
 using SaucyBot.Services.Cache;
 using SaucyBot.Site;
@@ -53,12 +54,14 @@ await Host.CreateDefaultBuilder(args)
         services.AddSingleton<IDeviantArtOpenEmbedClient, DeviantArtOpenEmbedClient>();
         services.AddSingleton<IDeviantArtClient, DeviantArtClient>();
         services.AddSingleton<IE621Client, E621Client>();
+        services.AddSingleton<IFxTwitterClient, FxTwitterClient>();
 
         services.AddSingleton<FurAffinity>();
         services.AddSingleton<Pixiv>();
         services.AddSingleton<ArtStation>();
         services.AddSingleton<HentaiFoundry>();
         services.AddSingleton<Twitter>();
+        services.AddSingleton<FxTwitter>();
         services.AddSingleton<DeviantArt>();
         services.AddSingleton<E621>();
         services.AddSingleton<ExHentai>();

@@ -1,7 +1,5 @@
 ﻿using System.Net.Http.Headers;
 using System.Reflection;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using AngleSharp.Html.Dom;
 using AngleSharp.Html.Parser;
 using SaucyBot.Services;
