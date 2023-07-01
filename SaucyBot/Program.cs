@@ -55,6 +55,7 @@ await Host.CreateDefaultBuilder(args)
         services.AddSingleton<IDeviantArtClient, DeviantArtClient>();
         services.AddSingleton<IE621Client, E621Client>();
         services.AddSingleton<IFxTwitterClient, FxTwitterClient>();
+        services.AddSingleton<ITwitterImageSyndicationClient, TwitterImageSyndicationClient>();
 
         services.AddSingleton<FurAffinity>();
         services.AddSingleton<Pixiv>();
