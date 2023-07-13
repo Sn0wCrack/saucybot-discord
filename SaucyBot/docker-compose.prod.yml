@@ -15,7 +15,7 @@ services:
         restart: unless-stopped
         
     database:
-        image: mariadb:10
+        image: mariadb:11
         env_file:
             - .env
         ports:
