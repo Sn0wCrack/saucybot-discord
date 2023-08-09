@@ -4,10 +4,10 @@ using System.Linq;
 using System.Net.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Moq;
 using SaucyBot.Library.Sites.Pixiv;
 using SaucyBot.Services;
 using SaucyBot.Site;
+using NSubstitute;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Site;
@@ -19,7 +19,7 @@ public class PixivTest
     {
         // Post: https://www.pixiv.net/en/artworks/106848609
         
-        var logger = Mock.Of<ILogger<Pixiv>>();
+        var logger = Substitute.For<ILogger<Pixiv>>();
         
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -28,9 +28,9 @@ public class PixivTest
             })
             .Build();
         
-        var guildConfigurationManager = new Mock<IGuildConfigurationManager>();
+        var guildConfigurationManager = Substitute.For<IGuildConfigurationManager>();
         
-        var client = new Mock<IPixivClient>();
+        var client = Substitute.For<IPixivClient>();
 
         var illustrationDetails = new IllustrationDetails(
             "106848609",
@@ -96,27 +96,32 @@ public class PixivTest
             "Test Response",
             illustrationPages
         );
-        
-        client.Setup(mock => mock.Login())
-            .ReturnsAsync(true);
 
-        client.Setup(mock => mock.IllustrationDetails(It.IsAny<string>()))
-            .ReturnsAsync((IllustrationDetailsResponse?) illustrationDetailsResponse);
+        client
+            .Login()
+            .Returns(true);
 
-        client.Setup(mock => mock.IllustrationPages(It.IsAny<string>()))
-            .ReturnsAsync((IllustrationPagesResponse?) illustrationPagesResponse);
-        
-        client.Setup(mock => mock.PokeFile(It.IsAny<string>()))
-            .ReturnsAsync(new HttpResponseMessage());
+        client
+            .IllustrationDetails(Arg.Any<string>())
+            .Returns((IllustrationDetailsResponse?) illustrationDetailsResponse);
 
-        client.Setup(mock => mock.GetFile(It.IsAny<string>()))
-            .ReturnsAsync(new MemoryStream());
+        client
+            .IllustrationPages(Arg.Any<string>())
+            .Returns((IllustrationPagesResponse?) illustrationPagesResponse);
+
+        client
+            .PokeFile(Arg.Any<string>())
+            .Returns(new HttpResponseMessage());
+
+        client
+            .GetFile(Arg.Any<string>())
+            .Returns(new MemoryStream());
 
         var site = new Pixiv(
             logger,
             config,
-            guildConfigurationManager.Object,
-            client.Object
+            guildConfigurationManager,
+            client
         );
 
         var match = site.Match("https://www.pixiv.net/en/artworks/106848609").First();
@@ -131,7 +136,7 @@ public class PixivTest
     [Fact]
     public async void NothingIsReturnedWhenTheApiClientReturnsUnsuccessfully()
     {
-        var logger = Mock.Of<ILogger<Pixiv>>();
+        var logger = Substitute.For<ILogger<Pixiv>>();
         
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -140,18 +145,20 @@ public class PixivTest
             })
             .Build();
         
-        var guildConfigurationManager = new Mock<IGuildConfigurationManager>();
+        var guildConfigurationManager = Substitute.For<IGuildConfigurationManager>();
         
-        var client = new Mock<IPixivClient>();
+        var client = Substitute.For<IPixivClient>();
 
-        client.Setup(mock => mock.IllustrationDetails(It.IsAny<string>()))
-            .ReturnsAsync((IllustrationDetailsResponse?) null);
-
+        client
+            .IllustrationDetails(Arg.Any<string>())
+            .Returns((IllustrationDetailsResponse?)null);
+        
+        
         var site = new Pixiv(
             logger,
             config,
-            guildConfigurationManager.Object,
-            client.Object
+            guildConfigurationManager,
+            client
         );
 
         var match = site.Match("https://www.pixiv.net/en/artworks/79124301").First();

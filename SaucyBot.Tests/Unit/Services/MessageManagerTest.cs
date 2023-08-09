@@ -1,9 +1,9 @@
 ﻿using System.Linq;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Moq;
 using SaucyBot.Services;
 using SaucyBot.Site.Response;
+using NSubstitute;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Services;
@@ -13,7 +13,7 @@ public class MessageManagerTest
     [Fact]
     public async void ProcessResponseWithASingleTextElementShouldReturnASingleMessage()
     {
-        var logger = Mock.Of<ILogger<MessageManager>>();
+        var logger = Substitute.For<ILogger<MessageManager>>();
         
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection()

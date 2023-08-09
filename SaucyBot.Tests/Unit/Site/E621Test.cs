@@ -1,4 +1,4 @@
-﻿using Moq;
+﻿using NSubstitute;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Site;

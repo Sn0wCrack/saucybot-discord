@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Linq;
 using Microsoft.Extensions.Logging;
-using Moq;
 using SaucyBot.Library.Sites.FurAffinity;
 using SaucyBot.Site;
+using NSubstitute;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Site;
@@ -13,9 +13,9 @@ public class FurAffinityTest
     [Fact]
     public async void SingleEmbedIsReturnWhenTheApiClientReturnsSuccessfullyTest()
     {
-        var logger = Mock.Of<ILogger<FurAffinity>>();
+        var logger = Substitute.For<ILogger<FurAffinity>>();
 
-        var client = new Mock<IFurAffinityClient>();
+        var client = Substitute.For<IFurAffinityClient>();
 
         var submission = new FaExportSubmission(
             "You're A Furry Aren't Ya? (Nude Alt)",
@@ -43,10 +43,11 @@ public class FurAffinityTest
             new[] { "Helltaker", "Lucifier", "Nude", "Alt" }
         );
 
-        client.Setup(mock => mock.GetSubmission(It.IsAny<string>()))
-            .ReturnsAsync(submission);
-
-        var site = new FurAffinity(logger, client.Object);
+        client
+            .GetSubmission(Arg.Any<string>())
+            .Returns(submission);
+        
+        var site = new FurAffinity(logger, client);
 
         var match = site.Match("https://www.furaffinity.net/view/38790081/").First();
 
@@ -74,14 +75,15 @@ public class FurAffinityTest
     [Fact]
     public async void NothingIsReturnedWhenTheApiClientReturnsUnsuccessfully()
     {
-        var logger = Mock.Of<ILogger<FurAffinity>>();
+        var logger = Substitute.For<ILogger<FurAffinity>>();
 
-        var client = new Mock<IFurAffinityClient>();
+        var client = Substitute.For<IFurAffinityClient>();
 
-        client.Setup(mock => mock.GetSubmission(It.IsAny<string>()))
-            .ReturnsAsync((FaExportSubmission?) null);
+        client
+            .GetSubmission(Arg.Any<string>())
+            .Returns((FaExportSubmission?) null);
 
-        var site = new FurAffinity(logger, client.Object);
+        var site = new FurAffinity(logger, client);
 
         var match = site.Match("https://www.furaffinity.net/view/38790081/").First();
 

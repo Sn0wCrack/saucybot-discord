@@ -1,13 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Moq;
+using NSubstitute;
 using SaucyBot.Library.Sites.ArtStation;
 using SaucyBot.Site;
 using Xunit;
-
 
 namespace SaucyBot.Tests.Unit.Site;
 
@@ -16,7 +14,7 @@ public class ArtStationTest
     [Fact]
     public async void AnEmbedIsCreatedForEachProjectImageAsset()
     {
-        var logger = Mock.Of<ILogger<ArtStation>>();
+        var logger = Substitute.For<ILogger<ArtStation>>();
         
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -25,7 +23,7 @@ public class ArtStationTest
             })
             .Build();
         
-        var client = new Mock<IArtStationClient>();
+        var client = Substitute.For<IArtStationClient>();
         
         var user = new ProjectUser(
             "zhongguoduliu",
@@ -96,11 +94,12 @@ public class ArtStationTest
             user,
             assets
         );
-        
-        client.Setup(mock => mock.GetProject(It.IsAny<string>()))
-            .ReturnsAsync(project);
 
-        var site = new ArtStation(logger, config, client.Object);
+        client
+            .GetProject(Arg.Any<string>())
+            .Returns(project);
+
+        var site = new ArtStation(logger, config, client);
 
         var match = site.Match("https://www.artstation.com/artwork/xYXO5X").First();
 
@@ -114,7 +113,7 @@ public class ArtStationTest
     [Fact]
     public async void NothingIsReturnedWhenTheApiClientReturnsUnsuccessfully()
     {
-        var logger = Mock.Of<ILogger<ArtStation>>();
+        var logger = Substitute.For<ILogger<ArtStation>>();
         
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -123,12 +122,13 @@ public class ArtStationTest
             })
             .Build();
         
-        var client = new Mock<IArtStationClient>();
+        var client = Substitute.For<IArtStationClient>();;
 
-        client.Setup(mock => mock.GetProject(It.IsAny<string>()))
-            .ReturnsAsync((Project?) null);
+        client
+            .GetProject(Arg.Any<string>())
+            .Returns((Project?) null);
 
-        var site = new ArtStation(logger, config, client.Object);
+        var site = new ArtStation(logger, config, client);
 
         var match = site.Match("https://www.artstation.com/artwork/xYXO5X").First();
 

@@ -1,14 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net.Http;
-using Microsoft.Extensions.Configuration;
+﻿using System.Linq;
 using Microsoft.Extensions.Logging;
-using Moq;
 using SaucyBot.Library.Sites.HentaiFoundry;
-using SaucyBot.Services;
 using SaucyBot.Site;
+using NSubstitute;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Site;
@@ -20,18 +14,19 @@ public class HentaiFoundryTest
     {
         // Post: https://www.hentai-foundry.com/pictures/user/cherry-gig/1042457/FOR-THE-GOD-EMPEROR
         
-        var logger = Mock.Of<ILogger<HentaiFoundry>>();
+        var logger = Substitute.For<ILogger<HentaiFoundry>>();
 
-        var client = new Mock<IHentaiFoundryClient>();
+        var client = Substitute.For<IHentaiFoundryClient>();
 
         var picture = new HentaiFoundryPicture("");
 
-        client.Setup(mock => mock.GetPage(It.IsAny<string>()))
-            .ReturnsAsync((HentaiFoundryPicture?) picture);
+        client
+            .GetPage(Arg.Any<string>())
+            .Returns((HentaiFoundryPicture?) picture);
 
         var site = new HentaiFoundry(
             logger,
-            client.Object
+            client
         );
 
         var match = site.Match("https://www.hentai-foundry.com/pictures/user/cherry-gig/1042457/FOR-THE-GOD-EMPEROR").First();
@@ -48,16 +43,17 @@ public class HentaiFoundryTest
     {
         // Post: https://www.hentai-foundry.com/pictures/user/cherry-gig/1042457/FOR-THE-GOD-EMPEROR
         
-        var logger = Mock.Of<ILogger<HentaiFoundry>>();
+        var logger = Substitute.For<ILogger<HentaiFoundry>>();
 
-        var client = new Mock<IHentaiFoundryClient>();
-        
-        client.Setup(mock => mock.GetPage(It.IsAny<string>()))
-            .ReturnsAsync((HentaiFoundryPicture?) null);
+        var client = Substitute.For<IHentaiFoundryClient>();
+
+        client
+            .GetPage(Arg.Any<string>())
+            .Returns((HentaiFoundryPicture?) null);
 
         var site = new HentaiFoundry(
             logger,
-            client.Object
+            client
         );
 
         var match = site.Match("https://www.hentai-foundry.com/pictures/user/cherry-gig/1042457/FOR-THE-GOD-EMPEROR").First();
