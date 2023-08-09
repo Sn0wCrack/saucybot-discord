@@ -15,7 +15,7 @@ services:
         restart: unless-stopped
         
     database:
-        image: mariadb:11
+        image: mariadb:11@sha256:f94bb4868d953fed5220c9d3cdc8449f4c314efb07d3a18eefa6010b383f2ab8
         env_file:
             - .env
         ports:
@@ -27,7 +27,7 @@ services:
             retries: 10
         
     cache:
-        image: "redis:7-alpine"
+        image: "redis:7-alpine@sha256:32dcb8aedb557eb0d3463537f5fc3c765d1688d4940d487c1f0c3752f2c3916c"
         ports:
             - "6379:6379"
         restart: unless-stopped
