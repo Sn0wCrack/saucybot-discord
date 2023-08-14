@@ -48,7 +48,7 @@ jobs:
     environment: Production
     
     steps:
-      - uses: appleboy/ssh-action@master
+      - uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.SSH_HOSTNAME }}
           username: ${{ secrets.SSH_USERNAME }}
