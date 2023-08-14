@@ -29,5 +29,4 @@
     <ItemGroup>
       <ProjectReference Include="..\SaucyBot\SaucyBot.csproj" />
     </ItemGroup>
-
 </Project>
