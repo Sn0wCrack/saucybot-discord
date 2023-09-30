@@ -1,9 +1,9 @@
 ﻿ARG CONFIGURATION=Release
 
-FROM mcr.microsoft.com/dotnet/runtime:7.0-alpine3.18@sha256:f90450f4d703203bde6d75b6e09f21edb3c4dd225bf4a1f933deaf42981f545a AS base
+FROM mcr.microsoft.com/dotnet/runtime:7.0-alpine3.18@sha256:b162b0c90f2607d0e39c2afa532731cb49392a0e628bc1be6dd38bbdfd216882 AS base
 WORKDIR /app
 
-FROM mcr.microsoft.com/dotnet/sdk:7.0-alpine3.18@sha256:ba04d2d249d045c4324f8f238f0b82a08528a61db969ba9b0c549b8bc1dc9127 AS build
+FROM mcr.microsoft.com/dotnet/sdk:7.0-alpine3.18@sha256:941e667376fc005ee30c79542086a61aa336d2e3aadd97af8d05816c0218601b AS build
 WORKDIR /src
 COPY ["SaucyBot.csproj", "SaucyBot/"]
 RUN dotnet restore "SaucyBot/SaucyBot.csproj"
