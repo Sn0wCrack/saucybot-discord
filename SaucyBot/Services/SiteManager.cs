@@ -2,6 +2,7 @@
 using System.Text.RegularExpressions;
 using Discord;
 using Discord.WebSocket;
+using SaucyBot.Library;
 using SaucyBot.Site;
 
 namespace SaucyBot.Services;
@@ -173,8 +174,11 @@ public sealed partial class SiteManager
                 }
 
                 await _messageManager.Send(message, response);
-                
-                await message.ModifyAsync(x => x.Flags = MessageFlags.SuppressEmbeds);
+
+                if (HasPermissionToHideEmbed(message))
+                {
+                    await message.ModifyAsync(x => x.Flags = MessageFlags.SuppressEmbeds);
+                }
             }
             catch (Exception ex)
             {
@@ -276,16 +280,61 @@ public sealed partial class SiteManager
         return IgnoreContentRegex().IsMatch(message.Content);
     }
     
-    private bool HasPermissionsToCreateEmbed(SocketUserMessage message)
+    private bool HasPermissionsToCreateEmbed(SocketMessage message)
     {
-        // TODO: Implement checking Guild and Channel permissions to see if I can send messages in the first place
-        return true;
+        if (message.Channel is SocketGuildChannel guildChannel)
+        {
+            var permissions = guildChannel.Guild.CurrentUser.GetPermissions(guildChannel);
+
+            return permissions.Has(Constants.RequiredChannelPermissions);
+        }
+
+        if (message.Channel is SocketThreadChannel threadChannel)
+        {
+            var permissions = threadChannel.Guild.CurrentUser.GetPermissions(threadChannel);
+
+            return permissions.Has(Constants.RequiredThreadPermissions);
+        }
+        
+        return false;
+    }
+
+    private bool HasPermissionToHideEmbed(SocketMessage message)
+    {
+        if (message.Channel is SocketGuildChannel guildChannel)
+        {
+            var permissions = guildChannel.Guild.CurrentUser.GetPermissions(guildChannel);
+
+            return permissions.Has(ChannelPermission.ManageMessages);
+        }
+
+        if (message.Channel is SocketThreadChannel threadChannel)
+        {
+            var permissions = threadChannel.Guild.CurrentUser.GetPermissions(threadChannel);
+
+            return permissions.Has(ChannelPermission.ManageMessages);
+        }
+        
+        return false;
     }
     
-    private bool HasPermissionsToCreateEmbed(SocketSlashCommand message)
+    private bool HasPermissionsToCreateEmbed(SocketInteraction message)
     {
-        // TODO: Implement checking Guild and Channel permissions to see if I can send messages in the first place
-        return true;
+        if (message.Channel is SocketGuildChannel guildChannel)
+        {
+            var permissions = guildChannel.Guild.CurrentUser.GetPermissions(guildChannel);
+
+            return permissions.Has(Constants.RequiredChannelPermissions);
+        }
+
+        if (message.Channel is SocketThreadChannel threadChannel)
+        {
+            var permissions = threadChannel.Guild.CurrentUser.GetPermissions(threadChannel);
+
+            return permissions.Has(Constants.RequiredThreadPermissions);
+        }
+        
+        return false;
     }
 }
 
