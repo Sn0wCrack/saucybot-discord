@@ -20,7 +20,7 @@ await Host.CreateDefaultBuilder(args)
         configuration
             .ReadFrom.Configuration(context.Configuration)
             .Enrich.FromLogContext()
-            .WriteTo.Console();
+            .WriteTo.Console(outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}");
     })
     .ConfigureServices((context, services) =>
     {
