@@ -37,7 +37,19 @@ public sealed class FxTwitterClient : IFxTwitterClient
             async () => await _client.GetStringAsync($"{BaseUrl}/{name}/status/{identifier}")
         );
 
-        return response is null ? null : JsonSerializer.Deserialize<FxTwitterResponse>(response);
+        if (response is null)
+        {
+            return null;
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<FxTwitterResponse>(response);
+        }
+        catch (Exception)
+        {
+            return null;
+        } 
     }
 }
 
