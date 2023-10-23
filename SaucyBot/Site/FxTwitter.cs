@@ -1,12 +1,9 @@
 ﻿using System.Text.RegularExpressions;
-using CoreTweet;
 using Discord;
 using Discord.WebSocket;
-using SaucyBot.Common;
 using SaucyBot.Extensions;
 using SaucyBot.Library;
 using SaucyBot.Library.Sites.Twitter;
-using SaucyBot.Services;
 using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site;
@@ -16,7 +13,7 @@ public sealed class FxTwitter : BaseSite
     public override string Identifier => "FxTwitter";
 
     protected override string Pattern =>
-        @"https?:\/\/(www\.|mobile\.)?(twitter|x)\.com\/(?<user>.*)\/status\/(?<id>\d+)\/?(\?\=.*)?";
+        @"https?:\/\/(www\.|mobile\.)?(twitter|x)\.com\/(?<user>.*)\/status\/(?<id>\d+)\/?";
 
     protected override Color Color => new(0x1DA1F2);
 

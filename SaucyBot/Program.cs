@@ -67,6 +67,7 @@ await Host.CreateDefaultBuilder(args)
         services.AddSingleton<E621>();
         services.AddSingleton<ExHentai>();
         services.AddSingleton<Newgrounds>();
+        services.AddSingleton<Reddit>();
 
         services.AddHostedService<Worker>();
     })
