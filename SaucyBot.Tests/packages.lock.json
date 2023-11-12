@@ -46,8 +46,8 @@
       },
       "AngleSharp": {
         "type": "Transitive",
-        "resolved": "1.0.5",
-        "contentHash": "4IeYlrwnbjLloXFigls5JkdfxfkBUp5DKI+8sUl4OUZQ3VKcsVCb99bqlxJOTIuAHy6rT6pfb2Lq87n+Tp3IqQ==",
+        "resolved": "1.0.6",
+        "contentHash": "OIU4pbC6KjSzYdQZOjV4nme1RgGfCd3TdZgx1/blDUpgagYc9Es1NcyLHNp6tTyHJBp1aU4cvxr9c679bWX0Rw==",
         "dependencies": {
           "System.Text.Encoding.CodePages": "7.0.0"
         }
@@ -1653,7 +1653,7 @@
       "saucybot": {
         "type": "Project",
         "dependencies": {
-          "AngleSharp": "[1.0.5, )",
+          "AngleSharp": "[1.0.6, )",
           "CoreTweet": "[1.0.0.483, )",
           "Discord.Net": "[3.12.0, )",
           "EFCore.NamingConventions": "[7.0.2, )",
