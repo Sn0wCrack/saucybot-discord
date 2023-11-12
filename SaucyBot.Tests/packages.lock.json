@@ -776,10 +776,10 @@
       },
       "Serilog.Sinks.Console": {
         "type": "Transitive",
-        "resolved": "4.1.0",
-        "contentHash": "K6N5q+5fetjnJPvCmkWOpJ/V8IEIoMIB1s86OzBrbxwTyHxdx3pmz4H+8+O/Dc/ftUX12DM1aynx/dDowkwzqg==",
+        "resolved": "5.0.0",
+        "contentHash": "IZ6bn79k+3SRXOBpwSOClUHikSkp2toGPCZ0teUkscv4dpDg9E2R2xVsNkLmwddE4OpNVO3N0xiYsAH556vN8Q==",
         "dependencies": {
-          "Serilog": "2.10.0"
+          "Serilog": "3.1.0"
         }
       },
       "SQLitePCLRaw.bundle_e_sqlite3": {
@@ -1666,7 +1666,7 @@
           "Serilog": "[3.1.1, )",
           "Serilog.Extensions.Hosting": "[7.0.0, )",
           "Serilog.Settings.Configuration": "[7.0.1, )",
-          "Serilog.Sinks.Console": "[4.1.0, )",
+          "Serilog.Sinks.Console": "[5.0.0, )",
           "StackExchange.Redis": "[2.7.4, )",
           "Xabe.FFmpeg": "[5.2.6, )"
         }
