@@ -1,7 +1,11 @@
-﻿using System.Net.Http.Headers;
+﻿using System.Net;
+using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Polly;
+using Polly.Fallback;
+using Polly.Retry;
 using SaucyBot.Services;
 
 namespace SaucyBot.Library.Sites.FurAffinity;
@@ -14,6 +18,8 @@ public sealed class FaExportClient : IFurAffinityClient
     
     private readonly HttpClient _client = new();
 
+    private readonly ResiliencePipeline<string?> _pipeline;
+
     public FaExportClient(ICacheManager cacheManager)
     {
         _cache = cacheManager;
@@ -25,11 +31,39 @@ public sealed class FaExportClient : IFurAffinityClient
         _client.DefaultRequestHeaders.Accept.Add(
             new MediaTypeWithQualityHeaderValue("application/json")
         );
+        
+        _pipeline = new ResiliencePipelineBuilder<string?>()
+            .AddFallback(new FallbackStrategyOptions<string?>
+            {
+                FallbackAction = _ => Outcome.FromResultAsValueTask<string?>(null),
+                ShouldHandle = arguments => arguments.Outcome switch
+                {
+                    { Exception: HttpRequestException e } => e.StatusCode == HttpStatusCode.NotFound ? PredicateResult.True() : PredicateResult.False(),
+                    _ => PredicateResult.False(), 
+                }
+            })
+            .AddRetry(new RetryStrategyOptions<string?>
+            {
+                ShouldHandle = arguments => arguments.Outcome switch
+                {
+                    { Exception: HttpRequestException e } => e.StatusCode >= HttpStatusCode.InternalServerError ? PredicateResult.True() : PredicateResult.False(),
+                    _ => PredicateResult.False(),
+                },
+                BackoffType = DelayBackoffType.Exponential,
+                UseJitter = true,
+                MaxRetryAttempts = 3,
+                Delay = TimeSpan.FromSeconds(3)
+            })
+            .AddTimeout(TimeSpan.FromSeconds(15))
+            .Build();
     }
 
     public async Task<FaExportSubmission?> GetSubmission(string identifier)
     {
-        var response = await _cache.Remember($"furaffinity.post_{identifier}", async () => await _client.GetStringAsync($"{BaseUrl}/submission/{identifier}.json"));
+        var response = await _cache.Remember($"furaffinity.post_{identifier}", async () =>
+        {
+            return await _pipeline.ExecuteAsync(async token => await _client.GetStringAsync($"{BaseUrl}/submission/{identifier}.json", token));
+        });
 
         return response is null ? null : JsonSerializer.Deserialize<FaExportSubmission>(response);
     }

@@ -64,6 +64,7 @@ public sealed class CacheManager : ICacheManager
 
         if (existing is not null)
         {
+            _logger.LogDebug("Found existing cache item with key: {Key}", key);
             return existing;
         }
 
@@ -71,6 +72,7 @@ public sealed class CacheManager : ICacheManager
 
         if (store is not null)
         {
+            _logger.LogDebug("Setting cache item with key: {Key} and value: {Value}", key, store);
             await Set<T>(key, store);
         }
 
@@ -83,6 +85,7 @@ public sealed class CacheManager : ICacheManager
 
         if (existing is not null)
         {
+            _logger.LogDebug("Found existing cache item with key: {Key}", key);
             return existing;
         }
 
@@ -90,6 +93,7 @@ public sealed class CacheManager : ICacheManager
 
         if (store is not null)
         {
+            _logger.LogDebug("Setting cache item with key: {Key} and value: {Value} and expiry: {Expiry}", key, store, expiry);
             await Set<T>(key, store, expiry);
         }
 

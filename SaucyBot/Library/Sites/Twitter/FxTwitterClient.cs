@@ -1,7 +1,11 @@
-﻿using System.Net.Http.Headers;
+﻿using System.Net;
+using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Polly;
+using Polly.Fallback;
+using Polly.Retry;
 using SaucyBot.Services;
 
 namespace SaucyBot.Library.Sites.Twitter;
@@ -15,6 +19,8 @@ public sealed class FxTwitterClient : IFxTwitterClient
     private readonly ICacheManager _cache;
     
     private readonly HttpClient _client = new();
+    
+    private readonly ResiliencePipeline<string?> _pipeline;
 
     public FxTwitterClient(ILogger<FxTwitterClient> logger, ICacheManager cacheManager)
     {
@@ -28,13 +34,38 @@ public sealed class FxTwitterClient : IFxTwitterClient
         _client.DefaultRequestHeaders.Accept.Add(
             new MediaTypeWithQualityHeaderValue("application/json")
         );
+        
+        _pipeline = new ResiliencePipelineBuilder<string?>()
+            .AddFallback(new FallbackStrategyOptions<string?>
+            {
+                FallbackAction = _ => Outcome.FromResultAsValueTask<string?>(null),
+                ShouldHandle = arguments => arguments.Outcome switch
+                {
+                    { Exception: HttpRequestException e } => e.StatusCode == HttpStatusCode.NotFound ? PredicateResult.True() : PredicateResult.False(),
+                    _ => PredicateResult.False(), 
+                }
+            })
+            .AddRetry(new RetryStrategyOptions<string?>
+            {
+                ShouldHandle = arguments => arguments.Outcome switch
+                {
+                    { Exception: HttpRequestException e } => e.StatusCode >= HttpStatusCode.InternalServerError ? PredicateResult.True() : PredicateResult.False(),
+                    _ => PredicateResult.False(),
+                },
+                BackoffType = DelayBackoffType.Exponential,
+                UseJitter = true,
+                MaxRetryAttempts = 3,
+                Delay = TimeSpan.FromSeconds(3)
+            })
+            .AddTimeout(TimeSpan.FromSeconds(15))
+            .Build();
     }
     
     public async Task<FxTwitterResponse?> GetTweet(string name, string identifier)
     {
         var response = await _cache.Remember(
             $"fxtwitter.tweet_{name}_{identifier}",
-            async () => await _client.GetStringAsync($"{BaseUrl}/{name}/status/{identifier}")
+            async () => await _pipeline.ExecuteAsync(async token => await _client.GetStringAsync($"{BaseUrl}/{name}/status/{identifier}", token))
         );
 
         if (response is null)
@@ -46,8 +77,9 @@ public sealed class FxTwitterClient : IFxTwitterClient
         {
             return JsonSerializer.Deserialize<FxTwitterResponse>(response);
         }
-        catch (Exception)
+        catch (Exception e)
         {
+            _logger.LogDebug(e, "Failed to deserialize FxTwitter response, response not JSON or is malformed.");
             return null;
         } 
     }

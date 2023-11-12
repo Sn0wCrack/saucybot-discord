@@ -144,6 +144,12 @@
           "System.Diagnostics.DiagnosticSource": "7.0.1"
         }
       },
+      "Polly.Core": {
+        "type": "Direct",
+        "requested": "[8.0.0, )",
+        "resolved": "8.0.0",
+        "contentHash": "g+8HnRjFTs8Ujz4Si4slrVrEK9M92DjvF75WvNpnF/lbT8M3/xW+tuD2udTiv2KuOsFOsRfOcZ12PddizrtXVA=="
+      },
       "Pomelo.EntityFrameworkCore.MySql": {
         "type": "Direct",
         "requested": "[7.0.0, )",
