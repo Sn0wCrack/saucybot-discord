@@ -13,7 +13,7 @@ public sealed class FxTwitter : BaseSite
     public override string Identifier => "FxTwitter";
 
     protected override string Pattern =>
-        @"https?:\/\/(www\.|mobile\.)?(twitter|x)\.com\/(?<user>.*)\/status\/(?<id>\d+)\/?";
+        @"https?:\/\/(www\.|mobile\.)?(?<domain>twitter|x|nitter)\.(com|net)\/(?<user>.*)\/status\/(?<id>\d+)\/?";
 
     protected override Color Color => new(0x1DA1F2);
 
@@ -60,7 +60,7 @@ public sealed class FxTwitter : BaseSite
 
             hasTwitterEmbed = message.Embeds.Any(item =>
             {
-                var isTwitterEmbed = item.Url.Contains("twitter.com") || item.Url.Contains("t.co");
+                var isTwitterEmbed = item.Url.Contains("twitter.com") || item.Url.Contains("t.co") || item.Url.Contains("x.com");
 
                 return isTwitterEmbed && item.Author is not null;
             });
