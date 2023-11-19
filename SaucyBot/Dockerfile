@@ -3,7 +3,7 @@
 FROM mcr.microsoft.com/dotnet/runtime:7.0-alpine3.18@sha256:eb21fd82d4e9d2e65193303410075ef247d65a5706967a8c9e1a34a4584f7d16 AS base
 WORKDIR /app
 
-FROM mcr.microsoft.com/dotnet/sdk:7.0-alpine3.18@sha256:169668f3d7f3dace2930632b68774777eae575f51f7aac6b9b17411f41e89bc5 AS build
+FROM mcr.microsoft.com/dotnet/sdk:7.0-alpine3.18@sha256:8374845e3d80115d8bf9b06362e079536cd23641df012f389aa0c2ab9c7ae64f AS build
 WORKDIR /src
 COPY ["SaucyBot.csproj", "SaucyBot/"]
 RUN dotnet restore "SaucyBot/SaucyBot.csproj"
