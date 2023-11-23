@@ -139,6 +139,23 @@ public sealed class Worker : BackgroundService
             await CreateSlashCommands(client);
             _logger.LogDebug("Created or Updated Slash Commands");
         }
+
+        var status = _configuration.GetSection("Bot:DiscordStatus:Enabled").Get<bool?>() ?? false;
+
+        if (status)
+        {
+            ActivityType.TryParse(
+                _configuration.GetSection("Bot:DiscordStatus:Type").Get<string?>() ?? "",
+                out ActivityType activityType
+            );
+            
+            await _client.SetActivityAsync(
+                new Game(
+                    _configuration.GetSection("Bot:DiscordStatus:Text").Get<string?>() ?? "",
+                    activityType
+                )
+            );
+        }
     }
 
     private async Task HandleShardReadyAsync(DiscordSocketClient client)
@@ -149,6 +166,23 @@ public sealed class Worker : BackgroundService
         {
             await CreateSlashCommands(client);
             _logger.LogDebug("Created or Updated Slash Commands");
+        }
+
+        var status = _configuration.GetSection("Bot:DiscordStatus:Enabled").Get<bool?>() ?? false;
+
+        if (status)
+        {
+            ActivityType.TryParse(
+                _configuration.GetSection("Bot:DiscordStatus:Type").Get<string?>() ?? "",
+                out ActivityType activityType
+            );
+            
+            await client.SetActivityAsync(
+                new Game(
+                    _configuration.GetSection("Bot:DiscordStatus:Text").Get<string?>() ?? "",
+                    activityType
+                )
+            );
         }
     }
 
