@@ -101,7 +101,7 @@ public sealed record FxTwitterTweet(
     [property: JsonPropertyName("id")]
     string Id,
     [property: JsonPropertyName("url")]
-    string Url,
+    string? Url,
     [property: JsonPropertyName("text")]
     string Text,
     [property: JsonPropertyName("created_at")]
@@ -147,6 +147,8 @@ public sealed record FxTwitterAuthor(
     string ScreenName,
     [property: JsonPropertyName("avatar_url")]
     string? AvatarUrl,
+    [property: JsonPropertyName("url")]
+    string? Url,
     [property: JsonPropertyName("avatar_color")]
     string? AvatarColor,
     [property: JsonPropertyName("banner_url")]

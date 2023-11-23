@@ -79,6 +79,8 @@ public sealed class FxTwitter : BaseSite
             return null;
         }
         
+        // TODO: Handle quote tweet chains similar to fxtwitter and vxtwitter
+        
         return videoMedia is not null 
             ? await HandleVideo(tweet, match.Value)
             : await HandleRegular(tweet, match.Value);
@@ -140,7 +142,7 @@ public sealed class FxTwitter : BaseSite
         // TODO: When Discord add video embeds, come back here and add that
         var embed = new EmbedBuilder
         {
-            Url = url,
+            Url = tweet.Url ?? url,
             Timestamp = DateTimeOffset.FromUnixTimeSeconds(tweet.CreatedTimestamp),
             Color = this.Color,
             Description = tweet.Text,
@@ -148,10 +150,21 @@ public sealed class FxTwitter : BaseSite
             {
                 Name = $"{tweet.Author.Name} (@{tweet.Author.ScreenName})",
                 IconUrl = tweet.Author.AvatarUrl,
-                Url = $"https://twitter.com/{tweet.Author.ScreenName}",
+                Url = tweet.Author.Url ?? $"https://twitter.com/{tweet.Author.ScreenName}",
             },
             Fields = new List<EmbedFieldBuilder>
             {
+                new ()
+                {
+                    Name = "Replies",
+                    Value = tweet.Replies,
+                    IsInline = true
+                },
+                new () {
+                    Name = "Retweets",
+                    Value = tweet.Retweets,
+                    IsInline = true
+                },
                 new ()
                 {
                     Name = "Likes",
@@ -160,8 +173,8 @@ public sealed class FxTwitter : BaseSite
                 },
                 new ()
                 {
-                    Name = "Retweets",
-                    Value = tweet.Retweets,
+                    Name = "Views",
+                    Value = tweet.Views,
                     IsInline = true
                 },
             },
@@ -217,16 +230,60 @@ public sealed class FxTwitter : BaseSite
 
         var photos = await FindAllPhotoElements(tweet);
 
+        // TODO: Refactor how we build embeds a bit better so I don't have massive amounts of duplicate code
         if (photos is null)
         {
-            return null;
+            var embed = new EmbedBuilder
+            {
+                Url = tweet.Url ?? url,
+                Timestamp = DateTimeOffset.FromUnixTimeSeconds(tweet.CreatedTimestamp),
+                Color = this.Color,
+                Description = tweet.Text,
+                Author = new EmbedAuthorBuilder
+                {
+                    Name = $"{tweet.Author.Name} (@{tweet.Author.ScreenName})",
+                    IconUrl = tweet.Author.AvatarUrl,
+                    Url = tweet.Author.Url ?? $"https://twitter.com/{tweet.Author.ScreenName}",
+                },
+                Fields = new List<EmbedFieldBuilder>
+                {
+                    new ()
+                    {
+                        Name = "Replies",
+                        Value = tweet.Replies,
+                        IsInline = true
+                    },
+                    new () {
+                        Name = "Retweets",
+                        Value = tweet.Retweets,
+                        IsInline = true
+                    },
+                    new ()
+                    {
+                        Name = "Likes",
+                        Value = tweet.Likes,
+                        IsInline = true
+                    },
+                    new ()
+                    {
+                        Name = "Views",
+                        Value = tweet.Views,
+                        IsInline = true
+                    },
+                },
+                Footer = new EmbedFooterBuilder { IconUrl = Constants.TwitterIconUrl, Text = "Twitter" },
+            };
+            
+            response.Embeds.Add(embed.Build());
+            
+            return response;
         }
 
         foreach (var photo in photos)
         {
             var embed = new EmbedBuilder
             {
-                Url = url,
+                Url = tweet.Url ?? url,
                 Timestamp = DateTimeOffset.FromUnixTimeSeconds(tweet.CreatedTimestamp),
                 Color = this.Color,
                 Description = tweet.Text,
@@ -240,14 +297,25 @@ public sealed class FxTwitter : BaseSite
                 {
                     new ()
                     {
+                        Name = "Replies",
+                        Value = tweet.Replies,
+                        IsInline = true
+                    },
+                    new () {
+                        Name = "Retweets",
+                        Value = tweet.Retweets,
+                        IsInline = true
+                    },
+                    new ()
+                    {
                         Name = "Likes",
                         Value = tweet.Likes,
                         IsInline = true
                     },
                     new ()
                     {
-                        Name = "Retweets",
-                        Value = tweet.Retweets,
+                        Name = "Views",
+                        Value = tweet.Views,
                         IsInline = true
                     },
                 },

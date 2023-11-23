@@ -15,7 +15,7 @@ public sealed class Twitter : BaseSite
     public override string Identifier => "Twitter";
 
     protected override string Pattern =>
-        @"https?:\/\/(www\.|mobile\.)?twitter\.com\/(?<user>.*)\/status\/(?<id>\d+)\/?(\?\=.*)?";
+        @"https?:\/\/(www\.|mobile\.)?(?<domain>twitter|x|nitter)\.(com|net)\/(?<user>.*)\/status\/(?<id>\d+)\/?";
 
     protected override Color Color => new(0x1DA1F2);
 
