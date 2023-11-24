@@ -111,11 +111,11 @@ public sealed record FxTwitterTweet(
     [property: JsonPropertyName("author")]
     FxTwitterAuthor Author,
     [property: JsonPropertyName("replies")]
-    int Replies,
+    int? Replies,
     [property: JsonPropertyName("retweets")]
-    int Retweets,
+    int? Retweets,
     [property: JsonPropertyName("likes")]
-    int Likes,
+    int? Likes,
     [property: JsonPropertyName("views")]
     int? Views,
     [property: JsonPropertyName("color")]

@@ -157,24 +157,24 @@ public sealed class FxTwitter : BaseSite
                 new ()
                 {
                     Name = "Replies",
-                    Value = tweet.Replies,
+                    Value = tweet.Replies ?? 0,
                     IsInline = true
                 },
                 new () {
                     Name = "Retweets",
-                    Value = tweet.Retweets,
+                    Value = tweet.Retweets ?? 0,
                     IsInline = true
                 },
                 new ()
                 {
                     Name = "Likes",
-                    Value = tweet.Likes,
+                    Value = tweet.Likes ?? 0,
                     IsInline = true
                 },
                 new ()
                 {
                     Name = "Views",
-                    Value = tweet.Views,
+                    Value = tweet.Views ?? 0,
                     IsInline = true
                 },
             },
@@ -250,24 +250,24 @@ public sealed class FxTwitter : BaseSite
                     new ()
                     {
                         Name = "Replies",
-                        Value = tweet.Replies,
+                        Value = tweet.Replies ?? 0,
                         IsInline = true
                     },
                     new () {
                         Name = "Retweets",
-                        Value = tweet.Retweets,
+                        Value = tweet.Retweets ?? 0,
                         IsInline = true
                     },
                     new ()
                     {
                         Name = "Likes",
-                        Value = tweet.Likes,
+                        Value = tweet.Likes ?? 0,
                         IsInline = true
                     },
                     new ()
                     {
                         Name = "Views",
-                        Value = tweet.Views,
+                        Value = tweet.Views ?? 0,
                         IsInline = true
                     },
                 },
@@ -298,24 +298,24 @@ public sealed class FxTwitter : BaseSite
                     new ()
                     {
                         Name = "Replies",
-                        Value = tweet.Replies,
+                        Value = tweet.Replies ?? 0,
                         IsInline = true
                     },
                     new () {
                         Name = "Retweets",
-                        Value = tweet.Retweets,
+                        Value = tweet.Retweets ?? 0,
                         IsInline = true
                     },
                     new ()
                     {
                         Name = "Likes",
-                        Value = tweet.Likes,
+                        Value = tweet.Likes ?? 0,
                         IsInline = true
                     },
                     new ()
                     {
                         Name = "Views",
-                        Value = tweet.Views,
+                        Value = tweet.Views ?? 0,
                         IsInline = true
                     },
                 },
