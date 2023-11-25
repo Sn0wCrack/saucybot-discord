@@ -5,11 +5,11 @@ namespace SaucyBot.Library;
 public static class Constants
 {
     #region Discord
-    
+
     /// <summary>
     /// The maximum file size that Discord allows to be uploaded.
     /// </summary>
-    public const long MaximumFileSize = 8_388_119; // 24_117_248
+    public const long MaximumFileSize = 24_117_248; // 8_388_119; 
 
     /// <summary>
     /// The maximum number of embeds that Discord allows per message.

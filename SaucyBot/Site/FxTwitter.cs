@@ -129,15 +129,19 @@ public sealed class FxTwitter : BaseSite
         var variants = new List<string> { video.Url };
 
         var variant = await DetermineHighestUsableQualityFile(variants);
-        
-        if (variant is null)
+
+        if (variant is not null)
         {
-            return null;
+            var videoFile = await GetFile(variant);
+
+            response.Files.Add(videoFile);
         }
-        
-        var videoFile = await GetFile(variant);
-        
-        response.Files.Add(videoFile);
+        else
+        {
+            response.Text = $"https://fxtwitter.com/{tweet.Author.ScreenName}/status/{tweet.Id}";
+            
+            return response;
+        }
 
         // TODO: When Discord add video embeds, come back here and add that
         var embed = new EmbedBuilder
