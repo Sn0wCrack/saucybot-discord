@@ -29,6 +29,9 @@ public static class Constants
     public const string HentaiFoundryIconUrl = "https://i.imgur.com/dOECfxG.png";
 
     public const string DeviantArtIconUrl = "https://st.deviantart.net/eclipse/icons/ios-180.png";
+
+    public const string MisskeyIconUrl =
+        "https://s3.arkjp.net/misskey/webpublic-0c66b1ca-b8c0-4eaa-9827-47674f4a1580.png";
     
     #endregion
     

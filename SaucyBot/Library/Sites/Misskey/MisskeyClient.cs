@@ -44,11 +44,6 @@ public sealed class MisskeyClient : IMisskeyClient
 
         return response is null ? null : JsonSerializer.Deserialize<ShowNoteResponse>(response);
     }
-
-    public void SetUrl(string url)
-    {
-        BaseUrl = url.TrimEnd('/');
-    }
 }
 
 #region Response Types

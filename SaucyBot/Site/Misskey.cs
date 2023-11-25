@@ -1,6 +1,7 @@
 ﻿using System.Text.RegularExpressions;
 using Discord;
 using Discord.WebSocket;
+using SaucyBot.Library;
 using SaucyBot.Library.Sites.Misskey;
 using SaucyBot.Site.Response;
 
@@ -33,22 +34,45 @@ public sealed class Misskey : BaseSite
         {
             return null;
         }
+        
+        if (!ShouldEmbed(note))
+        {
+            return null;
+        }
 
         var response = new ProcessResponse();
 
-        var embed = new EmbedBuilder
+        foreach (var file in note.Files)
         {
-            Color = this.Color,
-            Description = note.Text ?? "",
-            Author = new EmbedAuthorBuilder
+            if (!file.Type.StartsWith("image/"))
             {
-                Name = $"{note.User.Name} ({note.User.Username})",
-                IconUrl = note.User.AvatarUrl
+                continue;
             }
-        };
+            
+            var embed = new EmbedBuilder
+            {
+                Url = match.Value,
+                Timestamp = DateTimeOffset.Parse(note.CreatedAt),
+                Color = this.Color,
+                Description = note.Text ?? "",
+                Author = new EmbedAuthorBuilder
+                {
+                    Name = $"{note.User.Name} ({note.User.Username})",
+                    IconUrl = note.User.AvatarUrl,
+                    Url = $"https://misskey.io/@{note.User.Username}"
+                },
+                ImageUrl = file.Url,
+                Footer = new EmbedFooterBuilder { IconUrl = Constants.MisskeyIconUrl, Text = "Misskey" },
+            };
         
-        response.Embeds.Add(embed.Build());
+            response.Embeds.Add(embed.Build());
+        }
 
         return response;
+    }
+
+    private bool ShouldEmbed(ShowNoteResponse note)
+    {
+        return note.Files.Count > 1 || note.Files.Any(file => file.IsSensitive);
     }
 }
