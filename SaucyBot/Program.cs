@@ -6,6 +6,7 @@ using SaucyBot.Library.Sites.E621;
 using SaucyBot.Library.Sites.ExHentai;
 using SaucyBot.Library.Sites.FurAffinity;
 using SaucyBot.Library.Sites.HentaiFoundry;
+using SaucyBot.Library.Sites.Misskey;
 using SaucyBot.Library.Sites.Newgrounds;
 using SaucyBot.Library.Sites.Pixiv;
 using SaucyBot.Library.Sites.Twitter;
@@ -56,6 +57,7 @@ await Host.CreateDefaultBuilder(args)
         services.AddSingleton<IE621Client, E621Client>();
         services.AddSingleton<IFxTwitterClient, FxTwitterClient>();
         services.AddSingleton<ITwitterImageSyndicationClient, TwitterImageSyndicationClient>();
+        services.AddSingleton<IMisskeyClient, MisskeyClient>();
 
         services.AddSingleton<FurAffinity>();
         services.AddSingleton<Pixiv>();
@@ -68,6 +70,7 @@ await Host.CreateDefaultBuilder(args)
         services.AddSingleton<ExHentai>();
         services.AddSingleton<Newgrounds>();
         services.AddSingleton<Reddit>();
+        services.AddSingleton<Misskey>();
 
         services.AddHostedService<Worker>();
     })
