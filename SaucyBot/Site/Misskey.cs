@@ -13,7 +13,7 @@ public sealed class Misskey : BaseSite
 
     protected override string Pattern => @"https?:\/\/(www\.)?misskey\.io\/notes\/(?<id>[0-9a-z]+)";
 
-    protected override Color Color => new Color(0x85B300);
+    protected override Color Color => new(0x85B300);
 
     private readonly ILogger<Misskey> _logger;
     private readonly IMisskeyClient _client;
@@ -71,7 +71,7 @@ public sealed class Misskey : BaseSite
         return response;
     }
 
-    private bool ShouldEmbed(ShowNoteResponse note)
+    private static bool ShouldEmbed(ShowNoteResponse note)
     {
         return note.Files.Count > 1 || note.Files.Any(file => file.IsSensitive);
     }
