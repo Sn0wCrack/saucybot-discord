@@ -12,14 +12,15 @@ SaucyBot
 If you would like to add this bot to your server [click here](https://discordapp.com/api/oauth2/authorize?client_id=647368715742216193&permissions=67497024&scope=bot) and authorize it through your discord account.
 
 * Currently, Supports:
-  * ArtStation - Embeds up to X extra images (X is configurable, default 5)
+  * ArtStation - Embeds up to 8 extra images (configurable)
   * Twitter - Embeds posts when native embeds fail
-    * NOTE: May not always work as expected due to API rate limits
+    * Utilises [fxtwitter](https://github.com/FixTweet/FixTweet)'s API
     * Will create an embed when Twitter fails to embed a Link itself
     * Will embed a video if it cannot be played natively in Discord
+    * If the images or video are larger than the Discord maximum file size will reply with an fxtwitter link instead.
   * DeviantArt - Embeds main image or thumbnail, includes more information than built-in embed
   * Hentai Foundry - Creates embed as none exists for site.
-  * Pixiv - Posts up to X images of the set (X is configurable, default 5)
+  * Pixiv - Posts up to 5 images of the set (configurable)
     * Pixiv Ugoira - Uploads a video with correct framerate and frame-timing (Video format is configurable, requires ffmpeg)
   * FurAffinity - Creates image embed as none exists for site
   * Newgrounds - Creates embed for site as image isn't fully embedded, this also displays the rating the image has.
@@ -28,9 +29,13 @@ If you would like to add this bot to your server [click here](https://discordapp
     * NOTE: This is disabled on live version as I think it doesn't add much right now
   * E(x-)Hentai - Creates an embed to preview cover art, title, current score, etc.
     * NOTE: Live version only supports e-hentai.org right now
+  * Misskey - Creates an embed for multi-image posts and NSFW posts
+    * NOTE: Only supports misskey.io
 
 Installation
 ----------
+
+**NOTE**: Information here is outdated and is intended for v1
 
 ### Production Docker (recommended)
 
@@ -78,6 +83,8 @@ docker-compose -f docker-compose.dev.yml up -d
 ```
 
 ### Standalone
+
+**NOTE**: Information here is outdated and is intended for v1
 
 Prerequisites:
  - git (https://git-scm.com/)
