@@ -11,15 +11,6 @@
           "System.Text.Encoding.CodePages": "7.0.0"
         }
       },
-      "CoreTweet": {
-        "type": "Direct",
-        "requested": "[1.0.0.483, )",
-        "resolved": "1.0.0.483",
-        "contentHash": "KEIuzpDiTvOcxKVBbeNp13bOOX1VavS5UxlUjVZi7ji9hNY3KGuecb4c/4RR5Y7F4JcuPj6n0UeBuOxJ3PEBOA==",
-        "dependencies": {
-          "Newtonsoft.Json": "9.0.1"
-        }
-      },
       "Discord.Net": {
         "type": "Direct",
         "requested": "[3.13.0, )",

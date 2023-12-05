@@ -60,14 +60,6 @@
           "System.Diagnostics.EventLog": "6.0.0"
         }
       },
-      "CoreTweet": {
-        "type": "Transitive",
-        "resolved": "1.0.0.483",
-        "contentHash": "KEIuzpDiTvOcxKVBbeNp13bOOX1VavS5UxlUjVZi7ji9hNY3KGuecb4c/4RR5Y7F4JcuPj6n0UeBuOxJ3PEBOA==",
-        "dependencies": {
-          "Newtonsoft.Json": "9.0.1"
-        }
-      },
       "Discord.Net": {
         "type": "Transitive",
         "resolved": "3.13.0",
@@ -1699,7 +1691,6 @@
         "type": "Project",
         "dependencies": {
           "AngleSharp": "[1.0.7, )",
-          "CoreTweet": "[1.0.0.483, )",
           "Discord.Net": "[3.13.0, )",
           "EFCore.NamingConventions": "[7.0.2, )",
           "Microsoft.EntityFrameworkCore": "[7.0.14, )",

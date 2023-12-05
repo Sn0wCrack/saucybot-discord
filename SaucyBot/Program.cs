@@ -63,7 +63,6 @@ await Host.CreateDefaultBuilder(args)
         services.AddSingleton<Pixiv>();
         services.AddSingleton<ArtStation>();
         services.AddSingleton<HentaiFoundry>();
-        services.AddSingleton<Twitter>();
         services.AddSingleton<FxTwitter>();
         services.AddSingleton<DeviantArt>();
         services.AddSingleton<E621>();
