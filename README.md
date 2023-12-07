@@ -35,7 +35,8 @@ If you would like to add this bot to your server [click here](https://discordapp
 Installation
 ----------
 
-**NOTE**: Information here is outdated and is intended for v1
+> [!CAUTION]
+> Information here is outdated and is intended for v1
 
 ### Production Docker (recommended)
 
