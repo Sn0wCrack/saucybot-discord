@@ -6,18 +6,6 @@ public static class ListExtensions
     /// Port of the JavaScript array function "slice".
     /// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/slice
     ///
-    /// This functions is considered unsafe, as it will not constrain the range of the "to" to be inside the List.
-    /// </summary>
-    /// <param name="source">The List being operated upon.</param>
-    /// <param name="from">Zero-based index at which to start extraction.</param>
-    /// <param name="to">The index of the first element to exclude from the returned List.</param>
-    /// <returns>List</returns>
-    public static List<T> Slice<T>(this List<T> source, int from, int to) => source.GetRange(from, to - from);
-
-    /// <summary>
-    /// Port of the JavaScript array function "slice".
-    /// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/slice
-    ///
     /// This function is considered safe, as it will always constrain the range of the "to" to be inside the List.
     /// </summary>
     /// <param name="source">The List being operated upon.</param>

@@ -175,7 +175,7 @@ public sealed record FxTwitterVideo(
     int Height,
     [property: JsonPropertyName("format")]
     string Format
-);
+); 
 
 public sealed record FxTwitterPhoto(
     [property: JsonPropertyName("type")]

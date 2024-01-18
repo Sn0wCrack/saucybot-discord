@@ -85,7 +85,7 @@ public sealed class FxTwitter : BaseSite
             ? await HandleVideo(tweet, match.Value)
             : await HandleRegular(tweet, match.Value);
     }
-
+    
     private Task<FxTwitterVideo?> FindVideoElement(FxTwitterTweet tweet)
     {
         var video = tweet.Media?.Videos?.FirstOrDefault(item => item.Type.IsIn("video", "gif"));
@@ -98,7 +98,20 @@ public sealed class FxTwitter : BaseSite
         }
 
         return Task.FromResult(video);
+    }
 
+    private Task<IEnumerable<FxTwitterVideo>?> FindAllVideoElements(FxTwitterTweet tweet)
+    {
+        var videos = tweet.Media?.Videos?.Where(item => item.Type.IsIn("video", "gif"));
+        
+        if (videos is null && tweet.QuotedTweet is not null)
+        {
+            var quotedVideos = tweet.QuotedTweet?.Media?.Videos?.Where(item => item.Type.IsIn("video", "gif"));
+
+            return Task.FromResult(quotedVideos);
+        }
+
+        return Task.FromResult(videos);
     }
 
     private Task<IEnumerable<FxTwitterPhoto>?> FindAllPhotoElements(FxTwitterTweet tweet)

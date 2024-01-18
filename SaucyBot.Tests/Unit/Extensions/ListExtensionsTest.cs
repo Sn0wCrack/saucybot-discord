@@ -9,18 +9,6 @@ public class ListExtensionsTest
     [Theory]
     [InlineData(0, 5, 5)]
     [InlineData(5, 10, 5)]
-    public void SliceTest(int from, int to, int output)
-    {
-        var list = Enumerable.Range(0, 10).ToList();
-
-        var sliced = list.Slice(from, to);
-        
-        Assert.Equal(output, sliced.Count);
-    }
-
-    [Theory]
-    [InlineData(0, 5, 5)]
-    [InlineData(5, 10, 5)]
     public void SafeSliceTest(int from, int to, int output)
     {
         var list = Enumerable.Range(0, 10).ToList();
