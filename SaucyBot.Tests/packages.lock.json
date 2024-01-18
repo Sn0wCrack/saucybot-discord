@@ -46,8 +46,8 @@
       },
       "AngleSharp": {
         "type": "Transitive",
-        "resolved": "1.0.7",
-        "contentHash": "jZg7lDcrXRiIC8VBluuGKOCMR9mc4CIRX5vpQJ8fcgafs6T6plOzKHhAn3lJEwXorrltd9p1WtRxxhFpRBACbg==",
+        "resolved": "1.1.0",
+        "contentHash": "3baCuPkx2Wrpjr2b67wJAf9fCbYSbEVcdCh88S66HLdfHa2b1Mk1FsGpcH76uHLf3MPxopWngT1imHPEmDimAg==",
         "dependencies": {
           "System.Text.Encoding.CodePages": "8.0.0"
         }
@@ -788,7 +788,7 @@
       "saucybot": {
         "type": "Project",
         "dependencies": {
-          "AngleSharp": "[1.0.7, )",
+          "AngleSharp": "[1.1.0, )",
           "Discord.Net": "[3.13.0, )",
           "EFCore.NamingConventions": "[8.0.3, )",
           "Microsoft.EntityFrameworkCore": "[8.0.1, )",
