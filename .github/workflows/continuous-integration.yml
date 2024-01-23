@@ -24,7 +24,7 @@ jobs:
 
     strategy:
       matrix:
-        dotnet-version: ['7.x', '8.x']
+        dotnet-version: ['8.x']
 
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
