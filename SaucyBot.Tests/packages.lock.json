@@ -653,8 +653,8 @@
       },
       "StackExchange.Redis": {
         "type": "Transitive",
-        "resolved": "2.7.17",
-        "contentHash": "PduekHww3CrCBr1ebIPX4k4zdah9wjJ4AQZXfp+JfGJQfwf8s1SHSY7kthDi9MP0ULcYrNw4xnbRXFMbCryIig==",
+        "resolved": "2.7.20",
+        "contentHash": "4ogjXwVp/7Gi/dNjGn1SWVxjrS0J0izVg8LeMVWSF3/zS3GH4lwtEMehQ9VEatQAqRbZ0i+OU+Z2obLUTYEoYg==",
         "dependencies": {
           "Microsoft.Extensions.Logging.Abstractions": "6.0.0",
           "Pipelines.Sockets.Unofficial": "2.2.8"
@@ -796,7 +796,7 @@
           "Serilog.Extensions.Hosting": "[8.0.0, )",
           "Serilog.Settings.Configuration": "[8.0.0, )",
           "Serilog.Sinks.Console": "[5.0.1, )",
-          "StackExchange.Redis": "[2.7.17, )",
+          "StackExchange.Redis": "[2.7.20, )",
           "Xabe.FFmpeg": "[5.2.6, )"
         }
       }
