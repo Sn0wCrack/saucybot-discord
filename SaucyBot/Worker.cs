@@ -60,6 +60,7 @@ public sealed class Worker : BackgroundService
         var config = new DiscordSocketConfig()
         {
             GatewayIntents = Constants.RequiredGatewayIntents,
+            AuditLogCacheSize = 0,
             MessageCacheSize = _configuration.GetSection("Bot:MessageCacheSize").Get<int?>() ?? 100,
             ConnectionTimeout = _configuration.GetSection("Bot:ConnectionTimeout").Get<int?>() ?? 30000,
             AlwaysDownloadUsers = false,
@@ -83,6 +84,7 @@ public sealed class Worker : BackgroundService
         {
             ShardId = _configuration.GetSection("Bot:ShardId").Get<int?>() ?? 0,
             GatewayIntents = Constants.RequiredGatewayIntents,
+            AuditLogCacheSize = 0,
             MessageCacheSize = _configuration.GetSection("Bot:MessageCacheSize").Get<int?>() ?? 100,
             ConnectionTimeout = _configuration.GetSection("Bot:ConnectionTimeout").Get<int?>() ?? 30000,
             AlwaysDownloadUsers = false,
