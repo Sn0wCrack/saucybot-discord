@@ -66,10 +66,32 @@ public sealed class FxTwitter : BaseSite
             });
         }
 
-        var videoMedia = await FindVideoElement(tweet);
-
-        var shouldEmbedVideo = videoMedia is not null && tweet.PossiblySensitive;
+        var photoMedia = await FindAllPhotoElements(tweet);
         
+        var videoMedia = await FindAllVideoElements(tweet);
+
+        var mainTweetHasPhoto = photoMedia
+            .Where(result => result.Source == ResultSource.MainTweet)
+            .NotEmpty();
+        
+        var mainTweetHasVideo = videoMedia
+            .Where(result => result.Source == ResultSource.MainTweet)
+            .NotEmpty();
+        
+        var quotedTweetHasPhoto = photoMedia
+            .Where(result => result.Source == ResultSource.QuotedTweet)
+            .NotEmpty();
+
+        var quotedTweetHasVideo = videoMedia
+            .Where(result => result.Source == ResultSource.QuotedTweet)
+            .NotEmpty();
+        
+        var mainTweetHasMedia = mainTweetHasPhoto || mainTweetHasVideo;
+
+        var quotedTweetHasMedia = quotedTweetHasPhoto || quotedTweetHasVideo;
+        
+        var shouldEmbedVideo = (mainTweetHasVideo || quotedTweetHasVideo) && tweet.PossiblySensitive;
+
         // Only try and embed this twitter link if one of the following is true:
         //  - Discord has failed to create an embed for Twitter
         //  - The result is "sensitive" and it has a video, as Discord often fails to play these inline
@@ -81,65 +103,95 @@ public sealed class FxTwitter : BaseSite
         
         // TODO: Handle quote tweet chains similar to fxtwitter and vxtwitter
         
-        return videoMedia is not null 
-            ? await HandleVideo(tweet, match.Value)
-            : await HandleRegular(tweet, match.Value);
+        if (mainTweetHasMedia)
+        {
+            return mainTweetHasVideo
+                ? await HandleVideo(tweet, videoMedia, mainTweetHasMedia)
+                : HandlePhoto(tweet, photoMedia, mainTweetHasMedia);
+        }
+        
+        if (quotedTweetHasMedia)
+        {
+            return quotedTweetHasVideo
+                ? await HandleVideo(tweet, videoMedia, mainTweetHasMedia)
+                : HandlePhoto(tweet, photoMedia, mainTweetHasMedia);
+        }
+
+        return HandleRegular(tweet);
     }
     
-    private Task<FxTwitterVideo?> FindVideoElement(FxTwitterTweet tweet)
+    private Task<List<VideoResult>> FindAllVideoElements(FxTwitterTweet tweet)
     {
-        var video = tweet.Media?.Videos?.FirstOrDefault(item => item.Type.IsIn("video", "gif"));
-
-        if (video is null && tweet.QuotedTweet is not null)
-        {
-            var quotedVideo = tweet.QuotedTweet?.Media?.Videos?.FirstOrDefault(item => item.Type.IsIn("video", "gif"));
-
-            return Task.FromResult(quotedVideo);
-        }
-
-        return Task.FromResult(video);
-    }
-
-    private Task<IEnumerable<FxTwitterVideo>?> FindAllVideoElements(FxTwitterTweet tweet)
-    {
-        var videos = tweet.Media?.Videos?.Where(item => item.Type.IsIn("video", "gif"));
+        var output = new List<VideoResult>();
         
-        if (videos is null && tweet.QuotedTweet is not null)
-        {
-            var quotedVideos = tweet.QuotedTweet?.Media?.Videos?.Where(item => item.Type.IsIn("video", "gif"));
+        var videos = tweet
+            .Media?
+            .Videos?
+            .Where(item => item.Type.IsIn("video", "gif"));
 
-            return Task.FromResult(quotedVideos);
+        if (videos is not null)
+        {
+            output.AddRange(videos.Select(video => new VideoResult(video, ResultSource.MainTweet)));
+        }
+        
+        var quotedVideos = tweet
+            .QuotedTweet?
+            .Media?
+            .Videos?
+            .Where(item => item.Type.IsIn("video", "gif"));
+
+        if (quotedVideos is not null)
+        {
+            output.AddRange(quotedVideos.Select(video => new VideoResult(video, ResultSource.QuotedTweet)));
         }
 
-        return Task.FromResult(videos);
+        return Task.FromResult(output);
     }
 
-    private Task<IEnumerable<FxTwitterPhoto>?> FindAllPhotoElements(FxTwitterTweet tweet)
+    private Task<List<PhotoResult>> FindAllPhotoElements(FxTwitterTweet tweet)
     {
-        var photos = tweet.Media?.Photos?.Where(item => item.Type == "photo");
+        var output = new List<PhotoResult>();
+        
+        var photos = tweet
+            .Media?
+            .Photos?
+            .Where(item => item.Type == "photo");
 
-        if (photos is null && tweet.QuotedTweet is not null)
+        if (photos is not null)
         {
-            var quotedPhotos = tweet.QuotedTweet?.Media?.Photos?.Where(item => item.Type == "photo");
-
-            return Task.FromResult(quotedPhotos);
+            output.AddRange(photos.Select(photo => new PhotoResult(photo, ResultSource.MainTweet)));
         }
+        
+        var quotedPhotos = tweet
+            .QuotedTweet?
+            .Media?
+            .Photos?
+            .Where(item => item.Type == "photo");
 
-        return Task.FromResult(photos);
+        if (quotedPhotos is not null)
+        {
+            output.AddRange(quotedPhotos.Select(photo => new PhotoResult(photo, ResultSource.QuotedTweet)));
+        }
+        
+        return Task.FromResult(output);
     }
 
-    private async Task<ProcessResponse?> HandleVideo(FxTwitterTweet tweet, string url)
+    private async Task<ProcessResponse?> HandleVideo(FxTwitterTweet tweet, IEnumerable<VideoResult> results, bool mainTweetHasMedia)
     {
+        _logger.LogDebug("Processing as video embed");
+        
         var response = new ProcessResponse();
 
-        var video = await FindVideoElement(tweet);
+        var video = mainTweetHasMedia
+            ? results.FirstOrDefault(result => result.Source == ResultSource.MainTweet)
+            : results.FirstOrDefault(result => result.Source == ResultSource.QuotedTweet);
 
         if (video is null)
         {
             return null;
         }
 
-        var variants = new List<string> { video.Url };
+        var variants = new List<string> { video.Video.Url };
 
         var variant = await DetermineHighestUsableQualityFile(variants);
 
@@ -155,11 +207,10 @@ public sealed class FxTwitter : BaseSite
             
             return response;
         }
-
-        // TODO: When Discord add video embeds, come back here and add that
+        
         var embed = new EmbedBuilder
         {
-            Url = tweet.Url ?? url,
+            Url = tweet.Url,
             Timestamp = DateTimeOffset.FromUnixTimeSeconds(tweet.CreatedTimestamp),
             Color = this.Color,
             Description = tweet.Text,
@@ -241,66 +292,21 @@ public sealed class FxTwitter : BaseSite
         );
     }
     
-    private async Task<ProcessResponse?> HandleRegular(FxTwitterTweet tweet, string url)
+    private ProcessResponse HandlePhoto(FxTwitterTweet tweet, IEnumerable<PhotoResult> results, bool mainTweetHasMedia)
     {
+        _logger.LogDebug("Processing as photo embed");
+        
         var response = new ProcessResponse();
 
-        var photos = await FindAllPhotoElements(tweet);
-
-        // TODO: Refactor how we build embeds a bit better so I don't have massive amounts of duplicate code
-        if (photos is null)
-        {
-            var embed = new EmbedBuilder
-            {
-                Url = tweet.Url ?? url,
-                Timestamp = DateTimeOffset.FromUnixTimeSeconds(tweet.CreatedTimestamp),
-                Color = this.Color,
-                Description = tweet.Text,
-                Author = new EmbedAuthorBuilder
-                {
-                    Name = $"{tweet.Author.Name} (@{tweet.Author.ScreenName})",
-                    IconUrl = tweet.Author.AvatarUrl,
-                    Url = tweet.Author.Url ?? $"https://twitter.com/{tweet.Author.ScreenName}",
-                },
-                Fields = new List<EmbedFieldBuilder>
-                {
-                    new ()
-                    {
-                        Name = "Replies",
-                        Value = tweet.Replies ?? 0,
-                        IsInline = true
-                    },
-                    new () {
-                        Name = "Retweets",
-                        Value = tweet.Retweets ?? 0,
-                        IsInline = true
-                    },
-                    new ()
-                    {
-                        Name = "Likes",
-                        Value = tweet.Likes ?? 0,
-                        IsInline = true
-                    },
-                    new ()
-                    {
-                        Name = "Views",
-                        Value = tweet.Views ?? 0,
-                        IsInline = true
-                    },
-                },
-                Footer = new EmbedFooterBuilder { IconUrl = Constants.TwitterIconUrl, Text = "Twitter" },
-            };
-            
-            response.Embeds.Add(embed.Build());
-            
-            return response;
-        }
+        var photos = mainTweetHasMedia
+            ? results.Where(result => result.Source == ResultSource.MainTweet).ToList()
+            : results.Where(result => result.Source == ResultSource.QuotedTweet).ToList();
 
         foreach (var photo in photos)
         {
             var embed = new EmbedBuilder
             {
-                Url = tweet.Url ?? url,
+                Url = tweet.Url,
                 Timestamp = DateTimeOffset.FromUnixTimeSeconds(tweet.CreatedTimestamp),
                 Color = this.Color,
                 Description = tweet.Text,
@@ -336,7 +342,7 @@ public sealed class FxTwitter : BaseSite
                         IsInline = true
                     },
                 },
-                ImageUrl = photo.Url,
+                ImageUrl = photo.Photo.Url,
                 Footer = new EmbedFooterBuilder { IconUrl = Constants.TwitterIconUrl, Text = "Twitter" },
             };
             
@@ -345,4 +351,70 @@ public sealed class FxTwitter : BaseSite
         
         return response;
     }
+
+    private ProcessResponse HandleRegular(FxTwitterTweet tweet)
+    {
+        var response = new ProcessResponse();
+        
+        var embed = new EmbedBuilder
+        {
+            Url = tweet.Url,
+            Timestamp = DateTimeOffset.FromUnixTimeSeconds(tweet.CreatedTimestamp),
+            Color = this.Color,
+            Description = tweet.Text,
+            Author = new EmbedAuthorBuilder
+            {
+                Name = $"{tweet.Author.Name} (@{tweet.Author.ScreenName})",
+                IconUrl = tweet.Author.AvatarUrl,
+                Url = tweet.Author.Url ?? $"https://twitter.com/{tweet.Author.ScreenName}",
+            },
+            Fields = new List<EmbedFieldBuilder>
+            {
+                new ()
+                {
+                    Name = "Replies",
+                    Value = tweet.Replies ?? 0,
+                    IsInline = true
+                },
+                new () {
+                    Name = "Retweets",
+                    Value = tweet.Retweets ?? 0,
+                    IsInline = true
+                },
+                new ()
+                {
+                    Name = "Likes",
+                    Value = tweet.Likes ?? 0,
+                    IsInline = true
+                },
+                new ()
+                {
+                    Name = "Views",
+                    Value = tweet.Views ?? 0,
+                    IsInline = true
+                },
+            },
+            Footer = new EmbedFooterBuilder { IconUrl = Constants.TwitterIconUrl, Text = "Twitter" },
+        };
+            
+        response.Embeds.Add(embed.Build());
+            
+        return response;
+    }
 }
+
+public enum ResultSource
+{
+    MainTweet,
+    QuotedTweet
+};
+
+public sealed record VideoResult(
+    FxTwitterVideo Video,
+    ResultSource Source
+ );
+
+public sealed record PhotoResult(
+    FxTwitterPhoto Photo,
+    ResultSource Source
+);

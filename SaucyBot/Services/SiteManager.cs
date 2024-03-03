@@ -2,6 +2,7 @@
 using System.Text.RegularExpressions;
 using Discord;
 using Discord.WebSocket;
+using SaucyBot.Extensions;
 using SaucyBot.Library;
 using SaucyBot.Site;
 
@@ -67,10 +68,6 @@ public sealed partial class SiteManager
         var results = new List<SiteManagerProcessResult>();
         
         var embedCount = 0u;
-        
-        var guildConfiguration = await _guildConfigurationManager.GetByChannel(message.Channel);
-        
-        var maximumEmbeds = guildConfiguration?.MaximumEmbeds ?? _configuration.GetSection("Bot:MaximumEmbeds").Get<uint>();
 
         var content = message.CleanContent;
 
@@ -78,6 +75,10 @@ public sealed partial class SiteManager
         {
             return results;
         }
+        
+        var guildConfiguration = await _guildConfigurationManager.GetByChannel(message.Channel);
+        
+        var maximumEmbeds = guildConfiguration?.MaximumEmbeds ?? _configuration.GetSection("Bot:MaximumEmbeds").Get<uint>();
         
         foreach (var (identifier, site) in _sites)
         {
@@ -104,10 +105,6 @@ public sealed partial class SiteManager
         var results = new List<SiteManagerProcessResult>();
         
         var embedCount = 0u;
-        
-        var guildConfiguration = await _guildConfigurationManager.GetByChannel(command.Channel);
-        
-        var maximumEmbeds = guildConfiguration?.MaximumEmbeds ?? _configuration.GetSection("Bot:MaximumEmbeds").Get<uint>();
 
         var content = (string?) command.Data.Options.First().Value;
 
@@ -115,6 +112,10 @@ public sealed partial class SiteManager
         {
             return results;
         }
+        
+        var guildConfiguration = await _guildConfigurationManager.GetByChannel(command.Channel);
+        
+        var maximumEmbeds = guildConfiguration?.MaximumEmbeds ?? _configuration.GetSection("Bot:MaximumEmbeds").Get<uint>();
         
         foreach (var (identifier, site) in _sites)
         {
@@ -146,7 +147,7 @@ public sealed partial class SiteManager
         
         var results = await Match(message);
         
-        if (!results.Any())
+        if (results.Empty())
         {
             return;
         }
@@ -207,7 +208,7 @@ public sealed partial class SiteManager
         
         var results = await Match(command);
         
-        if (!results.Any())
+        if (results.Empty())
         {
             await command.FollowupAsync("Provided URL cannot be sauced", ephemeral: true);
             return;

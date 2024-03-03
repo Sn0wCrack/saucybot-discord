@@ -2,7 +2,7 @@
 
 namespace SaucyBot.Site.Response;
 
-public sealed class ProcessResponse
+public sealed record ProcessResponse
 {
     public List<Embed> Embeds;
     public List<FileAttachment> Files;

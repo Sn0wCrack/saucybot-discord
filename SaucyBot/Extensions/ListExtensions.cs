@@ -37,4 +37,24 @@ public static class ListExtensions
 
         return source.GetRange(index, count);
     }
+    
+    public static bool Empty<T>(this List<T> source)
+    {
+        return source.Count == 0;
+    }
+
+    public static bool NotEmpty<T>(this List<T> source)
+    {
+        return source.Count != 0;
+    }
+
+    public static bool Empty<T>(this IEnumerable<T> source)
+    {
+        return !source.Any();
+    }
+
+    public static bool NotEmpty<T>(this IEnumerable<T> source)
+    {
+        return source.Any();
+    }
 }
