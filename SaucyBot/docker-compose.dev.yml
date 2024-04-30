@@ -15,7 +15,7 @@ services:
         restart: unless-stopped
         
     database:
-        image: mariadb:11@sha256:0f14fda0e514a7465dc0544a023942bda3c862e662b16695379635fc80491f91
+        image: mariadb:11@sha256:b467df6bdb84f316239028275424154c09b164df6b24c2982e92de93e842649e
         env_file:
             - .env
         ports:
