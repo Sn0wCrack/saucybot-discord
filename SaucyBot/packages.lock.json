@@ -137,9 +137,9 @@
       },
       "Polly.Core": {
         "type": "Direct",
-        "requested": "[8.3.1, )",
-        "resolved": "8.3.1",
-        "contentHash": "b9mMAjqXuCXFCtf/RtRPwFUkAm/sz37s7G+taDvS5EqfkJsLiWfO2xO2cSISjIgIY+88oIZTGguP6UrRGRlqzg=="
+        "requested": "[8.4.0, )",
+        "resolved": "8.4.0",
+        "contentHash": "3AZxuP//pxOeBo9tQs7/tz4Z5TTbu4BYfjpaXZD0JYKJo98ngN9TMUz1nybh4k0ykWkMBpGZALV/AmVIE3ew7A=="
       },
       "Pomelo.EntityFrameworkCore.MySql": {
         "type": "Direct",
