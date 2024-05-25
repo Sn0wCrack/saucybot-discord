@@ -29,7 +29,7 @@ services:
             retries: 10
         
     cache:
-        image: "redis:7-alpine@sha256:c8bb255c3559b3e458766db810aa7b3c7af1235b204cfdb304e79ff388fe1a5a"
+        image: "redis:7-alpine@sha256:6abca08e3a4d1c5fb834782b642324402b5fbd79a4bc00880bfce693ad98b651"
         ports:
             - "6379:6379"
         volumes:
