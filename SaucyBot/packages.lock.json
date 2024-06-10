@@ -172,9 +172,9 @@
       },
       "Serilog.Settings.Configuration": {
         "type": "Direct",
-        "requested": "[8.0.0, )",
-        "resolved": "8.0.0",
-        "contentHash": "nR0iL5HwKj5v6ULo3/zpP8NMcq9E2pxYA6XKTSWCbugVs4YqPyvaqaKOY+OMpPivKp7zMEpax2UKHnDodbRB0Q==",
+        "requested": "[8.0.1, )",
+        "resolved": "8.0.1",
+        "contentHash": "KOEABqMUdEc8Lpq51Nmiv69Je53mKE6yle4ac2jt3QYiBI0FKKFZCVV6MnkD/z3FonNMjUs/vLOa1mrhzexgCA==",
         "dependencies": {
           "Microsoft.Extensions.Configuration.Binder": "8.0.0",
           "Microsoft.Extensions.DependencyModel": "8.0.0",
