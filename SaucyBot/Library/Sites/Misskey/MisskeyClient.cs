@@ -10,13 +10,9 @@ namespace SaucyBot.Library.Sites.Misskey;
 
 public sealed class MisskeyClient : IMisskeyClient
 {
-    private const string DefaultBaseUrl = "https://misskey.io";
-    
     private readonly ICacheManager _cache;
     
     private readonly HttpClient _client = new();
-
-    private string BaseUrl = DefaultBaseUrl;
     
     public MisskeyClient(ICacheManager cacheManager)
     {
@@ -31,13 +27,13 @@ public sealed class MisskeyClient : IMisskeyClient
         );
     }
 
-    public async Task<ShowNoteResponse?> ShowNote(string id)
+    public async Task<ShowNoteResponse?> ShowNote(string url, string id)
     {
-        var response = await _cache.Remember($"misskey.{BaseUrl}.note_{id}", async () =>
+        var response = await _cache.Remember($"misskey.{url}.note_{id}", async () =>
         {
             var request = JsonContent.Create(new { noteId = id });
             
-            var response = await _client.PostAsync($"{BaseUrl}/api/notes/show", request);
+            var response = await _client.PostAsync($"{url}/api/notes/show", request);
 
             return await response.Content.ReadAsStringAsync();
         });

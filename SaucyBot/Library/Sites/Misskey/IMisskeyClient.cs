@@ -2,5 +2,5 @@
 
 public interface IMisskeyClient
 {
-    public Task<ShowNoteResponse?> ShowNote(string id);
+    public Task<ShowNoteResponse?> ShowNote(string url, string id);
 }

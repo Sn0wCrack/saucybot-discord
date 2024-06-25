@@ -11,7 +11,7 @@ public sealed class Misskey : BaseSite
 {
     public override string Identifier => "Misskey";
 
-    protected override string Pattern => @"https?:\/\/(www\.)?misskey\.io\/notes\/(?<id>[0-9a-z]+)";
+    protected override string Pattern => @"(?<url>https?:\/\/(www\.)?misskey\.(io|design))\/notes\/(?<id>[0-9a-z]+)";
 
     protected override Color Color => new(0x85B300);
 
@@ -28,8 +28,11 @@ public sealed class Misskey : BaseSite
 
     public override async Task<ProcessResponse?> Process(Match match, SocketUserMessage? message = null)
     {
-        var note = await _client.ShowNote(match.Groups["id"].Value);
+        var url = match.Groups["url"].Value;
 
+        var id = match.Groups["id"].Value;
+        
+        var note = await _client.ShowNote(url, id);
         if (note is null)
         {
             return null;
@@ -59,7 +62,7 @@ public sealed class Misskey : BaseSite
                 {
                     Name = $"{note.User.Name} ({note.User.Username})",
                     IconUrl = note.User.AvatarUrl,
-                    Url = $"https://misskey.io/@{note.User.Username}"
+                    Url = $"{url}/@{note.User.Username}"
                 },
                 ImageUrl = file.Url,
                 Footer = new EmbedFooterBuilder { IconUrl = Constants.MisskeyIconUrl, Text = "Misskey" },
