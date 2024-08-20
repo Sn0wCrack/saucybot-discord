@@ -59,6 +59,7 @@ public sealed class Worker : BackgroundService
     {
         var config = new DiscordSocketConfig()
         {
+            TotalShards = _configuration.GetSection("Bot:TotalShards").Get<int?>(),
             GatewayIntents = Constants.RequiredGatewayIntents,
             AuditLogCacheSize = 0,
             MessageCacheSize = _configuration.GetSection("Bot:MessageCacheSize").Get<int?>() ?? 100,
@@ -82,7 +83,7 @@ public sealed class Worker : BackgroundService
     {
         var config = new DiscordSocketConfig()
         {
-            ShardId = _configuration.GetSection("Bot:ShardId").Get<int?>() ?? 0,
+            ShardId = _configuration.GetSection("Bot:ShardId").Get<int?>(),
             GatewayIntents = Constants.RequiredGatewayIntents,
             AuditLogCacheSize = 0,
             MessageCacheSize = _configuration.GetSection("Bot:MessageCacheSize").Get<int?>() ?? 100,
