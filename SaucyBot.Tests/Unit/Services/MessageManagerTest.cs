@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SaucyBot.Services;
@@ -11,7 +12,7 @@ namespace SaucyBot.Tests.Unit.Services;
 public class MessageManagerTest
 {
     [Fact]
-    public async void ProcessResponseWithASingleTextElementShouldReturnASingleMessage()
+    public async Task ProcessResponseWithASingleTextElementShouldReturnASingleMessage()
     {
         var logger = Substitute.For<ILogger<MessageManager>>();
         

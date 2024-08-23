@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SaucyBot.Library.Sites.Pixiv;
@@ -15,7 +16,7 @@ namespace SaucyBot.Tests.Unit.Site;
 public class PixivTest
 {
     [Fact]
-    public async void AFileIsCreatedForEachImageWithinMultiImagePost()
+    public async Task AFileIsCreatedForEachImageWithinMultiImagePost()
     {
         // Post: https://www.pixiv.net/en/artworks/106848609
         
@@ -134,7 +135,7 @@ public class PixivTest
     }
     
     [Fact]
-    public async void NothingIsReturnedWhenTheApiClientReturnsUnsuccessfully()
+    public async Task NothingIsReturnedWhenTheApiClientReturnsUnsuccessfully()
     {
         var logger = Substitute.For<ILogger<Pixiv>>();
         

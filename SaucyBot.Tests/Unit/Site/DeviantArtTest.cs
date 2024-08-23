@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SaucyBot.Library.Sites.DeviantArt;
 using SaucyBot.Site;
@@ -11,7 +12,7 @@ namespace SaucyBot.Tests.Unit.Site;
 public class DeviantArtTest
 {
     [Fact]
-    public async void SingleEmbedIsReturnedWhenTheApiClientReturnsSuccessfully()
+    public async Task SingleEmbedIsReturnedWhenTheApiClientReturnsSuccessfully()
     {
         // Post: https://www.deviantart.com/shadeofshinon/art/Frostbreath-VI-943346591
         
@@ -64,7 +65,7 @@ public class DeviantArtTest
     }
     
     [Fact]
-    public async void NothingIsReturnedWhenTheApiClientReturnsUnsuccessfully()
+    public async Task NothingIsReturnedWhenTheApiClientReturnsUnsuccessfully()
     {
         // Post: https://www.deviantart.com/shadeofshinon/art/Frostbreath-VI-943346591
 

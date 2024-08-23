@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SaucyBot.Library.Sites.FurAffinity;
 using SaucyBot.Site;
@@ -11,7 +12,7 @@ namespace SaucyBot.Tests.Unit.Site;
 public class FurAffinityTest
 {
     [Fact]
-    public async void SingleEmbedIsReturnWhenTheApiClientReturnsSuccessfullyTest()
+    public async Task SingleEmbedIsReturnWhenTheApiClientReturnsSuccessfullyTest()
     {
         var logger = Substitute.For<ILogger<FurAffinity>>();
 
@@ -73,7 +74,7 @@ public class FurAffinityTest
     }
     
     [Fact]
-    public async void NothingIsReturnedWhenTheApiClientReturnsUnsuccessfully()
+    public async Task NothingIsReturnedWhenTheApiClientReturnsUnsuccessfully()
     {
         var logger = Substitute.For<ILogger<FurAffinity>>();
 

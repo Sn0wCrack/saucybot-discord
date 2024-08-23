@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
@@ -12,7 +13,7 @@ namespace SaucyBot.Tests.Unit.Site;
 public class ArtStationTest
 {
     [Fact]
-    public async void AnEmbedIsCreatedForEachProjectImageAsset()
+    public async Task AnEmbedIsCreatedForEachProjectImageAsset()
     {
         var logger = Substitute.For<ILogger<ArtStation>>();
         
@@ -111,7 +112,7 @@ public class ArtStationTest
     }
 
     [Fact]
-    public async void NothingIsReturnedWhenTheApiClientReturnsUnsuccessfully()
+    public async Task NothingIsReturnedWhenTheApiClientReturnsUnsuccessfully()
     {
         var logger = Substitute.For<ILogger<ArtStation>>();
         

@@ -1,4 +1,5 @@
-﻿using NSubstitute;
+﻿using System.Threading.Tasks;
+using NSubstitute;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Site;
@@ -6,13 +7,13 @@ namespace SaucyBot.Tests.Unit.Site;
 public class E621Test
 {
     [Fact]
-    public async void SingleEmbedIsReturnedWhenTheApiClientReturnsSuccessfully()
+    public async Task SingleEmbedIsReturnedWhenTheApiClientReturnsSuccessfully()
     {
         
     }
 
     [Fact]
-    public async void NothingIsReturnedWhenTheApiClientReturnsUnsuccessfully()
+    public async Task NothingIsReturnedWhenTheApiClientReturnsUnsuccessfully()
     {
         
     }

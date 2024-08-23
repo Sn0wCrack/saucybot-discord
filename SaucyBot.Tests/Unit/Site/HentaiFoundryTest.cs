@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SaucyBot.Library.Sites.HentaiFoundry;
 using SaucyBot.Site;
@@ -10,7 +11,7 @@ namespace SaucyBot.Tests.Unit.Site;
 public class HentaiFoundryTest
 {
     [Fact(Skip = "Need to find way to mock HTML parser style classes")]
-    public async void SingleEmbedIsCreatedWhenTheApiClientReturnsSuccessfully()
+    public async Task SingleEmbedIsCreatedWhenTheApiClientReturnsSuccessfully()
     {
         // Post: https://www.hentai-foundry.com/pictures/user/cherry-gig/1042457/FOR-THE-GOD-EMPEROR
         
@@ -39,7 +40,7 @@ public class HentaiFoundryTest
     
     
     [Fact]
-    public async void NothingIsReturnedWhenTheApiClientReturnsUnsuccessfully()
+    public async Task NothingIsReturnedWhenTheApiClientReturnsUnsuccessfully()
     {
         // Post: https://www.hentai-foundry.com/pictures/user/cherry-gig/1042457/FOR-THE-GOD-EMPEROR
         

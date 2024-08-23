@@ -1,4 +1,5 @@
-﻿using SaucyBot.Common;
+﻿using System.Threading.Tasks;
+using SaucyBot.Common;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Common;
@@ -22,7 +23,7 @@ public class HelpersTest
     [InlineData(200)]
     [InlineData(20)]
     [InlineData(8)]
-    public async void ProcessDescriptionWillLimitStringLength(int maxLength)
+    public async Task ProcessDescriptionWillLimitStringLength(int maxLength)
     {
         var random = Helper.RandomString(maxLength * 2);
 
@@ -37,7 +38,7 @@ public class HelpersTest
     [InlineData(200, "")]
     [InlineData(20, "--")]
     [InlineData(8, "?!")]
-    public async void ProcessDescriptionWillAddSuffixWhenLimited(int maxLength, string suffix)
+    public async Task ProcessDescriptionWillAddSuffixWhenLimited(int maxLength, string suffix)
     {
         var random = Helper.RandomString(maxLength * 2);
 
@@ -52,7 +53,7 @@ public class HelpersTest
     [InlineData("<p><span>Test</span> Test</p")]
     [InlineData("<h1>TEST</h1>")]
     [InlineData("<script>let test = 'test';</script>")]
-    public async void ProcessDescriptionWillRemoveHtml(string description)
+    public async Task ProcessDescriptionWillRemoveHtml(string description)
     {
         var processed = await Helper.ProcessDescription(description);
 
@@ -62,7 +63,7 @@ public class HelpersTest
     [Theory]
     [InlineData("<p>Test</p>Test")]
     [InlineData("Test<br>Test")]
-    public async void ProcessDescriptionWillRetainBreaksAndParagraphs(string description)
+    public async Task ProcessDescriptionWillRetainBreaksAndParagraphs(string description)
     {
         var processed = await Helper.ProcessDescription(description);
 
@@ -70,7 +71,7 @@ public class HelpersTest
     }
     
     [Fact]
-    public async void ProcessDescriptionWillRetainBreaksAndRemoveExistingNewLines()
+    public async Task ProcessDescriptionWillRetainBreaksAndRemoveExistingNewLines()
     {
         const string description = "Test\n<br>Test";
 

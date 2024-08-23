@@ -57,9 +57,12 @@ public sealed class Worker : BackgroundService
 
     private DiscordShardedClient SetupShardedSocketClient()
     {
+        var shardId = _configuration.GetSection("Bot:ShardIds").Get<int?>();
+        var totalShards = _configuration.GetSection("Bot:TotalShards").Get<int?>();
+        
         var config = new DiscordSocketConfig()
         {
-            TotalShards = _configuration.GetSection("Bot:TotalShards").Get<int?>(),
+            TotalShards = totalShards,
             GatewayIntents = Constants.RequiredGatewayIntents,
             AuditLogCacheSize = 0,
             MessageCacheSize = _configuration.GetSection("Bot:MessageCacheSize").Get<int?>() ?? 100,
@@ -69,7 +72,14 @@ public sealed class Worker : BackgroundService
             AlwaysDownloadDefaultStickers = false,
         };
 
-        var client = new DiscordShardedClient(config);
+        int[]? ids = null;
+
+        if (shardId is not null && totalShards is not null)
+        {
+            ids = Enumerable.Range((int) (shardId * totalShards), (int) totalShards).ToArray();
+        }
+        
+        var client = new DiscordShardedClient(ids, config);
         
         client.Log += HandleLogAsync;
         client.ShardReady += HandleShardReadyAsync;
