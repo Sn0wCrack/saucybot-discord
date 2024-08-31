@@ -19,7 +19,7 @@ If you would like to add this bot to your server [click here](https://discordapp
     * Will embed a video if it cannot be played natively in Discord
     * If the images or video are larger than the Discord maximum file size will reply with an fxtwitter link instead.
   * DeviantArt - Embeds main image or thumbnail, includes more information than built-in embed
-    * NOTE: This is disabled on live version due to IP rate limiting from DeviantAr
+    * NOTE: This is disabled on live version due to IP rate limiting from DeviantArt
   * Hentai Foundry - Creates embed as none exists for site.
   * Pixiv - Posts up to 5 images of the set (configurable)
     * Pixiv Ugoira - Uploads a video with correct framerate and frame-timing (Video format is configurable, requires ffmpeg)
