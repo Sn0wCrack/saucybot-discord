@@ -57,7 +57,7 @@ public sealed class Worker : BackgroundService
 
     private DiscordShardedClient SetupShardedSocketClient()
     {
-        var shardId = _configuration.GetSection("Bot:ShardIds").Get<int?>();
+        var shardId = _configuration.GetSection("Bot:ShardId").Get<int?>();
         var totalShards = _configuration.GetSection("Bot:TotalShards").Get<int?>();
         
         var config = new DiscordSocketConfig()
@@ -79,6 +79,8 @@ public sealed class Worker : BackgroundService
             ids = Enumerable.Range((int) (shardId * totalShards), (int) totalShards).ToArray();
         }
         
+        _logger.LogInformation("Starting in Automatic Sharing Mode with {ShardId} and {TotalShards}", shardId, totalShards);
+        
         var client = new DiscordShardedClient(ids, config);
         
         client.Log += HandleLogAsync;
@@ -91,9 +93,11 @@ public sealed class Worker : BackgroundService
 
     private DiscordSocketClient SetupSocketClient()
     {
+        var shardId = _configuration.GetSection("Bot:ShardId").Get<int?>();
+        
         var config = new DiscordSocketConfig()
         {
-            ShardId = _configuration.GetSection("Bot:ShardId").Get<int?>(),
+            ShardId = shardId,
             GatewayIntents = Constants.RequiredGatewayIntents,
             AuditLogCacheSize = 0,
             MessageCacheSize = _configuration.GetSection("Bot:MessageCacheSize").Get<int?>() ?? 100,
@@ -102,6 +106,8 @@ public sealed class Worker : BackgroundService
             AlwaysResolveStickers = false,
             AlwaysDownloadDefaultStickers = false,
         };
+        
+        _logger.LogInformation("Starting in Manual Mode with {ShardId}", shardId);
 
         var client = new DiscordSocketClient(config);
         
