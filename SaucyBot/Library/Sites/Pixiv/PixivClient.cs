@@ -22,6 +22,8 @@ public sealed class PixivClient : IPixivClient
     private readonly CookieContainer _cookieContainer = new();
     private readonly HttpClient _client;
 
+    private bool _isLoggedIn;
+
     public PixivClient(
         ILogger<PixivClient> logger,
         IConfiguration configuration,
@@ -35,10 +37,10 @@ public sealed class PixivClient : IPixivClient
         {
             Name = "PHPSESSID",
             Value = _configuration.GetSection("Sites:Pixiv:SessionCookie").Get<string>(),
-            Domain = "pixiv.net",
+            Domain = ".pixiv.net",
             Path = "/",
-            HttpOnly = false,
-            Secure = false
+            HttpOnly = true,
+            Secure = true,
         });
 
         var httpClientHandler = new HttpClientHandler
@@ -51,7 +53,7 @@ public sealed class PixivClient : IPixivClient
         _client = new HttpClient(httpClientHandler);
 
         _client.DefaultRequestHeaders.Add("User-Agent",
-            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36"
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
         );
 
         _client.DefaultRequestHeaders.Referrer = _referrer;
@@ -63,17 +65,31 @@ public sealed class PixivClient : IPixivClient
 
     public async Task<bool> Login()
     {
-        return await CookieLogin();
+        if (_isLoggedIn)
+        {
+            return true;
+        }
+        
+        return _isLoggedIn = await CookieLogin();
     }
 
     private async Task<bool> CookieLogin()
     {
-        var response = await _client.GetStringAsync(BaseUrl);
+        try
+        {
+            var response = await _client.GetStringAsync(BaseUrl);
 
-        return response.Contains("logout.php") ||
-                     response.Contains("pixiv.user.loggedIn = true") ||
-                     response.Contains("_gaq.push(['_setCustomVar', 1, 'login', 'yes'") ||
-                     response.Contains("var dataLayer = [{ login: 'yes',");
+            return response.Contains("logout.php") ||
+                   response.Contains("pixiv.user.loggedIn = true") ||
+                   response.Contains("_gaq.push(['_setCustomVar', 1, 'login', 'yes'") ||
+                   response.Contains("var dataLayer = [{ login: 'yes',");
+        }
+        catch (Exception e)
+        {
+            _logger.LogDebug("Failed logging into Pixiv with error: {Exception}", e.Message);
+            
+            return false;
+        }
     }
 
     public async Task<IllustrationDetailsResponse?> IllustrationDetails(string id)
