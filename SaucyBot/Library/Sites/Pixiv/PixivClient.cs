@@ -48,6 +48,7 @@ public sealed class PixivClient : IPixivClient
             CookieContainer = _cookieContainer,
             UseCookies = true,
             AllowAutoRedirect = true,
+            MaxAutomaticRedirections = 5,
         };
 
         _client = new HttpClient(httpClientHandler);
