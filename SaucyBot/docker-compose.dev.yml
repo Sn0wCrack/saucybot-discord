@@ -27,7 +27,7 @@ services:
             start_period: 10s
         
     cache:
-        image: "redis:7-alpine@sha256:309ba197540c90f5ae5ec22eb10d4a01151510216bd9121616fde58dab8f0d28"
+        image: "redis:7-alpine@sha256:4dc8a5b107f17e119f85a6f8a4547283f6c7db4d281b6f409a93dd098645c3f6"
         ports:
             - "6379:6379"
         restart: unless-stopped
