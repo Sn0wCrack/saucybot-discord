@@ -3,7 +3,7 @@ ARG CONFIGURATION=Release
 FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/runtime:8.0-alpine3.20@sha256:5420a4b0c216f1e911d2a63a7f70a0990d870437a97e2fc6cc5a6e38eb087dfc AS base
 WORKDIR /app
 
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:8.0-alpine3.20@sha256:e269102a31758d5d6c16f4d11d0e9cf97140551fae8af91fb7e4c861beed5ddf AS build
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:8.0-alpine3.20@sha256:0062dac82deeedd731b8b709c4e7fc6ce1060d376b00edabcb937fa27c2add1e AS build
 WORKDIR /src
 COPY ["SaucyBot.csproj", "SaucyBot/"]
 RUN dotnet restore "SaucyBot/SaucyBot.csproj" -a "${TARGETARCH}"
