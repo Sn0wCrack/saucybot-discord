@@ -601,8 +601,8 @@
       },
       "Serilog.Settings.Configuration": {
         "type": "Transitive",
-        "resolved": "8.0.2",
-        "contentHash": "hn8HCAmupon7N0to20EwGeNJ+L3iRzjGzAHIl8+8CCFlEkVedHvS6NMYMb0VPNMsDgDwOj4cPBPV6Fc2hb0/7w==",
+        "resolved": "8.0.3",
+        "contentHash": "zDVHRxhhLgZN0mhGbXAQQUrVgDhYhIGX2OyrTyWGQSTq8NWViytgjtPbZuUSSnCrmOzmIh4d1gaKo2WqPC5iLw==",
         "dependencies": {
           "Microsoft.Extensions.Configuration.Binder": "8.0.0",
           "Microsoft.Extensions.DependencyModel": "8.0.1",
@@ -783,7 +783,7 @@
           "Pomelo.EntityFrameworkCore.MySql": "[8.0.2, )",
           "Serilog": "[4.0.2, )",
           "Serilog.Extensions.Hosting": "[8.0.0, )",
-          "Serilog.Settings.Configuration": "[8.0.2, )",
+          "Serilog.Settings.Configuration": "[8.0.3, )",
           "Serilog.Sinks.Console": "[6.0.0, )",
           "StackExchange.Redis": "[2.8.16, )",
           "Xabe.FFmpeg": "[5.2.6, )"
