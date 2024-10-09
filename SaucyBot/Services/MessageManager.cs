@@ -194,6 +194,6 @@ public record Message(
 
     public bool IsEmpty()
     {
-        return Content is null or "" && !Embeds.Any() && !Files.Any();
+        return Content is null or "" && Embeds.Count == 0 && Files.Count == 0;
     }
 }
