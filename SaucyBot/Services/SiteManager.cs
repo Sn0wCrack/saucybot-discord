@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using Discord;
 using Discord.WebSocket;
 using SaucyBot.Extensions;
+using SaucyBot.Extensions.Discord;
 using SaucyBot.Library;
 using SaucyBot.Site;
 
@@ -69,9 +70,9 @@ public sealed partial class SiteManager
         
         var embedCount = 0u;
 
-        var content = message.CleanContent;
-
-        if (content is null)
+        var content = message.AllMessageCleanContent();
+            
+        if (content is null or "")
         {
             return results;
         }
@@ -141,7 +142,7 @@ public sealed partial class SiteManager
     {
         if (!ShouldProcessMessage(message))
         {
-            _logger.LogDebug("Message was ignored with content: \"{Message}\"", message.Content);
+            _logger.LogDebug("Message was ignored with content: \"{Message}\"", message.AllMessageContent());
             return;
         }
         
@@ -278,7 +279,7 @@ public sealed partial class SiteManager
 
     private bool HasIgnoreMessageTagsInContent(SocketUserMessage message)
     {
-        return IgnoreContentRegex().IsMatch(message.Content);
+        return IgnoreContentRegex().IsMatch(message.AllMessageContent());
     }
     
     private bool HasPermissionsToCreateEmbed(SocketMessage message)
