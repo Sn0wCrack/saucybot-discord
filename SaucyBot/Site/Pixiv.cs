@@ -225,6 +225,8 @@ public sealed class Pixiv : BaseSite
     {
         foreach (var url in urls)
         {
+            _logger.LogDebug("Checking {Url} for usable quality...", url);
+            
             var response = await _client.PokeFile(url);
 
             if (response.Content.Headers.ContentLength < Constants.MaximumFileSize)
@@ -238,6 +240,8 @@ public sealed class Pixiv : BaseSite
 
     private async Task<FileAttachment> GetFile(string url)
     {
+        _logger.LogDebug("Attempting to download {Url}...", url);
+        
         var response = await _client.GetFile(url);
 
         var parsed = new Uri(url);
