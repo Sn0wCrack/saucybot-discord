@@ -139,7 +139,8 @@ public sealed class Pixiv : BaseSite
     }
 
 
-    private async Task RenderUgoiraVideo(string concatFilePath, string videoFilePath) {
+    private async Task RenderUgoiraVideo(string concatFilePath, string videoFilePath)
+    {
         var bitrate = _configuration.GetSection("Sites:Pixiv:UgoiraBitrate").Get<int>();
         
         var conversion = FFmpeg.Conversions.New()
