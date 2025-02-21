@@ -60,7 +60,7 @@ public sealed class Worker : BackgroundService
         var shardId = _configuration.GetSection("Bot:ShardId").Get<int?>();
         var totalShards = _configuration.GetSection("Bot:TotalShards").Get<int?>();
         
-        var config = new DiscordSocketConfig()
+        var config = new DiscordSocketConfig
         {
             TotalShards = totalShards,
             GatewayIntents = Constants.RequiredGatewayIntents,
@@ -95,7 +95,7 @@ public sealed class Worker : BackgroundService
     {
         var shardId = _configuration.GetSection("Bot:ShardId").Get<int?>();
         
-        var config = new DiscordSocketConfig()
+        var config = new DiscordSocketConfig
         {
             ShardId = shardId,
             GatewayIntents = Constants.RequiredGatewayIntents,

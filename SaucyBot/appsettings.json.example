@@ -67,6 +67,9 @@
     },
     "Misskey": {
        "Delay": "2.00"
+    },
+    "Bluesky": {
+       "Delay": "2.00"
     }
   }
 }
