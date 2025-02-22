@@ -28,7 +28,7 @@ services:
             retries: 10
         
     cache:
-        image: "valkey/valkey:8-alpine@sha256:2b2811478015aadaa3fd09e441dcb9268bd6a06afacc358cead96c4096b38426"
+        image: "valkey/valkey:8-alpine@sha256:0fae58181c223280867e8b6d9d5fa29fca507770aeb6819f36d059cab73fa2fd"
         ports:
             - "6379:6379"
         volumes:
