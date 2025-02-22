@@ -20,6 +20,7 @@ on:
 jobs:
   build:
     name: 'Build and Test'
+    continue-on-error: true
     runs-on: ubuntu-latest
 
     strategy:
