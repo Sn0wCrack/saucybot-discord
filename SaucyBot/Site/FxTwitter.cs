@@ -1,4 +1,5 @@
 ﻿using System.Text.RegularExpressions;
+using System.Web;
 using Discord;
 using Discord.WebSocket;
 using SaucyBot.Extensions;
@@ -291,7 +292,24 @@ public sealed class FxTwitter : BaseSite
             Path.GetFileName(parsed.AbsolutePath)
         );
     }
-    
+
+    private string GetOriginalResolutionPhotoUrl(string url)
+    {
+        var uri = new Uri(url);
+        var query = uri.Query;
+        var queryDictionary = HttpUtility.ParseQueryString(query);
+        if (queryDictionary.AllKeys.Contains("name"))
+        {
+            queryDictionary.Remove("name");
+        }
+        queryDictionary.Add("name", "orig");
+        var builder = new UriBuilder(uri)
+        {
+            Query = queryDictionary.ToString()
+        };
+        return builder.Uri.ToString();
+    }
+
     private ProcessResponse HandlePhoto(FxTwitterTweet tweet, IEnumerable<PhotoResult> results, bool mainTweetHasMedia)
     {
         _logger.LogDebug("Processing as photo embed");
@@ -342,7 +360,7 @@ public sealed class FxTwitter : BaseSite
                         IsInline = true
                     },
                 },
-                ImageUrl = photo.Photo.Url,
+                ImageUrl = this.GetOriginalResolutionPhotoUrl(photo.Photo.Url),
                 Footer = new EmbedFooterBuilder { IconUrl = Constants.TwitterIconUrl, Text = "Twitter" },
             };
             
