@@ -27,7 +27,7 @@ services:
             start_period: 10s
         
     cache:
-        image: "valkey/valkey:8-alpine@sha256:0fae58181c223280867e8b6d9d5fa29fca507770aeb6819f36d059cab73fa2fd"
+        image: "valkey/valkey:8-alpine@sha256:d781a69ff6cc8175ac48c530175b95ef0bc53d4249fc5414f42e394bce3b60e0"
         ports:
             - "6379:6379"
         restart: unless-stopped
