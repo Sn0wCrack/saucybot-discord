@@ -150,58 +150,58 @@
       },
       "Microsoft.Data.Sqlite.Core": {
         "type": "Transitive",
-        "resolved": "8.0.14",
-        "contentHash": "MT/9fCazlL4T10BwCQCxvUXOmtU4rR1qDl2mpePFhmuXONafUjXUf8FH94IR79ISxrGVHxsOWvwGzgKi6RSE/g==",
+        "resolved": "8.0.15",
+        "contentHash": "IucTvSRBA+yAxTd/Y2kIfEXKAYedg3FsNyu6IDU0EFGZyfhCssDlR835VlTKkiDGDhC5cVxI3/+p2cITNdpzTQ==",
         "dependencies": {
           "SQLitePCLRaw.core": "2.1.6"
         }
       },
       "Microsoft.EntityFrameworkCore": {
         "type": "Transitive",
-        "resolved": "8.0.14",
-        "contentHash": "HNn+NPKCm7rR7ij7IRCCbuImaMulFJGloyIbMwi3Ews77RsthM8gxpTZciFLgRYPsBtszKpdIClEwnWmP0vjUg==",
+        "resolved": "8.0.15",
+        "contentHash": "v6gDYdi2j+BbUHzl5sb835mefpFlSCsQOOsn/xjky45kFA9Xrc2hjVa0yQGVLc2J7+fQDqoHWRD5c+RHU3klSQ==",
         "dependencies": {
-          "Microsoft.EntityFrameworkCore.Abstractions": "8.0.14",
-          "Microsoft.EntityFrameworkCore.Analyzers": "8.0.14",
+          "Microsoft.EntityFrameworkCore.Abstractions": "8.0.15",
+          "Microsoft.EntityFrameworkCore.Analyzers": "8.0.15",
           "Microsoft.Extensions.Caching.Memory": "8.0.1",
           "Microsoft.Extensions.Logging": "8.0.1"
         }
       },
       "Microsoft.EntityFrameworkCore.Abstractions": {
         "type": "Transitive",
-        "resolved": "8.0.14",
-        "contentHash": "Om8/jdWyx9eKFkA1YEgxk13KjGIzA8teLgG7iNFunsI2+MT6UT54Eb4t6oe4NQlIaACj5voUe6szVAQe9GKwDA=="
+        "resolved": "8.0.15",
+        "contentHash": "wzBUYqfNTyclVaVo6we4Vo0GsfNSmHHJPn3SF4gEsR+e5QZ4r5Ck5Y9oRcEoeqxS+eFPvJzWN6xpTbwCCoWPnw=="
       },
       "Microsoft.EntityFrameworkCore.Analyzers": {
         "type": "Transitive",
-        "resolved": "8.0.14",
-        "contentHash": "lzNb3s4t5JDMHGoUFuX/f977dFythvmzGFJxvjlhExdiATPKQfquo2NM0uX8Kelfq04jRljpdbRzcsSsK1q9Tw=="
+        "resolved": "8.0.15",
+        "contentHash": "viyTqFw09xwhynmvYggUu48R0Y6WEU2dDKBKm7WwozDH5t1K7+RS9P+iXGe5uUNJstTH/STd2AMFKpT9GaX4OQ=="
       },
       "Microsoft.EntityFrameworkCore.Relational": {
         "type": "Transitive",
-        "resolved": "8.0.14",
-        "contentHash": "cPEeIk9nFO3+hxj9tp5AvTFdcTZkVPJCOFUiagbf37KhPGtiG0ZWpl15xOzLYTDAYjF5kxH/jcuDYGlLACJEmA==",
+        "resolved": "8.0.15",
+        "contentHash": "rOge9UqPepLr4fDSbAjH+gMl4TwK7byKgUy66vgsjlwl11n/+MjbYZAYqfrD8mpGDwJ6Nzv2LIIK2fBHDqA+CQ==",
         "dependencies": {
-          "Microsoft.EntityFrameworkCore": "8.0.14",
+          "Microsoft.EntityFrameworkCore": "8.0.15",
           "Microsoft.Extensions.Configuration.Abstractions": "8.0.0"
         }
       },
       "Microsoft.EntityFrameworkCore.Sqlite": {
         "type": "Transitive",
-        "resolved": "8.0.14",
-        "contentHash": "iqrhkOirZ9mm3Yu+ut9698VDn6WSykfr9NMECIe6gObUZLxAsg28f1JmIjx2n4pKFm5Uz5sYJ3k4AUnrJbgUag==",
+        "resolved": "8.0.15",
+        "contentHash": "jgpXuRB1v5a7/9ojjMTKtMQnoTzz4HHGR4IjtZVUYYMBNNxuhyw5WpAwgjG0edKOfszc+a98zGUVUrcCEZGiDA==",
         "dependencies": {
-          "Microsoft.EntityFrameworkCore.Sqlite.Core": "8.0.14",
+          "Microsoft.EntityFrameworkCore.Sqlite.Core": "8.0.15",
           "SQLitePCLRaw.bundle_e_sqlite3": "2.1.6"
         }
       },
       "Microsoft.EntityFrameworkCore.Sqlite.Core": {
         "type": "Transitive",
-        "resolved": "8.0.14",
-        "contentHash": "TcbHy/SdKTcrxlgx14uicVMqrBTu3SP3STGicR+JzYG4I3mVtsBgqtArt6mmUtA7UZj7sogXJ6EFpSyNsJU8Zg==",
+        "resolved": "8.0.15",
+        "contentHash": "o7MT+uS44blhexi3hkoC7jh7O/TwmWrhB0tyty460DohKtaIkSwk9ClUPLfHIRj1FNF+amoqjyXStKh/XAXFaA==",
         "dependencies": {
-          "Microsoft.Data.Sqlite.Core": "8.0.14",
-          "Microsoft.EntityFrameworkCore.Relational": "8.0.14",
+          "Microsoft.Data.Sqlite.Core": "8.0.15",
+          "Microsoft.EntityFrameworkCore.Relational": "8.0.15",
           "Microsoft.Extensions.DependencyModel": "8.0.2"
         }
       },
@@ -227,8 +227,8 @@
       },
       "Microsoft.Extensions.Caching.StackExchangeRedis": {
         "type": "Transitive",
-        "resolved": "8.0.14",
-        "contentHash": "SWdxLb0WsCGJtmCFD3neN/J+n8sdbiAYg9X843/XHqX7oShyttTVGdUfidDBBVy97CXHMaEGqc9kDrv6IHq2bQ==",
+        "resolved": "8.0.15",
+        "contentHash": "/N7aTIXXkKJ8LLSREG0rfejU9ZF3wn13WRWz7RfIMpfl1UKrClVEqFLuj2dgknyvGkPEm3OANB3Ocrz7EC8bHQ==",
         "dependencies": {
           "Microsoft.Extensions.Caching.Abstractions": "8.0.0",
           "Microsoft.Extensions.Logging.Abstractions": "8.0.3",
@@ -756,10 +756,10 @@
           "AngleSharp": "[1.2.0, )",
           "Discord.Net": "[3.17.2, )",
           "EFCore.NamingConventions": "[8.0.3, )",
-          "Microsoft.EntityFrameworkCore": "[8.0.14, )",
-          "Microsoft.EntityFrameworkCore.Sqlite": "[8.0.14, )",
+          "Microsoft.EntityFrameworkCore": "[8.0.15, )",
+          "Microsoft.EntityFrameworkCore.Sqlite": "[8.0.15, )",
           "Microsoft.Extensions.Caching.Memory": "[8.0.1, )",
-          "Microsoft.Extensions.Caching.StackExchangeRedis": "[8.0.14, )",
+          "Microsoft.Extensions.Caching.StackExchangeRedis": "[8.0.15, )",
           "Microsoft.Extensions.Hosting": "[8.0.1, )",
           "Polly.Core": "[8.5.2, )",
           "Pomelo.EntityFrameworkCore.MySql": "[8.0.3, )",
