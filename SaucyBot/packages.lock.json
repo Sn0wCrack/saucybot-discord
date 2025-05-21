@@ -150,9 +150,9 @@
       },
       "Serilog": {
         "type": "Direct",
-        "requested": "[4.2.0, )",
-        "resolved": "4.2.0",
-        "contentHash": "gmoWVOvKgbME8TYR+gwMf7osROiWAURterc6Rt2dQyX7wtjZYpqFiA/pY6ztjGQKKV62GGCyOcmtP1UKMHgSmA=="
+        "requested": "[4.3.0, )",
+        "resolved": "4.3.0",
+        "contentHash": "+cDryFR0GRhsGOnZSKwaDzRRl4MupvJ42FhCE4zhQRVanX0Jpg6WuCBk59OVhVDPmab1bB+nRykAnykYELA9qQ=="
       },
       "Serilog.Extensions.Hosting": {
         "type": "Direct",
@@ -189,9 +189,9 @@
       },
       "StackExchange.Redis": {
         "type": "Direct",
-        "requested": "[2.8.31, )",
-        "resolved": "2.8.31",
-        "contentHash": "RCHVQa9Zke8k0oBgJn1Yl6BuYy8i6kv+sdMObiH60nOwD6QvWAjxdDwOm+LO78E8WsGiPqgOuItkz98fPS6haQ==",
+        "requested": "[2.8.37, )",
+        "resolved": "2.8.37",
+        "contentHash": "ULscDAQR+z132IsLczXcM/PG+EyfQMNxhvqjG1Xd/h/J1O9prsUU4pG9d95xv77lUF8v3X6owpf/11Uh0uvZAQ==",
         "dependencies": {
           "Microsoft.Extensions.Logging.Abstractions": "6.0.0",
           "Pipelines.Sockets.Unofficial": "2.2.8"

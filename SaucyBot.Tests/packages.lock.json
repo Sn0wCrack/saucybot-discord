@@ -40,9 +40,9 @@
       },
       "xunit.runner.visualstudio": {
         "type": "Direct",
-        "requested": "[3.0.2, )",
-        "resolved": "3.0.2",
-        "contentHash": "oXbusR6iPq0xlqoikjdLvzh+wQDkMv9If58myz9MEzldS4nIcp442Btgs2sWbYWV+caEluMe2pQCZ0hUZgPiow=="
+        "requested": "[3.1.0, )",
+        "resolved": "3.1.0",
+        "contentHash": "K9O9TOzugqOo4LJ87uuq1VG8RAqGp20Ng85Wx932oT5LNBkIgeeGYubVW5UMnOOTanFNbGavmbuYrJr4INzSwg=="
       },
       "AngleSharp": {
         "type": "Transitive",
@@ -573,8 +573,8 @@
       },
       "Serilog": {
         "type": "Transitive",
-        "resolved": "4.2.0",
-        "contentHash": "gmoWVOvKgbME8TYR+gwMf7osROiWAURterc6Rt2dQyX7wtjZYpqFiA/pY6ztjGQKKV62GGCyOcmtP1UKMHgSmA=="
+        "resolved": "4.3.0",
+        "contentHash": "+cDryFR0GRhsGOnZSKwaDzRRl4MupvJ42FhCE4zhQRVanX0Jpg6WuCBk59OVhVDPmab1bB+nRykAnykYELA9qQ=="
       },
       "Serilog.Extensions.Hosting": {
         "type": "Transitive",
@@ -647,8 +647,8 @@
       },
       "StackExchange.Redis": {
         "type": "Transitive",
-        "resolved": "2.8.31",
-        "contentHash": "RCHVQa9Zke8k0oBgJn1Yl6BuYy8i6kv+sdMObiH60nOwD6QvWAjxdDwOm+LO78E8WsGiPqgOuItkz98fPS6haQ==",
+        "resolved": "2.8.37",
+        "contentHash": "ULscDAQR+z132IsLczXcM/PG+EyfQMNxhvqjG1Xd/h/J1O9prsUU4pG9d95xv77lUF8v3X6owpf/11Uh0uvZAQ==",
         "dependencies": {
           "Microsoft.Extensions.Logging.Abstractions": "6.0.0",
           "Pipelines.Sockets.Unofficial": "2.2.8"
@@ -763,11 +763,11 @@
           "Microsoft.Extensions.Hosting": "[8.0.1, )",
           "Polly.Core": "[8.5.2, )",
           "Pomelo.EntityFrameworkCore.MySql": "[8.0.3, )",
-          "Serilog": "[4.2.0, )",
+          "Serilog": "[4.3.0, )",
           "Serilog.Extensions.Hosting": "[8.0.0, )",
           "Serilog.Settings.Configuration": "[8.0.4, )",
           "Serilog.Sinks.Console": "[6.0.0, )",
-          "StackExchange.Redis": "[2.8.31, )",
+          "StackExchange.Redis": "[2.8.37, )",
           "Xabe.FFmpeg": "[6.0.1, )"
         }
       }
