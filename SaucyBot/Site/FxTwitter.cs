@@ -62,7 +62,7 @@ public sealed class FxTwitter : BaseSite
             hasTwitterEmbed = message.Embeds.Any(item =>
             {
                 var isTwitterEmbed = item.Url.Contains("twitter.com") || item.Url.Contains("t.co") || item.Url.Contains("x.com");
-
+                
                 return isTwitterEmbed && item.Author is not null;
             });
         }
@@ -90,14 +90,15 @@ public sealed class FxTwitter : BaseSite
         var mainTweetHasMedia = mainTweetHasPhoto || mainTweetHasVideo;
 
         var quotedTweetHasMedia = quotedTweetHasPhoto || quotedTweetHasVideo;
-        
-        var shouldEmbedVideo = (mainTweetHasVideo || quotedTweetHasVideo) && tweet.PossiblySensitive;
+
+        var tweetHasVideo = (mainTweetHasVideo || quotedTweetHasVideo);
 
         // Only try and embed this twitter link if one of the following is true:
         //  - Discord has failed to create an embed for Twitter
-        //  - The result is "sensitive" and it has a video, as Discord often fails to play these inline
+        //  - The Tweet has been marked as sensitive. Discord does not currently embed these.
+        //  - The Tweet has a video in it. Discord does not currently embed videos.
 
-        if (hasTwitterEmbed && !shouldEmbedVideo)
+        if (hasTwitterEmbed && !tweetHasVideo && !tweet.PossiblySensitive)
         {
             return null;
         }

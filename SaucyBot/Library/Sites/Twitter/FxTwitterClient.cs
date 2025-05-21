@@ -118,8 +118,10 @@ public sealed record FxTwitterTweet(
     int? Likes,
     [property: JsonPropertyName("views")]
     int? Views,
+    [property: JsonPropertyName("bookmarks")]
+    int? Bookmarks,
     [property: JsonPropertyName("color")]
-    string Color,
+    string? Color,
     [property: JsonPropertyName("twitter_card")]
     string TwitterCard,
     [property: JsonPropertyName("lang")]
@@ -141,6 +143,8 @@ public sealed record FxTwitterTweet(
 );
 
 public sealed record FxTwitterAuthor(
+    [property: JsonPropertyName("id")]
+    string Id,
     [property: JsonPropertyName("name")]
     string Name,
     [property: JsonPropertyName("screen_name")]
