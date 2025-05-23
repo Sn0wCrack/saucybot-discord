@@ -46,26 +46,6 @@ public sealed class FxTwitter : BaseSite
         }
 
         var tweet = response.Tweet;
-        
-        var hasTwitterEmbed = false;
-        
-        // If we have a message attached, we need to wait a bit for Discord to process the embed,
-        // we when need to refresh the message and see if an embed has been added in that time.
-        if (message is not null)
-        {
-            await Task.Delay(TimeSpan.FromSeconds(_configuration.GetSection("Sites:Twitter:Delay").Get<double>()));
-
-            // NOTE: Discord.NET works a little interestingly, basically when a message updates the Bot learns of this change
-            // and then proceeds to update its internal cache, so while we're waiting around it should update the message cache
-            // automatically, so there's no need to refresh the message object.
-
-            hasTwitterEmbed = message.Embeds.Any(item =>
-            {
-                var isTwitterEmbed = item.Url.Contains("twitter.com") || item.Url.Contains("t.co") || item.Url.Contains("x.com");
-                
-                return isTwitterEmbed && item.Author is not null;
-            });
-        }
 
         var photoMedia = await FindAllPhotoElements(tweet);
         
@@ -90,18 +70,6 @@ public sealed class FxTwitter : BaseSite
         var mainTweetHasMedia = mainTweetHasPhoto || mainTweetHasVideo;
 
         var quotedTweetHasMedia = quotedTweetHasPhoto || quotedTweetHasVideo;
-
-        var tweetHasVideo = (mainTweetHasVideo || quotedTweetHasVideo);
-
-        // Only try and embed this twitter link if one of the following is true:
-        //  - Discord has failed to create an embed for Twitter
-        //  - The Tweet has been marked as sensitive. Discord does not currently embed these.
-        //  - The Tweet has a video in it. Discord does not currently embed videos.
-
-        if (hasTwitterEmbed && !tweetHasVideo && !tweet.PossiblySensitive)
-        {
-            return null;
-        }
         
         // TODO: Handle quote tweet chains similar to fxtwitter and vxtwitter
         
