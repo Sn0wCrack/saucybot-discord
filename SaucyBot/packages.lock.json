@@ -189,11 +189,11 @@
       },
       "StackExchange.Redis": {
         "type": "Direct",
-        "requested": "[2.8.41, )",
-        "resolved": "2.8.41",
-        "contentHash": "EgtQzlucry9V2Gces1K19Xi8Sz/8DfoZlGQEmL/hSM/SXO/ucDS5RPmLzcmT489ZNGFbj9CGhlpscPLOXtYWwA==",
+        "requested": "[2.8.47, )",
+        "resolved": "2.8.47",
+        "contentHash": "NUf2lhtZuBRLZEwoOH8ocfn7eDMjQkwP1KM5LbBi4dbEVSKs9GMJ34VtOntzPqmvWfk/wWi5MfBcAmU3HSujpg==",
         "dependencies": {
-          "Microsoft.Extensions.Logging.Abstractions": "6.0.0",
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
           "Pipelines.Sockets.Unofficial": "2.2.8"
         }
       },
