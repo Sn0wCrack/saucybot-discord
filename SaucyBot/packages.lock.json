@@ -199,9 +199,9 @@
       },
       "Xabe.FFmpeg": {
         "type": "Direct",
-        "requested": "[6.0.1, )",
-        "resolved": "6.0.1",
-        "contentHash": "QvPEyASVFL9UkPHVn3GQlYYPJvVMvcBCVLM/rNGdGNvkRbG4g9x45XEQduYOv/hxYmY5XVcZUyg/hwuuRDO5Zw=="
+        "requested": "[6.0.2, )",
+        "resolved": "6.0.2",
+        "contentHash": "82rhJD6NRXJ71g+Spk3gLINUmoNK3AGmUDCIUSOqR7wW1Z1JHMpkg3RTxeg4Hw7cEaQvuBePCrz4CvPQeNzjLA=="
       },
       "Discord.Net.Commands": {
         "type": "Transitive",
