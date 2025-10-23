@@ -73,6 +73,7 @@ await Host.CreateDefaultBuilder(args)
         services.AddSingleton<Reddit>();
         services.AddSingleton<Misskey>();
         services.AddSingleton<Bluesky>();
+        services.AddSingleton<Instagram>();
 
         services.AddHostedService<Worker>();
     })
