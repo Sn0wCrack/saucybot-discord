@@ -23,7 +23,7 @@ public sealed class Instagram : BaseSite
         _logger = logger;
     }
 
-    public override async Task<ProcessResponse?> Process(Match match, SocketUserMessage? message = null)
+    public override Task<ProcessResponse?> Process(Match match, SocketUserMessage? message = null)
     {
         var originalUrl = match.Value;
         var path = match.Groups["path"].Value;
@@ -34,6 +34,6 @@ public sealed class Instagram : BaseSite
 
         _logger.LogDebug("Rewrote Instagram URL: {Original} -> {Rewritten}", originalUrl, rewrittenUrl);
 
-        return new ProcessResponse { Text = rewrittenUrl };
+        return Task.FromResult<ProcessResponse?>(new ProcessResponse { Text = rewrittenUrl });
     }
 }
