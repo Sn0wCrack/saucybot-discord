@@ -563,8 +563,8 @@
       },
       "Polly.Core": {
         "type": "Transitive",
-        "resolved": "8.6.3",
-        "contentHash": "xRlcE+1FidqIfZ7zxBT6klSblJ/7MAJq1x5yvYoLnwNhs8Xc2gp3Srf8wHG2NpFxVBqrldc3svhkMPJjSzTmzw=="
+        "resolved": "8.6.4",
+        "contentHash": "4AWqYnQ2TME0E+Mzovt1Uu+VyvpR84ymUldMcPw7Mbj799Phaag14CKrMtlJGx5jsvYP+S3oR1QmysgmXoD5cw=="
       },
       "Pomelo.EntityFrameworkCore.MySql": {
         "type": "Transitive",
@@ -782,7 +782,7 @@
           "Microsoft.Extensions.Caching.Memory": "[8.0.1, )",
           "Microsoft.Extensions.Caching.StackExchangeRedis": "[8.0.21, )",
           "Microsoft.Extensions.Hosting": "[8.0.1, )",
-          "Polly.Core": "[8.6.3, )",
+          "Polly.Core": "[8.6.4, )",
           "Pomelo.EntityFrameworkCore.MySql": "[8.0.3, )",
           "Serilog": "[4.3.0, )",
           "Serilog.Extensions.Hosting": "[8.0.0, )",
