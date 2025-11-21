@@ -70,7 +70,7 @@ public sealed partial class SiteManager
         
         var embedCount = 0u;
 
-        var content = message.AllMessageCleanContent();
+        var content = message.AllMessageContent();
             
         if (content is null or "")
         {

@@ -35,4 +35,29 @@ public class MessageManagerTest
         Assert.Empty(message.Embeds);
         Assert.Empty(message.Files);
     }
+
+    [Fact]
+    public async Task PartitionMessagesShouldPreserveUnderscoresInUrlText()
+    {
+        var logger = Substitute.For<ILogger<MessageManager>>();
+
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection()
+            .Build();
+
+        const string url = "https://www.kkinstagram.com/reel/DQLuwVcABa_/";
+
+        var processResponse = new ProcessResponse(text: url);
+
+        var messageManager = new MessageManager(logger, config);
+
+        var messages = await messageManager.PartitionMessages(processResponse);
+
+        Assert.NotNull(messages);
+        Assert.NotEmpty(messages);
+
+        var message = messages.First();
+
+        Assert.Equal(url, message.Content);
+    }
 }
