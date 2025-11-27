@@ -138,6 +138,11 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "9.0.0"
         }
       },
+      "Markdig": {
+        "type": "Transitive",
+        "resolved": "0.44.0",
+        "contentHash": "X+CYMjcUnh/yO24wOSQxVFLiGqWrrtXJ5M7toHiM1Zk4Fg9UMLN5fkaq6FSOWH+mIprsHHgDMlq3MJhmrXalhg=="
+      },
       "Microsoft.Bcl.AsyncInterfaces": {
         "type": "Transitive",
         "resolved": "6.0.0",
@@ -784,10 +789,11 @@
           "AngleSharp": "[1.4.0, )",
           "Discord.Net": "[3.18.0, )",
           "EFCore.NamingConventions": "[9.0.0, )",
+          "Markdig": "[0.44.0, )",
           "Microsoft.EntityFrameworkCore": "[9.0.11, )",
           "Microsoft.EntityFrameworkCore.Sqlite": "[9.0.11, )",
-          "Microsoft.Extensions.Caching.Memory": "[9.0.11, )",
           "Microsoft.Extensions.Caching.StackExchangeRedis": "[9.0.11, )",
+          "Microsoft.Extensions.Caching.Memory": "[9.0.11, )",
           "Microsoft.Extensions.Hosting": "[9.0.11, )",
           "Polly.Core": "[8.6.4, )",
           "Pomelo.EntityFrameworkCore.MySql": "[9.0.0, )",

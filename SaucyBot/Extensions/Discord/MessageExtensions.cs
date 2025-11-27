@@ -1,7 +1,9 @@
-﻿using System.Text;
+﻿using SaucyBot.Common;
+using System.Text;
 using Discord;
 
 namespace SaucyBot.Extensions.Discord;
+
 
 public static class MessageExtensions
 {
@@ -36,13 +38,17 @@ public static class MessageExtensions
 
     public static string AllMessageCleanContent(this IUserMessage msg)
     {
-        var builder = new StringBuilder(msg.CleanContent ?? "");
+        var builder = new StringBuilder(
+            Helper.MarkdownToPlainText(msg.Content ?? "")
+        );
 
         foreach (var forwarded in msg.ForwardedMessages)
         {
-            builder.AppendLine(forwarded.Message.CleanContent ?? "");
+            builder.AppendLine(
+                Helper.MarkdownToPlainText(forwarded.Message.Content ?? "")
+            );
         }
 
-        return builder.ToString();
+        return builder.ToString().Trim();
     }
 }

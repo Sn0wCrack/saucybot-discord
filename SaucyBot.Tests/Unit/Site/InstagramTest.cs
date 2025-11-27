@@ -31,6 +31,20 @@ public class InstagramTest
         Assert.NotNull(response);
         Assert.Equal(expectedUrl, response.Text);
     }
+    
+    [Theory]
+    [InlineData("https://www.instagram.com/reel/DQLuwVcABa_/", "https://kkinstagram.com/reel/DQLuwVcABa_/")]
+    [InlineData("https://www.instagram.com/reel/DQLu_wVcA_Ba/", "https://kkinstagram.com/reel/DQLu_wVcA_Ba/")]
+    [InlineData("https://www.instagram.com/reel/DQLu_wVcA_Ba_/?utm_source=test", "https://kkinstagram.com/reel/DQLu_wVcA_Ba_/?utm_source=test")]
+    public async Task ReelUrlsWithUnderscoresAreRewrittenCorrectly(string originalUrl, string expectedUrl)
+    {
+        var site = new Instagram(_logger);
+        var match = site.Match(originalUrl).First();
+        var response = await site.Process(match);
+
+        Assert.NotNull(response);
+        Assert.Equal(expectedUrl, response.Text);
+    }
 
     [Theory]
     [InlineData("https://instagram.com/reel/EFG456/", "https://kkinstagram.com/reel/EFG456/")]

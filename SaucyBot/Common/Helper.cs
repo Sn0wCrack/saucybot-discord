@@ -2,6 +2,7 @@
 using System.Text;
 using AngleSharp;
 using AngleSharp.Html.Parser;
+using Markdig;
 
 namespace SaucyBot.Common;
 
@@ -21,6 +22,11 @@ public static class Helper
         var document = await parser.ParseDocumentAsync(html);
 
         return document.Body?.ToHtml(new PlainTextMarkupFormatter());
+    }
+
+    public static string MarkdownToPlainText(string markdown)
+    {
+        return Markdown.ToPlainText(markdown);
     }
 
     public static async Task<string> ProcessDescription(string description, int maxLength = 300, string suffix = "...")
