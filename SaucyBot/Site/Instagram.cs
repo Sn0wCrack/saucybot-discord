@@ -30,7 +30,7 @@ public sealed class Instagram : BaseSite
         var query = match.Groups["query"].Success ? match.Groups["query"].Value : string.Empty;
         var fragment = match.Groups["fragment"].Success ? match.Groups["fragment"].Value : string.Empty;
 
-        var rewrittenUrl = $"https://kkinstagram.com/{path}{query}{fragment}";
+        var rewrittenUrl = $"https://d.vxinstagram.com/{path}{query}{fragment}";
 
         _logger.LogDebug("Rewrote Instagram URL: {Original} -> {Rewritten}", originalUrl, rewrittenUrl);
 
