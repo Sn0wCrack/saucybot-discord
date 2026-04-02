@@ -9,12 +9,7 @@ namespace SaucyBot.Tests.Unit.Site;
 
 public class InstagramTest
 {
-    private readonly ILogger<Instagram> _logger;
-
-    public InstagramTest()
-    {
-        _logger = Substitute.For<ILogger<Instagram>>();
-    }
+    private readonly ILogger<Instagram> _logger = Substitute.For<ILogger<Instagram>>();
 
     // Positive Cases - Should Rewrite
 
