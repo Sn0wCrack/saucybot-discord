@@ -14,7 +14,7 @@ public sealed class FxTwitter : BaseSite
     public override string Identifier => "FxTwitter";
 
     protected override string Pattern =>
-        @"https?:\/\/(www\.|mobile\.)?(?<domain>twitter|x|nitter)\.(com|net)\/(?<user>.*)\/status\/(?<id>\d+)\/?";
+        @"https?:\/\/(www\.|mobile\.)?(?<domain>twitter|x|nitter)\.(com|net)\/(?<user>.*)\/status\/(?<id>\d+)(\/(?<translate>\w{2}|\w{5}))?";
 
     protected override Color Color => new(0x1DA1F2);
 
@@ -37,7 +37,8 @@ public sealed class FxTwitter : BaseSite
     {
         var response = await _client.GetTweet(
             match.Groups["user"].Value,
-            match.Groups["id"].Value
+            match.Groups["id"].Value,
+            match.Groups["translate"].Success ? match.Groups["translate"].Value : null
         );
         
         if (response is null)
@@ -183,7 +184,7 @@ public sealed class FxTwitter : BaseSite
             Url = tweet.Url,
             Timestamp = DateTimeOffset.FromUnixTimeSeconds(tweet.CreatedTimestamp),
             Color = this.Color,
-            Description = tweet.Text,
+            Description = GetTweetText(tweet),
             Author = new EmbedAuthorBuilder
             {
                 Name = $"{tweet.Author.Name} (@{tweet.Author.ScreenName})",
@@ -222,6 +223,122 @@ public sealed class FxTwitter : BaseSite
         response.Embeds.Add(embed.Build());
 
         return response;
+    }
+    
+
+    private ProcessResponse HandlePhoto(FxTwitterTweet tweet, IEnumerable<PhotoResult> results, bool mainTweetHasMedia)
+    {
+        _logger.LogDebug("Processing as photo embed");
+        
+        var response = new ProcessResponse();
+
+        var photos = mainTweetHasMedia
+            ? results.Where(result => result.Source == ResultSource.MainTweet).ToList()
+            : results.Where(result => result.Source == ResultSource.QuotedTweet).ToList();
+
+        foreach (var photo in photos)
+        {
+            var embed = new EmbedBuilder
+            {
+                Url = tweet.Url,
+                Timestamp = DateTimeOffset.FromUnixTimeSeconds(tweet.CreatedTimestamp),
+                Color = this.Color,
+                Description = GetTweetText(tweet),
+                Author = new EmbedAuthorBuilder
+                {
+                    Name = $"{tweet.Author.Name} (@{tweet.Author.ScreenName})",
+                    IconUrl = tweet.Author.AvatarUrl,
+                    Url = $"https://twitter.com/{tweet.Author.ScreenName}",
+                },
+                Fields = new List<EmbedFieldBuilder>
+                {
+                    new ()
+                    {
+                        Name = "Replies",
+                        Value = tweet.Replies ?? 0,
+                        IsInline = true
+                    },
+                    new () {
+                        Name = "Retweets",
+                        Value = tweet.Retweets ?? 0,
+                        IsInline = true
+                    },
+                    new ()
+                    {
+                        Name = "Likes",
+                        Value = tweet.Likes ?? 0,
+                        IsInline = true
+                    },
+                    new ()
+                    {
+                        Name = "Views",
+                        Value = tweet.Views ?? 0,
+                        IsInline = true
+                    },
+                },
+                ImageUrl = this.GetOriginalResolutionPhotoUrl(photo.Photo.Url),
+                Footer = new EmbedFooterBuilder { IconUrl = Constants.TwitterIconUrl, Text = "Twitter" },
+            };
+            
+            response.Embeds.Add(embed.Build());
+        }
+        
+        return response;
+    }
+
+    private ProcessResponse HandleRegular(FxTwitterTweet tweet)
+    {
+        var response = new ProcessResponse();
+        
+        var embed = new EmbedBuilder
+        {
+            Url = tweet.Url,
+            Timestamp = DateTimeOffset.FromUnixTimeSeconds(tweet.CreatedTimestamp),
+            Color = this.Color,
+            Description = GetTweetText(tweet),
+            Author = new EmbedAuthorBuilder
+            {
+                Name = $"{tweet.Author.Name} (@{tweet.Author.ScreenName})",
+                IconUrl = tweet.Author.AvatarUrl,
+                Url = tweet.Author.Url ?? $"https://twitter.com/{tweet.Author.ScreenName}",
+            },
+            Fields = new List<EmbedFieldBuilder>
+            {
+                new ()
+                {
+                    Name = "Replies",
+                    Value = tweet.Replies ?? 0,
+                    IsInline = true
+                },
+                new () {
+                    Name = "Retweets",
+                    Value = tweet.Retweets ?? 0,
+                    IsInline = true
+                },
+                new ()
+                {
+                    Name = "Likes",
+                    Value = tweet.Likes ?? 0,
+                    IsInline = true
+                },
+                new ()
+                {
+                    Name = "Views",
+                    Value = tweet.Views ?? 0,
+                    IsInline = true
+                },
+            },
+            Footer = new EmbedFooterBuilder { IconUrl = Constants.TwitterIconUrl, Text = "Twitter" },
+        };
+            
+        response.Embeds.Add(embed.Build());
+            
+        return response;
+    }
+
+    private string GetTweetText(FxTwitterTweet tweet)
+    {
+        return tweet.Translation is not null ? tweet.Translation.Text : tweet.Text;
     }
     
     private async Task<string?> DetermineHighestUsableQualityFile(IEnumerable<string> urls)
@@ -277,116 +394,6 @@ public sealed class FxTwitter : BaseSite
             Query = queryDictionary.ToString()
         };
         return builder.Uri.ToString();
-    }
-
-    private ProcessResponse HandlePhoto(FxTwitterTweet tweet, IEnumerable<PhotoResult> results, bool mainTweetHasMedia)
-    {
-        _logger.LogDebug("Processing as photo embed");
-        
-        var response = new ProcessResponse();
-
-        var photos = mainTweetHasMedia
-            ? results.Where(result => result.Source == ResultSource.MainTweet).ToList()
-            : results.Where(result => result.Source == ResultSource.QuotedTweet).ToList();
-
-        foreach (var photo in photos)
-        {
-            var embed = new EmbedBuilder
-            {
-                Url = tweet.Url,
-                Timestamp = DateTimeOffset.FromUnixTimeSeconds(tweet.CreatedTimestamp),
-                Color = this.Color,
-                Description = tweet.Text,
-                Author = new EmbedAuthorBuilder
-                {
-                    Name = $"{tweet.Author.Name} (@{tweet.Author.ScreenName})",
-                    IconUrl = tweet.Author.AvatarUrl,
-                    Url = $"https://twitter.com/{tweet.Author.ScreenName}",
-                },
-                Fields = new List<EmbedFieldBuilder>
-                {
-                    new ()
-                    {
-                        Name = "Replies",
-                        Value = tweet.Replies ?? 0,
-                        IsInline = true
-                    },
-                    new () {
-                        Name = "Retweets",
-                        Value = tweet.Retweets ?? 0,
-                        IsInline = true
-                    },
-                    new ()
-                    {
-                        Name = "Likes",
-                        Value = tweet.Likes ?? 0,
-                        IsInline = true
-                    },
-                    new ()
-                    {
-                        Name = "Views",
-                        Value = tweet.Views ?? 0,
-                        IsInline = true
-                    },
-                },
-                ImageUrl = this.GetOriginalResolutionPhotoUrl(photo.Photo.Url),
-                Footer = new EmbedFooterBuilder { IconUrl = Constants.TwitterIconUrl, Text = "Twitter" },
-            };
-            
-            response.Embeds.Add(embed.Build());
-        }
-        
-        return response;
-    }
-
-    private ProcessResponse HandleRegular(FxTwitterTweet tweet)
-    {
-        var response = new ProcessResponse();
-        
-        var embed = new EmbedBuilder
-        {
-            Url = tweet.Url,
-            Timestamp = DateTimeOffset.FromUnixTimeSeconds(tweet.CreatedTimestamp),
-            Color = this.Color,
-            Description = tweet.Text,
-            Author = new EmbedAuthorBuilder
-            {
-                Name = $"{tweet.Author.Name} (@{tweet.Author.ScreenName})",
-                IconUrl = tweet.Author.AvatarUrl,
-                Url = tweet.Author.Url ?? $"https://twitter.com/{tweet.Author.ScreenName}",
-            },
-            Fields = new List<EmbedFieldBuilder>
-            {
-                new ()
-                {
-                    Name = "Replies",
-                    Value = tweet.Replies ?? 0,
-                    IsInline = true
-                },
-                new () {
-                    Name = "Retweets",
-                    Value = tweet.Retweets ?? 0,
-                    IsInline = true
-                },
-                new ()
-                {
-                    Name = "Likes",
-                    Value = tweet.Likes ?? 0,
-                    IsInline = true
-                },
-                new ()
-                {
-                    Name = "Views",
-                    Value = tweet.Views ?? 0,
-                    IsInline = true
-                },
-            },
-            Footer = new EmbedFooterBuilder { IconUrl = Constants.TwitterIconUrl, Text = "Twitter" },
-        };
-            
-        response.Embeds.Add(embed.Build());
-            
-        return response;
     }
 }
 

@@ -2,5 +2,5 @@
 
 public interface IFxTwitterClient
 {
-    public Task<FxTwitterResponse?> GetTweet(string name, string identifier);
+    public Task<FxTwitterResponse?> GetTweet(string name, string identifier, string? translate = null);
 }

@@ -61,11 +61,11 @@ public sealed class FxTwitterClient : IFxTwitterClient
             .Build();
     }
     
-    public async Task<FxTwitterResponse?> GetTweet(string name, string identifier)
+    public async Task<FxTwitterResponse?> GetTweet(string name, string identifier, string? translate = null)
     {
         var response = await _cache.Remember(
-            $"fxtwitter.tweet_{name}_{identifier}",
-            async () => await _pipeline.ExecuteAsync(async token => await _client.GetStringAsync($"{BaseUrl}/{name}/status/{identifier}", token))
+            BuildCacheKey(name, identifier, translate),
+            async () => await _pipeline.ExecuteAsync(async token => await _client.GetStringAsync(BuildUrl(name, identifier, translate), token))
         );
 
         if (response is null)
@@ -82,6 +82,26 @@ public sealed class FxTwitterClient : IFxTwitterClient
             _logger.LogDebug(e, "Failed to deserialize FxTwitter response, response not JSON or is malformed.");
             return null;
         } 
+    }
+    
+    private string BuildUrl(string name, string identifier, string? translate = null)
+    {
+        if (translate is null)
+        {
+            return $"{BaseUrl}/{name}/status/{identifier}";   
+        }
+        
+        return $"{BaseUrl}/{name}/status/{identifier}/{translate}";
+    }
+    
+    private string BuildCacheKey(string name, string identifier, string? translate = null)
+    {
+        if (translate is null)
+        {
+            return $"fxtwitter.tweet_{name}_{identifier}";
+        }
+        
+        return $"fxtwitter.tweet_{name}_{identifier}_{translate}";
     }
 }
 
@@ -134,6 +154,8 @@ public sealed record FxTwitterTweet(
     string? ReplyingToScreenName,
     [property: JsonPropertyName("replying_to_status")]
     string? ReplyingToStatusId,
+    [property: JsonPropertyName("translation")]
+    FxTwitterTranslation? Translation,
     [property: JsonPropertyName("quote")]
     FxTwitterTweet? QuotedTweet,
     [property: JsonPropertyName("poll")]
@@ -210,6 +232,15 @@ public sealed record FxTwitterPollChoice(
     int Count,
     [property: JsonPropertyName("percentage")]
     int Percentage
+);
+
+public sealed record FxTwitterTranslation(
+    [property: JsonPropertyName("text")]
+    string Text,
+    [property: JsonPropertyName("source_lang")]
+    string SourceLanguage,
+    [property: JsonPropertyName("target_lang")]
+    string TargetLanguage
 );
 
 #endregion
