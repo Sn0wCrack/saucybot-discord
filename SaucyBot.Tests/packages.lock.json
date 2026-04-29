@@ -10,12 +10,12 @@
       },
       "Microsoft.NET.Test.Sdk": {
         "type": "Direct",
-        "requested": "[18.4.0, )",
-        "resolved": "18.4.0",
-        "contentHash": "w49iZdL4HL6V25l41NVQLXWQ+e71GvSkKVteMrOL02gP/PUkcnO/1yEb2s9FntU4wGmJWfKnyrRAhcMHd9ZZNA==",
+        "requested": "[18.5.1, )",
+        "resolved": "18.5.1",
+        "contentHash": "SfqVaLiIqAbRWuPg5BP4QFwBIirQj/YIL8Dhxl6zntBKbXp0cQykoV480SmwG+yRMiWptxEI6NbHQuGSZ8b97w==",
         "dependencies": {
-          "Microsoft.CodeCoverage": "18.4.0",
-          "Microsoft.TestPlatform.TestHost": "18.4.0"
+          "Microsoft.CodeCoverage": "18.5.1",
+          "Microsoft.TestPlatform.TestHost": "18.5.1"
         }
       },
       "NSubstitute": {
@@ -146,8 +146,8 @@
       },
       "Microsoft.CodeCoverage": {
         "type": "Transitive",
-        "resolved": "18.4.0",
-        "contentHash": "9O0BtCfzCWrkAmK187ugKdq72HHOXoOUjuWFDVc2LsZZ0pOnA9bTt+Sg9q4cF+MoAaUU+MuWtvBuFsnduviJow=="
+        "resolved": "18.5.1",
+        "contentHash": "vMFDR1ZjqzzgKmM0zrPie7Gv9Y+ZppjODB5Quzu9Eq0TlIusUfUCYFPEawO91zQuqwzvdFbJSU7WHNtjStffJQ=="
       },
       "Microsoft.Data.Sqlite.Core": {
         "type": "Transitive",
@@ -534,34 +534,34 @@
       },
       "Microsoft.TestPlatform.ObjectModel": {
         "type": "Transitive",
-        "resolved": "18.4.0",
-        "contentHash": "4L6m2kS2pY5uJ9cpeRxzW22opr6ttScIRqsOpMDQpgENp/ZwxkkQCcmc6LRSURo2dFaaSW5KVflQZvroiJ7Wzg=="
+        "resolved": "18.5.1",
+        "contentHash": "KNZd+M0S0rz5eNAln0pbZX+A/RbokYZCbGKx4fN4CkhtWhkz6nSJDO+9LGYjRE4d0WPVriJ2JnVubkjt3+PpMg=="
       },
       "Microsoft.TestPlatform.TestHost": {
         "type": "Transitive",
-        "resolved": "18.4.0",
-        "contentHash": "gZsCHI+zOmZCcKZieIL4Jg14qKD2OGZOmX5DehuIk1EA9BN6Crm0+taXQNEuajOH1G9CCyBxw8VWR4t5tumcng==",
+        "resolved": "18.5.1",
+        "contentHash": "RM+3JNHEoHOCFXzVntUcIiYxzPjzBN0N8wto6HYXi76YyBTZ/3CeRL8U+Pk5zx3AUrOmHxDvKJwGUCdElU9bJg==",
         "dependencies": {
-          "Microsoft.TestPlatform.ObjectModel": "18.4.0",
+          "Microsoft.TestPlatform.ObjectModel": "18.5.1",
           "Newtonsoft.Json": "13.0.3"
         }
       },
       "Microting.EntityFrameworkCore.MySql": {
         "type": "Transitive",
-        "resolved": "10.0.5",
-        "contentHash": "j7Ar17KmBMaPecBDDM3eh5wMny0EqyD+cWdOExdfv1AHHBMv9M7nZdoqy1ZPbShs/L6f7hfYs8i2ahTNfL6XcA==",
+        "resolved": "10.0.7",
+        "contentHash": "FNohIzR0HuCsGNc8kHDeICt3cReGCGO0mZ5SOzcTlmZZgZux7GN/ekBcjGb2LwT81wJIi0R5Xh1xZrPXvF7m9A==",
         "dependencies": {
-          "Microsoft.EntityFrameworkCore.Relational": "[10.0.5, 10.0.999]",
+          "Microsoft.EntityFrameworkCore.Relational": "[10.0.7, 10.0.999]",
           "MySqlConnector": "2.5.0"
         }
       },
       "Microting.EntityFrameworkCore.MySql.Json.Microsoft": {
         "type": "Transitive",
-        "resolved": "10.0.5",
-        "contentHash": "iP98KnKr8YZaAeAglRl7jUlkOz+dBqmEx3BPOwPFRztLVNiqPNwYZQ9R5vp48iiaArPE/fcHXVhqL1P2tBtTFw==",
+        "resolved": "10.0.7",
+        "contentHash": "/CSBO251+pxIIIEkAleV4yhAmXPWBxrV23lKJKroTUoJb4Hw1kwBnOtjCC3oRSvlHZhvCJ1w+MzbF6koRCSr2Q==",
         "dependencies": {
-          "Microsoft.EntityFrameworkCore.Relational": "[10.0.5, 10.0.999]",
-          "Microting.EntityFrameworkCore.MySql": "10.0.5",
+          "Microsoft.EntityFrameworkCore.Relational": "[10.0.7, 10.0.999]",
+          "Microting.EntityFrameworkCore.MySql": "10.0.7",
           "MySqlConnector": "2.5.0"
         }
       },
@@ -737,8 +737,8 @@
           "Microsoft.Extensions.Caching.Memory": "[10.0.7, )",
           "Microsoft.Extensions.Caching.StackExchangeRedis": "[10.0.7, )",
           "Microsoft.Extensions.Hosting": "[10.0.7, )",
-          "Microting.EntityFrameworkCore.MySql": "[10.0.5, )",
-          "Microting.EntityFrameworkCore.MySql.Json.Microsoft": "[10.0.5, )",
+          "Microting.EntityFrameworkCore.MySql": "[10.0.7, )",
+          "Microting.EntityFrameworkCore.MySql.Json.Microsoft": "[10.0.7, )",
           "Polly.Core": "[8.6.6, )",
           "Serilog": "[4.3.1, )",
           "Serilog.Extensions.Hosting": "[10.0.0, )",

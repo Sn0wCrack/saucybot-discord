@@ -152,22 +152,22 @@
       },
       "Microting.EntityFrameworkCore.MySql": {
         "type": "Direct",
-        "requested": "[10.0.5, )",
-        "resolved": "10.0.5",
-        "contentHash": "j7Ar17KmBMaPecBDDM3eh5wMny0EqyD+cWdOExdfv1AHHBMv9M7nZdoqy1ZPbShs/L6f7hfYs8i2ahTNfL6XcA==",
+        "requested": "[10.0.7, )",
+        "resolved": "10.0.7",
+        "contentHash": "FNohIzR0HuCsGNc8kHDeICt3cReGCGO0mZ5SOzcTlmZZgZux7GN/ekBcjGb2LwT81wJIi0R5Xh1xZrPXvF7m9A==",
         "dependencies": {
-          "Microsoft.EntityFrameworkCore.Relational": "[10.0.5, 10.0.999]",
+          "Microsoft.EntityFrameworkCore.Relational": "[10.0.7, 10.0.999]",
           "MySqlConnector": "2.5.0"
         }
       },
       "Microting.EntityFrameworkCore.MySql.Json.Microsoft": {
         "type": "Direct",
-        "requested": "[10.0.5, )",
-        "resolved": "10.0.5",
-        "contentHash": "iP98KnKr8YZaAeAglRl7jUlkOz+dBqmEx3BPOwPFRztLVNiqPNwYZQ9R5vp48iiaArPE/fcHXVhqL1P2tBtTFw==",
+        "requested": "[10.0.7, )",
+        "resolved": "10.0.7",
+        "contentHash": "/CSBO251+pxIIIEkAleV4yhAmXPWBxrV23lKJKroTUoJb4Hw1kwBnOtjCC3oRSvlHZhvCJ1w+MzbF6koRCSr2Q==",
         "dependencies": {
-          "Microsoft.EntityFrameworkCore.Relational": "[10.0.5, 10.0.999]",
-          "Microting.EntityFrameworkCore.MySql": "10.0.5",
+          "Microsoft.EntityFrameworkCore.Relational": "[10.0.7, 10.0.999]",
+          "Microting.EntityFrameworkCore.MySql": "10.0.7",
           "MySqlConnector": "2.5.0"
         }
       },
