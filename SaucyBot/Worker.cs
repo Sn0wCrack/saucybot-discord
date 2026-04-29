@@ -109,7 +109,7 @@ public sealed class Worker : BackgroundService
             AlwaysDownloadDefaultStickers = false,
         };
         
-        _logger.LogInformation("Starting in Manual Mode with {ShardId}", shardId);
+        _logger.LogInformation("Starting in Manual Mode with {ShardId} and {TotalShards}", shardId, totalShards);
 
         var client = new DiscordSocketClient(config);
         
