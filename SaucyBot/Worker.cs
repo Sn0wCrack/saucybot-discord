@@ -94,10 +94,12 @@ public sealed class Worker : BackgroundService
     private DiscordSocketClient SetupSocketClient()
     {
         var shardId = _configuration.GetSection("Bot:ShardId").Get<int?>();
+        var totalShards = _configuration.GetSection("Bot:TotalShards").Get<int?>();
         
         var config = new DiscordSocketConfig
         {
             ShardId = shardId,
+            TotalShards = totalShards,
             GatewayIntents = Constants.RequiredGatewayIntents,
             AuditLogCacheSize = 0,
             MessageCacheSize = _configuration.GetSection("Bot:MessageCacheSize").Get<int?>() ?? 100,
