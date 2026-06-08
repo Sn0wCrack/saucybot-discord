@@ -14,7 +14,7 @@ public sealed class FxTwitter : BaseSite
     public override string Identifier => "FxTwitter";
 
     protected override string Pattern =>
-        @"https?:\/\/(www\.|mobile\.)?(?<domain>twitter|x|nitter)\.(com|net)\/(?<user>.*)\/status\/(?<id>\d+)(\/(?<translate>\w{2}|\w{5}))?";
+        @"https?:\/\/(www\.|mobile\.)?(?<domain>twitter|x|nitter)\.(com|net)\/(?<user>.*)\/status\/(?<id>\d+)(\/(video|photo)\/\d{1})?(\/(?<translate>\w{2}|\w{5}))?";
 
     protected override Color Color => new(0x1DA1F2);
 
