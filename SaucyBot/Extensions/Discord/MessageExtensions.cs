@@ -7,48 +7,50 @@ namespace SaucyBot.Extensions.Discord;
 
 public static class MessageExtensions
 {
-    public static async Task<IUserMessage> ReplyAsync(
-        this IUserMessage msg,
-        IEnumerable<FileAttachment>? attachments,
-        string? text = null,
-        bool isTTS = false,
-        Embed? embed = null,
-        RequestOptions? options = null,
-        AllowedMentions? allowedMentions = null,
-        MessageComponent? components = null,
-        ISticker[]? stickers = null,
-        Embed[]? embeds = null,
-        MessageFlags flags = MessageFlags.None)
+    extension(IUserMessage msg)
     {
-        return await msg.Channel.SendFilesAsync(attachments, text, isTTS, embed, options, allowedMentions, new MessageReference(new ulong?(msg.Id)), components, stickers, embeds, flags)
-            .ConfigureAwait(false);
-    }
-
-    public static string AllMessageContent(this IUserMessage msg)
-    {
-        var builder = new StringBuilder(msg.Content ?? "");
-
-        foreach (var forwarded in msg.ForwardedMessages)
-        {
-            builder.AppendLine(forwarded.Message.Content ?? "");
+        public async Task<IUserMessage> ReplyAsync(
+            IEnumerable<FileAttachment>? attachments,
+            string? text = null,
+            bool isTTS = false,
+            Embed? embed = null,
+            RequestOptions? options = null,
+            AllowedMentions? allowedMentions = null,
+            MessageComponent? components = null,
+            ISticker[]? stickers = null,
+            Embed[]? embeds = null,
+            MessageFlags flags = MessageFlags.None
+        ) {
+            return await msg.Channel.SendFilesAsync(attachments, text, isTTS, embed, options, allowedMentions, new MessageReference(new ulong?(msg.Id)), components, stickers, embeds, flags)
+                .ConfigureAwait(false);
         }
 
-        return builder.ToString();
-    }
-
-    public static string AllMessageCleanContent(this IUserMessage msg)
-    {
-        var builder = new StringBuilder(
-            Helper.MarkdownToPlainText(msg.Content ?? "")
-        );
-
-        foreach (var forwarded in msg.ForwardedMessages)
+        public string AllMessageContent()
         {
-            builder.AppendLine(
-                Helper.MarkdownToPlainText(forwarded.Message.Content ?? "")
+            var builder = new StringBuilder(msg.Content ?? "");
+
+            foreach (var forwarded in msg.ForwardedMessages)
+            {
+                builder.AppendLine(forwarded.Message.Content ?? "");
+            }
+
+            return builder.ToString();
+        }
+
+        public string AllMessageCleanContent()
+        {
+            var builder = new StringBuilder(
+                Helper.MarkdownToPlainText(msg.Content ?? "")
             );
-        }
 
-        return builder.ToString().Trim();
+            foreach (var forwarded in msg.ForwardedMessages)
+            {
+                builder.AppendLine(
+                    Helper.MarkdownToPlainText(forwarded.Message.Content ?? "")
+                );
+            }
+
+            return builder.ToString().Trim();
+        }
     }
 }
