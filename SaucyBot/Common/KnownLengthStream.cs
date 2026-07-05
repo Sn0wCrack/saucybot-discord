@@ -28,6 +28,9 @@ public sealed class KnownLengthStream : Stream
     public override int Read(byte[] buffer, int offset, int count) =>
         _inner.Read(buffer, offset, count);
 
+    public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default) =>
+        _inner.ReadAsync(buffer, cancellationToken);
+
     public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) =>
         _inner.ReadAsync(buffer, offset, count, cancellationToken);
 
