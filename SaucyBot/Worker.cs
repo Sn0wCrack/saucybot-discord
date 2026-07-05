@@ -131,6 +131,11 @@ public sealed class Worker : BackgroundService
     {
         Task.Run(async () =>
         {
+            if (_throttle.CurrentCount == 0)
+            {
+                _logger.LogDebug("Concurrency limit reached, waiting for available slot before handling slash command...");
+            }
+
             await _throttle.WaitAsync();
 
             try
@@ -161,6 +166,11 @@ public sealed class Worker : BackgroundService
 
         Task.Run(async () =>
         {
+            if (_throttle.CurrentCount == 0)
+            {
+                _logger.LogDebug("Concurrency limit reached, waiting for available slot before handling message...");
+            }
+
             await _throttle.WaitAsync();
 
             try
@@ -192,14 +202,14 @@ public sealed class Worker : BackgroundService
         }
 
         var status = _configuration.GetSection("Bot:DiscordStatus:Enabled").Get<bool?>() ?? false;
+        
+        var parsed = Enum.TryParse(
+            _configuration.GetSection("Bot:DiscordStatus:Type").Get<string?>() ?? "",
+            out ActivityType activityType
+        );
 
-        if (status)
+        if (status && parsed)
         {
-            ActivityType.TryParse(
-                _configuration.GetSection("Bot:DiscordStatus:Type").Get<string?>() ?? "",
-                out ActivityType activityType
-            );
-            
             await _client.SetActivityAsync(
                 new Game(
                     _configuration.GetSection("Bot:DiscordStatus:Text").Get<string?>() ?? "",
@@ -220,14 +230,14 @@ public sealed class Worker : BackgroundService
         }
 
         var status = _configuration.GetSection("Bot:DiscordStatus:Enabled").Get<bool?>() ?? false;
+        
+        var parsed = Enum.TryParse(
+            _configuration.GetSection("Bot:DiscordStatus:Type").Get<string?>() ?? "",
+            out ActivityType activityType
+        );
 
-        if (status)
+        if (status && parsed)
         {
-            ActivityType.TryParse(
-                _configuration.GetSection("Bot:DiscordStatus:Type").Get<string?>() ?? "",
-                out ActivityType activityType
-            );
-            
             await client.SetActivityAsync(
                 new Game(
                     _configuration.GetSection("Bot:DiscordStatus:Text").Get<string?>() ?? "",
