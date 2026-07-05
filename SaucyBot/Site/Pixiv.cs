@@ -80,11 +80,11 @@ public sealed class Pixiv : BaseSite
 
         var concatFile = Path.Join(basePath, "ffconcat");
         
-        var format = _configuration.GetSection("Sites:Pixiv:UgoiraFormat").Get<string>();
+        var format = _configuration.GetSection("Sites:Pixiv:UgoiraFormat").Get<string?>() ?? "mp4";
 
         var videoFile = Path.Join(basePath, $"ugoira.{format}");
         
-        zip.ExtractToDirectory(basePath, true);
+        await zip.ExtractToDirectoryAsync(basePath, true);
         
         await File.WriteAllTextAsync(concatFile, BuildConcatFile(metadata.UgoiraMetadata.Frames));
 
@@ -141,7 +141,7 @@ public sealed class Pixiv : BaseSite
 
     private async Task RenderUgoiraVideo(string concatFilePath, string videoFilePath)
     {
-        var bitrate = _configuration.GetSection("Sites:Pixiv:UgoiraBitrate").Get<int>();
+        var bitrate = _configuration.GetSection("Sites:Pixiv:UgoiraBitrate").Get<int?>() ?? 2_000;
         
         var conversion = FFmpeg.Conversions.New()
             .SetOverwriteOutput(true)
