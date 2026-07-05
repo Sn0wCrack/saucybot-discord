@@ -31,7 +31,11 @@ await Host.CreateDefaultBuilder(args)
         services.AddDbContext<DatabaseContext>(ServiceLifetime.Transient);
         services.AddDbContextFactory<DatabaseContext>(lifetime: ServiceLifetime.Transient);
 
-        services.AddMemoryCache();
+        services.AddMemoryCache(options =>
+        {
+            options.SizeLimit = configuration.GetSection("Cache:Memory:SizeLimit").Get<long?>();
+            options.CompactionPercentage = 0.2;
+        });
         services.AddStackExchangeRedisCache(options =>
         {
             options.Configuration = configuration.GetSection("Cache:Redis:ConnectionString").Get<string>();

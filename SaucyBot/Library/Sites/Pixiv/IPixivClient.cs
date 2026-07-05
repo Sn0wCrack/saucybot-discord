@@ -12,5 +12,5 @@ public interface IPixivClient
 
     public Task<HttpResponseMessage> PokeFile(string url);
 
-    public Task<MemoryStream> GetFile(string url);
+    public Task<Stream> GetFile(string url);
 }

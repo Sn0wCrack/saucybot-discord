@@ -116,7 +116,7 @@ public class PixivTest
 
         client
             .GetFile(Arg.Any<string>())
-            .Returns(new MemoryStream());
+            .Returns(new MemoryStream() as Stream);
 
         var site = new Pixiv(
             logger,

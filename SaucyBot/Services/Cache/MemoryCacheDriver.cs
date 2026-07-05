@@ -33,14 +33,22 @@ public sealed class MemoryCacheDriver : ICacheDriver
 
     public Task<T> Set<T>(object key, T value)
     {
-        _cache.Set(key, value, _defaultExpiry);
+        var options = new MemoryCacheEntryOptions()
+            .SetAbsoluteExpiration(_defaultExpiry)
+            .SetSize(1);
+
+        _cache.Set(key, value, options);
 
         return Task.FromResult(value);
     }
 
     public Task<T> Set<T>(object key, T value, TimeSpan expiry)
     {
-        _cache.Set(key, value, expiry);
+        var options = new MemoryCacheEntryOptions()
+            .SetAbsoluteExpiration(expiry)
+            .SetSize(1);
+
+        _cache.Set(key, value, options);
 
         return Task.FromResult(value);
     }

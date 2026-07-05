@@ -2,6 +2,7 @@
 using System.Web;
 using Discord;
 using Discord.WebSocket;
+using SaucyBot.Common;
 using SaucyBot.Extensions;
 using SaucyBot.Library;
 using SaucyBot.Library.Sites.Twitter;
@@ -365,16 +366,17 @@ public sealed class FxTwitter : BaseSite
 
     private async Task<FileAttachment> GetFile(string url)
     {
-        var response = await _httpClient.GetStreamAsync(url);
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
 
-        var stream = new MemoryStream();
-        
-        await response.CopyToAsync(stream);
-        
+        var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+
+        var contentLength = response.Content.Headers.ContentLength ?? -1;
+        var stream = await response.Content.ReadAsStreamAsync();
+
         var parsed = new Uri(url);
-        
+
         return new FileAttachment(
-            stream,
+            new KnownLengthStream(stream, contentLength),
             Path.GetFileName(parsed.AbsolutePath)
         );
     }

@@ -2,6 +2,7 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using SaucyBot.Common;
 using SaucyBot.Services;
 
 namespace SaucyBot.Library.Sites.Pixiv;
@@ -121,15 +122,16 @@ public sealed class PixivClient : IPixivClient
         return await _client.SendAsync(request);
     }
 
-    public async Task<MemoryStream> GetFile(string url)
+    public async Task<Stream> GetFile(string url)
     {
-        var response = await _client.GetStreamAsync(url);
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
 
-        var stream = new MemoryStream();
-        
-        await response.CopyToAsync(stream);
+        var response = await _client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
 
-        return stream;
+        var contentLength = response.Content.Headers.ContentLength ?? -1;
+        var stream = await response.Content.ReadAsStreamAsync();
+
+        return new KnownLengthStream(stream, contentLength);
     }
 }
 

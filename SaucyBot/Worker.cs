@@ -13,6 +13,8 @@ public sealed class Worker : BackgroundService
     private readonly DatabaseManager _databaseManager;
     private readonly SiteManager _siteManager;
 
+    private readonly SemaphoreSlim _throttle;
+
     private BaseSocketClient? _client;
 
     public Worker(
@@ -25,6 +27,10 @@ public sealed class Worker : BackgroundService
         _configuration = configuration;
         _databaseManager = databaseManager;
         _siteManager = siteManager;
+
+        var limit = _configuration.GetSection("Bot:ConcurrencyLimit").Get<int?>() ?? 5;
+
+        _throttle = new SemaphoreSlim(limit);
     }
 
     public override async Task StartAsync(CancellationToken cancellationToken)
@@ -122,9 +128,21 @@ public sealed class Worker : BackgroundService
     }
 
     private Task HandleSlashCommandAsync(SocketSlashCommand socketSlashCommand)
-    {   
-        Task.Run(async () => await _siteManager.HandleCommand(socketSlashCommand));
-        
+    {
+        Task.Run(async () =>
+        {
+            await _throttle.WaitAsync();
+
+            try
+            {
+                await _siteManager.HandleCommand(socketSlashCommand);
+            }
+            finally
+            {
+                _throttle.Release();
+            }
+        });
+
         return Task.CompletedTask;
     }
 
@@ -141,7 +159,19 @@ public sealed class Worker : BackgroundService
             return Task.CompletedTask;
         }
 
-        Task.Run(async () => await _siteManager.HandleMessage(message));
+        Task.Run(async () =>
+        {
+            await _throttle.WaitAsync();
+
+            try
+            {
+                await _siteManager.HandleMessage(message);
+            }
+            finally
+            {
+                _throttle.Release();
+            }
+        });
 
         return Task.CompletedTask;
     }
