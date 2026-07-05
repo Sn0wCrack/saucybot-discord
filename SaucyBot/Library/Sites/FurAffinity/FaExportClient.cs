@@ -1,6 +1,5 @@
 ﻿using System.Net;
 using System.Net.Http.Headers;
-using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Polly;
@@ -16,21 +15,14 @@ public sealed class FaExportClient : IFurAffinityClient
 
     private readonly ICacheManager _cache;
     
-    private readonly HttpClient _client = new();
+    private readonly HttpClient _client;
 
     private readonly ResiliencePipeline<string?> _pipeline;
 
-    public FaExportClient(ICacheManager cacheManager)
+    public FaExportClient(ICacheManager cacheManager, HttpClient client)
     {
         _cache = cacheManager;
-        
-        _client.DefaultRequestHeaders.UserAgent.Add(
-            new ProductInfoHeaderValue("SaucyBot", Assembly.GetEntryAssembly()?.GetName().Version?.ToString())    
-        );
-        
-        _client.DefaultRequestHeaders.Accept.Add(
-            new MediaTypeWithQualityHeaderValue("application/json")
-        );
+        _client = client;
         
         _pipeline = new ResiliencePipelineBuilder<string?>()
             .AddFallback(new FallbackStrategyOptions<string?>

@@ -1,6 +1,5 @@
 ﻿using System.Net;
 using System.Net.Http.Headers;
-using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Polly;
@@ -18,22 +17,15 @@ public sealed class FxTwitterClient : IFxTwitterClient
     
     private readonly ICacheManager _cache;
     
-    private readonly HttpClient _client = new();
+    private readonly HttpClient _client;
     
     private readonly ResiliencePipeline<string?> _pipeline;
 
-    public FxTwitterClient(ILogger<FxTwitterClient> logger, ICacheManager cacheManager)
+    public FxTwitterClient(ILogger<FxTwitterClient> logger, ICacheManager cacheManager, HttpClient client)
     {
         _logger = logger;
         _cache = cacheManager;
-        
-        _client.DefaultRequestHeaders.UserAgent.Add(
-            new ProductInfoHeaderValue("SaucyBot", Assembly.GetEntryAssembly()?.GetName().Version?.ToString())    
-        );
-        
-        _client.DefaultRequestHeaders.Accept.Add(
-            new MediaTypeWithQualityHeaderValue("application/json")
-        );
+        _client = client;
         
         _pipeline = new ResiliencePipelineBuilder<string?>()
             .AddFallback(new FallbackStrategyOptions<string?>

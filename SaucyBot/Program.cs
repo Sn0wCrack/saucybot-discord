@@ -1,5 +1,6 @@
 using SaucyBot;
 using SaucyBot.Database;
+using SaucyBot.Library.Sites;
 using SaucyBot.Library.Sites.ArtStation;
 using SaucyBot.Library.Sites.BlueSky;
 using SaucyBot.Library.Sites.DeviantArt;
@@ -27,57 +28,26 @@ await Host.CreateDefaultBuilder(args)
     .ConfigureServices((context, services) =>
     {
         var configuration = context.Configuration;
-        
-        services.AddDbContext<DatabaseContext>(ServiceLifetime.Transient);
-        services.AddDbContextFactory<DatabaseContext>(lifetime: ServiceLifetime.Transient);
 
-        services.AddMemoryCache(options =>
-        {
-            options.SizeLimit = configuration.GetSection("Cache:Memory:SizeLimit").Get<long?>();
-            options.CompactionPercentage = 0.2;
-        });
-        services.AddStackExchangeRedisCache(options =>
-        {
-            options.Configuration = configuration.GetSection("Cache:Redis:ConnectionString").Get<string>();
-        });
-        
-        services.AddSingleton<SiteManager>();
-        services.AddSingleton<MessageManager>();
-        services.AddSingleton<DatabaseManager>();
-        services.AddSingleton<ICacheManager, CacheManager>();
+        services.AddSaucyBotDatabase();
+        services.AddSaucyBotCache(configuration);
+        services.AddSaucyBotServices();
+        services.AddSaucyBotSites();
 
-        services.AddSingleton<MemoryCacheDriver>();
-        services.AddSingleton<RedisCacheDriver>();
-
-        services.AddSingleton<IGuildConfigurationManager, GuildConfigurationManager>();
-        
-        services.AddSingleton<IFurAffinityClient, FaExportClient>();
-        services.AddSingleton<IPixivClient, PixivClient>();
-        services.AddSingleton<IArtStationClient, ArtStationClient>();
-        services.AddSingleton<IHentaiFoundryClient, HentaiFoundryClient>();
-        services.AddSingleton<INewgroundsClient, NewgroundsClient>();
-        services.AddSingleton<IExHentaiClient, ExHentaiClient>();
-        services.AddSingleton<IDeviantArtOpenEmbedClient, DeviantArtOpenEmbedClient>();
-        services.AddSingleton<IDeviantArtClient, DeviantArtClient>();
-        services.AddSingleton<IE621Client, E621Client>();
-        services.AddSingleton<IFxTwitterClient, FxTwitterClient>();
-        services.AddSingleton<ITwitterImageSyndicationClient, TwitterImageSyndicationClient>();
-        services.AddSingleton<IMisskeyClient, MisskeyClient>();
-        services.AddSingleton<IVixBlueskyClient, VixBlueskyClient>();
-
-        services.AddSingleton<FurAffinity>();
-        services.AddSingleton<Pixiv>();
-        services.AddSingleton<ArtStation>();
-        services.AddSingleton<HentaiFoundry>();
-        services.AddSingleton<FxTwitter>();
-        services.AddSingleton<DeviantArt>();
-        services.AddSingleton<E621>();
-        services.AddSingleton<ExHentai>();
-        services.AddSingleton<Newgrounds>();
-        services.AddSingleton<Reddit>();
-        services.AddSingleton<Misskey>();
-        services.AddSingleton<Bluesky>();
-        services.AddSingleton<Instagram>();
+        services.AddFurAffinityClient();
+        services.AddArtStationClient();
+        services.AddNewgroundsClient();
+        services.AddDeviantArtOpenEmbedClient();
+        services.AddE621Client();
+        services.AddFxTwitterClient();
+        services.AddTwitterImageSyndicationClient();
+        services.AddMisskeyClient();
+        services.AddVixBlueskyClient();
+        services.AddPixivClient(configuration);
+        services.AddExHentaiClient(configuration);
+        services.AddHentaiFoundryClient();
+        services.AddDeviantArtClient();
+        services.AddFileDownloadClient();
 
         services.AddHostedService<Worker>();
     })

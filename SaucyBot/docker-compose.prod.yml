@@ -9,9 +9,10 @@ services:
         volumes:
             - ./appsettings.json:/app/appsettings.json
         depends_on: 
-            - cache
-            - database
-        restart: unless-stopped
+            cache:
+                condition: service_healthy
+            database:
+                condition: service_healthy
         
     database:
         image: mariadb:12.3@sha256:628f228f0fd5913a220438693576b29b6fe4dc1fa0a1298c0e98579fae28635f
@@ -23,9 +24,11 @@ services:
             - database:/var/lib/mysql
         restart: unless-stopped
         healthcheck:
-            test: 'mysqladmin ping -h 127.0.0.1 -u "$MYSQL_USER" --password="$MYSQL_PASSWORD"'
-            timeout: 20s
-            retries: 10
+            test: [ "CMD", "healthcheck.sh", "--connect", "--innodb_initialized" ]
+            start_period: 10s
+            interval: 10s
+            timeout: 5s
+            retries: 3
         
     cache:
         image: "valkey/valkey:9-alpine@sha256:a35428eba9043cc0b79dbe54100f0c92784f2de00ad09b01182bfb1c5c83d1bd"

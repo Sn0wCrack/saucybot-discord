@@ -14,13 +14,10 @@ public sealed class PixivClient : IPixivClient
     private const string LoginApiUrl = "https://accounts.pixiv.net/api/login";
     private const string WebApiUrl = "https://www.pixiv.net/ajax";
 
-    private readonly Uri _referrer = new(BaseUrl);
-
     private readonly ILogger<PixivClient> _logger;
     private readonly IConfiguration _configuration;
     private readonly ICacheManager _cache;
 
-    private readonly CookieContainer _cookieContainer = new();
     private readonly HttpClient _client;
 
     private bool _isLoggedIn;
@@ -28,41 +25,13 @@ public sealed class PixivClient : IPixivClient
     public PixivClient(
         ILogger<PixivClient> logger,
         IConfiguration configuration,
-        ICacheManager cacheManager
+        ICacheManager cacheManager,
+        HttpClient client
     ) {
         _logger = logger;
         _configuration = configuration;
         _cache = cacheManager;
-        
-        _cookieContainer.Add(new Cookie
-        {
-            Name = "PHPSESSID",
-            Value = _configuration.GetSection("Sites:Pixiv:SessionCookie").Get<string>(),
-            Domain = ".pixiv.net",
-            Path = "/",
-            HttpOnly = true,
-            Secure = true,
-        });
-
-        var httpClientHandler = new HttpClientHandler
-        {
-            CookieContainer = _cookieContainer,
-            UseCookies = true,
-            AllowAutoRedirect = true,
-            MaxAutomaticRedirections = 5,
-        };
-
-        _client = new HttpClient(httpClientHandler);
-
-        _client.DefaultRequestHeaders.Add("User-Agent",
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
-        );
-
-        _client.DefaultRequestHeaders.Referrer = _referrer;
-        
-        _client.DefaultRequestHeaders.Accept.Add(
-            new MediaTypeWithQualityHeaderValue("application/json")
-        );
+        _client = client;
     }
 
     public async Task<bool> Login()

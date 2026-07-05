@@ -20,11 +20,11 @@ public sealed partial class Bluesky : BaseSite
 
     protected override Color Color => new(0x1083FE);
 
-    private readonly ILogger<FxTwitter> _logger;
+    private readonly ILogger<Bluesky> _logger;
     private readonly IConfiguration _configuration;
     private readonly IVixBlueskyClient _client;
 
-    public Bluesky(ILogger<FxTwitter> logger, IConfiguration configuration, IVixBlueskyClient client)
+    public Bluesky(ILogger<Bluesky> logger, IConfiguration configuration, IVixBlueskyClient client)
     {
         _logger = logger;
         _configuration = configuration;

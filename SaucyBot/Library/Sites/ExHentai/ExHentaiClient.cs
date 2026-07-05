@@ -15,7 +15,6 @@ public sealed class ExHentaiClient : IExHentaiClient
     private readonly IConfiguration _configuration;
     private readonly ICacheManager _cache;
 
-    private readonly CookieContainer _cookieContainer = new();
     private readonly HttpClient _client;
 
     private const string ExHentaiDomain = "exhentai.org";
@@ -24,49 +23,13 @@ public sealed class ExHentaiClient : IExHentaiClient
     public ExHentaiClient(
         ILogger<ExHentaiClient> logger,
         IConfiguration configuration,
-        ICacheManager cacheManager
+        ICacheManager cacheManager,
+        HttpClient client
     )  {
         _logger = logger;
         _configuration = configuration;
         _cache = cacheManager;
-        
-        _cookieContainer.Add(
-            new Cookie(
-                "ipb_member_id", 
-                _configuration.GetSection("Sites:ExHentai:Cookies:MemberId").Get<string>(),
-                "/",
-                ExHentaiDomain
-            )
-         );
-        
-        _cookieContainer.Add(
-            new Cookie(
-                "ipb_pass_hash", 
-                _configuration.GetSection("Sites:ExHentai:Cookies:PasswordHash").Get<string>(),
-                "/",
-                ExHentaiDomain
-            )
-        );
-        
-        var httpClientHandler = new HttpClientHandler
-        {
-            CookieContainer = _cookieContainer,
-            UseCookies = true,
-            AllowAutoRedirect = true,
-        };
-        
-        _client = new HttpClient(httpClientHandler);
-        
-        _client.DefaultRequestHeaders.Add("User-Agent",
-            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36");
-        
-        _client.DefaultRequestHeaders.Accept.Add(
-            new MediaTypeWithQualityHeaderValue("application/json")
-        );
-        
-        _client.DefaultRequestHeaders.Accept.Add(
-            new MediaTypeWithQualityHeaderValue("text/html")    
-        );
+        _client = client;
     }
 
     public async Task<ExHentaiGalleryPage?> GetGallery(ExHentaiGalleryRequest request)

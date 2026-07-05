@@ -15,7 +15,7 @@ public class BlueskyTest
     [Fact]
     public async Task AnEmbedIsCreatedForEachImageInPost()
     {
-        var logger = Substitute.For<ILogger<FxTwitter>>();
+        var logger = Substitute.For<ILogger<Bluesky>>();
         
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -61,7 +61,7 @@ public class BlueskyTest
     [Fact]
     public async Task NothingIsReturnedWhenTheApiClientReturnsUnsuccessfully()
     {
-        var logger = Substitute.For<ILogger<FxTwitter>>();
+        var logger = Substitute.For<ILogger<Bluesky>>();
         
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -88,7 +88,7 @@ public class BlueskyTest
     [Fact]
     public async Task HandlesPostWithNoImages()
     {
-        var logger = Substitute.For<ILogger<FxTwitter>>();
+        var logger = Substitute.For<ILogger<Bluesky>>();
         
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>

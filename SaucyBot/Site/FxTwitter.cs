@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Net.Http;
+using System.Text.RegularExpressions;
 using System.Web;
 using Discord;
 using Discord.WebSocket;
@@ -26,12 +27,12 @@ public sealed partial class FxTwitter : BaseSite
     private readonly HttpClient _httpClient;
     private readonly IFxTwitterClient _client;
 
-    public FxTwitter(ILogger<FxTwitter> logger, IConfiguration configuration, IFxTwitterClient client)
+    public FxTwitter(ILogger<FxTwitter> logger, IConfiguration configuration, IFxTwitterClient client, IHttpClientFactory httpClientFactory)
     {
         _logger = logger;
         _configuration = configuration;
 
-        _httpClient = new HttpClient();
+        _httpClient = httpClientFactory.CreateClient("FileDownload");
         
         _client = client;
     }

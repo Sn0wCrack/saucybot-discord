@@ -435,6 +435,19 @@
           "Microsoft.Extensions.Logging.Abstractions": "10.0.9"
         }
       },
+      "Microsoft.Extensions.Http": {
+        "type": "Transitive",
+        "resolved": "10.0.9",
+        "contentHash": "5jdmuLRg1HO7x/v8McOf6ndhkMQWImkRBtJpXM8+xIocXNdLqCItyyFLKusdILc62TDzHuLlqaWoxtOA5FFOPg==",
+        "dependencies": {
+          "Microsoft.Extensions.Configuration.Abstractions": "10.0.9",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.9",
+          "Microsoft.Extensions.Diagnostics": "10.0.9",
+          "Microsoft.Extensions.Logging": "10.0.9",
+          "Microsoft.Extensions.Logging.Abstractions": "10.0.9",
+          "Microsoft.Extensions.Options": "10.0.9"
+        }
+      },
       "Microsoft.Extensions.Logging": {
         "type": "Transitive",
         "resolved": "10.0.9",
@@ -807,6 +820,7 @@
           "Microsoft.Extensions.Caching.Memory": "[10.0.9, )",
           "Microsoft.Extensions.Caching.StackExchangeRedis": "[10.0.9, )",
           "Microsoft.Extensions.Hosting": "[10.0.9, )",
+          "Microsoft.Extensions.Http": "[10.0.9, )",
           "Microting.EntityFrameworkCore.MySql": "[10.0.9, )",
           "Microting.EntityFrameworkCore.MySql.Json.Microsoft": "[10.0.9, )",
           "Polly.Core": "[8.7.0, )",

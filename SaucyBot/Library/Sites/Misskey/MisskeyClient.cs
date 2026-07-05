@@ -1,7 +1,6 @@
 ﻿using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using SaucyBot.Services;
@@ -12,19 +11,12 @@ public sealed class MisskeyClient : IMisskeyClient
 {
     private readonly ICacheManager _cache;
     
-    private readonly HttpClient _client = new();
+    private readonly HttpClient _client;
     
-    public MisskeyClient(ICacheManager cacheManager)
+    public MisskeyClient(ICacheManager cacheManager, HttpClient client)
     {
         _cache = cacheManager;
-        
-        _client.DefaultRequestHeaders.UserAgent.Add(
-            new ProductInfoHeaderValue("SaucyBot", Assembly.GetEntryAssembly()?.GetName().Version?.ToString())    
-        );
-        
-        _client.DefaultRequestHeaders.Accept.Add(
-            new MediaTypeWithQualityHeaderValue("application/json")
-        );
+        _client = client;
     }
 
     public async Task<ShowNoteResponse?> ShowNote(string url, string id)

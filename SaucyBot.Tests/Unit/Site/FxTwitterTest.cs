@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -18,6 +19,8 @@ public class FxTwitterTest
         var config = new ConfigurationBuilder()
             .Build();
         var client = Substitute.For<IFxTwitterClient>();
+        var httpClientFactory = Substitute.For<IHttpClientFactory>();
+        httpClientFactory.CreateClient(Arg.Any<string>()).Returns(new HttpClient());
 
         var tweet = new FxTwitterTweet(
             Id: "123456789",
@@ -50,7 +53,7 @@ public class FxTwitterTest
             .GetTweet(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string?>())
             .Returns(response);
 
-        var site = new FxTwitter(logger, config, client);
+        var site = new FxTwitter(logger, config, client, httpClientFactory);
 
         var matches = site.Match("https://twitter.com/testuser/status/123456789");
         var match = matches[0];
@@ -69,12 +72,14 @@ public class FxTwitterTest
         var config = new ConfigurationBuilder()
             .Build();
         var client = Substitute.For<IFxTwitterClient>();
+        var httpClientFactory = Substitute.For<IHttpClientFactory>();
+        httpClientFactory.CreateClient(Arg.Any<string>()).Returns(new HttpClient());
 
         client
             .GetTweet(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string?>())
             .Returns((FxTwitterResponse?)null);
 
-        var site = new FxTwitter(logger, config, client);
+        var site = new FxTwitter(logger, config, client, httpClientFactory);
 
         var matches = site.Match("https://twitter.com/testuser/status/123456789");
         var match = matches[0];
@@ -91,6 +96,8 @@ public class FxTwitterTest
         var config = new ConfigurationBuilder()
             .Build();
         var client = Substitute.For<IFxTwitterClient>();
+        var httpClientFactory = Substitute.For<IHttpClientFactory>();
+        httpClientFactory.CreateClient(Arg.Any<string>()).Returns(new HttpClient());
 
         var tweet = new FxTwitterTweet(
             Id: "123456789",
@@ -130,7 +137,7 @@ public class FxTwitterTest
             .GetTweet(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string?>())
             .Returns(response);
 
-        var site = new FxTwitter(logger, config, client);
+        var site = new FxTwitter(logger, config, client, httpClientFactory);
 
         var matches = site.Match("https://twitter.com/testuser/status/123456789");
         var match = matches[0];

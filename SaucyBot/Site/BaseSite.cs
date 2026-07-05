@@ -9,7 +9,7 @@ public abstract class BaseSite
 {
     public virtual string Identifier => "Base";
 
-    protected virtual Regex Pattern { get; set; } = new Regex(string.Empty);
+    protected virtual Regex Pattern { get; init; } = new(string.Empty);
 
     protected virtual Color Color => Color.Default;
     

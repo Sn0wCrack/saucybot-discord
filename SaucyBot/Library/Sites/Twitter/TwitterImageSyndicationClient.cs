@@ -1,5 +1,4 @@
 ﻿using System.Net.Http.Headers;
-using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using SaucyBot.Services;
@@ -14,20 +13,13 @@ public class TwitterImageSyndicationClient : ITwitterImageSyndicationClient
     
     private readonly ICacheManager _cache;
     
-    private readonly HttpClient _client = new();
+    private readonly HttpClient _client;
 
-    public TwitterImageSyndicationClient(ILogger<TwitterImageSyndicationClient> logger, ICacheManager cacheManager)
+    public TwitterImageSyndicationClient(ILogger<TwitterImageSyndicationClient> logger, ICacheManager cacheManager, HttpClient client)
     {
         _logger = logger;
         _cache = cacheManager;
-        
-        _client.DefaultRequestHeaders.UserAgent.Add(
-            new ProductInfoHeaderValue("SaucyBot", Assembly.GetEntryAssembly()?.GetName().Version?.ToString())    
-        );
-        
-        _client.DefaultRequestHeaders.Accept.Add(
-            new MediaTypeWithQualityHeaderValue("application/json")
-        );
+        _client = client;
     }
     
     public async Task<TwitterImageSyndicationTweet?> GetTweet(string identifier)

@@ -1,5 +1,4 @@
 ﻿using System.Net.Http.Headers;
-using System.Reflection;
 using AngleSharp.Html.Dom;
 using AngleSharp.Html.Parser;
 using SaucyBot.Services;
@@ -14,24 +13,18 @@ public sealed class NewgroundsClient : INewgroundsClient
     private readonly IConfiguration _configuration;
     private readonly ICacheManager _cache;
 
-    private readonly HttpClient _client = new();
+    private readonly HttpClient _client;
 
     public NewgroundsClient(
         ILogger<NewgroundsClient> logger,
         IConfiguration configuration,
-        ICacheManager cacheManager
+        ICacheManager cacheManager,
+        HttpClient client
     ) {
         _logger = logger;
         _configuration = configuration;
         _cache = cacheManager;
-        
-        _client.DefaultRequestHeaders.UserAgent.Add(
-            new ProductInfoHeaderValue("SaucyBot", Assembly.GetEntryAssembly()?.GetName().Version?.ToString())    
-        );
-        
-        _client.DefaultRequestHeaders.Accept.Add(
-            new MediaTypeWithQualityHeaderValue("application/json")
-        );
+        _client = client;
     }
 
     public async Task<NewgroundsArt?> GetArt(string user, string slug)
