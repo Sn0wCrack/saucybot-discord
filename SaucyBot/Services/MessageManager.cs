@@ -71,7 +71,7 @@ public sealed class MessageManager
         };
     }
 
-    private Task<List<Message>> HandleFiles(ProcessResponse response)
+    private static Task<List<Message>> HandleFiles(ProcessResponse response)
     {
         var messages = new List<Message>();
 
@@ -87,7 +87,7 @@ public sealed class MessageManager
             return Task.FromResult(messages);
         }
 
-        // We split up file messages into groups of files under the file size limit
+        // We split up file messages into groups of files under the file size limit.
         // This is faster than sending the images back one-by-one
         var segments = new List<List<FileAttachment>>();
         
@@ -95,7 +95,7 @@ public sealed class MessageManager
         {
             if (segments.Count == 0)
             {
-                segments.Add(new List<FileAttachment> { file });
+                segments.Add([file]);
                 continue;
             }
 
@@ -107,7 +107,7 @@ public sealed class MessageManager
 
             if (file.Stream.Length + totalSize >= Constants.MaximumFileSize)
             {
-                segments.Add(new List<FileAttachment> { file });
+                segments.Add([file]);
                 continue;
             }
             
@@ -120,14 +120,14 @@ public sealed class MessageManager
         return Task.FromResult(messages);
     }
 
-    private Task<List<Message>> HandleSingleEmbed(ProcessResponse response)
+    private static Task<List<Message>> HandleSingleEmbed(ProcessResponse response)
     {
         var messages = new List<Message>();
 
         var embed = response.Embeds.First();
         
         var message = new Message(
-            Embeds: new List<Embed> { embed },
+            Embeds: [embed],
             Files: response.Files
         );
         
@@ -141,7 +141,7 @@ public sealed class MessageManager
         return Task.FromResult(messages);
     }
 
-    private Task<List<Message>> HandleMultipleEmbeds(ProcessResponse response)
+    private static Task<List<Message>> HandleMultipleEmbeds(ProcessResponse response)
     {
         var messages = new List<Message>();
 
@@ -167,7 +167,7 @@ public sealed class MessageManager
         return Task.FromResult(messages);
     }
 
-    private List<FileAttachment> GetRelatedFiles(IEmbed embed, IEnumerable<FileAttachment> files)
+    private static List<FileAttachment> GetRelatedFiles(IEmbed embed, IEnumerable<FileAttachment> files)
     {
         var embedUrls = new List<string>();
 
@@ -193,8 +193,8 @@ public record Message(
     List<FileAttachment>? Files = null
 )
 {
-    public List<Embed> Embeds { get; } = Embeds ?? new List<Embed>();
-    public List<FileAttachment> Files { get; } = Files ?? new List<FileAttachment>();
+    public List<Embed> Embeds { get; } = Embeds ?? [];
+    public List<FileAttachment> Files { get; } = Files ?? [];
 
     public bool IsEmpty()
     {

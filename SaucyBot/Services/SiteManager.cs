@@ -252,7 +252,7 @@ public sealed partial class SiteManager
         return await message.ReplyAsync($"Matched link to {site}, please wait...", allowedMentions: AllowedMentions.None);
     }
 
-    private bool ShouldProcessMessage(SocketUserMessage message)
+    private static bool ShouldProcessMessage(SocketUserMessage message)
     {
         if (HasIgnoreMessageTagsInContent(message))
         {
@@ -267,7 +267,7 @@ public sealed partial class SiteManager
         return true;
     }
 
-    private bool ShouldProcessCommand(SocketSlashCommand command)
+    private static bool ShouldProcessCommand(SocketSlashCommand command)
     {
         if (!HasPermissionsToCreateEmbed(command))
         {
@@ -277,12 +277,12 @@ public sealed partial class SiteManager
         return true;
     }
 
-    private bool HasIgnoreMessageTagsInContent(SocketUserMessage message)
+    private static bool HasIgnoreMessageTagsInContent(SocketUserMessage message)
     {
         return IgnoreContentRegex().IsMatch(message.AllMessageContent());
     }
     
-    private bool HasPermissionsToCreateEmbed(SocketMessage message)
+    private static bool HasPermissionsToCreateEmbed(SocketMessage message)
     {
         if (message.Channel is SocketGuildChannel guildChannel)
         {
@@ -301,7 +301,7 @@ public sealed partial class SiteManager
         return false;
     }
 
-    private bool HasPermissionToHideEmbed(SocketMessage message)
+    private static bool HasPermissionToHideEmbed(SocketMessage message)
     {
         if (message.Channel is SocketGuildChannel guildChannel)
         {
@@ -320,29 +320,28 @@ public sealed partial class SiteManager
         return false;
     }
     
-    private bool HasPermissionsToCreateEmbed(SocketInteraction message)
+    private static bool HasPermissionsToCreateEmbed(SocketInteraction message)
     {
-        // User Commands _should_ always have the correct permissions in these channels to do what we need to do
-        if (message.Channel is SocketDMChannel or SocketGroupChannel)
+        switch (message.Channel)
         {
-            return true;
-        }
-        
-        if (message.Channel is SocketGuildChannel guildChannel)
-        {
-            var permissions = guildChannel.Guild.CurrentUser.GetPermissions(guildChannel);
+            // User Commands _should_ always have the correct permissions in these channels to do what we need to do
+            case SocketDMChannel or SocketGroupChannel:
+                return true;
+            case SocketThreadChannel threadChannel:
+            {
+                var permissions = threadChannel.Guild.CurrentUser.GetPermissions(threadChannel);
 
-            return permissions.Has(Constants.RequiredChannelPermissions);
-        }
+                return permissions.Has(Constants.RequiredThreadPermissions);
+            }
+            case SocketGuildChannel guildChannel:
+            {
+                var permissions = guildChannel.Guild.CurrentUser.GetPermissions(guildChannel);
 
-        if (message.Channel is SocketThreadChannel threadChannel)
-        {
-            var permissions = threadChannel.Guild.CurrentUser.GetPermissions(threadChannel);
-
-            return permissions.Has(Constants.RequiredThreadPermissions);
+                return permissions.Has(Constants.RequiredChannelPermissions);
+            }
+            default:
+                return false;
         }
-        
-        return false;
     }
 }
 

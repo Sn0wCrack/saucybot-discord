@@ -30,12 +30,8 @@ public sealed class CacheManager : ICacheManager
             _ => typeof(MemoryCacheDriver),
         };
 
-        if (_serviceProvider.GetService(driverType) is not ICacheDriver instance)
-        {
-            throw new Exception($"Unable to create Cache Driver of type {driver}");
-        }
-
-        return instance;
+        return _serviceProvider.GetService(driverType) as ICacheDriver 
+               ?? throw new Exception($"Unable to create Cache Driver of type {driver}");
     }
 
     public async Task<T?> Get<T>(object key)
@@ -70,11 +66,13 @@ public sealed class CacheManager : ICacheManager
 
         var store = await value.Invoke();
 
-        if (store is not null)
+        if (store is null)
         {
-            _logger.LogDebug("Setting cache item with key: {Key} and value: {Value}", key, store);
-            await Set<T>(key, store);
+            return store;
         }
+
+        _logger.LogDebug("Setting cache item with key: {Key} and value: {Value}", key, store);
+        await Set<T>(key, store);
 
         return store;
     }
@@ -91,11 +89,13 @@ public sealed class CacheManager : ICacheManager
 
         var store = await value.Invoke();
 
-        if (store is not null)
+        if (store is null)
         {
-            _logger.LogDebug("Setting cache item with key: {Key} and value: {Value} and expiry: {Expiry}", key, store, expiry);
-            await Set<T>(key, store, expiry);
+            return store;
         }
+
+        _logger.LogDebug("Setting cache item with key: {Key} and value: {Value} and expiry: {Expiry}", key, store, expiry);
+        await Set<T>(key, store, expiry);
 
         return store;
     }

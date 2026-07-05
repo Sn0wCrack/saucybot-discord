@@ -117,7 +117,7 @@ public sealed record IllustrationDetailsResponse(
 public enum IllustrationType
 {
     Illustration = 0,
-    // Illustration Type 1 seems to be the same as Type 0
+    // Illustration Type 1 seems to be the same as Type 0.
     // These might be from pixiv Sketch potentially?
     Unknown = 1,
     Ugoira = 2,
@@ -151,7 +151,7 @@ public sealed record IllustrationDetailsUrls(
     string Original
 )
 {
-    public IEnumerable<string> All => new[] { Original, Regular, Small, Thumbnail, Mini };
+    public IEnumerable<string> All => [Original, Regular, Small, Thumbnail, Mini];
 };
 
 public record IllustrationPagesResponse(
@@ -183,7 +183,7 @@ public sealed record IllustrationPagesUrls(
     string Original
 )
 {
-    public IEnumerable<string> All => new[] { Original, Regular, Small, Thumbnail };
+    public IEnumerable<string> All => [Original, Regular, Small, Thumbnail];
 };
 
 public sealed record UgoiraMetadataResponse(

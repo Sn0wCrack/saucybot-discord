@@ -76,24 +76,18 @@ public sealed class FxTwitterClient : IFxTwitterClient
         } 
     }
     
-    private string BuildUrl(string name, string identifier, string? translate = null)
+    private static string BuildUrl(string name, string identifier, string? translate = null)
     {
-        if (translate is null)
-        {
-            return $"{BaseUrl}/{name}/status/{identifier}";   
-        }
-        
-        return $"{BaseUrl}/{name}/status/{identifier}/{translate}";
+        return translate is null 
+            ? $"{BaseUrl}/{name}/status/{identifier}"
+            : $"{BaseUrl}/{name}/status/{identifier}/{translate}";
     }
     
-    private string BuildCacheKey(string name, string identifier, string? translate = null)
+    private static string BuildCacheKey(string name, string identifier, string? translate = null)
     {
-        if (translate is null)
-        {
-            return $"fxtwitter.tweet_{name}_{identifier}";
-        }
-        
-        return $"fxtwitter.tweet_{name}_{identifier}_{translate}";
+        return translate is null 
+            ? $"fxtwitter.tweet_{name}_{identifier}"
+            : $"fxtwitter.tweet_{name}_{identifier}_{translate}";
     }
 }
 

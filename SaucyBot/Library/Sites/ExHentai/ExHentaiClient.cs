@@ -72,9 +72,12 @@ public sealed record ExHentaiGalleryRequest(ExHentaiRequestMode Mode, string Id,
     }
 }
 
-public sealed class ExHentaiGalleryPage
+public sealed partial class ExHentaiGalleryPage
 {
     private readonly IHtmlDocument _document;
+    
+    [GeneratedRegex(@"url\((?<url>.*)\)", RegexOptions.IgnoreCase)]
+    private static partial Regex CssBackgroundUrlRegex();
 
     public ExHentaiGalleryPage(string page)
     {
@@ -107,7 +110,7 @@ public sealed class ExHentaiGalleryPage
             return null;
         }
 
-        var match = Regex.Match(style, @"url\((?<url>.*)\)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        var match = CssBackgroundUrlRegex().Match(style);
 
         return match.Groups["url"].Value;
     }
