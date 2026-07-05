@@ -31,7 +31,7 @@ public sealed class Misskey : BaseSite
 
         var regex = String.Join("|", domains);
 
-        Pattern = @$"(?<url>https?:\/\/(www\.)?({regex}))\/notes\/(?<id>[0-9a-z]+)";
+        Pattern = new Regex(@$"(?<url>https?://(www\.)?({regex}))/notes/(?<id>[0-9a-z]+)", RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.Compiled);
     }
 
     public override async Task<ProcessResponse?> Process(Match match, SocketUserMessage? message = null)

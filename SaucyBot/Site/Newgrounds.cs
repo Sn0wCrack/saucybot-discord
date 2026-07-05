@@ -7,12 +7,16 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site;
 
-public sealed class Newgrounds : BaseSite
+public sealed partial class Newgrounds : BaseSite
 {
     public override string Identifier => "Newgrounds";
 
+    [GeneratedRegex(@"https?://(www\.)?newgrounds\.com/art/view/(?<user>.*)/(?<slug>\S+)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
+    private static partial Regex NewgroundsPattern();
+
+    protected override Regex Pattern => NewgroundsPattern();
+
     protected override Color Color => new(0xFFF17A);
-    protected override string Pattern => @"https?:\/\/(www\.)?newgrounds\.com\/art\/view\/(?<user>.*)\/(?<slug>\S+)\/?";
 
     private readonly ILogger<Newgrounds> _logger;
     private readonly INewgroundsClient _client;

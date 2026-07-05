@@ -13,10 +13,14 @@ using Xabe.FFmpeg;
 
 namespace SaucyBot.Site;
 
-public sealed class Pixiv : BaseSite
+public sealed partial class Pixiv : BaseSite
 {
     public override string Identifier => "Pixiv";
-    protected override string Pattern => @"https?:\/\/(www\.)?pixiv\.net\/.*artworks\/(?<id>\d+)\/?";
+
+    [GeneratedRegex(@"https?://(www\.)?pixiv\.net/.*artworks/(?<id>\d+)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
+    private static partial Regex PixivPattern();
+
+    protected override Regex Pattern => PixivPattern();
 
     private readonly IPixivClient _client;
     private readonly ILogger<Pixiv> _logger;
@@ -105,7 +109,8 @@ public sealed class Pixiv : BaseSite
         var title = illustrationDetails.IllustrationDetails.Title
             .ToLowerInvariant()
             .Replace("-", "")
-            .Replace(" ", "_");
+            .Replace(" ", "_")
+            .Trim();
 
         var fileName = $"{title}_ugoira.{format}";
         

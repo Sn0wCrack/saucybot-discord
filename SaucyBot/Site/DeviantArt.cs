@@ -7,11 +7,14 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site;
 
-public sealed class DeviantArt : BaseSite
+public sealed partial class DeviantArt : BaseSite
 {
     public override string Identifier => "DeviantArt";
 
-    protected override string Pattern => @"https?:\/\/(www\.)?deviantart\.com\/(?<author>\S+)\/art\/(?<slug>\S+)\/?";
+    [GeneratedRegex(@"https?://(www\.)?deviantart\.com/(?<author>\S+)/art/(?<slug>\S+)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
+    private static partial Regex DeviantArtPattern();
+
+    protected override Regex Pattern => DeviantArtPattern();
 
     protected override Color Color => new(0x00E59B);
 

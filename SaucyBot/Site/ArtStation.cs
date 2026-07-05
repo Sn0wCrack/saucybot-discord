@@ -10,11 +10,14 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site;
 
-public sealed class ArtStation : BaseSite
+public sealed partial class ArtStation : BaseSite
 {
     public override string Identifier => "ArtStation";
 
-    protected override string Pattern => @"https?:\/\/(www\.)?artstation\.com\/artwork\/(?<hash>\S+)\/?";
+    [GeneratedRegex(@"https?://(www\.)?artstation\.com/artwork/(?<hash>\S+)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
+    private static partial Regex ArtStationPattern();
+
+    protected override Regex Pattern => ArtStationPattern();
 
     private readonly ILogger<ArtStation> _logger;
     private readonly IConfiguration _configuration;

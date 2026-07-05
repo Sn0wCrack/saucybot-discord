@@ -9,12 +9,14 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site;
 
-public sealed class Bluesky : BaseSite
+public sealed partial class Bluesky : BaseSite
 {
     public override string Identifier => "Bluesky";
 
-    protected override string Pattern =>
-        @"https?:\/\/(www\.)?bsky\.app\/profile\/(?<user>.*)\/post\/(?<id>.*)\/?";
+    [GeneratedRegex(@"https?://(www\.)?bsky\.app/profile/(?<user>.*)/post/(?<id>.*)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
+    private static partial Regex BlueskyPattern();
+
+    protected override Regex Pattern => BlueskyPattern();
 
     protected override Color Color => new(0x1083FE);
 

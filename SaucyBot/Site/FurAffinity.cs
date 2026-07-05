@@ -7,10 +7,14 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site;
 
-public sealed class FurAffinity : BaseSite
+public sealed partial class FurAffinity : BaseSite
 {
     public override string Identifier => "FurAffinity";
-    protected override string Pattern => @"https?:\/\/(www\.)?furaffinity\.net\/(?:view|full)\/(?<id>\d+)\/?";
+
+    [GeneratedRegex(@"https?://(www\.)?furaffinity\.net/(?:view|full)/(?<id>\d+)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
+    private static partial Regex FurAffinityPattern();
+
+    protected override Regex Pattern => FurAffinityPattern();
 
     private readonly ILogger<FurAffinity> _logger;
     private readonly IFurAffinityClient _client;

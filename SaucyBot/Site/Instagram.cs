@@ -5,14 +5,14 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site;
 
-public sealed class Instagram : BaseSite
+public sealed partial class Instagram : BaseSite
 {
     public override string Identifier => "Instagram";
 
-    // Match Instagram URLs from instagram.com, www.instagram.com, m.instagram.com
-    // Only capture /p/, /reel/, /reels/ paths
-    protected override string Pattern => 
-        @"https?:\/\/(?<host>(?:www\.|m\.)?instagram\.com)\/(?<path>(?:p|reel|reels)\/[^\/\s\?\#]+(?:\/[^\s\?\#]*)?)(?<query>\?[^\s\#]*)?(?<fragment>\#[^\s]*)?";
+    [GeneratedRegex(@"https?://(?<host>(?:www\.|m\.)?instagram\.com)/(?<path>(?:p|reel|reels)/[^/\s?#]+(?:/[^\s?#]*)?)(?<query>\?[^\s#]*)?(?<fragment>\#[^\s]*)?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
+    private static partial Regex InstagramPattern();
+
+    protected override Regex Pattern => InstagramPattern();
 
     protected override Color Color => new(0xE4405F);
 

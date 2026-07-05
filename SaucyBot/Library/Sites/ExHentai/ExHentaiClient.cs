@@ -1,10 +1,7 @@
 ﻿using System.Net;
 using System.Net.Http.Headers;
 using System.Text.RegularExpressions;
-using AngleSharp;
-using AngleSharp.Css.Dom;
 using AngleSharp.Dom;
-using SaucyBot.Library.Sites.HentaiFoundry;
 using AngleSharp.Html.Dom;
 using AngleSharp.Html.Parser;
 using SaucyBot.Services;

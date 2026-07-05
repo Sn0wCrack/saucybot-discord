@@ -10,12 +10,14 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site;
 
-public sealed class FxTwitter : BaseSite
+public sealed partial class FxTwitter : BaseSite
 {
     public override string Identifier => "FxTwitter";
 
-    protected override string Pattern =>
-        @"https?:\/\/(www\.|mobile\.)?(?<domain>twitter|x|nitter)\.(com|net)\/(?<user>.*)\/status\/(?<id>\d+)(\/(video|photo)\/\d{1})?(\/(?<translate>\w{2}|\w{5}))?";
+    [GeneratedRegex(@"https?://(www\.|mobile\.)?(?<domain>twitter|x|nitter)\.(com|net)/(?<user>.*)/status/(?<id>\d+)(/(video|photo)/\d{1})?(/(?<translate>\w{2}|\w{5}))?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
+    private static partial Regex FxTwitterPattern();
+
+    protected override Regex Pattern => FxTwitterPattern();
 
     protected override Color Color => new(0x1DA1F2);
 

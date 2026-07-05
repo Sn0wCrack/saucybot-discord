@@ -6,11 +6,14 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site;
 
-public sealed class Reddit : BaseSite
+public sealed partial class Reddit : BaseSite
 {
     public override string Identifier => "Reddit";
 
-    protected override string Pattern => @"https?:\/\/(www\.)?reddit\.com\/media\?url=(?<url>[A-Z0-9\%\.]+)";
+    [GeneratedRegex(@"https?://(www\.)?reddit\.com/media\?url=(?<url>[A-Z0-9\%\.]+)", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
+    private static partial Regex RedditPattern();
+
+    protected override Regex Pattern => RedditPattern();
 
     protected override Color Color => new(0xFF4500);
 

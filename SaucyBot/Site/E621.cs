@@ -7,11 +7,14 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site;
 
-public sealed class E621 : BaseSite
+public sealed partial class E621 : BaseSite
 {
     public override string Identifier => "E621";
 
-    protected override string Pattern => @"https?:\/\/(www\.)?e621\.net\/posts\/(?<id>\d+)\/?";
+    [GeneratedRegex(@"https?://(www\.)?e621\.net/posts/(?<id>\d+)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
+    private static partial Regex E621Pattern();
+
+    protected override Regex Pattern => E621Pattern();
 
     protected override Color Color => new (0x00549E);
     

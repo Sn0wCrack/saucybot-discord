@@ -39,7 +39,7 @@ public sealed class Worker : BackgroundService
 
         var shardMode = _configuration.GetSection("Bot:ShardMode").Get<string?>() ?? "Automatic";
 
-        _client = shardMode.ToLowerInvariant() switch
+        _client = shardMode.ToLowerInvariant().Trim() switch
         {
             "automatic" => this.SetupShardedSocketClient(),
             "manual" => this.SetupSocketClient(),

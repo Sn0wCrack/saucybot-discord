@@ -8,23 +8,29 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site;
 
-public sealed class ExHentai : BaseSite
+public sealed partial class ExHentai : BaseSite
 {
     public override string Identifier => "ExHentai";
 
-    protected override Color Color => new(0x660611);
+    [GeneratedRegex(@"https?://(www\.)?e[x-]hentai\.org/g/(?<id>\d+)/(?<hash>\S+)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
+    private static partial Regex ExHentaiPattern();
 
-    protected override string Pattern => @"https?:\/\/(www\.)?e[x-]hentai\.org\/g\/(?<id>\d+)\/(?<hash>\S+)\/?";
+    protected override Regex Pattern => ExHentaiPattern();
+
+    protected override Color Color => new(0x660611);
 
     private readonly ILogger<ExHentai> _logger;
     private readonly IConfiguration _configuration;
     private readonly IExHentaiClient _client;
+    private readonly bool _isConfiguredToEmbedExHentaiLinks;
 
     public ExHentai(ILogger<ExHentai> logger, IConfiguration configuration, IExHentaiClient client)
     {
         _logger = logger;
         _configuration = configuration;
         _client = client;
+        
+        _isConfiguredToEmbedExHentaiLinks = IsConfiguredToEmbedExHentaiLinks();
     }
     
     public override async Task<ProcessResponse?> Process(Match match, SocketUserMessage? message = null)
@@ -33,11 +39,11 @@ public sealed class ExHentai : BaseSite
 
         var url = match.Value;
 
-        var isExHentaiLink = url.ToLowerInvariant().Contains("exhentai");
+        var isExHentaiLink = url.Contains("exhentai", StringComparison.InvariantCultureIgnoreCase);
 
         if (
             isExHentaiLink &&
-            !IsConfiguredToEmbedExHentaiLinks()
+            !_isConfiguredToEmbedExHentaiLinks
         ) {
             return null;
         }
@@ -106,6 +112,6 @@ public sealed class ExHentai : BaseSite
         var memberId = _configuration.GetSection("Sites:ExHentai:Cookies:MemberId").Get<string?>();
         var passwordHash = _configuration.GetSection("Sites:ExHentai:Cookies:PasswordHash").Get<string?>();
 
-        return memberId is not null or "" && passwordHash is not null or "";
+        return memberId is not (null or "") && passwordHash is not (null or "");
     }
 }

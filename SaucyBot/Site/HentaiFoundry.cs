@@ -8,12 +8,14 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site;
 
-public sealed class HentaiFoundry : BaseSite
+public sealed partial class HentaiFoundry : BaseSite
 {
     public override string Identifier => "HentaiFoundry";
 
-    protected override string Pattern =>
-        @"https:?\/\/(www\.)?hentai-foundry\.com\/pictures\/user\/(?<user>.*)\/(?<id>\d+)\/(?<slug>\S+)\/?";
+    [GeneratedRegex(@"https?://(www\.)?hentai-foundry\.com/pictures/user/(?<user>.*)/(?<id>\d+)/(?<slug>\S+)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
+    private static partial Regex HentaiFoundryPattern();
+
+    protected override Regex Pattern => HentaiFoundryPattern();
 
     protected override Color Color => new(0xFF67A2);
 
