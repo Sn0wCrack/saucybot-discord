@@ -123,7 +123,7 @@ public class ArtStationTest
             })
             .Build();
         
-        var client = Substitute.For<IArtStationClient>();;
+        var client = Substitute.For<IArtStationClient>();
 
         client
             .GetProject(Arg.Any<string>())

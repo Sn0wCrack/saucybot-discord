@@ -111,11 +111,14 @@ public static class HtmlToMarkdownConverter
                 else if (linkBuffer is not null)
                 {
                     var linkText = linkBuffer.ToString();
-                    if (!string.IsNullOrEmpty(linkText))
+                    if (IsBareUrl(linkUrl, linkText))
+                    {
+                        output.Append(linkUrl!);
+                    }
+                    else if (!string.IsNullOrEmpty(linkText))
                     {
                         output.Append(linkText);
-                        if (!string.IsNullOrEmpty(linkUrl) &&
-                            !linkText.Equals(linkUrl, StringComparison.OrdinalIgnoreCase))
+                        if (!string.IsNullOrEmpty(linkUrl))
                         {
                             output.Append(" (");
                             output.Append(linkUrl);
@@ -168,6 +171,31 @@ public static class HtmlToMarkdownConverter
         }
 
         return WebUtility.HtmlDecode(output.ToString());
+    }
+
+    private static bool IsBareUrl(string? url, string text)
+    {
+        if (string.IsNullOrEmpty(url) || string.IsNullOrEmpty(text))
+            return false;
+
+        if (url.Equals(text, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        var normalizedUrl = url;
+        if (normalizedUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
+            normalizedUrl = normalizedUrl["http://".Length..];
+        else if (normalizedUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            normalizedUrl = normalizedUrl["https://".Length..];
+        normalizedUrl = normalizedUrl.TrimEnd('/');
+
+        var normalizedText = text;
+        if (normalizedText.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
+            normalizedText = normalizedText["http://".Length..];
+        else if (normalizedText.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            normalizedText = normalizedText["https://".Length..];
+        normalizedText = normalizedText.TrimEnd('/');
+
+        return normalizedUrl.Equals(normalizedText, StringComparison.OrdinalIgnoreCase);
     }
 
     private static string? ExtractHref(ReadOnlySpan<char> attributes)
