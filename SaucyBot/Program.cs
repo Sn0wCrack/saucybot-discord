@@ -45,7 +45,7 @@ await Host.CreateDefaultBuilder(args)
         services.AddVixBlueskyClient();
         services.AddPixivClient(configuration);
         services.AddExHentaiClient(configuration);
-        services.AddHentaiFoundryClient();
+        services.AddHentaiFoundryClient(configuration);
         services.AddDeviantArtClient();
         services.AddFileDownloadClient();
 

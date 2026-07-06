@@ -41,7 +41,7 @@ public sealed partial class Newgrounds : BaseSite
         var embed = new EmbedBuilder
         {
             Title = post.Title(),
-            Description = await Helper.ProcessDescription(post.Description() ?? ""),
+            Description = Helper.ProcessDescription(post.Description() ?? ""),
             Url = match.Value,
             Color = this.Color,
             ImageUrl = post.ImageUrl(),

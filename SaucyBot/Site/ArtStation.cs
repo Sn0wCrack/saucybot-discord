@@ -53,9 +53,10 @@ public sealed partial class ArtStation : BaseSite
             .ToList()
             .SafeSlice(0, limit);
         
+        var description = Helper.ProcessDescription(project.Description);
+        
         foreach (var asset in assets)
         {
-            var description = await Helper.ProcessDescription(project.Description);
 
             var embed = new EmbedBuilder
             {

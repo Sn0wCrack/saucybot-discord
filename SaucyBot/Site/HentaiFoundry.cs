@@ -48,7 +48,7 @@ public sealed partial class HentaiFoundry : BaseSite
         var embed = new EmbedBuilder
         {
             Title = page.Title(),
-            Description = await Helper.ProcessDescription(page.Description() ?? ""),
+            Description = Helper.ProcessDescription(page.Description() ?? ""),
             Url = match.Value,
             Color = this.Color,
             ImageUrl = page.ImageUrl(),

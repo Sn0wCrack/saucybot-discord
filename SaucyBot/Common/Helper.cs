@@ -1,7 +1,5 @@
 ﻿using System.Net;
 using System.Text;
-using AngleSharp;
-using AngleSharp.Html.Parser;
 using Markdig;
 
 namespace SaucyBot.Common;
@@ -9,19 +7,72 @@ namespace SaucyBot.Common;
 public static class Helper
 {
     private const string Characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    
-    public static async Task<string?> HtmlToPlainText(string html)
-    {
-        // Since HTML does not respect newlines, we need to remove them before processing to ensure
-        // our plaintext has the exact number of newlines that would be displayed on the site or thereabouts at least.
-        html = html
-            .Replace("\n", "")
-            .Replace("\r", "");
-        
-        var parser = new HtmlParser();
-        var document = await parser.ParseDocumentAsync(html);
 
-        return document.Body?.ToHtml(new PlainTextMarkupFormatter());
+    public static string? HtmlToPlainText(string html)
+    {
+        if (string.IsNullOrEmpty(html))
+            return html;
+
+        var length = html.Length;
+        var sb = new StringBuilder(length);
+
+        var inTag = false;
+        var tagNameStart = 0;
+
+        for (var i = 0; i < length; i++)
+        {
+            var c = html[i];
+
+            if (c == '<')
+            {
+                if (i + 3 < length && html[i + 1] == '!' && html[i + 2] == '-' && html[i + 3] == '-')
+                {
+                    var commentEnd = html.IndexOf("-->", i + 4, StringComparison.Ordinal);
+                    if (commentEnd > i)
+                    {
+                        i = commentEnd + 2;
+                        continue;
+                    }
+                }
+
+                inTag = true;
+                tagNameStart = i + 1;
+                continue;
+            }
+
+            if (c == '>' && inTag)
+            {
+                inTag = false;
+
+                var isClosingTag = html[tagNameStart] == '/';
+                var nameStart = isClosingTag ? tagNameStart + 1 : tagNameStart;
+                var tagEnd = nameStart;
+
+                while (tagEnd < i && html[tagEnd] is not (' ' or '\t' or '\n' or '\r' or '/'))
+                    tagEnd++;
+
+                var tagName = html.AsSpan(nameStart, tagEnd - nameStart);
+
+                if (!isClosingTag)
+                {
+                    if (tagName.Equals("p", StringComparison.OrdinalIgnoreCase))
+                        sb.Append("\n\n");
+                    else if (tagName.Equals("br", StringComparison.OrdinalIgnoreCase))
+                        sb.Append('\n');
+                    else if (tagName.Equals("span", StringComparison.OrdinalIgnoreCase))
+                        sb.Append(' ');
+                }
+
+                continue;
+            }
+
+            if (!inTag && c is not '\n' and not '\r')
+            {
+                sb.Append(c);
+            }
+        }
+
+        return WebUtility.HtmlDecode(sb.ToString());
     }
 
     public static string MarkdownToPlainText(string markdown)
@@ -29,13 +80,13 @@ public static class Helper
         return Markdown.ToPlainText(markdown);
     }
 
-    public static async Task<string> ProcessDescription(string description, int maxLength = 300, string suffix = "...")
+    public static string ProcessDescription(string description, int maxLength = 300, string suffix = "...")
     {
-        description = await HtmlToPlainText(description) ?? "";
-        
+        description = HtmlToPlainText(description) ?? "";
+
         if (description.Length > maxLength)
         {
-            description = $"{description.AsSpan(0, maxLength)}{suffix}";
+            description = string.Concat(description.AsSpan(0, maxLength), suffix);
         }
 
         return description;

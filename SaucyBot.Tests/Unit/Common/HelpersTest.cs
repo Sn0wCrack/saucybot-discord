@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using SaucyBot.Common;
 using Xunit;
 
@@ -24,11 +23,11 @@ public class HelpersTest
     [InlineData(200)]
     [InlineData(20)]
     [InlineData(8)]
-    public async Task ProcessDescriptionWillLimitStringLength(int maxLength)
+    public void ProcessDescriptionWillLimitStringLength(int maxLength)
     {
         var random = Helper.RandomString(maxLength * 2);
 
-        var processed = await Helper.ProcessDescription(random, maxLength, "");
+        var processed = Helper.ProcessDescription(random, maxLength, "");
         
         Assert.NotEqual(random.Length, processed.Length);
         Assert.Equal(processed.Length, maxLength);
@@ -39,11 +38,11 @@ public class HelpersTest
     [InlineData(200, "")]
     [InlineData(20, "--")]
     [InlineData(8, "?!")]
-    public async Task ProcessDescriptionWillAddSuffixWhenLimited(int maxLength, string suffix)
+    public void ProcessDescriptionWillAddSuffixWhenLimited(int maxLength, string suffix)
     {
         var random = Helper.RandomString(maxLength * 2);
 
-        var processed = await Helper.ProcessDescription(random, maxLength, suffix);
+        var processed = Helper.ProcessDescription(random, maxLength, suffix);
         
         Assert.Equal(maxLength + suffix.Length, processed.Length);
         Assert.Equal(suffix, processed[^suffix.Length..]);
@@ -54,9 +53,9 @@ public class HelpersTest
     [InlineData("<p><span>Test</span> Test</p>")]
     [InlineData("<h1>TEST</h1>")]
     [InlineData("<script>let test = 'test';</script>")]
-    public async Task ProcessDescriptionWillRemoveHtml(string description)
+    public void ProcessDescriptionWillRemoveHtml(string description)
     {
-        var processed = await Helper.ProcessDescription(description);
+        var processed = Helper.ProcessDescription(description);
         
         Assert.NotEqual(description, processed);
     }
@@ -64,19 +63,19 @@ public class HelpersTest
     [Theory]
     [InlineData("<p>Test</p>Test")]
     [InlineData("Test<br>Test")]
-    public async Task ProcessDescriptionWillRetainBreaksAndParagraphs(string description)
+    public void ProcessDescriptionWillRetainBreaksAndParagraphs(string description)
     {
-        var processed = await Helper.ProcessDescription(description);
+        var processed = Helper.ProcessDescription(description);
         
         Assert.Contains("\n", processed);
     }
     
     [Fact]
-    public async Task ProcessDescriptionWillRetainBreaksAndRemoveExistingNewLines()
+    public void ProcessDescriptionWillRetainBreaksAndRemoveExistingNewLines()
     {
         const string description = "Test\n<br>Test";
 
-        var processed = await Helper.ProcessDescription(description);
+        var processed = Helper.ProcessDescription(description);
         
         Assert.Contains("\n", processed);
         Assert.DoesNotContain("\n\n", processed);
@@ -89,9 +88,9 @@ public class HelpersTest
     [InlineData("<br/>Line 1<br/>Line 2", "\nLine 1\nLine 2")]
     [InlineData("", "")]
     [InlineData("<p>Line 1Line 2</p>", "\n\nLine 1Line 2")]
-    public async Task HtmlToPlainText_ReturnsExpectedText(string html, string expected)
+    public void HtmlToPlainText_ReturnsExpectedText(string html, string expected)
     {
-        var result = await Helper.HtmlToPlainText(html);
+        var result = Helper.HtmlToPlainText(html);
         
         Assert.Equal(expected, result);
     }

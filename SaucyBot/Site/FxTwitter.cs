@@ -280,7 +280,7 @@ public sealed partial class FxTwitter : BaseSite
                         IsInline = true
                     },
                 },
-                ImageUrl = this.GetOriginalResolutionPhotoUrl(photo.Photo.Url),
+                ImageUrl = GetOriginalResolutionPhotoUrl(photo.Photo.Url),
                 Footer = new EmbedFooterBuilder { IconUrl = Constants.TwitterIconUrl, Text = "Twitter" },
             };
             
@@ -340,7 +340,7 @@ public sealed partial class FxTwitter : BaseSite
         return response;
     }
 
-    private string GetTweetText(FxTwitterTweet tweet)
+    private static string GetTweetText(FxTwitterTweet tweet)
     {
         return tweet.Translation is not null ? tweet.Translation.Text : tweet.Text;
     }
@@ -384,7 +384,7 @@ public sealed partial class FxTwitter : BaseSite
         );
     }
 
-    private string GetOriginalResolutionPhotoUrl(string url)
+    private static string GetOriginalResolutionPhotoUrl(string url)
     {
         var uri = new Uri(url);
         var query = uri.Query;

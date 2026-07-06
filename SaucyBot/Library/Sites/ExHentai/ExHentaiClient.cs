@@ -1,6 +1,4 @@
-﻿using System.Net;
-using System.Net.Http.Headers;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using AngleSharp.Dom;
 using AngleSharp.Html.Dom;
 using AngleSharp.Html.Parser;

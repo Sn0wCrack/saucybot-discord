@@ -64,7 +64,7 @@ public sealed partial class ExHentai : BaseSite
         var embed = new EmbedBuilder
         {
             Title = page.Title(),
-            Description = await Helper.ProcessDescription(page.Description() ?? ""),
+            Description = Helper.ProcessDescription(page.Description() ?? ""),
             Url = url,
             Color = this.Color,
             ImageUrl = page.ImageUrl(),
