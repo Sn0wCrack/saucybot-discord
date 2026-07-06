@@ -84,16 +84,18 @@ public class HelpersTest
     [Theory]
     [InlineData("<p>Hello World</p>", "\n\nHello World")]
     [InlineData("<div><p>Paragraph 1</p><p>Paragraph 2</p></div>", "\n\nParagraph 1\n\nParagraph 2")]
-    [InlineData("<h1>Title</h1><p>Content with <strong>bold</strong> text</p>", "Title\n\nContent with bold text")]
+    [InlineData("<h1>Title</h1><p>Content with <strong>bold</strong> text</p>", "# Title\n\nContent with **bold** text")]
     [InlineData("<br/>Line 1<br/>Line 2", "\nLine 1\nLine 2")]
     [InlineData("", "")]
     [InlineData("<p>Line 1Line 2</p>", "\n\nLine 1Line 2")]
-    public void HtmlToPlainText_ReturnsExpectedText(string html, string expected)
+    public void HtmlToMarkdown_ReturnsExpectedText(string html, string expected)
     {
-        var result = Helper.HtmlToPlainText(html);
+        var result = Helper.HtmlToMarkdown(html);
         
         Assert.Equal(expected, result);
     }
+
+
 
     [Theory]
     [InlineData("**bold**", "bold\n")]

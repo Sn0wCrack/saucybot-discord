@@ -84,16 +84,16 @@ public class HelperBenchmarks
     public string RandomString_Length128() => Helper.RandomString(128);
 
     [Benchmark]
-    public string? HtmlToPlainText_Short() => Helper.HtmlToPlainText(ShortHtml);
+    public string? HtmlToMarkdown_Short() => Helper.HtmlToMarkdown(ShortHtml);
 
     [Benchmark]
-    public string? HtmlToPlainText_Medium() => Helper.HtmlToPlainText(MediumHtml);
+    public string? HtmlToMarkdown_Medium() => Helper.HtmlToMarkdown(MediumHtml);
 
     [Benchmark]
-    public string? HtmlToPlainText_Long() => Helper.HtmlToPlainText(LongHtml);
+    public string? HtmlToMarkdown_Long() => Helper.HtmlToMarkdown(LongHtml);
 
     [Benchmark]
-    public string? HtmlToPlainText_Complex() => Helper.HtmlToPlainText(ComplexHtml);
+    public string? HtmlToMarkdown_Complex() => Helper.HtmlToMarkdown(ComplexHtml);
 
     [Benchmark]
     public string ProcessDescription_Short() => Helper.ProcessDescription(ShortHtml);
@@ -106,6 +106,7 @@ public class HelperBenchmarks
 
     [Benchmark]
     public string ProcessDescription_Complex() => Helper.ProcessDescription(ComplexHtml);
+
 
     [Benchmark]
     public string MarkdownToPlainText() => Helper.MarkdownToPlainText(MarkdownText);

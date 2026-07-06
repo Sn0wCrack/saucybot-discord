@@ -8,71 +8,9 @@ public static class Helper
 {
     private const string Characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
-    public static string? HtmlToPlainText(string html)
+    public static string? HtmlToMarkdown(string html)
     {
-        if (string.IsNullOrEmpty(html))
-            return html;
-
-        var length = html.Length;
-        var sb = new StringBuilder(length);
-
-        var inTag = false;
-        var tagNameStart = 0;
-
-        for (var i = 0; i < length; i++)
-        {
-            var c = html[i];
-
-            if (c == '<')
-            {
-                if (i + 3 < length && html[i + 1] == '!' && html[i + 2] == '-' && html[i + 3] == '-')
-                {
-                    var commentEnd = html.IndexOf("-->", i + 4, StringComparison.Ordinal);
-                    if (commentEnd > i)
-                    {
-                        i = commentEnd + 2;
-                        continue;
-                    }
-                }
-
-                inTag = true;
-                tagNameStart = i + 1;
-                continue;
-            }
-
-            if (c == '>' && inTag)
-            {
-                inTag = false;
-
-                var isClosingTag = html[tagNameStart] == '/';
-                var nameStart = isClosingTag ? tagNameStart + 1 : tagNameStart;
-                var tagEnd = nameStart;
-
-                while (tagEnd < i && html[tagEnd] is not (' ' or '\t' or '\n' or '\r' or '/'))
-                    tagEnd++;
-
-                var tagName = html.AsSpan(nameStart, tagEnd - nameStart);
-
-                if (!isClosingTag)
-                {
-                    if (tagName.Equals("p", StringComparison.OrdinalIgnoreCase))
-                        sb.Append("\n\n");
-                    else if (tagName.Equals("br", StringComparison.OrdinalIgnoreCase))
-                        sb.Append('\n');
-                    else if (tagName.Equals("span", StringComparison.OrdinalIgnoreCase))
-                        sb.Append(' ');
-                }
-
-                continue;
-            }
-
-            if (!inTag && c is not '\n' and not '\r')
-            {
-                sb.Append(c);
-            }
-        }
-
-        return WebUtility.HtmlDecode(sb.ToString());
+        return HtmlToMarkdownConverter.Convert(html);
     }
 
     public static string MarkdownToPlainText(string markdown)
@@ -82,7 +20,7 @@ public static class Helper
 
     public static string ProcessDescription(string description, int maxLength = 300, string suffix = "...")
     {
-        description = HtmlToPlainText(description) ?? "";
+        description = HtmlToMarkdown(description) ?? "";
 
         if (description.Length > maxLength)
         {
