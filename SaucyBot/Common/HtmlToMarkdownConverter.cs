@@ -117,12 +117,17 @@ public static class HtmlToMarkdownConverter
                     }
                     else if (!string.IsNullOrEmpty(linkText))
                     {
-                        output.Append(linkText);
                         if (!string.IsNullOrEmpty(linkUrl))
                         {
-                            output.Append(" (");
+                            output.Append('[');
+                            output.Append(linkText);
+                            output.Append("](");
                             output.Append(linkUrl);
                             output.Append(')');
+                        }
+                        else
+                        {
+                            output.Append(linkText);
                         }
                     }
                     else if (!string.IsNullOrEmpty(linkUrl))

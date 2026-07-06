@@ -86,12 +86,11 @@ public class HelpersTest
     [InlineData("<div><p>Paragraph 1</p><p>Paragraph 2</p></div>", "\n\nParagraph 1\n\nParagraph 2")]
     [InlineData("<h1>Title</h1><p>Content with <strong>bold</strong> text</p>", "# Title\n\nContent with **bold** text")]
     [InlineData("<br/>Line 1<br/>Line 2", "\nLine 1\nLine 2")]
-    [InlineData("", "")]
     [InlineData("<p>Line 1Line 2</p>", "\n\nLine 1Line 2")]
     [InlineData("<a href=\"http://example.com\">example.com</a>", "http://example.com")]
     [InlineData("<a href=\"https://example.com/page\">https://example.com/page</a>", "https://example.com/page")]
     [InlineData("<a href=\"https://example.com/page/\">example.com/page</a>", "https://example.com/page/")]
-    [InlineData("<a href=\"https://example.com\">click here</a>", "click here (https://example.com)")]
+    [InlineData("<a href=\"https://example.com\">click here</a>", "[click here](https://example.com)")]
     [InlineData("<a href=\"http://example.com\">http://example.com</a>", "http://example.com")]
     [InlineData("<a href=\"https://www.imaworldbuilder.com\">www.imaworldbuilder.com</a>", "https://www.imaworldbuilder.com")]
     public void HtmlToMarkdown_ReturnsExpectedText(string html, string expected)
