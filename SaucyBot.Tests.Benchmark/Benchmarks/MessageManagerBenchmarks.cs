@@ -10,6 +10,9 @@ using SaucyBot.Site.Response;
 namespace SaucyBot.Tests.Benchmark.Benchmarks;
 
 [MemoryDiagnoser]
+[MinInvokeCount(3), InvocationCount(16)]      
+[MinWarmupCount(3), MaxWarmupCount(5)]
+[MinIterationCount(3), MaxIterationCount(5)]
 public class MessageManagerBenchmarks
 {
     private MessageManager _messageManager = null!;

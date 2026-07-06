@@ -20,6 +20,18 @@
           "System.Management": "9.0.5"
         }
       },
+      "BenchmarkDotNet.TestAdapter": {
+        "type": "Direct",
+        "requested": "[0.15.8, )",
+        "resolved": "0.15.8",
+        "contentHash": "jbAdtva3rKe0qPpONrnHeIeeZbu9Re3ixQgtRts9ZY1xSDi741nXaOLIvIIuKUS2uY1wvA44u0BLZdgOl7ZUQQ==",
+        "dependencies": {
+          "BenchmarkDotNet": "0.15.8",
+          "Microsoft.TestPlatform.AdapterUtilities": "17.8.0",
+          "Microsoft.TestPlatform.ObjectModel": "17.8.0",
+          "Microsoft.TestPlatform.TranslationLayer": "17.8.0"
+        }
+      },
       "NSubstitute": {
         "type": "Direct",
         "requested": "[5.3.0, )",
@@ -597,6 +609,32 @@
         "resolved": "10.0.9",
         "contentHash": "fmEbAUFsaIKirgLt/lYhuFRBwhcSJN31jjHgCdbQxJiWOum6EdLjkbgGuukSP9z/a+9LibaxII/kF+GwOXgC4g=="
       },
+      "Microsoft.NETCore.Platforms": {
+        "type": "Transitive",
+        "resolved": "1.1.0",
+        "contentHash": "kz0PEW2lhqygehI/d6XsPCQzD7ff7gUJaVGPVETX611eadGsA3A877GdSlU0LRVMCTH/+P3o2iDTak+S08V2+A=="
+      },
+      "Microsoft.TestPlatform.AdapterUtilities": {
+        "type": "Transitive",
+        "resolved": "17.8.0",
+        "contentHash": "635M4VCvcnUAK8m67ee1oYZMBIrRm0b4YwcUvd5YKmPc8jKbjKvbMK1tgQkqa2qmRKVOLE3eTfsYXldFRc3ACA=="
+      },
+      "Microsoft.TestPlatform.ObjectModel": {
+        "type": "Transitive",
+        "resolved": "17.8.0",
+        "contentHash": "AYy6vlpGMfz5kOFq99L93RGbqftW/8eQTqjT9iGXW6s9MRP3UdtY8idJ8rJcjeSja8A18IhIro5YnH3uv1nz4g==",
+        "dependencies": {
+          "NuGet.Frameworks": "6.5.0"
+        }
+      },
+      "Microsoft.TestPlatform.TranslationLayer": {
+        "type": "Transitive",
+        "resolved": "17.8.0",
+        "contentHash": "eo3zgw/CWe4HhBSWRQ2e3PyPybsE7VCGuHN2+AhOIVaElqQKqHcBDRxsZhWubN54dq5QvpjOX2lSRldROqSY4Q==",
+        "dependencies": {
+          "NETStandard.Library": "2.0.0"
+        }
+      },
       "Microting.EntityFrameworkCore.MySql": {
         "type": "Transitive",
         "resolved": "10.0.9",
@@ -625,10 +663,23 @@
           "Microsoft.Extensions.Logging.Abstractions": "8.0.2"
         }
       },
+      "NETStandard.Library": {
+        "type": "Transitive",
+        "resolved": "2.0.0",
+        "contentHash": "7jnbRU+L08FXKMxqUflxEXtVymWvNOrS8yHgu9s6EM8Anr6T/wIX4nZ08j/u3Asz+tCufp3YVwFSEvFTPYmBPA==",
+        "dependencies": {
+          "Microsoft.NETCore.Platforms": "1.1.0"
+        }
+      },
       "Newtonsoft.Json": {
         "type": "Transitive",
         "resolved": "13.0.4",
         "contentHash": "pdgNNMai3zv51W5aq268sujXUyx7SNdE2bj1wZcWjAQrKMFZV260lbqYop1d2GM67JI1huLRwxo9ZqnfF/lC6A=="
+      },
+      "NuGet.Frameworks": {
+        "type": "Transitive",
+        "resolved": "6.5.0",
+        "contentHash": "QWINE2x3MbTODsWT1Gh71GaGb5icBz4chS8VYvTgsBnsi8esgN6wtHhydd7fvToWECYGq7T4cgBBDiKD/363fg=="
       },
       "Perfolizer": {
         "type": "Transitive",

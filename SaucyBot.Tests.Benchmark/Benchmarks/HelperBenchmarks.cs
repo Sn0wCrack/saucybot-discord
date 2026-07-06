@@ -4,6 +4,9 @@ using SaucyBot.Common;
 namespace SaucyBot.Tests.Benchmark.Benchmarks;
 
 [MemoryDiagnoser]
+[MinInvokeCount(3), InvocationCount(16)]      
+[MinWarmupCount(3), MaxWarmupCount(5)]
+[MinIterationCount(3), MaxIterationCount(5)]
 public class HelperBenchmarks
 {
     private static readonly string ShortHtml = "<p>Hello World</p>";
@@ -81,28 +84,28 @@ public class HelperBenchmarks
     public string RandomString_Length128() => Helper.RandomString(128);
 
     [Benchmark]
-    public Task<string?> HtmlToPlainText_Short() => Helper.HtmlToPlainText(ShortHtml);
+    public string? HtmlToPlainText_Short() => Helper.HtmlToPlainText(ShortHtml);
 
     [Benchmark]
-    public Task<string?> HtmlToPlainText_Medium() => Helper.HtmlToPlainText(MediumHtml);
+    public string? HtmlToPlainText_Medium() => Helper.HtmlToPlainText(MediumHtml);
 
     [Benchmark]
-    public Task<string?> HtmlToPlainText_Long() => Helper.HtmlToPlainText(LongHtml);
+    public string? HtmlToPlainText_Long() => Helper.HtmlToPlainText(LongHtml);
 
     [Benchmark]
-    public Task<string?> HtmlToPlainText_Complex() => Helper.HtmlToPlainText(ComplexHtml);
+    public string? HtmlToPlainText_Complex() => Helper.HtmlToPlainText(ComplexHtml);
 
     [Benchmark]
-    public Task<string> ProcessDescription_Short() => Helper.ProcessDescription(ShortHtml);
+    public string ProcessDescription_Short() => Helper.ProcessDescription(ShortHtml);
 
     [Benchmark]
-    public Task<string> ProcessDescription_Medium() => Helper.ProcessDescription(MediumHtml);
+    public string ProcessDescription_Medium() => Helper.ProcessDescription(MediumHtml);
 
     [Benchmark]
-    public Task<string> ProcessDescription_Long() => Helper.ProcessDescription(LongHtml, 200);
+    public string ProcessDescription_Long() => Helper.ProcessDescription(LongHtml, 200);
 
     [Benchmark]
-    public Task<string> ProcessDescription_Complex() => Helper.ProcessDescription(ComplexHtml);
+    public string ProcessDescription_Complex() => Helper.ProcessDescription(ComplexHtml);
 
     [Benchmark]
     public string MarkdownToPlainText() => Helper.MarkdownToPlainText(MarkdownText);

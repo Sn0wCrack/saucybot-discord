@@ -4,6 +4,9 @@ using SaucyBot.Extensions;
 namespace SaucyBot.Tests.Benchmark.Benchmarks;
 
 [MemoryDiagnoser]
+[MinInvokeCount(3), InvocationCount(16)]      
+[MinWarmupCount(3), MaxWarmupCount(5)]
+[MinIterationCount(3), MaxIterationCount(5)]
 public class ExtensionsBenchmarks
 {
     private List<string> _smallList = null!;
