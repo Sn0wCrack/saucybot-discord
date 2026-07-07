@@ -339,19 +339,19 @@ public sealed partial class FxTwitter : BaseSite
         return response;
     }
 
-    private string GetTweetText(FxTwitterTweet tweet)
+    private static string GetTweetText(FxTwitterTweet tweet)
     {
         var text = Helper.EscapeDiscordMarkdown(tweet.Translation is not null ? tweet.Translation.Text : tweet.Text);
 
-        if (tweet.QuotedTweet is not null)
+        if (tweet.QuotedTweet is null)
         {
-            var author = tweet.QuotedTweet.Author;
-            
-            text += $"\n\n> **[Quoting]({tweet.Url}) {author.Name} ([@{author.ScreenName}]({author.Url}))**\n" +
-                    GetQuoteText(tweet.QuotedTweet);
+            return text;
         }
-        
-        _logger.LogDebug("{TweetText}", text);
+
+        var author = tweet.QuotedTweet.Author;
+            
+        text += $"\n\n> **[Quoting]({tweet.Url}) {author.Name} ([@{author.ScreenName}]({author.Url}))**\n" +
+                GetQuoteText(tweet.QuotedTweet);
 
         return text;
     }
@@ -360,8 +360,8 @@ public sealed partial class FxTwitter : BaseSite
     {
         var quotedText = Helper.EscapeDiscordMarkdown(quote.Translation is not null ? quote.Translation.Text : quote.Text);
         
-        // Place all quoted text into a block quote. Places a ` > ` at the start of the string and start of every line.
-        return quotedText.Insert(0, " > ").Replace("\n", "\n > "); 
+        // Place all quoted text into a block quote. Places a `> ` at the start of the string and start of every line.
+        return quotedText.Insert(0, "> ").Replace("\n", "\n> "); 
     }
     
     private async Task<string?> DetermineHighestUsableQualityFile(IEnumerable<string> urls)
