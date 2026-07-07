@@ -38,8 +38,8 @@ public static class Helper
     public static string EscapeDiscordMarkdown(string text)
     {
         return text
-            .Replace(">", @"\>")
             .Replace(@"\", @"\\")
+            .Replace(">", @"\>")
             .Replace("*", @"\*")
             .Replace("_", @"\_")
             .Replace("~", @"\~")
