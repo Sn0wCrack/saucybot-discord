@@ -1,5 +1,4 @@
-﻿using System.Net.Http;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using System.Web;
 using Discord;
 using Discord.WebSocket;
@@ -340,9 +339,29 @@ public sealed partial class FxTwitter : BaseSite
         return response;
     }
 
-    private static string GetTweetText(FxTwitterTweet tweet)
+    private string GetTweetText(FxTwitterTweet tweet)
     {
-        return tweet.Translation is not null ? tweet.Translation.Text : tweet.Text;
+        var text = Helper.EscapeDiscordMarkdown(tweet.Translation is not null ? tweet.Translation.Text : tweet.Text);
+
+        if (tweet.QuotedTweet is not null)
+        {
+            var author = tweet.QuotedTweet.Author;
+            
+            text += $"\n\n> **[Quoting]({tweet.Url}) {author.Name} ([@{author.ScreenName}]({author.Url}))**\n" +
+                    GetQuoteText(tweet.QuotedTweet);
+        }
+        
+        _logger.LogDebug("{TweetText}", text);
+
+        return text;
+    }
+
+    private static string GetQuoteText(FxTwitterTweet quote)
+    {
+        var quotedText = Helper.EscapeDiscordMarkdown(quote.Translation is not null ? quote.Translation.Text : quote.Text);
+        
+        // Place all quoted text into a block quote. Places a ` > ` at the start of the string and start of every line.
+        return quotedText.Insert(0, " > ").Replace("\n", "\n > "); 
     }
     
     private async Task<string?> DetermineHighestUsableQualityFile(IEnumerable<string> urls)

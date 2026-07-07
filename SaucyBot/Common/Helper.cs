@@ -35,6 +35,18 @@ public static class Helper
         return new string(Enumerable.Repeat(Characters, length).Select(s => s[Random.Shared.Next(s.Length)]).ToArray());
     }
 
+    public static string EscapeDiscordMarkdown(string text)
+    {
+        return text
+            .Replace(">", @"\>")
+            .Replace(@"\", @"\\")
+            .Replace("*", @"\*")
+            .Replace("_", @"\_")
+            .Replace("~", @"\~")
+            .Replace("`", @"\`")
+            .Replace("|", @"\|");
+    }
+
     /// <summary>
     /// This is taken from Microsoft.AspNetCore.WebUtilities.QueryHelpers
     /// </summary>
