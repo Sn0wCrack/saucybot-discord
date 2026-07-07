@@ -17,6 +17,12 @@ public sealed partial class FxTwitter : BaseSite
     [GeneratedRegex(@"https?://(www\.|mobile\.)?(?<domain>twitter|x|nitter)\.(com|net)/(?<user>.*)/status/(?<id>\d+)(/(video|photo)/\d{1})?(/(?<translate>\w{2}|\w{5}))?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex FxTwitterPattern();
 
+    [GeneratedRegex(@"(?<!https?://[\w.\-_%$@&?!:;/'()*]+)@([\w.]+)(?=\W|$)", RegexOptions.IgnoreCase)]
+    private static partial Regex MentionPattern();
+
+    [GeneratedRegex(@"(?<!https?://[\w.\-_%$@&?!:;/'()*]+)#([\w.]+)(?=\W|$)", RegexOptions.IgnoreCase)]
+    private static partial Regex HashtagPattern();
+
     protected override Regex Pattern => FxTwitterPattern();
 
     protected override Color Color => new(0x1DA1F2);
@@ -341,7 +347,10 @@ public sealed partial class FxTwitter : BaseSite
 
     private static string GetTweetText(FxTwitterTweet tweet)
     {
-        var text = Helper.EscapeDiscordMarkdown(tweet.Translation is not null ? tweet.Translation.Text : tweet.Text);
+        var text = tweet.Translation is not null ? tweet.Translation.Text : tweet.Text;
+
+        text = LinkifyTwitterContent(text);
+        text = Helper.EscapeDiscordMarkdown(text);
 
         if (tweet.QuotedTweet is null)
         {
@@ -358,10 +367,29 @@ public sealed partial class FxTwitter : BaseSite
 
     private static string GetQuoteText(FxTwitterTweet quote)
     {
-        var quotedText = Helper.EscapeDiscordMarkdown(quote.Translation is not null ? quote.Translation.Text : quote.Text);
+        var quotedText = quote.Translation is not null ? quote.Translation.Text : quote.Text;
+
+        quotedText = LinkifyTwitterContent(quotedText);
+        quotedText = Helper.EscapeDiscordMarkdown(quotedText);
         
-        // Place all quoted text into a block quote. Places a `> ` at the start of the string and start of every line.
         return quotedText.Insert(0, "> ").Replace("\n", "\n> "); 
+    }
+
+    private static string LinkifyTwitterContent(string text)
+    {
+        text = MentionPattern().Replace(text, match =>
+        {
+            var username = match.Groups[1].Value;
+            return $"[@{username}](https://twitter.com/{username})";
+        });
+
+        text = HashtagPattern().Replace(text, match =>
+        {
+            var hashtag = match.Groups[1].Value;
+            return $"[#{hashtag}](https://twitter.com/hashtag/{hashtag})";
+        });
+
+        return text;
     }
     
     private async Task<string?> DetermineHighestUsableQualityFile(IEnumerable<string> urls)
