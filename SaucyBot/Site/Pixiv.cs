@@ -228,9 +228,11 @@ public sealed partial class Pixiv : BaseSite
             AccentColor = this.Color
         };
         
-        container.AddComponent(
-            new TextDisplayBuilder().WithContent($"# {illustrationDetails.IllustrationDetails.Title}")
+        container.AddComponents(
+            new TextDisplayBuilder().WithContent($"# {illustrationDetails.IllustrationDetails.Title}"),
+            new TextDisplayBuilder().WithContent(Helper.HtmlToMarkdown(illustrationDetails.IllustrationDetails.Description))
         );
+        
         
         var mediaGallery = new MediaGalleryBuilder();
 
