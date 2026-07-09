@@ -204,6 +204,8 @@ public sealed record IllustrationDetailsUrls(
 )
 {
     public IEnumerable<string> All => [Original, Regular, Small, Thumbnail, Mini];
+    public IEnumerable<string> AllWithoutThumbnails => [Original, Regular, Small];
+    public IEnumerable<string> AllWithoutOriginalAndThumbnails => [Regular, Small];
 };
 
 public record IllustrationPagesResponse(
@@ -236,6 +238,8 @@ public sealed record IllustrationPagesUrls(
 )
 {
     public IEnumerable<string> All => [Original, Regular, Small, Thumbnail];
+    public IEnumerable<string> AllWithoutThumbnails => [Original, Regular, Small];
+    public IEnumerable<string> AllWithoutOriginalAndThumbnails => [Regular, Small];
 };
 
 public sealed record UgoiraMetadataResponse(

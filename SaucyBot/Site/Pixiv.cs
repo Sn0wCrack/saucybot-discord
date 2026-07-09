@@ -1,4 +1,5 @@
 ﻿using System.IO.Compression;
+using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using Discord;
@@ -19,6 +20,9 @@ public sealed partial class Pixiv : BaseSite
 
     [GeneratedRegex(@"https?://(www\.)?pixiv\.net/.*artworks/(?<id>\d+)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex PixivPattern();
+
+    [GeneratedRegex(@"/jump\.php\?(?<url>[^""'\s>]+)", RegexOptions.IgnoreCase)]
+    private static partial Regex JumpUrlPattern();
 
     protected override Regex Pattern => PixivPattern();
     
@@ -171,7 +175,7 @@ public sealed partial class Pixiv : BaseSite
         if (pageCount == 1)
         {
             var file = await DetermineHighestUsableQualityFile(
-                illustrationDetails.IllustrationDetails.IllustrationDetailsUrls.All
+                illustrationDetails.IllustrationDetails.IllustrationDetailsUrls.AllWithoutThumbnails
             );
 
             if (file is not null)
@@ -203,7 +207,7 @@ public sealed partial class Pixiv : BaseSite
 
         var pages = illustrationPagesResponse.IllustrationPages.SafeSlice(0, postLimit);
 
-        var fileTasks = pages.Select(page => DetermineHighestUsableQualityFile(page.IllustrationPagesUrls.All));
+        var fileTasks = pages.Select(page => DetermineHighestUsableQualityFile(page.IllustrationPagesUrls.AllWithoutOriginalAndThumbnails));
 
         var files = await Task.WhenAll(fileTasks);
 
@@ -222,12 +226,16 @@ public sealed partial class Pixiv : BaseSite
             AccentColor = this.Color
         };
         
-        container.AddComponents(
-            new TextDisplayBuilder().WithContent($"# [{illustrationDetails.IllustrationDetails.Title}]({illustrationDetails.IllustrationDetails.Url})"),
-            // TODO: Replace /jump.php URLs with original URLs
-            new TextDisplayBuilder().WithContent(Helper.HtmlToMarkdown(illustrationDetails.IllustrationDetails.Description))
+        container.AddComponent(
+            new TextDisplayBuilder().WithContent($"## [{illustrationDetails.IllustrationDetails.Title}]({illustrationDetails.IllustrationDetails.Url})")
         );
-        
+
+        if (illustrationDetails.IllustrationDetails.Description is not "")
+        {
+            container.AddComponent(
+                new TextDisplayBuilder().WithContent(Helper.HtmlToMarkdown(CleanPixivHtml(illustrationDetails.IllustrationDetails.Description)))
+            );
+        }
         
         var mediaGallery = new MediaGalleryBuilder();
 
@@ -285,5 +293,14 @@ public sealed partial class Pixiv : BaseSite
             response,
             Path.GetFileName(parsed.AbsolutePath)
         );
+    }
+
+    private static string CleanPixivHtml(string html)
+    {
+        return JumpUrlPattern().Replace(html, match =>
+        {
+            var encoded = match.Groups["url"].Value;
+            return WebUtility.UrlDecode(encoded);
+        });
     }
 }

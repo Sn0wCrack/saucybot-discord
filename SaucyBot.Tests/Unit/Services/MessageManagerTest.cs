@@ -29,7 +29,7 @@ public class MessageManagerTest
         Assert.NotNull(messages);
         Assert.NotEmpty(messages);
 
-        var message = messages.First();
+        var message = (EmbedMessage)messages.First();
         
         Assert.Equal("This is a test", message.Content);
         Assert.Empty(message.Embeds);
