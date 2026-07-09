@@ -171,28 +171,7 @@ public sealed partial class Pixiv : BaseSite
         var response = new ProcessResponse();
 
         var pageCount = illustrationDetails.IllustrationDetails.PageCount;
-
-        if (pageCount == 1)
-        {
-            var file = await DetermineHighestUsableQualityFile(
-                illustrationDetails.IllustrationDetails.IllustrationDetailsUrls.AllWithoutThumbnails
-            );
-
-            if (file is not null)
-            {
-                response.Files.Add(file.Value);
-            }
-
-            return response;
-        }
-
-        var illustrationPagesResponse = await _client.IllustrationPages(illustrationDetails.IllustrationDetails.Id);
-
-        if (illustrationPagesResponse is null)
-        {
-            return response;
-        }
-
+        
         var postLimit =  _configuration.GetSection("Sites:Pixiv:PostLimit").Get<int>();
 
         if (message is not null)
@@ -205,17 +184,38 @@ public sealed partial class Pixiv : BaseSite
             }
         }
 
-        var pages = illustrationPagesResponse.IllustrationPages.SafeSlice(0, postLimit);
-
-        var fileTasks = pages.Select(page => DetermineHighestUsableQualityFile(page.IllustrationPagesUrls.AllWithoutOriginalAndThumbnails));
-
-        var files = await Task.WhenAll(fileTasks);
-
-        foreach (var file in files)
+        if (pageCount == 1)
         {
+            var file = await DetermineHighestUsableQualityFile(
+                illustrationDetails.IllustrationDetails.IllustrationDetailsUrls.AllWithoutThumbnails
+            );
+
             if (file is not null)
             {
                 response.Files.Add(file.Value);
+            }
+        }
+        else
+        {
+            var illustrationPagesResponse = await _client.IllustrationPages(illustrationDetails.IllustrationDetails.Id);
+
+            if (illustrationPagesResponse is null)
+            {
+                return response;
+            }
+
+            var pages = illustrationPagesResponse.IllustrationPages.SafeSlice(0, postLimit);
+
+            var fileTasks = pages.Select(page => DetermineHighestUsableQualityFile(page.IllustrationPagesUrls.AllWithoutOriginalAndThumbnails));
+
+            var files = await Task.WhenAll(fileTasks);
+
+            foreach (var file in files)
+            {
+                if (file is not null)
+                {
+                    response.Files.Add(file.Value);
+                }
             }
         }
 
