@@ -57,7 +57,7 @@ public static class HtmlToMarkdownConverter
 
             if (!isClosing && tagName.Equals("a", StringComparison.OrdinalIgnoreCase))
             {
-                var attrPart = tagContent.Slice(nameEnd).Trim();
+                var attrPart = tagContent[nameEnd..].Trim();
                 linkUrl = ExtractHref(attrPart);
             }
 
@@ -149,12 +149,7 @@ public static class HtmlToMarkdownConverter
                     currentBuffer.Append(' ');
                 }
             }
-            else if (tagName.Equals("ul", StringComparison.OrdinalIgnoreCase))
-            {
-                if (isClosing)
-                    currentBuffer.Append('\n');
-            }
-            else if (tagName.Equals("ol", StringComparison.OrdinalIgnoreCase))
+            else if (tagName.Equals("ul", StringComparison.OrdinalIgnoreCase) || tagName.Equals("ol", StringComparison.OrdinalIgnoreCase))
             {
                 if (isClosing)
                     currentBuffer.Append('\n');
@@ -226,12 +221,12 @@ public static class HtmlToMarkdownConverter
         if (hrefPos >= attributes.Length)
             return null;
 
-        var afterHref = attributes.Slice(hrefPos + 4).TrimStart();
+        var afterHref = attributes[(hrefPos + 4)..].TrimStart();
 
         if (afterHref.Length == 0 || afterHref[0] != '=')
             return null;
 
-        afterHref = afterHref.Slice(1).TrimStart();
+        afterHref = afterHref[1..].TrimStart();
 
         if (afterHref.Length == 0)
             return null;
@@ -243,7 +238,7 @@ public static class HtmlToMarkdownConverter
         {
             var quote = afterHref[0];
             valueStart = 1;
-            valueEnd = afterHref.Slice(1).IndexOf(quote);
+            valueEnd = afterHref[1..].IndexOf(quote);
             if (valueEnd == -1)
                 valueEnd = afterHref.Length - 1;
             else

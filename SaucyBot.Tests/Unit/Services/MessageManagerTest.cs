@@ -24,7 +24,7 @@ public class MessageManagerTest
         
         var messageManager = new MessageManager(logger, config);
 
-        var messages = await messageManager.PartitionMessages(processResponse);
+        var messages = await MessageManager.PartitionMessages(processResponse);
         
         Assert.NotNull(messages);
         Assert.NotEmpty(messages);

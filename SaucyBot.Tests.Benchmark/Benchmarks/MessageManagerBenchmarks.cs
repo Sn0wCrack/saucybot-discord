@@ -61,30 +61,30 @@ public class MessageManagerBenchmarks
     [Benchmark]
     public Task<List<Message>> PartitionMessages_TextOnly()
     {
-        return _messageManager.PartitionMessages(_textOnlyResponse);
+        return MessageManager.PartitionMessages(_textOnlyResponse);
     }
 
     [Benchmark]
     public Task<List<Message>> PartitionMessages_SingleEmbed()
     {
-        return _messageManager.PartitionMessages(_singleEmbedResponse);
+        return MessageManager.PartitionMessages(_singleEmbedResponse);
     }
 
     [Benchmark]
     public Task<List<Message>> PartitionMessages_MultipleEmbeds()
     {
-        return _messageManager.PartitionMessages(_multiEmbedResponse);
+        return MessageManager.PartitionMessages(_multiEmbedResponse);
     }
 
     [Benchmark]
     public Task<List<Message>> PartitionMessages_SingleFile()
     {
-        return _messageManager.PartitionMessages(_filesResponse);
+        return MessageManager.PartitionMessages(_filesResponse);
     }
 
     [Benchmark]
     public Task<List<Message>> PartitionMessages_Mixed()
     {
-        return _messageManager.PartitionMessages(_mixedResponse);
+        return MessageManager.PartitionMessages(_mixedResponse);
     }
 }

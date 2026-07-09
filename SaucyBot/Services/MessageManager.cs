@@ -60,7 +60,7 @@ public sealed class MessageManager
         }
     }
 
-    public async Task<List<Message>> PartitionMessages(ProcessResponse response)
+    public static async Task<List<Message>> PartitionMessages(ProcessResponse response)
     {
         return response switch
         {

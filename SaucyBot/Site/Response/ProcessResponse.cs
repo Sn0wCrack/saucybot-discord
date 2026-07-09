@@ -10,8 +10,8 @@ public sealed record ProcessResponse
     
     public ProcessResponse(List<Embed>? embeds = null, List<FileAttachment>? files = null, string? text = null)
     {
-        Embeds = embeds ?? new List<Embed>();
-        Files = files ?? new List<FileAttachment>();
+        Embeds = embeds ?? [];
+        Files = files ?? [];
         Text = text;
     }
 }
