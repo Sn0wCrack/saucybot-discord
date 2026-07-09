@@ -21,6 +21,8 @@ public sealed partial class Pixiv : BaseSite
     private static partial Regex PixivPattern();
 
     protected override Regex Pattern => PixivPattern();
+    
+    protected override Color Color => new(0x0096fa);
 
     private readonly IPixivClient _client;
     private readonly ILogger<Pixiv> _logger;
@@ -123,7 +125,7 @@ public sealed partial class Pixiv : BaseSite
         return response;
     }
 
-    private string BuildConcatFile(List<UgoiraFrame> frames)
+    private static string BuildConcatFile(List<UgoiraFrame> frames)
     {
         var builder = new StringBuilder("ffconcat version 1.0\n");
 
@@ -219,10 +221,36 @@ public sealed partial class Pixiv : BaseSite
             response.Files.Add(file);
         }
 
+        var componentBuilder = new ComponentBuilderV2();
+
+        var container = new ContainerBuilder
+        {
+            AccentColor = this.Color
+        };
+        
+        container.AddComponent(
+            new TextDisplayBuilder().WithContent($"# {illustrationDetails.IllustrationDetails.Title}")
+        );
+        
+        var mediaGallery = new MediaGalleryBuilder();
+
+        foreach (var file in response.Files)
+        {
+            mediaGallery.AddItem($"attachment://{file.FileName}");
+        }
+
+        container.AddComponent(mediaGallery);
+        
         if (pageCount > postLimit)
         {
-            response.Text = $"This is part of a {pageCount} image set.";
+            container.AddComponent(
+                new TextDisplayBuilder().WithContent($"This is part of a {pageCount} image set.")
+            );
         }
+
+        componentBuilder.AddComponent(container);
+        
+        response.Components = componentBuilder.Build();
 
         return response;
     }
