@@ -1,6 +1,6 @@
 ARG CONFIGURATION=Release
 
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/runtime:10.0-alpine3.24@sha256:bb250b6e59f8270c30aedb2c83b4aae3228e9ba3280a17cb5ce537c34108e3d4 as base
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/runtime:10.0-alpine3.24@sha256:bb250b6e59f8270c30aedb2c83b4aae3228e9ba3280a17cb5ce537c34108e3d4 AS base
 WORKDIR /app
 
 FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0-alpine3.24@sha256:fc785a84b314fce6b7adb29ecc18542d7416f2e05c03ec1ebdb222eadaeafa50 AS build
