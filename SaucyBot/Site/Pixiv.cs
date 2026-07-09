@@ -1,4 +1,5 @@
 ﻿using System.IO.Compression;
+using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using Discord;
@@ -20,7 +21,12 @@ public sealed partial class Pixiv : BaseSite
     [GeneratedRegex(@"https?://(www\.)?pixiv\.net/.*artworks/(?<id>\d+)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex PixivPattern();
 
+    [GeneratedRegex(@"/jump\.php\?(?<url>[^""'\s>]+)", RegexOptions.IgnoreCase)]
+    private static partial Regex JumpUrlPattern();
+
     protected override Regex Pattern => PixivPattern();
+    
+    protected override Color Color => new(0x0096fa);
 
     private readonly IPixivClient _client;
     private readonly ILogger<Pixiv> _logger;
@@ -123,7 +129,7 @@ public sealed partial class Pixiv : BaseSite
         return response;
     }
 
-    private string BuildConcatFile(List<UgoiraFrame> frames)
+    private static string BuildConcatFile(List<UgoiraFrame> frames)
     {
         var builder = new StringBuilder("ffconcat version 1.0\n");
 
@@ -168,18 +174,14 @@ public sealed partial class Pixiv : BaseSite
 
         if (pageCount == 1)
         {
-            var url = await DetermineHighestUsableQualityFile(
-                illustrationDetails.IllustrationDetails.IllustrationDetailsUrls.All
+            var file = await DetermineHighestUsableQualityFile(
+                illustrationDetails.IllustrationDetails.IllustrationDetailsUrls.AllWithoutThumbnails
             );
 
-            if (url is null)
+            if (file is not null)
             {
-                return response;
+                response.Files.Add(file.Value);
             }
-
-            var file = await GetFile(url);
-            
-            response.Files.Add(file);
 
             return response;
         }
@@ -205,40 +207,75 @@ public sealed partial class Pixiv : BaseSite
 
         var pages = illustrationPagesResponse.IllustrationPages.SafeSlice(0, postLimit);
 
-        foreach (var page in pages)
+        var fileTasks = pages.Select(page => DetermineHighestUsableQualityFile(page.IllustrationPagesUrls.AllWithoutOriginalAndThumbnails));
+
+        var files = await Task.WhenAll(fileTasks);
+
+        foreach (var file in files)
         {
-            var url = await DetermineHighestUsableQualityFile(page.IllustrationPagesUrls.All);
-
-            if (url is null)
+            if (file is not null)
             {
-                continue;
+                response.Files.Add(file.Value);
             }
-
-            var file = await GetFile(url);
-            
-            response.Files.Add(file);
         }
 
+        var componentBuilder = new ComponentBuilderV2();
+
+        var container = new ContainerBuilder
+        {
+            AccentColor = this.Color
+        };
+        
+        container.AddComponent(
+            new TextDisplayBuilder().WithContent($"## [{illustrationDetails.IllustrationDetails.Title}]({illustrationDetails.IllustrationDetails.Url})")
+        );
+
+        if (illustrationDetails.IllustrationDetails.Description is not "")
+        {
+            container.AddComponent(
+                new TextDisplayBuilder().WithContent(Helper.HtmlToMarkdown(CleanPixivHtml(illustrationDetails.IllustrationDetails.Description)))
+            );
+        }
+        
+        var mediaGallery = new MediaGalleryBuilder();
+
+        foreach (var file in response.Files)
+        {
+            mediaGallery.AddItem($"attachment://{file.FileName}");
+        }
+
+        container.AddComponent(mediaGallery);
+        
         if (pageCount > postLimit)
         {
-            response.Text = $"This is part of a {pageCount} image set.";
+            container.AddComponent(
+                new TextDisplayBuilder().WithContent($"This is part of a {pageCount} image set.")
+            );
         }
+
+        componentBuilder.AddComponent(container);
+        
+        response.Components = componentBuilder.Build();
 
         return response;
     }
 
-    private async Task<string?> DetermineHighestUsableQualityFile(IEnumerable<string> urls)
+    private async Task<FileAttachment?> DetermineHighestUsableQualityFile(IEnumerable<string> urls)
     {
         foreach (var url in urls)
         {
-            _logger.LogDebug("Checking {Url} for usable quality...", url);
-            
-            var response = await _client.PokeFile(url);
+            _logger.LogDebug("Attempting to download {Url}...", url);
 
-            if (response.Content.Headers.ContentLength < Constants.MaximumFileSize)
+            var stream = await _client.GetFile(url);
+
+            if (stream.Length < Constants.MaximumFileSize)
             {
-                return url;
+                var parsed = new Uri(url);
+
+                return new FileAttachment(stream, Path.GetFileName(parsed.AbsolutePath));
             }
+
+            await stream.DisposeAsync();
         }
 
         return null;
@@ -256,5 +293,14 @@ public sealed partial class Pixiv : BaseSite
             response,
             Path.GetFileName(parsed.AbsolutePath)
         );
+    }
+
+    private static string CleanPixivHtml(string html)
+    {
+        return JumpUrlPattern().Replace(html, match =>
+        {
+            var encoded = match.Groups["url"].Value;
+            return WebUtility.UrlDecode(encoded);
+        });
     }
 }

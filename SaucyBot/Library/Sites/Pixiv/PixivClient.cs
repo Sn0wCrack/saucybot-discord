@@ -2,6 +2,9 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Polly;
+using Polly.Fallback;
+using Polly.Retry;
 using SaucyBot.Common;
 using SaucyBot.Services;
 
@@ -20,6 +23,8 @@ public sealed class PixivClient : IPixivClient
 
     private readonly HttpClient _client;
 
+    private readonly ResiliencePipeline<string?> _pipeline;
+
     private bool _isLoggedIn;
 
     public PixivClient(
@@ -32,6 +37,31 @@ public sealed class PixivClient : IPixivClient
         _configuration = configuration;
         _cache = cacheManager;
         _client = client;
+
+        _pipeline = new ResiliencePipelineBuilder<string?>()
+            .AddFallback(new FallbackStrategyOptions<string?>
+            {
+                FallbackAction = _ => Outcome.FromResultAsValueTask<string?>(null),
+                ShouldHandle = arguments => arguments.Outcome switch
+                {
+                    { Exception: HttpRequestException e } => e.StatusCode == HttpStatusCode.NotFound ? PredicateResult.True() : PredicateResult.False(),
+                    _ => PredicateResult.False(),
+                }
+            })
+            .AddRetry(new RetryStrategyOptions<string?>
+            {
+                ShouldHandle = arguments => arguments.Outcome switch
+                {
+                    { Exception: HttpRequestException e } => e.StatusCode >= HttpStatusCode.InternalServerError ? PredicateResult.True() : PredicateResult.False(),
+                    _ => PredicateResult.False(),
+                },
+                BackoffType = DelayBackoffType.Exponential,
+                UseJitter = true,
+                MaxRetryAttempts = 3,
+                Delay = TimeSpan.FromSeconds(3)
+            })
+            .AddTimeout(TimeSpan.FromSeconds(15))
+            .Build();
     }
 
     public async Task<bool> Login()
@@ -48,7 +78,12 @@ public sealed class PixivClient : IPixivClient
     {
         try
         {
-            var response = await _client.GetStringAsync(BaseUrl);
+            var response = await _pipeline.ExecuteAsync(async token => await _client.GetStringAsync(BaseUrl, token));
+
+            if (response is null)
+            {
+                return false;
+            }
 
             return response.Contains("logout.php") ||
                    response.Contains("pixiv.user.loggedIn = true") ||
@@ -65,21 +100,27 @@ public sealed class PixivClient : IPixivClient
 
     public async Task<IllustrationDetailsResponse?> IllustrationDetails(string id)
     {
-        var response = await _cache.Remember($"pixiv.illustration_details_{id}", async () => await _client.GetStringAsync($"{WebApiUrl}/illust/{id}"));
+        var response = await _cache.Remember($"pixiv.illustration_details_{id}", async () =>
+            await _pipeline.ExecuteAsync(async token => await _client.GetStringAsync($"{WebApiUrl}/illust/{id}", token))
+        );
 
         return response is null ? null : JsonSerializer.Deserialize<IllustrationDetailsResponse>(response);
     }
 
     public async Task<IllustrationPagesResponse?> IllustrationPages(string id)
     {
-        var response = await _cache.Remember($"pixiv.illustration_pages_{id}", async () => await _client.GetStringAsync($"{WebApiUrl}/illust/{id}/pages")); 
+        var response = await _cache.Remember($"pixiv.illustration_pages_{id}", async () =>
+            await _pipeline.ExecuteAsync(async token => await _client.GetStringAsync($"{WebApiUrl}/illust/{id}/pages", token))
+        );
         
         return response is null ? null : JsonSerializer.Deserialize<IllustrationPagesResponse>(response);
     }
 
     public async Task<UgoiraMetadataResponse?> UgoiraMetadata(string id)
     {
-        var response = await _cache.Remember($"pixiv.ugoira_metadata_{id}", async () => await _client.GetStringAsync($"{WebApiUrl}/illust/{id}/ugoira_meta"));
+        var response = await _cache.Remember($"pixiv.ugoira_metadata_{id}", async () =>
+            await _pipeline.ExecuteAsync(async token => await _client.GetStringAsync($"{WebApiUrl}/illust/{id}/ugoira_meta", token))
+        );
         
         return response is null ? null : JsonSerializer.Deserialize<UgoiraMetadataResponse>(response);
     }
@@ -135,8 +176,19 @@ public sealed record IllustrationDetails(
     [property: JsonPropertyName("urls")]
     IllustrationDetailsUrls IllustrationDetailsUrls,
     [property: JsonPropertyName("pageCount")]
-    int PageCount
-);
+    int PageCount,
+    [property: JsonPropertyName("userId")]
+    string UserId,
+    [property: JsonPropertyName("userName")]
+    string UserName,
+    [property: JsonPropertyName("userAccount")]
+    string UserAccount
+)
+{
+    public string Url => $"https://www.pixiv.net/en/artworks/{Id}";
+
+    public string UserUrl => $"https://www.pixiv.net/en/users/{UserId}";
+};
 
 public sealed record IllustrationDetailsUrls(
     [property: JsonPropertyName("mini")]
@@ -152,6 +204,8 @@ public sealed record IllustrationDetailsUrls(
 )
 {
     public IEnumerable<string> All => [Original, Regular, Small, Thumbnail, Mini];
+    public IEnumerable<string> AllWithoutThumbnails => [Original, Regular, Small];
+    public IEnumerable<string> AllWithoutOriginalAndThumbnails => [Regular, Small];
 };
 
 public record IllustrationPagesResponse(
@@ -184,6 +238,8 @@ public sealed record IllustrationPagesUrls(
 )
 {
     public IEnumerable<string> All => [Original, Regular, Small, Thumbnail];
+    public IEnumerable<string> AllWithoutThumbnails => [Original, Regular, Small];
+    public IEnumerable<string> AllWithoutOriginalAndThumbnails => [Regular, Small];
 };
 
 public sealed record UgoiraMetadataResponse(

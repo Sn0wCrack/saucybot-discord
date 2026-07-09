@@ -39,7 +39,10 @@ public class PixivTest
             "",
             IllustrationType.Illustration,
             new IllustrationDetailsUrls("", "", "", "", ""),
-            4
+            4,
+            "12345",
+            "testuser",
+            "testaccount"
         );
         
         var illustrationDetailsResponse = new IllustrationDetailsResponse(
