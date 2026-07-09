@@ -135,8 +135,19 @@ public sealed record IllustrationDetails(
     [property: JsonPropertyName("urls")]
     IllustrationDetailsUrls IllustrationDetailsUrls,
     [property: JsonPropertyName("pageCount")]
-    int PageCount
-);
+    int PageCount,
+    [property: JsonPropertyName("userId")]
+    string UserId,
+    [property: JsonPropertyName("userName")]
+    string UserName,
+    [property: JsonPropertyName("userAccount")]
+    string UserAccount
+)
+{
+    public string Url => $"https://www.pixiv.net/en/artworks/{Id}";
+
+    public string UserUrl => $"https://www.pixiv.net/en/users/{UserId}";
+};
 
 public sealed record IllustrationDetailsUrls(
     [property: JsonPropertyName("mini")]

@@ -229,7 +229,8 @@ public sealed partial class Pixiv : BaseSite
         };
         
         container.AddComponents(
-            new TextDisplayBuilder().WithContent($"# {illustrationDetails.IllustrationDetails.Title}"),
+            new TextDisplayBuilder().WithContent($"# [{illustrationDetails.IllustrationDetails.Title}]({illustrationDetails.IllustrationDetails.Url})"),
+            // TODO: Replace /jump.php URLs with original URLs
             new TextDisplayBuilder().WithContent(Helper.HtmlToMarkdown(illustrationDetails.IllustrationDetails.Description))
         );
         
