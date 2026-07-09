@@ -30,12 +30,32 @@ public sealed class MessageManager
                 continue;
             }
             
-            await received.ReplyAsync(
-                message.Files,
-                message.Content,
-                allowedMentions: AllowedMentions.None,
-                embeds: message.Embeds.ToArray()
-            );
+            switch (message)
+            {
+                case ComponentsV2Message c:
+                    await received.ReplyAsync(
+                        c.Files,
+                        c.Content,
+                        allowedMentions: AllowedMentions.None,
+                        components: c.Components,
+                        flags: MessageFlags.ComponentsV2
+                    );
+                    break;
+                case EmbedMessage e:
+                    await received.ReplyAsync(
+                        e.Files,
+                        e.Content,
+                        allowedMentions: AllowedMentions.None,
+                        embeds: e.Embeds.ToArray()
+                    );
+                    break;
+                default:
+                    await received.ReplyAsync(
+                        message.Content,
+                        allowedMentions: AllowedMentions.None
+                    );
+                    break;
+            }
         }
     }
 
@@ -51,12 +71,32 @@ public sealed class MessageManager
                 continue;
             }
 
-            await received.FollowupWithFilesAsync(
-                message.Files,
-                message.Content,
-                allowedMentions: AllowedMentions.None,
-                embeds: message.Embeds.ToArray()
-            );
+            switch (message)
+            {
+                case ComponentsV2Message c:
+                    await received.FollowupWithFilesAsync(
+                        c.Files,
+                        c.Content,
+                        allowedMentions: AllowedMentions.None,
+                        components: c.Components,
+                        flags: MessageFlags.ComponentsV2
+                    );
+                    break;
+                case EmbedMessage e:
+                    await received.FollowupWithFilesAsync(
+                        e.Files,
+                        e.Content,
+                        allowedMentions: AllowedMentions.None,
+                        embeds: e.Embeds.ToArray()
+                    );
+                    break;
+                default:
+                    await received.FollowupAsync(
+                        message.Content,
+                        allowedMentions: AllowedMentions.None
+                    );
+                    break;
+            }
         }
     }
 
@@ -64,11 +104,26 @@ public sealed class MessageManager
     {
         return response switch
         {
+            { Components: not null } => await HandleComponentsV2(response),
             { Embeds.Count: > 1 } => await HandleMultipleEmbeds(response),
             { Embeds.Count: 1 } => await HandleSingleEmbed(response),
             { Files.Count: >= 1 } => await HandleFiles(response),
-            _ => new List<Message> { new(response.Text ?? "") },
+            _ => [new EmbedMessage { Content = response.Text }],
         };
+    }
+
+    private static Task<List<Message>> HandleComponentsV2(ProcessResponse response)
+    {
+        var files = response.Files.Count > 0 ? response.Files : [];
+        
+        return Task.FromResult<List<Message>>([
+            new ComponentsV2Message
+            {
+                Content = response.Text,
+                Files = files,
+                Components = response.Components!,
+            }
+        ]);
     }
 
     private static Task<List<Message>> HandleFiles(ProcessResponse response)
@@ -77,18 +132,16 @@ public sealed class MessageManager
 
         if (response.Text is not null)
         {
-            messages.Add(new Message(response.Text));
+            messages.Add(new EmbedMessage { Content = response.Text });
         }
 
         if (response.Files.Count == 1)
         {
-            messages.Add(new Message(Files: response.Files));
+            messages.Add(new EmbedMessage { Files = response.Files });
 
             return Task.FromResult(messages);
         }
 
-        // We split up file messages into groups of files under the file size limit.
-        // This is faster than sending the images back one-by-one
         var segments = new List<List<FileAttachment>>();
         
         foreach (var file in response.Files)
@@ -101,8 +154,6 @@ public sealed class MessageManager
 
             var index = segments.Count - 1;
 
-            // If we're about to reach maximum message size, move onto the next index
-            // If we've reached the end of the array, add a new item to the array as well
             var totalSize = segments[index].Aggregate(0L, (accumulator, item) => accumulator + item.Stream.Length);
 
             if (file.Stream.Length + totalSize >= Constants.MaximumFileSize)
@@ -111,11 +162,10 @@ public sealed class MessageManager
                 continue;
             }
             
-            // If we've not reached the maximum message size, add to the current index
             segments[index].Add(file);
         }
 
-        messages.AddRange(segments.Select(files => new Message(Files: files)));
+        messages.AddRange(segments.Select(files => new EmbedMessage { Files = files }));
 
         return Task.FromResult(messages);
     }
@@ -126,16 +176,17 @@ public sealed class MessageManager
 
         var embed = response.Embeds.First();
         
-        var message = new Message(
-            Embeds: [embed],
-            Files: response.Files
-        );
+        var message = new EmbedMessage
+        {
+            Embeds = [embed],
+            Files = response.Files,
+        };
         
         messages.Add(message);
         
         if (response.Text is not null)
         {
-            messages.Add(new Message(response.Text));
+            messages.Add(new EmbedMessage { Content = response.Text });
         }
         
         return Task.FromResult(messages);
@@ -147,7 +198,7 @@ public sealed class MessageManager
 
         if (response.Text is not null)
         {
-            messages.Add(new Message(response.Text));
+            messages.Add(new EmbedMessage { Content = response.Text });
         }
 
         for (var i = 0; i < response.Embeds.Count - 1; i += Constants.MaximumEmbedsPerMessage)
@@ -161,13 +212,13 @@ public sealed class MessageManager
                 files.AddRange(relatedFiles);
             }
             
-            messages.Add(new Message(Embeds: chunk, Files: files));
+            messages.Add(new EmbedMessage { Embeds = chunk, Files = files });
         }
         
         return Task.FromResult(messages);
     }
 
-    private static List<FileAttachment> GetRelatedFiles(IEmbed embed, IEnumerable<FileAttachment> files)
+    private static List<FileAttachment> GetRelatedFiles(Embed embed, IEnumerable<FileAttachment> files)
     {
         var embedUrls = new List<string>();
 
@@ -187,17 +238,22 @@ public sealed class MessageManager
     }
 }
 
-public record Message(
-    string? Content = null,
-    List<Embed>? Embeds = null,
-    List<FileAttachment>? Files = null
-)
+public abstract record Message
 {
-    public List<Embed> Embeds { get; } = Embeds ?? [];
-    public List<FileAttachment> Files { get; } = Files ?? [];
+    public string? Content { get; init; }
+    public List<FileAttachment> Files { get; init; } = [];
 
-    public bool IsEmpty()
-    {
-        return Content is null or "" && Embeds.Count == 0 && Files.Count == 0;
-    }
+    public virtual bool IsEmpty() => Content is null or "" && Files.Count == 0;
+}
+
+public sealed record EmbedMessage : Message
+{
+    public List<Embed> Embeds { get; init; } = [];
+    
+    public override bool IsEmpty() => base.IsEmpty() && Embeds.Count == 0;
+}
+
+public sealed record ComponentsV2Message : Message
+{
+    public required MessageComponent Components { get; init; }
 }
