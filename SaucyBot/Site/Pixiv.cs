@@ -170,18 +170,14 @@ public sealed partial class Pixiv : BaseSite
 
         if (pageCount == 1)
         {
-            var url = await DetermineHighestUsableQualityFile(
+            var file = await DetermineHighestUsableQualityFile(
                 illustrationDetails.IllustrationDetails.IllustrationDetailsUrls.All
             );
 
-            if (url is null)
+            if (file is not null)
             {
-                return response;
+                response.Files.Add(file.Value);
             }
-
-            var file = await GetFile(url);
-            
-            response.Files.Add(file);
 
             return response;
         }
@@ -207,18 +203,16 @@ public sealed partial class Pixiv : BaseSite
 
         var pages = illustrationPagesResponse.IllustrationPages.SafeSlice(0, postLimit);
 
-        foreach (var page in pages)
+        var fileTasks = pages.Select(page => DetermineHighestUsableQualityFile(page.IllustrationPagesUrls.All));
+
+        var files = await Task.WhenAll(fileTasks);
+
+        foreach (var file in files)
         {
-            var url = await DetermineHighestUsableQualityFile(page.IllustrationPagesUrls.All);
-
-            if (url is null)
+            if (file is not null)
             {
-                continue;
+                response.Files.Add(file.Value);
             }
-
-            var file = await GetFile(url);
-            
-            response.Files.Add(file);
         }
 
         var componentBuilder = new ComponentBuilderV2();
@@ -258,18 +252,22 @@ public sealed partial class Pixiv : BaseSite
         return response;
     }
 
-    private async Task<string?> DetermineHighestUsableQualityFile(IEnumerable<string> urls)
+    private async Task<FileAttachment?> DetermineHighestUsableQualityFile(IEnumerable<string> urls)
     {
         foreach (var url in urls)
         {
-            _logger.LogDebug("Checking {Url} for usable quality...", url);
-            
-            var response = await _client.PokeFile(url);
+            _logger.LogDebug("Attempting to download {Url}...", url);
 
-            if (response.Content.Headers.ContentLength < Constants.MaximumFileSize)
+            var stream = await _client.GetFile(url);
+
+            if (stream.Length < Constants.MaximumFileSize)
             {
-                return url;
+                var parsed = new Uri(url);
+
+                return new FileAttachment(stream, Path.GetFileName(parsed.AbsolutePath));
             }
+
+            await stream.DisposeAsync();
         }
 
         return null;
