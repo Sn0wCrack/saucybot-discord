@@ -647,8 +647,8 @@
       },
       "Serilog": {
         "type": "Transitive",
-        "resolved": "4.3.1",
-        "contentHash": "savYe7h5yRlkqBVOwP8cIRDOdqKiPmYCU4W87JH38sBmcKD5EBoXvQIw6bNEvZ/pTe1gsiye3VFCzBsoppGkXQ=="
+        "resolved": "4.4.0",
+        "contentHash": "ZC6Le3rr4TVJJjS4KsQAesxeF1EhW9qcZmmG7eP5Y2G3+gTGkJEUXkq4+tZNPtyp05I0wWOxnIjwtxFweJsObw=="
       },
       "Serilog.Extensions.Hosting": {
         "type": "Transitive",
@@ -824,7 +824,7 @@
           "Microting.EntityFrameworkCore.MySql": "[10.0.9, )",
           "Microting.EntityFrameworkCore.MySql.Json.Microsoft": "[10.0.9, )",
           "Polly.Core": "[8.7.0, )",
-          "Serilog": "[4.3.1, )",
+          "Serilog": "[4.4.0, )",
           "Serilog.Extensions.Hosting": "[10.0.0, )",
           "Serilog.Settings.Configuration": "[10.0.1, )",
           "Serilog.Sinks.Console": "[6.1.1, )",
