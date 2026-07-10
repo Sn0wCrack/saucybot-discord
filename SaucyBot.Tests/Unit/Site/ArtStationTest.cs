@@ -104,7 +104,7 @@ public class ArtStationTest
 
         var match = site.Match("https://www.artstation.com/artwork/xYXO5X").First();
 
-        var response = await site.Process(match);
+        var response = await site.Process(new ProcessRequest(match));
         
         Assert.NotNull(response);
         Assert.NotEmpty(response.Embeds);
@@ -133,7 +133,7 @@ public class ArtStationTest
 
         var match = site.Match("https://www.artstation.com/artwork/xYXO5X").First();
 
-        var response = await site.Process(match);
+        var response = await site.Process(new ProcessRequest(match));
         
         Assert.Null(response);
     }

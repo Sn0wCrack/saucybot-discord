@@ -45,7 +45,7 @@ public class NewgroundsTest
         var matches = site.Match("https://www.newgrounds.com/art/view/testuser/test-slug");
         var match = matches[0];
 
-        var result = await site.Process(match);
+        var result = await site.Process(new ProcessRequest(match));
         
         Assert.NotNull(result);
         Assert.NotEmpty(result.Embeds);
@@ -68,7 +68,7 @@ public class NewgroundsTest
         var matches = site.Match("https://www.newgrounds.com/art/view/testuser/test-slug");
         var match = matches[0];
 
-        var result = await site.Process(match);
+        var result = await site.Process(new ProcessRequest(match));
         
         Assert.Null(result);
     }

@@ -21,7 +21,7 @@ public class InstagramTest
     {
         var site = new Instagram(_logger);
         var match = site.Match(originalUrl).First();
-        var response = await site.Process(match);
+        var response = await site.Process(new ProcessRequest(match));
 
         Assert.NotNull(response);
         Assert.Equal(expectedUrl, response.Text);
@@ -35,7 +35,7 @@ public class InstagramTest
     {
         var site = new Instagram(_logger);
         var match = site.Match(originalUrl).First();
-        var response = await site.Process(match);
+        var response = await site.Process(new ProcessRequest(match));
 
         Assert.NotNull(response);
         Assert.Equal(expectedUrl, response.Text);
@@ -49,7 +49,7 @@ public class InstagramTest
     {
         var site = new Instagram(_logger);
         var match = site.Match(originalUrl).First();
-        var response = await site.Process(match);
+        var response = await site.Process(new ProcessRequest(match));
 
         Assert.NotNull(response);
         Assert.Equal(expectedUrl, response.Text);
@@ -63,7 +63,7 @@ public class InstagramTest
     {
         var site = new Instagram(_logger);
         var match = site.Match(originalUrl).First();
-        var response = await site.Process(match);
+        var response = await site.Process(new ProcessRequest(match));
 
         Assert.NotNull(response);
         Assert.Equal(expectedUrl, response.Text);
@@ -77,7 +77,7 @@ public class InstagramTest
     {
         var site = new Instagram(_logger);
         var match = site.Match(originalUrl).First();
-        var response = await site.Process(match);
+        var response = await site.Process(new ProcessRequest(match));
 
         Assert.NotNull(response);
         Assert.Equal(expectedUrl, response.Text);
@@ -91,7 +91,7 @@ public class InstagramTest
     {
         var site = new Instagram(_logger);
         var match = site.Match(originalUrl).First();
-        var response = await site.Process(match);
+        var response = await site.Process(new ProcessRequest(match));
 
         Assert.NotNull(response);
         Assert.Equal(expectedUrl, response.Text);
@@ -104,7 +104,7 @@ public class InstagramTest
     {
         var site = new Instagram(_logger);
         var match = site.Match(originalUrl).First();
-        var response = await site.Process(match);
+        var response = await site.Process(new ProcessRequest(match));
 
         Assert.NotNull(response);
         Assert.Equal(expectedUrl, response.Text);
@@ -117,7 +117,7 @@ public class InstagramTest
     {
         var site = new Instagram(_logger);
         var match = site.Match(originalUrl).First();
-        var response = await site.Process(match);
+        var response = await site.Process(new ProcessRequest(match));
 
         Assert.NotNull(response);
         Assert.Equal(expectedUrl, response.Text);
@@ -131,7 +131,7 @@ public class InstagramTest
     {
         var site = new Instagram(_logger);
         var match = site.Match(originalUrl).First();
-        var response = await site.Process(match);
+        var response = await site.Process(new ProcessRequest(match));
 
         Assert.NotNull(response);
         Assert.Equal(expectedUrl, response.Text);
@@ -201,8 +201,8 @@ public class InstagramTest
 
         Assert.Equal(2, matches.Count);
 
-        var firstResponse = await site.Process(matches[0]);
-        var secondResponse = await site.Process(matches[1]);
+        var firstResponse = await site.Process(new ProcessRequest(matches[0]));
+        var secondResponse = await site.Process(new ProcessRequest(matches[1]));
 
         Assert.NotNull(firstResponse);
         Assert.Equal("https://vxinstagram.com/p/ABC123/", firstResponse.Text);

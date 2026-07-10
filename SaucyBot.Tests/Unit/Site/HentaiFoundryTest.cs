@@ -32,7 +32,7 @@ public class HentaiFoundryTest
 
         var match = site.Match("https://www.hentai-foundry.com/pictures/user/cherry-gig/1042457/FOR-THE-GOD-EMPEROR").First();
 
-        var response = await site.Process(match);
+        var response = await site.Process(new ProcessRequest(match));
         
         Assert.NotNull(response);
         Assert.Single(response.Embeds);
@@ -59,7 +59,7 @@ public class HentaiFoundryTest
 
         var match = site.Match("https://www.hentai-foundry.com/pictures/user/cherry-gig/1042457/FOR-THE-GOD-EMPEROR").First();
 
-        var response = await site.Process(match);
+        var response = await site.Process(new ProcessRequest(match));
         
         Assert.Null(response);
     }

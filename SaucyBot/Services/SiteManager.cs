@@ -161,7 +161,7 @@ public sealed partial class SiteManager
 
             try
             {
-                var response = await _sites[site].Process(match, message);
+                var response = await _sites[site].Process(new ProcessRequest(match, message));
 
                 if (response is null)
                 {
@@ -221,7 +221,7 @@ public sealed partial class SiteManager
             
             try
             {
-                var response = await _sites[site].Process(match);
+                var response = await _sites[site].Process(new ProcessRequest(match, Command: command));
 
                 if (response is null)
                 {

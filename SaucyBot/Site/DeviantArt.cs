@@ -31,11 +31,11 @@ public sealed partial class DeviantArt : BaseSite
         _openEmbedClient = openEmbedClient;
     }
     
-    public override async Task<ProcessResponse?> Process(Match match, SocketUserMessage? message = null)
+    public override async Task<ProcessResponse?> Process(ProcessRequest request)
     {
         var response = new ProcessResponse();
 
-        var url = match.Value;
+        var url = request.Match.Value;
 
         var openEmbed = await _openEmbedClient.Get(url);
 

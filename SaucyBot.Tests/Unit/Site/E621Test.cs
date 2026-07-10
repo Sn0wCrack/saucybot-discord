@@ -39,7 +39,7 @@ public class E621Test
         var matches = site.Match("https://e621.net/posts/12345");
         var match = matches[0];
 
-        var result = await site.Process(match);
+        var result = await site.Process(new ProcessRequest(match));
 
         Assert.NotNull(result);
         Assert.NotEmpty(result.Embeds);
@@ -62,7 +62,7 @@ public class E621Test
         var matches = site.Match("https://e621.net/posts/12345");
         var match = matches[0];
 
-        var result = await site.Process(match);
+        var result = await site.Process(new ProcessRequest(match));
 
         Assert.Null(result);
     }
@@ -96,7 +96,7 @@ public class E621Test
         var matches = site.Match("https://e621.net/posts/12346");
         var match = matches[0];
 
-        var result = await site.Process(match);
+        var result = await site.Process(new ProcessRequest(match));
 
         Assert.NotNull(result);
         Assert.NotEmpty(result.Embeds);

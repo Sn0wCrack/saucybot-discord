@@ -18,7 +18,7 @@ public class RedditTest
         var matches = site.Match("https://www.reddit.com/media?url=https%3A%2F%2Fexample.com%2Fimage.jpg");
         var match = matches[0];
 
-        var result = await site.Process(match);
+        var result = await site.Process(new ProcessRequest(match));
 
         Assert.NotNull(result);
         Assert.Equal("https://example.com/image.jpg", result.Text);
@@ -34,7 +34,7 @@ public class RedditTest
         var matches = site.Match("https://reddit.com/media?url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3Dabc123");
         var match = matches[0];
 
-        var result = await site.Process(match);
+        var result = await site.Process(new ProcessRequest(match));
 
         Assert.NotNull(result);
         Assert.Equal("https://www.youtube.com/watch?v=abc123", result.Text);

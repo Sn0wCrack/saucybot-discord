@@ -49,7 +49,7 @@ public class DeviantArtTest
 
         var match = site.Match("https://www.deviantart.com/shadeofshinon/art/Frostbreath-VI-943346591").First();
 
-        var response = await site.Process(match);
+        var response = await site.Process(new ProcessRequest(match));
         
         Assert.NotNull(response);
         Assert.Single(response.Embeds);
@@ -91,7 +91,7 @@ public class DeviantArtTest
 
         var match = site.Match("https://www.deviantart.com/shadeofshinon/art/Frostbreath-VI-943346591").First();
 
-        var response = await site.Process(match);
+        var response = await site.Process(new ProcessRequest(match));
         
         Assert.Null(response);
     }

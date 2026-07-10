@@ -52,7 +52,7 @@ public class FurAffinityTest
 
         var match = site.Match("https://www.furaffinity.net/view/38790081/").First();
 
-        var response = await site.Process(match);
+        var response = await site.Process(new ProcessRequest(match));
         
         Assert.NotNull(response);
         Assert.Single(response.Embeds);
@@ -88,7 +88,7 @@ public class FurAffinityTest
 
         var match = site.Match("https://www.furaffinity.net/view/38790081/").First();
 
-        var response = await site.Process(match);
+        var response = await site.Process(new ProcessRequest(match));
         
         Assert.Null(response);
     }

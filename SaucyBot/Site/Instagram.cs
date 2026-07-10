@@ -23,12 +23,12 @@ public sealed partial class Instagram : BaseSite
         _logger = logger;
     }
 
-    public override Task<ProcessResponse?> Process(Match match, SocketUserMessage? message = null)
+    public override Task<ProcessResponse?> Process(ProcessRequest request)
     {
-        var originalUrl = match.Value;
-        var path = match.Groups["path"].Value;
-        var query = match.Groups["query"].Success ? match.Groups["query"].Value : string.Empty;
-        var fragment = match.Groups["fragment"].Success ? match.Groups["fragment"].Value : string.Empty;
+        var originalUrl = request.Match.Value;
+        var path = request.Match.Groups["path"].Value;
+        var query = request.Match.Groups["query"].Success ? request.Match.Groups["query"].Value : string.Empty;
+        var fragment = request.Match.Groups["fragment"].Success ? request.Match.Groups["fragment"].Value : string.Empty;
 
         var rewrittenUrl = $"https://vxinstagram.com/{path}{query}{fragment}";
 

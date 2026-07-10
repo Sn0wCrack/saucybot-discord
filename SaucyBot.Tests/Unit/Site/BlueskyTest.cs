@@ -51,7 +51,7 @@ public class BlueskyTest
 
         var match = site.Match("https://bsky.app/profile/testuser/post/3kabc123").First();
 
-        var result = await site.Process(match);
+        var result = await site.Process(new ProcessRequest(match));
         
         Assert.NotNull(result);
         Assert.NotEmpty(result.Embeds);
@@ -80,7 +80,7 @@ public class BlueskyTest
 
         var match = site.Match("https://bsky.app/profile/testuser/post/3kabc123").First();
 
-        var result = await site.Process(match);
+        var result = await site.Process(new ProcessRequest(match));
         
         Assert.Null(result);
     }
@@ -120,7 +120,7 @@ public class BlueskyTest
 
         var match = site.Match("https://bsky.app/profile/testuser/post/3kabc123").First();
 
-        var result = await site.Process(match);
+        var result = await site.Process(new ProcessRequest(match));
         
         Assert.NotNull(result);
         Assert.NotEmpty(result.Embeds);

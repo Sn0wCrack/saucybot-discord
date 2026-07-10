@@ -18,5 +18,5 @@ public abstract class BaseSite
         return Pattern.Matches(message);
     }
 
-    public abstract Task<ProcessResponse?> Process(Match match, SocketUserMessage? message = null);
+    public abstract Task<ProcessResponse?> Process(ProcessRequest request);
 }

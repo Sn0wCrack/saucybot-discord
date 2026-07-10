@@ -25,12 +25,12 @@ public sealed partial class FurAffinity : BaseSite
         _client = client;
     }
     
-    public override async Task<ProcessResponse?> Process(Match match, SocketUserMessage? message = null)
+    public override async Task<ProcessResponse?> Process(ProcessRequest request)
     {
         var response = new ProcessResponse();
 
         var submission = await _client.GetSubmission(
-            match.Groups["id"].Value
+            request.Match.Groups["id"].Value
         );
         
         if (submission is null)
