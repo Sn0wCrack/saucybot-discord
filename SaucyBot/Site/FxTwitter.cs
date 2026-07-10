@@ -62,7 +62,7 @@ public sealed partial class FxTwitter : BaseSite
         return SupportedLanguages.Contains(code) ? code : null;
     }
 
-    private static string? ResolveTranslationLanguage(ProcessRequest request)
+    private string? ResolveTranslationLanguage(ProcessRequest request)
     {
         // 1. Requested language from URL (highest priority)
         if (request.Match.Groups["translate"].Success)
@@ -70,10 +70,17 @@ public sealed partial class FxTwitter : BaseSite
             return request.Match.Groups["translate"].Value;
         }
 
-        // 2. Guild locale (only reliable for discoverable servers)
+        var autoDetect = _configuration.GetSection("Sites:FxTwitter:AutoDetectLanguage").Get<bool?>() ?? false;
+
+        if (!autoDetect)
+        {
+            return null;
+        }
+
+        // 2. Guild locale (only reliable for community servers)
         var guild = request.Guild;
 
-        if (guild is not null && guild.Features.HasFeature(GuildFeature.Discoverable))
+        if (guild is not null && guild.Features.HasFeature(GuildFeature.Community))
         {
             var guildCode = DiscordLocaleToLanguageCode(guild.PreferredLocale);
             if (guildCode is not null)

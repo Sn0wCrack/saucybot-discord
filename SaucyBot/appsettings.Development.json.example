@@ -60,7 +60,10 @@
             "MemberId": "",
             "PasswordHash": ""
         }
-    }
+    },
+    "FxTwitter": {
+        "AutoDetectLanguage": false
+    },
     "DeviantArt": {
       "ClientId": 0,
       "ClientSecret": ""
