@@ -130,7 +130,7 @@ public class PixivTest
 
         var match = site.Match("https://www.pixiv.net/en/artworks/106848609").First();
 
-        var response = await site.Process(match);
+        var response = await site.Process(new ProcessRequest(match));
         
         Assert.NotNull(response);
         Assert.NotEmpty(response.Files);
@@ -167,7 +167,7 @@ public class PixivTest
 
         var match = site.Match("https://www.pixiv.net/en/artworks/79124301").First();
 
-        var response = await site.Process(match);
+        var response = await site.Process(new ProcessRequest(match));
         
         Assert.Null(response);
     }

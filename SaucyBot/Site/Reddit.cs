@@ -24,13 +24,13 @@ public sealed partial class Reddit : BaseSite
         _logger = logger;
     }
 
-    public override async Task<ProcessResponse?> Process(Match match, SocketUserMessage? message = null)
+    public override async Task<ProcessResponse?> Process(ProcessRequest request)
     {
         // TODO: Handle v.redd.it links using youtube-dl or similar
         
         var response = new ProcessResponse();
         
-        var originalUrl = WebUtility.UrlDecode(match.Groups["url"].Value);
+        var originalUrl = WebUtility.UrlDecode(request.Match.Groups["url"].Value);
         
         response.Text = originalUrl;
 

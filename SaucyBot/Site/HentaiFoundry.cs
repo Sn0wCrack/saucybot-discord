@@ -28,7 +28,7 @@ public sealed partial class HentaiFoundry : BaseSite
         _client = client;
     }
 
-    public override async Task<ProcessResponse?> Process(Match match, SocketUserMessage? message = null)
+    public override async Task<ProcessResponse?> Process(ProcessRequest request)
     {
         var response = new ProcessResponse();
 
@@ -38,7 +38,7 @@ public sealed partial class HentaiFoundry : BaseSite
             return null;
         }
 
-        var page = await _client.GetPage(match.Value);
+        var page = await _client.GetPage(request.Match.Value);
 
         if (page is null)
         {
@@ -49,7 +49,7 @@ public sealed partial class HentaiFoundry : BaseSite
         {
             Title = page.Title(),
             Description = Helper.ProcessDescription(page.Description() ?? ""),
-            Url = match.Value,
+            Url = request.Match.Value,
             Color = this.Color,
             ImageUrl = page.ImageUrl(),
             Timestamp = page.PostedAt(),

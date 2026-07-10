@@ -61,7 +61,7 @@ public class ExHentaiTest
         var matches = site.Match("https://exhentai.org/g/12345/abcdef123/");
         var match = matches[0];
 
-        var result = await site.Process(match);
+        var result = await site.Process(new ProcessRequest(match));
         
         Assert.NotNull(result);
         Assert.NotEmpty(result.Embeds);
@@ -92,7 +92,7 @@ public class ExHentaiTest
         var matches = site.Match("https://exhentai.org/g/12345/abcdef123/");
         var match = matches[0];
 
-        var result = await site.Process(match);
+        var result = await site.Process(new ProcessRequest(match));
         
         Assert.Null(result);
     }
@@ -117,7 +117,7 @@ public class ExHentaiTest
         var matches = site.Match("https://exhentai.org/g/12345/abcdef123/");
         var match = matches[0];
 
-        var result = await site.Process(match);
+        var result = await site.Process(new ProcessRequest(match));
         
         Assert.Null(result);
     }

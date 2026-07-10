@@ -78,7 +78,7 @@ public sealed class FxTwitterClient : IFxTwitterClient
     
     private static string BuildUrl(string name, string identifier, string? translate = null)
     {
-        return translate is null 
+        return translate is null or "original"
             ? $"{BaseUrl}/{name}/status/{identifier}"
             : $"{BaseUrl}/{name}/status/{identifier}/{translate}";
     }

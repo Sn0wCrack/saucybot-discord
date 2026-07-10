@@ -33,11 +33,11 @@ public sealed partial class ExHentai : BaseSite
         _isConfiguredToEmbedExHentaiLinks = IsConfiguredToEmbedExHentaiLinks();
     }
     
-    public override async Task<ProcessResponse?> Process(Match match, SocketUserMessage? message = null)
+    public override async Task<ProcessResponse?> Process(ProcessRequest request)
     {
         var response = new ProcessResponse();
 
-        var url = match.Value;
+        var url = request.Match.Value;
 
         var isExHentaiLink = url.Contains("exhentai", StringComparison.InvariantCultureIgnoreCase);
 
@@ -48,13 +48,13 @@ public sealed partial class ExHentai : BaseSite
             return null;
         }
 
-        var request = new ExHentaiGalleryRequest(
+        var galleryRequest = new ExHentaiGalleryRequest(
             isExHentaiLink ? ExHentaiRequestMode.ExHentai : ExHentaiRequestMode.EHentai,
-            match.Groups["id"].Value,
-            match.Groups["hash"].Value
+            request.Match.Groups["id"].Value,
+            request.Match.Groups["hash"].Value
         );
 
-        var page = await _client.GetGallery(request);
+        var page = await _client.GetGallery(galleryRequest);
 
         if (page is null)
         {

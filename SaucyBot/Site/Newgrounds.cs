@@ -27,11 +27,11 @@ public sealed partial class Newgrounds : BaseSite
         _client = client;
     }
     
-    public override async Task<ProcessResponse?> Process(Match match, SocketUserMessage? message = null)
+    public override async Task<ProcessResponse?> Process(ProcessRequest request)
     {
         var response = new ProcessResponse();
 
-        var post = await _client.GetArt(match.Groups["user"].Value, match.Groups["slug"].Value);
+        var post = await _client.GetArt(request.Match.Groups["user"].Value, request.Match.Groups["slug"].Value);
 
         if (post is null)
         {
@@ -42,7 +42,7 @@ public sealed partial class Newgrounds : BaseSite
         {
             Title = post.Title(),
             Description = Helper.ProcessDescription(post.Description() ?? ""),
-            Url = match.Value,
+            Url = request.Match.Value,
             Color = this.Color,
             ImageUrl = post.ImageUrl(),
             Fields = new List<EmbedFieldBuilder>

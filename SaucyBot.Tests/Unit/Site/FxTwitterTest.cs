@@ -58,7 +58,7 @@ public class FxTwitterTest
         var matches = site.Match("https://twitter.com/testuser/status/123456789");
         var match = matches[0];
 
-        var result = await site.Process(match);
+        var result = await site.Process(new ProcessRequest(match));
         
         Assert.NotNull(result);
         Assert.NotEmpty(result.Embeds);
@@ -84,7 +84,7 @@ public class FxTwitterTest
         var matches = site.Match("https://twitter.com/testuser/status/123456789");
         var match = matches[0];
 
-        var result = await site.Process(match);
+        var result = await site.Process(new ProcessRequest(match));
         
         Assert.Null(result);
     }
@@ -142,7 +142,7 @@ public class FxTwitterTest
         var matches = site.Match("https://twitter.com/testuser/status/123456789");
         var match = matches[0];
 
-        var result = await site.Process(match);
+        var result = await site.Process(new ProcessRequest(match));
         
         Assert.NotNull(result);
         Assert.NotEmpty(result.Embeds);

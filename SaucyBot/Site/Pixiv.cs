@@ -45,7 +45,7 @@ public sealed partial class Pixiv : BaseSite
         _client = client;
     }
 
-    public override async Task<ProcessResponse?> Process(Match match, SocketUserMessage? message = null)
+    public override async Task<ProcessResponse?> Process(ProcessRequest request)
     {
         if (!await _client.Login())
         {
@@ -53,7 +53,7 @@ public sealed partial class Pixiv : BaseSite
             return null;
         }
 
-        var id = match.Groups["id"].Value;
+        var id = request.Match.Groups["id"].Value;
 
         var response = await _client.IllustrationDetails(id);
 
@@ -64,7 +64,7 @@ public sealed partial class Pixiv : BaseSite
         
         return response.IllustrationDetails.Type == IllustrationType.Ugoira
             ? await ProcessUgoira(response)
-            : await ProcessImage(response, message);
+            : await ProcessImage(response, request.Message);
     }
 
     private async Task<ProcessResponse?> ProcessUgoira(IllustrationDetailsResponse illustrationDetails)

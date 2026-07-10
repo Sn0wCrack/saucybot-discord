@@ -14,7 +14,7 @@ public sealed partial class FxTwitter : BaseSite
 {
     public override string Identifier => "FxTwitter";
 
-    [GeneratedRegex(@"https?://(www\.|mobile\.)?(?<domain>twitter|x|nitter)\.(com|net)/(?<user>.*)/status/(?<id>\d+)(/(video|photo)/\d{1})?(/(?<translate>\w{2}|\w{5}))?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
+    [GeneratedRegex(@"https?://(www\.|mobile\.)?(?<domain>twitter|x|nitter)\.(com|net)/(?<user>.*)/status/(?<id>\d+)(/(video|photo)/\d{1})?(/(?<translate>\w{2}|\w{5}|original))?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex FxTwitterPattern();
 
     [GeneratedRegex(@"(?<!https?://[\w.\-_%$@&?!:;/'()*]+)@([\w.]+)(?=\W|$)", RegexOptions.IgnoreCase)]
@@ -42,12 +42,67 @@ public sealed partial class FxTwitter : BaseSite
         _client = client;
     }
     
-    public override async Task<ProcessResponse?> Process(Match match, SocketUserMessage? message = null)
+    private static readonly HashSet<string> SupportedLanguages = new(StringComparer.OrdinalIgnoreCase)
     {
+        "en", "ja", "ko", "zh", "de", "fr", "es", "pt", "ru", "it",
+        "th", "vi", "id", "ms", "tl", "ar", "hi", "bn", "pl", "tr",
+        "nl", "sv", "da", "fi", "el", "cs", "ro", "hu", "uk", "he",
+        "nb", "ca"
+    };
+
+    private static string? DiscordLocaleToLanguageCode(string? locale)
+    {
+        if (locale is null || locale.Length < 2)
+        {
+            return null;
+        }
+
+        var code = locale[..2].ToLowerInvariant();
+
+        return SupportedLanguages.Contains(code) ? code : null;
+    }
+
+    private static string? ResolveTranslationLanguage(ProcessRequest request)
+    {
+        // 1. Requested language from URL (highest priority)
+        if (request.Match.Groups["translate"].Success)
+        {
+            return request.Match.Groups["translate"].Value;
+        }
+
+        // 2. Guild locale (only reliable for discoverable servers)
+        var guild = request.Guild;
+
+        if (guild is not null && guild.Features.HasFeature(GuildFeature.Discoverable))
+        {
+            var guildCode = DiscordLocaleToLanguageCode(guild.PreferredLocale);
+            if (guildCode is not null)
+            {
+                return guildCode;
+            }
+        }
+
+        // 3. User locale (only available on slash commands)
+        var userCode = DiscordLocaleToLanguageCode(request.UserLocale);
+        if (userCode is not null)
+        {
+            return userCode;
+        }
+
+        // 4. Original (no translation)
+        return null;
+    }
+
+    public override async Task<ProcessResponse?> Process(ProcessRequest request)
+    {
+        var translation = ResolveTranslationLanguage(request);
+        
+        _logger.LogDebug("Using {Translation} as language for Tweet translation", translation ?? "Original");
+        
         var response = await _client.GetTweet(
-            match.Groups["user"].Value,
-            match.Groups["id"].Value,
-            match.Groups["translate"].Success ? match.Groups["translate"].Value : null
+            request.Match.Groups["user"].Value,
+            request.Match.Groups["id"].Value,
+            translation
         );
         
         if (response is null)

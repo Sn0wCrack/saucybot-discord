@@ -50,7 +50,7 @@ public class MisskeyTest
 
         var match = site.Match("https://misskey.io/notes/note123").First();
 
-        var result = await site.Process(match);
+        var result = await site.Process(new ProcessRequest(match));
         
         Assert.NotNull(result);
         Assert.NotEmpty(result.Embeds);
@@ -79,7 +79,7 @@ public class MisskeyTest
 
         var match = site.Match("https://misskey.io/notes/note123").First();
 
-        var result = await site.Process(match);
+        var result = await site.Process(new ProcessRequest(match));
         
         Assert.Null(result);
     }
@@ -120,7 +120,7 @@ public class MisskeyTest
 
         var match = site.Match("https://misskey.io/notes/note123").First();
 
-        var result = await site.Process(match);
+        var result = await site.Process(new ProcessRequest(match));
         
         Assert.NotNull(result);
         Assert.NotEmpty(result.Embeds);

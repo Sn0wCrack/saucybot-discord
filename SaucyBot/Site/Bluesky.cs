@@ -30,14 +30,14 @@ public sealed partial class Bluesky : BaseSite
         _client = client;
     }
 
-    public override async Task<ProcessResponse?> Process(Match match, SocketUserMessage? message = null)
+    public override async Task<ProcessResponse?> Process(ProcessRequest request)
     {
         var response = await _client.GetPost(
-            match.Groups["user"].Value,
-            match.Groups["id"].Value
+            request.Match.Groups["user"].Value,
+            request.Match.Groups["id"].Value
         );
         
-        var url = $"https://bsky.app/profile/{match.Groups["user"].Value}/post/{match.Groups["id"].Value}";
+        var url = $"https://bsky.app/profile/{request.Match.Groups["user"].Value}/post/{request.Match.Groups["id"].Value}";
 
         var post = response?.Posts.FirstOrDefault();
 
@@ -50,7 +50,7 @@ public sealed partial class Bluesky : BaseSite
 
         // If we have a message attached, we need to wait a bit for Discord to process the embed,
         // we when need to refresh the message and see if an embed has been added in that time.
-        if (message is not null)
+        if (request.Message is not null)
         {
             await Task.Delay(TimeSpan.FromSeconds(_configuration.GetSection("Sites:Bluesky:Delay").Get<double>()));
 
@@ -58,7 +58,7 @@ public sealed partial class Bluesky : BaseSite
             // and then proceeds to update its internal cache, so while we're waiting around it should update the message cache
             // automatically, so there's no need to refresh the message object.
 
-            hasEmbed = message.Embeds.Count != 0;
+            hasEmbed = request.Message.Embeds.Count != 0;
         }
 
         if (hasEmbed)
@@ -76,7 +76,7 @@ public sealed partial class Bluesky : BaseSite
 
         if (hasVideo)
         {
-            return HandleVideoLazy(match);
+            return HandleVideoLazy(request.Match);
         }
 
         if (hasPhoto)

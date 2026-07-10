@@ -27,13 +27,13 @@ public sealed partial class E621 : BaseSite
         _client = client;
     }
 
-    public override async Task<ProcessResponse?> Process(Match match, SocketUserMessage? message = null)
+    public override async Task<ProcessResponse?> Process(ProcessRequest request)
     {
         var response = new ProcessResponse();
         
-        var url = match.Value;
+        var url = request.Match.Value;
 
-        var post = await _client.GetPost(match.Groups["id"].Value);
+        var post = await _client.GetPost(request.Match.Groups["id"].Value);
 
         if (post is null)
         {
@@ -78,7 +78,7 @@ public sealed partial class E621 : BaseSite
 
         var embed = new EmbedBuilder
         {
-            Title = $"{prefix} Post #{match.Groups["id"].Value}".Trim(),
+            Title = $"{prefix} Post #{request.Match.Groups["id"].Value}".Trim(),
             Url = url,
             Color = this.Color,
             Timestamp = DateTimeOffset.Parse(post.Post.CreatedAt),

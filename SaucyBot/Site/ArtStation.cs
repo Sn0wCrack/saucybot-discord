@@ -29,11 +29,11 @@ public sealed partial class ArtStation : BaseSite
         _client = client;
     }
     
-    public override async Task<ProcessResponse?> Process(Match match, SocketUserMessage? message = null)
+    public override async Task<ProcessResponse?> Process(ProcessRequest request)
     {
         var response = new ProcessResponse();
 
-        var project = await _client.GetProject(match.Groups["hash"].Value);
+        var project = await _client.GetProject(request.Match.Groups["hash"].Value);
 
         if (project is null)
         {
