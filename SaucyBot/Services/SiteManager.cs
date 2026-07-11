@@ -153,30 +153,36 @@ public sealed partial class SiteManager
             return;
         }
         
-        foreach (var (site, match) in results)
+        // Show a "typing..." indicator in the channel for as long as we are
+        // processing matches. It is broadcast until the returned object is
+        // disposed, and Discord clears it once we send our reply.
+        using (message.Channel.EnterTypingState())
         {
-            _logger.LogDebug("Matched link \"{Match}\" to site {Site}", match, site);
-
-            try
+            foreach (var (site, match) in results)
             {
-                var response = await _sites[site].Process(new ProcessRequest(match, message));
+                _logger.LogDebug("Matched link \"{Match}\" to site {Site}", match, site);
 
-                if (response is null)
+                try
                 {
-                    _logger.LogDebug("Failed to process match \"{Match}\" of site {Site}", match, site);
-                    continue;
+                    var response = await _sites[site].Process(new ProcessRequest(match, message));
+
+                    if (response is null)
+                    {
+                        _logger.LogDebug("Failed to process match \"{Match}\" of site {Site}", match, site);
+                        continue;
+                    }
+
+                    await _messageManager.Send(message, response);
+
+                    if (HasPermissionToHideEmbed(message))
+                    {
+                        await message.ModifyAsync(x => x.Flags = MessageFlags.SuppressEmbeds);
+                    }
                 }
-
-                await _messageManager.Send(message, response);
-
-                if (HasPermissionToHideEmbed(message))
+                catch (Exception ex)
                 {
-                    await message.ModifyAsync(x => x.Flags = MessageFlags.SuppressEmbeds);
+                    _logger.LogError(ex, "Exception occured processing or sending messages");
                 }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Exception occured processing or sending messages");
             }
         }
     }
