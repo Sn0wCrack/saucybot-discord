@@ -227,10 +227,13 @@ public sealed partial class Pixiv : BaseSite
                 new ContainerBuilder()
                     .WithAccentColor(this.Color)
                     .WithTextDisplay($"### [{illustrationDetails.Title}]({illustrationDetails.Url})")
-                    .WithTextDisplay($"[{illustrationDetails.UserName}]({illustrationDetails.UserUrl})")
+                    .WithTextDisplay($"👤 [{illustrationDetails.UserName}]({illustrationDetails.UserUrl})")
+                    .WithSeparator()
                     .When(illustrationDetails.Description is not "", (builder => builder.WithTextDisplay(Helper.HtmlToMarkdown(CleanPixivHtml(illustrationDetails.Description)))))
                     .WithMediaGallery(response.Files.GetAllButLast().Select((attachment => $"attachment://{attachment.FileName}")))
-                    .When(pageCount > postLimit, (builder => builder.WithSeparator().WithTextDisplay($"This is part of a {pageCount} image set.")))
+                    .WithSeparator()
+                    .WithTextDisplay($"{illustrationDetails.Likes} 🙂    {illustrationDetails.Bookmarks} ❤️    {illustrationDetails.Views} 👀")
+                    .When(pageCount > postLimit, (builder => builder.WithTextDisplay($"-# This is part of a {pageCount} image set.")))
              );
         
         response.Components = componentBuilder.Build();

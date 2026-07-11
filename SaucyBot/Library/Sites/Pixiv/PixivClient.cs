@@ -184,6 +184,12 @@ public sealed record IllustrationDetails(
     IllustrationType Type,
     [property: JsonPropertyName("urls")]
     IllustrationDetailsUrls IllustrationDetailsUrls,
+    [property: JsonPropertyName("likeCount")]
+    int Likes,
+    [property: JsonPropertyName("bookmarkCount")]
+    int Bookmarks,
+    [property: JsonPropertyName("viewCount")]
+    int Views,
     [property: JsonPropertyName("pageCount")]
     int PageCount,
     [property: JsonPropertyName("userId")]
