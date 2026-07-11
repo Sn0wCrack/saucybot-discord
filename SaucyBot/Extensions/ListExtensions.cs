@@ -39,7 +39,7 @@ public static class ListExtensions
             return source.GetRange(index, count);
         }
 
-        public List<T> GetAllBustFirst()
+        public List<T> GetAllButFirst()
         {
             return source.SafeGetRange(1, source.Count);
         }
