@@ -126,4 +126,57 @@ public class BlueskyTest
         Assert.NotEmpty(result.Embeds);
         Assert.Single(result.Embeds);
     }
+
+    [Fact]
+    public void PostsOnSeparateLinesBeforeAndAfterSameLinePostsAreAllMatched()
+    {
+        var logger = Substitute.For<ILogger<Bluesky>>();
+        var config = new ConfigurationBuilder().Build();
+        var client = Substitute.For<IVixBlueskyClient>();
+
+        var site = new Bluesky(logger, config, client);
+
+        var content =
+            "https://bsky.app/profile/first.bsky.social/post/p1\n" +
+            "https://bsky.app/profile/second.bsky.social/post/p2 https://bsky.app/profile/third.bsky.social/post/p3\n" +
+            "https://bsky.app/profile/fourth.bsky.social/post/p4";
+
+        var matches = site.Match(content);
+
+        Assert.Equal(4, matches.Count);
+
+        Assert.Equal("first.bsky.social", matches[0].Groups["user"].Value);
+        Assert.Equal("p1", matches[0].Groups["id"].Value);
+
+        Assert.Equal("second.bsky.social", matches[1].Groups["user"].Value);
+        Assert.Equal("p2", matches[1].Groups["id"].Value);
+
+        Assert.Equal("third.bsky.social", matches[2].Groups["user"].Value);
+        Assert.Equal("p3", matches[2].Groups["id"].Value);
+
+        Assert.Equal("fourth.bsky.social", matches[3].Groups["user"].Value);
+        Assert.Equal("p4", matches[3].Groups["id"].Value);
+    }
+
+    [Fact]
+    public void PostsSurroundedByTextOnASingleLineAreAllMatched()
+    {
+        var logger = Substitute.For<ILogger<Bluesky>>();
+        var config = new ConfigurationBuilder().Build();
+        var client = Substitute.For<IVixBlueskyClient>();
+
+        var site = new Bluesky(logger, config, client);
+
+        var content = "look https://bsky.app/profile/first.bsky.social/post/p1 and https://bsky.app/profile/second.bsky.social/post/p2 nice";
+
+        var matches = site.Match(content);
+
+        Assert.Equal(2, matches.Count);
+
+        Assert.Equal("first.bsky.social", matches[0].Groups["user"].Value);
+        Assert.Equal("p1", matches[0].Groups["id"].Value);
+
+        Assert.Equal("second.bsky.social", matches[1].Groups["user"].Value);
+        Assert.Equal("p2", matches[1].Groups["id"].Value);
+    }
 }

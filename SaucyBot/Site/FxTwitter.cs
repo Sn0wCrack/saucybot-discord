@@ -14,7 +14,7 @@ public sealed partial class FxTwitter : BaseSite
 {
     public override string Identifier => "FxTwitter";
 
-    [GeneratedRegex(@"https?://(www\.|mobile\.)?(?<domain>twitter|x|nitter)\.(com|net)/(?<user>.*)/status/(?<id>\d+)(/(video|photo)/\d{1})?(/(?<translate>\w{2}|\w{5}|original))?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
+    [GeneratedRegex(@"https?://(www\.|mobile\.)?(?<domain>twitter|x|nitter)\.(com|net)/(?<user>\S*)/status/(?<id>\d+)(/(video|photo)/\d{1})?(/(?<translate>\w{2}|\w{5}|original))?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex FxTwitterPattern();
 
     [GeneratedRegex(@"(?<!https?://[\w.\-_%$@&?!:;/'()*]+)@([\w.]+)(?=\W|$)", RegexOptions.IgnoreCase)]

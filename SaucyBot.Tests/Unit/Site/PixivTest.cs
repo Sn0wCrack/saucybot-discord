@@ -168,7 +168,62 @@ public class PixivTest
         var match = site.Match("https://www.pixiv.net/en/artworks/79124301").First();
 
         var response = await site.Process(new ProcessRequest(match));
-        
+
         Assert.Null(response);
+    }
+
+    [Fact]
+    public void ArtworksOnSeparateLinesBeforeAndAfterSameLineArtworksAreAllMatched()
+    {
+        var logger = Substitute.For<ILogger<Pixiv>>();
+        var config = new ConfigurationBuilder().Build();
+        var guildConfigurationManager = Substitute.For<IGuildConfigurationManager>();
+        var client = Substitute.For<IPixivClient>();
+
+        var site = new Pixiv(
+            logger,
+            config,
+            guildConfigurationManager,
+            client
+        );
+
+        var content =
+            "https://www.pixiv.net/en/artworks/1\n" +
+            "https://www.pixiv.net/en/artworks/2 https://www.pixiv.net/artworks/3\n" +
+            "https://www.pixiv.net/en/artworks/4";
+
+        var matches = site.Match(content);
+
+        Assert.Equal(4, matches.Count);
+
+        Assert.Equal("1", matches[0].Groups["id"].Value);
+        Assert.Equal("2", matches[1].Groups["id"].Value);
+        Assert.Equal("3", matches[2].Groups["id"].Value);
+        Assert.Equal("4", matches[3].Groups["id"].Value);
+    }
+
+    [Fact]
+    public void ArtworksSurroundedByTextOnASingleLineAreAllMatched()
+    {
+        var logger = Substitute.For<ILogger<Pixiv>>();
+        var config = new ConfigurationBuilder().Build();
+        var guildConfigurationManager = Substitute.For<IGuildConfigurationManager>();
+        var client = Substitute.For<IPixivClient>();
+
+        var site = new Pixiv(
+            logger,
+            config,
+            guildConfigurationManager,
+            client
+        );
+
+        var content = "wow https://www.pixiv.net/en/artworks/1 and https://www.pixiv.net/artworks/2 cool";
+
+        var matches = site.Match(content);
+
+        Assert.Equal(2, matches.Count);
+
+        Assert.Equal("1", matches[0].Groups["id"].Value);
+        Assert.Equal("2", matches[1].Groups["id"].Value);
     }
 }

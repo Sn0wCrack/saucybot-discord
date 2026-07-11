@@ -143,9 +143,115 @@ public class FxTwitterTest
         var match = matches[0];
 
         var result = await site.Process(new ProcessRequest(match));
-        
+
         Assert.NotNull(result);
         Assert.NotEmpty(result.Embeds);
         Assert.Equal(2, result.Embeds.Count);
+    }
+
+    [Fact]
+    public void MultipleTweetsOnTheSameLineAreAllMatched()
+    {
+        var logger = Substitute.For<ILogger<FxTwitter>>();
+        var config = new ConfigurationBuilder()
+            .Build();
+        var client = Substitute.For<IFxTwitterClient>();
+        var httpClientFactory = Substitute.For<IHttpClientFactory>();
+        httpClientFactory.CreateClient(Arg.Any<string>()).Returns(new HttpClient());
+
+        var site = new FxTwitter(logger, config, client, httpClientFactory);
+
+        var matches = site.Match("https://twitter.com/alice/status/111 https://twitter.com/bob/status/222");
+
+        Assert.Equal(2, matches.Count);
+        Assert.Equal("111", matches[0].Groups["id"].Value);
+        Assert.Equal("alice", matches[0].Groups["user"].Value);
+        Assert.Equal("222", matches[1].Groups["id"].Value);
+        Assert.Equal("bob", matches[1].Groups["user"].Value);
+    }
+
+    [Theory]
+    [InlineData("https://x.com/testuser123/status/2072717186859471548 https://x.com/testuser456/status/2070445370250928375")]
+    [InlineData("https://x.com/testuser123/status/2072717186859471548?t=123 https://x.com/testuser456/status/2070445370250928375")]
+    [InlineData("https://x.com/testuser123/status/2072717186859471548 https://x.com/testuser456/status/2070445370250928375?t=123")]
+    public void TwoTweetsOnTheSameLineAreBothMatchedRegardlessOfQueryParams(string content)
+    {
+        var logger = Substitute.For<ILogger<FxTwitter>>();
+        var config = new ConfigurationBuilder()
+            .Build();
+        var client = Substitute.For<IFxTwitterClient>();
+        var httpClientFactory = Substitute.For<IHttpClientFactory>();
+        httpClientFactory.CreateClient(Arg.Any<string>()).Returns(new HttpClient());
+
+        var site = new FxTwitter(logger, config, client, httpClientFactory);
+
+        var matches = site.Match(content);
+
+        Assert.Equal(2, matches.Count);
+
+        Assert.Equal("testuser123", matches[0].Groups["user"].Value);
+        Assert.Equal("2072717186859471548", matches[0].Groups["id"].Value);
+
+        Assert.Equal("testuser456", matches[1].Groups["user"].Value);
+        Assert.Equal("2070445370250928375", matches[1].Groups["id"].Value);
+    }
+
+    [Fact]
+    public void TweetsOnSeparateLinesBeforeAndAfterSameLineTweetsAreAllMatched()
+    {
+        var logger = Substitute.For<ILogger<FxTwitter>>();
+        var config = new ConfigurationBuilder()
+            .Build();
+        var client = Substitute.For<IFxTwitterClient>();
+        var httpClientFactory = Substitute.For<IHttpClientFactory>();
+        httpClientFactory.CreateClient(Arg.Any<string>()).Returns(new HttpClient());
+
+        var site = new FxTwitter(logger, config, client, httpClientFactory);
+
+        var content =
+            "https://x.com/first/status/1\n" +
+            "https://x.com/second/status/2 https://x.com/third/status/3\n" +
+            "https://x.com/fourth/status/4";
+
+        var matches = site.Match(content);
+
+        Assert.Equal(4, matches.Count);
+
+        Assert.Equal("first", matches[0].Groups["user"].Value);
+        Assert.Equal("1", matches[0].Groups["id"].Value);
+
+        Assert.Equal("second", matches[1].Groups["user"].Value);
+        Assert.Equal("2", matches[1].Groups["id"].Value);
+
+        Assert.Equal("third", matches[2].Groups["user"].Value);
+        Assert.Equal("3", matches[2].Groups["id"].Value);
+
+        Assert.Equal("fourth", matches[3].Groups["user"].Value);
+        Assert.Equal("4", matches[3].Groups["id"].Value);
+    }
+
+    [Fact]
+    public void TweetsSurroundedByTextOnASingleLineAreAllMatched()
+    {
+        var logger = Substitute.For<ILogger<FxTwitter>>();
+        var config = new ConfigurationBuilder()
+            .Build();
+        var client = Substitute.For<IFxTwitterClient>();
+        var httpClientFactory = Substitute.For<IHttpClientFactory>();
+        httpClientFactory.CreateClient(Arg.Any<string>()).Returns(new HttpClient());
+
+        var site = new FxTwitter(logger, config, client, httpClientFactory);
+
+        var content = "check this https://x.com/first/status/1 out and also https://x.com/second/status/2 lol";
+
+        var matches = site.Match(content);
+
+        Assert.Equal(2, matches.Count);
+
+        Assert.Equal("first", matches[0].Groups["user"].Value);
+        Assert.Equal("1", matches[0].Groups["id"].Value);
+
+        Assert.Equal("second", matches[1].Groups["user"].Value);
+        Assert.Equal("2", matches[1].Groups["id"].Value);
     }
 }
