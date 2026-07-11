@@ -9,6 +9,8 @@ public interface IPixivClient
     public Task<IllustrationPagesResponse?> IllustrationPages(string id);
 
     public Task<UgoiraMetadataResponse?> UgoiraMetadata(string id);
+    
+    public Task<UserDetailsResponse?> UserDetails(string id);
 
     public Task<HttpResponseMessage> PokeFile(string url);
 

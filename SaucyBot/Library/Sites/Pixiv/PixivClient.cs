@@ -124,6 +124,15 @@ public sealed class PixivClient : IPixivClient
         
         return response is null ? null : JsonSerializer.Deserialize<UgoiraMetadataResponse>(response);
     }
+    
+    public async Task<UserDetailsResponse?> UserDetails(string id)
+    {
+        var response = await _cache.Remember($"pixiv.user_{id}", TimeSpan.FromDays(7), async () =>
+            await _pipeline.ExecuteAsync(async token => await _client.GetStringAsync($"{WebApiUrl}/user/{id}", token))
+        );
+        
+        return response is null ? null : JsonSerializer.Deserialize<UserDetailsResponse>(response);
+    }
 
     public async Task<HttpResponseMessage> PokeFile(string url)
     {
@@ -267,6 +276,20 @@ public sealed record UgoiraFrame(
     string File,
     [property: JsonPropertyName("delay")]
     int Delay
+);
+
+public sealed record UserDetailsResponse(
+    [property: JsonPropertyName("body")]
+    UserDetails User
+);
+
+public sealed record UserDetails(
+    [property: JsonPropertyName("userId")]
+    string UserId,
+    [property: JsonPropertyName("image")]
+    string AvatarUrl,
+    [property: JsonPropertyName("imageBig")]
+    string LargeAvatarUrl
 );
 
 #endregion

@@ -6,6 +6,7 @@ using Discord;
 using Discord.WebSocket;
 using SaucyBot.Common;
 using SaucyBot.Extensions;
+using SaucyBot.Extensions.Discord;
 using SaucyBot.Library;
 using SaucyBot.Library.Sites.Pixiv;
 using SaucyBot.Services;
@@ -62,16 +63,18 @@ public sealed partial class Pixiv : BaseSite
             return null;
         }
         
+        var user = await _client.UserDetails(response.IllustrationDetails.UserId);
+        
         return response.IllustrationDetails.Type == IllustrationType.Ugoira
-            ? await ProcessUgoira(response)
-            : await ProcessImage(response, request.Message);
+            ? await ProcessUgoira(response.IllustrationDetails, user?.User)
+            : await ProcessImage(response.IllustrationDetails, user?.User, request.Message);
     }
 
-    private async Task<ProcessResponse?> ProcessUgoira(IllustrationDetailsResponse illustrationDetails)
+    private async Task<ProcessResponse?> ProcessUgoira(IllustrationDetails illustrationDetails, UserDetails? user)
     {
         var response = new ProcessResponse();
 
-        var metadata = await _client.UgoiraMetadata(illustrationDetails.IllustrationDetails.Id);
+        var metadata = await _client.UgoiraMetadata(illustrationDetails.Id);
 
         if (metadata is null)
         {
@@ -85,7 +88,7 @@ public sealed partial class Pixiv : BaseSite
         var basePath = Path.Join(
             Path.GetTempPath(),
             "pixiv",
-            $"{illustrationDetails.IllustrationDetails.Id}_{Helper.RandomString()}"
+            $"{illustrationDetails.Id}_{Helper.RandomString()}"
         );
 
         var concatFile = Path.Join(basePath, "ffconcat");
@@ -112,7 +115,7 @@ public sealed partial class Pixiv : BaseSite
             await File.ReadAllBytesAsync(videoFile)
         );
 
-        var title = illustrationDetails.IllustrationDetails.Title
+        var title = illustrationDetails.Title
             .ToLowerInvariant()
             .Replace("-", "")
             .Replace(" ", "_")
@@ -166,11 +169,11 @@ public sealed partial class Pixiv : BaseSite
         await conversion.Start();
     }
 
-    private async Task<ProcessResponse?> ProcessImage(IllustrationDetailsResponse illustrationDetails, SocketUserMessage? message)
+    private async Task<ProcessResponse?> ProcessImage(IllustrationDetails illustrationDetails, UserDetails? user, SocketUserMessage? message)
     {
         var response = new ProcessResponse();
 
-        var pageCount = illustrationDetails.IllustrationDetails.PageCount;
+        var pageCount = illustrationDetails.PageCount;
         
         var postLimit =  _configuration.GetSection("Sites:Pixiv:PostLimit").Get<int>();
 
@@ -187,7 +190,7 @@ public sealed partial class Pixiv : BaseSite
         if (pageCount == 1)
         {
             var file = await DetermineHighestUsableQualityFile(
-                illustrationDetails.IllustrationDetails.IllustrationDetailsUrls.AllWithoutThumbnails
+                illustrationDetails.IllustrationDetailsUrls.AllWithoutThumbnails
             );
 
             if (file is not null)
@@ -197,7 +200,7 @@ public sealed partial class Pixiv : BaseSite
         }
         else
         {
-            var illustrationPagesResponse = await _client.IllustrationPages(illustrationDetails.IllustrationDetails.Id);
+            var illustrationPagesResponse = await _client.IllustrationPages(illustrationDetails.Id);
 
             if (illustrationPagesResponse is null)
             {
@@ -218,46 +221,31 @@ public sealed partial class Pixiv : BaseSite
                 }
             }
         }
-
-        var componentBuilder = new ComponentBuilderV2();
-
-        var container = new ContainerBuilder
-        {
-            AccentColor = this.Color
-        };
         
-        container.AddComponent(
-            new TextDisplayBuilder().WithContent($"## [{illustrationDetails.IllustrationDetails.Title}]({illustrationDetails.IllustrationDetails.Url})")
-        );
-
-        if (illustrationDetails.IllustrationDetails.Description is not "")
-        {
-            container.AddComponent(
-                new TextDisplayBuilder().WithContent(Helper.HtmlToMarkdown(CleanPixivHtml(illustrationDetails.IllustrationDetails.Description)))
-            );
-        }
-        
-        var mediaGallery = new MediaGalleryBuilder();
-
-        foreach (var file in response.Files)
-        {
-            mediaGallery.AddItem($"attachment://{file.FileName}");
-        }
-
-        container.AddComponent(mediaGallery);
-        
-        if (pageCount > postLimit)
-        {
-            container.AddComponent(
-                new TextDisplayBuilder().WithContent($"This is part of a {pageCount} image set.")
-            );
-        }
-
-        componentBuilder.AddComponent(container);
+        var componentBuilder = new ComponentBuilderV2()
+            .WithContainer(
+                new ContainerBuilder()
+                    .WithAccentColor(this.Color)
+                    .WithTextDisplay($"### [{illustrationDetails.Title}]({illustrationDetails.Url})")
+                    .WithTextDisplay($"[{illustrationDetails.UserName}]({illustrationDetails.UserUrl})")
+                    .When(illustrationDetails.Description is not "", (builder => builder.WithTextDisplay(Helper.HtmlToMarkdown(CleanPixivHtml(illustrationDetails.Description)))))
+                    .WithMediaGallery(response.Files.GetAllButLast().Select((attachment => $"attachment://{attachment.FileName}")))
+                    .When(pageCount > postLimit, (builder => builder.WithSeparator().WithTextDisplay($"This is part of a {pageCount} image set.")))
+             );
         
         response.Components = componentBuilder.Build();
 
         return response;
+    }
+    
+    private async Task<FileAttachment?> GetUserAvatar(UserDetails? user)
+    {
+        if (user is null)
+        {
+            return null;
+        }
+
+        return await GetFile(user.AvatarUrl);
     }
 
     private async Task<FileAttachment?> DetermineHighestUsableQualityFile(IEnumerable<string> urls)

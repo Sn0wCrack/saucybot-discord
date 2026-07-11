@@ -39,6 +39,16 @@ public static class ListExtensions
             return source.GetRange(index, count);
         }
 
+        public List<T> GetAllBustFirst()
+        {
+            return source.SafeGetRange(1, source.Count);
+        }
+
+        public List<T> GetAllButLast()
+        {
+            return source.SafeGetRange(0, source.Count - 1);
+        }
+
         public bool Empty()
         {
             return source.Count == 0;
