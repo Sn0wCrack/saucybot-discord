@@ -155,7 +155,7 @@ public sealed partial class SiteManager
         
         // Show a "typing..." indicator in the channel for as long as we are
         // processing matches. It is broadcast until the returned object is
-        // disposed, and Discord clears it once we send our reply.
+        // disposed of, and Discord clears it once we send our reply.
         using (message.Channel.EnterTypingState())
         {
             foreach (var (site, match) in results)
