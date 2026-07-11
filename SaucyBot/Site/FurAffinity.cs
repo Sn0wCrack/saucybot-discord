@@ -37,8 +37,6 @@ public sealed partial class FurAffinity : BaseSite
         {
             return null;
         }
-        
-        _logger.LogDebug("{Submission}", submission);
 
         var embed = new EmbedBuilder
         {
