@@ -127,6 +127,21 @@ public sealed partial class Pixiv : BaseSite
             new FileAttachment(fileStream, fileName)
         );
         
+        var componentBuilder = new ComponentBuilderV2()
+            .WithContainer(
+                new ContainerBuilder()
+                    .WithAccentColor(this.Color)
+                    .WithTextDisplay($"### [{illustrationDetails.Title}]({illustrationDetails.Url})")
+                    .WithTextDisplay($"👤 [{illustrationDetails.UserName}]({illustrationDetails.UserUrl})")
+                    .WithSeparator()
+                    .When(illustrationDetails.Description is not "", (builder => builder.WithTextDisplay(Helper.HtmlToMarkdown(CleanPixivHtml(illustrationDetails.Description)))))
+                    .WithMediaGallery(response.Files.Select((attachment => $"attachment://{attachment.FileName}")))
+                    .WithSeparator()
+                    .WithTextDisplay($"{illustrationDetails.Likes:N0} 🙂    {illustrationDetails.Bookmarks:N0} ❤️    {illustrationDetails.Views:N0} 👀")
+            );
+        
+        response.Components = componentBuilder.Build();
+        
         Directory.Delete(basePath, true);
 
         return response;
@@ -230,7 +245,7 @@ public sealed partial class Pixiv : BaseSite
                     .WithTextDisplay($"👤 [{illustrationDetails.UserName}]({illustrationDetails.UserUrl})")
                     .WithSeparator()
                     .When(illustrationDetails.Description is not "", (builder => builder.WithTextDisplay(Helper.HtmlToMarkdown(CleanPixivHtml(illustrationDetails.Description)))))
-                    .WithMediaGallery(response.Files.GetAllButLast().Select((attachment => $"attachment://{attachment.FileName}")))
+                    .WithMediaGallery(response.Files.Select((attachment => $"attachment://{attachment.FileName}")))
                     .WithSeparator()
                     .WithTextDisplay($"{illustrationDetails.Likes:N0} 🙂    {illustrationDetails.Bookmarks:N0} ❤️    {illustrationDetails.Views:N0} 👀")
                     .When(pageCount > postLimit, (builder => builder.WithTextDisplay($"-# This is part of a {pageCount} image set.")))

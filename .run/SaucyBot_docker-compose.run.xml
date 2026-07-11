@@ -17,6 +17,7 @@
     <EXTENSION ID="com.jetbrains.rider.docker.debug" isFastModeEnabled="false" isSslEnabled="false" />
     <method v="2">
       <option name="ToolBeforeRunTask" enabled="true" actionId="Tool_External Tools_Podman Prune Images" />
+      <option name="ToolBeforeRunTask" enabled="true" actionId="Tool_External Tools_Podman Prune Volumes" />
     </method>
   </configuration>
 </component>
