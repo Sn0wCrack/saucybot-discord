@@ -142,9 +142,7 @@ public sealed partial class FxTwitter : BaseSite
         var mainTweetHasMedia = mainTweetHasPhoto || mainTweetHasVideo;
 
         var quotedTweetHasMedia = quotedTweetHasPhoto || quotedTweetHasVideo;
-        
-        // TODO: Handle quote tweet chains similar to fxtwitter and vxtwitter
-        
+
         if (mainTweetHasMedia)
         {
             return mainTweetHasVideo
