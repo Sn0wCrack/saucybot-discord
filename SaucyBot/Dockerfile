@@ -10,7 +10,7 @@ WORKDIR /src
 
 COPY ["SaucyBot.csproj", "SaucyBot/"]
 
-RUN --mount=type=cache,target=/root/.nuget/packages \
+RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages \
     --mount=type=cache,target=/root/.local/share/NuGet/http-cache \
     --mount=type=cache,target=/root/.local/share/NuGet/plugin-cache \
     --mount=type=cache,target=/tmp/NuGetScratchs \
@@ -20,7 +20,7 @@ COPY . SaucyBot/
 
 WORKDIR /src/SaucyBot
 
-RUN --mount=type=cache,target=/root/.nuget/packages \
+RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages \
     dotnet build "SaucyBot.csproj" -c "${CONFIGURATION}" -a "${TARGETARCH}" -o /app/build
 
 FROM build AS publish
