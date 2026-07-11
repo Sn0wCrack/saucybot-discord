@@ -41,7 +41,7 @@ public sealed partial class FurAffinity : BaseSite
         var embed = new EmbedBuilder
         {
             Title = submission.Title,
-            Description = Helper.ProcessDescription(submission.Description),
+            Description = Helper.ProcessDescription(FurAffinityBbCodeCleaner.Clean(submission.Description)),
             Color = Color,
             Url = submission.Link,
             ImageUrl = submission.Download,

@@ -82,6 +82,13 @@ public class HelpersTest
     }
 
     [Theory]
+    [InlineData("<i>A<br>B<br>C</i>", "*A*\n*B*\n*C*")]
+    [InlineData("<b>A<br>B<br>C</b>", "**A**\n**B**\n**C**")]
+    [InlineData("<strong>A<br>B</strong>", "**A**\n**B**")]
+    [InlineData("<em>A<br>B</em>", "*A*\n*B*")]
+    [InlineData("<i>A<br><b>B</b></i>", "*A*\n***B***")]
+    [InlineData("<i>\n    A\n    <br>\n    B\n</i>", "*A*\n*B*")]
+    [InlineData("<b>\n    A\n    <br>\n    B\n</b>", "**A**\n**B**")]
     [InlineData("<p>Hello World</p>", "\n\nHello World")]
     [InlineData("<div><p>Paragraph 1</p><p>Paragraph 2</p></div>", "\n\nParagraph 1\n\nParagraph 2")]
     [InlineData("<h1>Title</h1><p>Content with <strong>bold</strong> text</p>", "# Title\n\nContent with **bold** text")]
