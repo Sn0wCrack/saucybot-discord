@@ -18,7 +18,7 @@ public static class Helper
         return Markdown.ToPlainText(markdown);
     }
 
-    public static string ProcessDescription(string description, int maxLength = 300, string suffix = "...")
+    public static string ProcessDescription(string description, int maxLength = 500, string suffix = "...")
     {
         description = HtmlToMarkdown(description) ?? "";
 
