@@ -82,7 +82,7 @@ public class E621Test
                 new E621PostPreview(150, 112, "https://example.com/preview.jpg"),
                 new E621PostSample(true, 800, 600, "https://example.com/sample.jpg"),
                 new E621PostScore(100, 5, 95),
-                new E621PostTags(new[] { "artist1" }, Array.Empty<string>()),
+                new E621PostTags(new[] { "artist1" }, []),
                 "Test description"
             )
         );

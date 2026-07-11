@@ -255,5 +255,7 @@ public sealed record EmbedMessage : Message
 
 public sealed record ComponentsV2Message : Message
 {
-    public required MessageComponent Components { get; init; }
+    public required MessageComponent? Components { get; init; }
+    
+    public override bool IsEmpty() => base.IsEmpty() && Components is null;
 }

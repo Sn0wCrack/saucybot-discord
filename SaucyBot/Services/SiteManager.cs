@@ -33,7 +33,7 @@ public sealed partial class SiteManager
         _messageManager = messageManager;
         _guildConfigurationManager = guildConfigurationManager;
 
-        var disabled = _configuration.GetSection("Bot:DisabledSites").Get<string[]>() ?? Array.Empty<string>();
+        var disabled = _configuration.GetSection("Bot:DisabledSites").Get<string[]>() ?? [];
 
         var siteClasses = Assembly
             .GetExecutingAssembly()
