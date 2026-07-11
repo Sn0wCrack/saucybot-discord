@@ -146,14 +146,14 @@ public sealed partial class FxTwitter : BaseSite
         if (mainTweetHasMedia)
         {
             return mainTweetHasVideo
-                ? await HandleVideo(tweet, videoMedia, mainTweetHasMedia)
+                ? HandleVideo(tweet)
                 : HandlePhoto(tweet, photoMedia, mainTweetHasMedia);
         }
         
         if (quotedTweetHasMedia)
         {
             return quotedTweetHasVideo
-                ? await HandleVideo(tweet, videoMedia, mainTweetHasMedia)
+                ? HandleVideo(tweet)
                 : HandlePhoto(tweet, photoMedia, mainTweetHasMedia);
         }
 
@@ -216,81 +216,15 @@ public sealed partial class FxTwitter : BaseSite
         return Task.FromResult(output);
     }
 
-    private async Task<ProcessResponse?> HandleVideo(FxTwitterTweet tweet, IEnumerable<VideoResult> results, bool mainTweetHasMedia)
+    private ProcessResponse HandleVideo(FxTwitterTweet tweet)
     {
         _logger.LogDebug("Processing as video embed");
-        
-        var response = new ProcessResponse();
 
-        var video = mainTweetHasMedia
-            ? results.FirstOrDefault(result => result.Source == ResultSource.MainTweet)
-            : results.FirstOrDefault(result => result.Source == ResultSource.QuotedTweet);
-
-        if (video is null)
+        var response = new ProcessResponse
         {
-            return null;
-        }
-
-        var variants = new List<string> { video.Video.Url };
-
-        var variant = await DetermineHighestUsableQualityFile(variants);
-
-        if (variant is not null)
-        {
-            var videoFile = await GetFile(variant);
-
-            response.Files.Add(videoFile);
-        }
-        else
-        {
-            response.Text = $"https://fxtwitter.com/{tweet.Author.ScreenName}/status/{tweet.Id}";
-            
-            return response;
-        }
-        
-        var embed = new EmbedBuilder
-        {
-            Url = tweet.Url,
-            Timestamp = DateTimeOffset.FromUnixTimeSeconds(tweet.CreatedTimestamp),
-            Color = this.Color,
-            Description = GetTweetText(tweet),
-            Author = new EmbedAuthorBuilder
-            {
-                Name = $"{tweet.Author.Name} (@{tweet.Author.ScreenName})",
-                IconUrl = tweet.Author.AvatarUrl,
-                Url = tweet.Author.Url ?? $"https://twitter.com/{tweet.Author.ScreenName}",
-            },
-            Fields = new List<EmbedFieldBuilder>
-            {
-                new ()
-                {
-                    Name = "Replies",
-                    Value = tweet.Replies ?? 0,
-                    IsInline = true
-                },
-                new () {
-                    Name = "Retweets",
-                    Value = tweet.Retweets ?? 0,
-                    IsInline = true
-                },
-                new ()
-                {
-                    Name = "Likes",
-                    Value = tweet.Likes ?? 0,
-                    IsInline = true
-                },
-                new ()
-                {
-                    Name = "Views",
-                    Value = tweet.Views ?? 0,
-                    IsInline = true
-                },
-            },
-            Footer = new EmbedFooterBuilder { IconUrl = Constants.TwitterIconUrl, Text = "Twitter" },
+            Text = $"https://fxtwitter.com/{tweet.Author.ScreenName}/status/{tweet.Id}",
         };
-
-        response.Embeds.Add(embed.Build());
-
+        
         return response;
     }
     
