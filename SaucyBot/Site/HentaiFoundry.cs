@@ -12,7 +12,7 @@ public sealed partial class HentaiFoundry : BaseSite
 {
     public override string Identifier => "HentaiFoundry";
 
-    [GeneratedRegex(@"https?://(www\.)?hentai-foundry\.com/pictures/user/(?<user>.*)/(?<id>\d+)/(?<slug>\S+)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
+    [GeneratedRegex(@"https?://(www\.)?hentai-foundry\.com/pictures/user/(?<user>\S*)/(?<id>\d+)/(?<slug>\S+)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex HentaiFoundryPattern();
 
     protected override Regex Pattern => HentaiFoundryPattern();

@@ -69,7 +69,58 @@ public class NewgroundsTest
         var match = matches[0];
 
         var result = await site.Process(new ProcessRequest(match));
-        
+
         Assert.Null(result);
+    }
+
+    [Fact]
+    public void ArtPostsOnSeparateLinesBeforeAndAfterSameLinePostsAreAllMatched()
+    {
+        var logger = Substitute.For<ILogger<Newgrounds>>();
+        var client = Substitute.For<INewgroundsClient>();
+
+        var site = new Newgrounds(logger, client);
+
+        var content =
+            "https://www.newgrounds.com/art/view/first/slug1\n" +
+            "https://www.newgrounds.com/art/view/second/slug2 https://www.newgrounds.com/art/view/third/slug3\n" +
+            "https://www.newgrounds.com/art/view/fourth/slug4";
+
+        var matches = site.Match(content);
+
+        Assert.Equal(4, matches.Count);
+
+        Assert.Equal("first", matches[0].Groups["user"].Value);
+        Assert.Equal("slug1", matches[0].Groups["slug"].Value);
+
+        Assert.Equal("second", matches[1].Groups["user"].Value);
+        Assert.Equal("slug2", matches[1].Groups["slug"].Value);
+
+        Assert.Equal("third", matches[2].Groups["user"].Value);
+        Assert.Equal("slug3", matches[2].Groups["slug"].Value);
+
+        Assert.Equal("fourth", matches[3].Groups["user"].Value);
+        Assert.Equal("slug4", matches[3].Groups["slug"].Value);
+    }
+
+    [Fact]
+    public void ArtPostsSurroundedByTextOnASingleLineAreAllMatched()
+    {
+        var logger = Substitute.For<ILogger<Newgrounds>>();
+        var client = Substitute.For<INewgroundsClient>();
+
+        var site = new Newgrounds(logger, client);
+
+        var content = "art https://www.newgrounds.com/art/view/first/slug1 plus https://www.newgrounds.com/art/view/second/slug2 done";
+
+        var matches = site.Match(content);
+
+        Assert.Equal(2, matches.Count);
+
+        Assert.Equal("first", matches[0].Groups["user"].Value);
+        Assert.Equal("slug1", matches[0].Groups["slug"].Value);
+
+        Assert.Equal("second", matches[1].Groups["user"].Value);
+        Assert.Equal("slug2", matches[1].Groups["slug"].Value);
     }
 }

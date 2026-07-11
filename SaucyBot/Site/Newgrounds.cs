@@ -11,7 +11,7 @@ public sealed partial class Newgrounds : BaseSite
 {
     public override string Identifier => "Newgrounds";
 
-    [GeneratedRegex(@"https?://(www\.)?newgrounds\.com/art/view/(?<user>.*)/(?<slug>\S+)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
+    [GeneratedRegex(@"https?://(www\.)?newgrounds\.com/art/view/(?<user>\S*)/(?<slug>\S+)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex NewgroundsPattern();
 
     protected override Regex Pattern => NewgroundsPattern();

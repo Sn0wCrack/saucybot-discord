@@ -18,7 +18,7 @@ public sealed partial class Pixiv : BaseSite
 {
     public override string Identifier => "Pixiv";
 
-    [GeneratedRegex(@"https?://(www\.)?pixiv\.net/.*artworks/(?<id>\d+)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
+    [GeneratedRegex(@"https?://(www\.)?pixiv\.net/\S*artworks/(?<id>\d+)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex PixivPattern();
 
     [GeneratedRegex(@"/jump\.php\?(?<url>[^""'\s>]+)", RegexOptions.IgnoreCase)]
