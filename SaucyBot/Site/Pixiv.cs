@@ -232,7 +232,7 @@ public sealed partial class Pixiv : BaseSite
                     .When(illustrationDetails.Description is not "", (builder => builder.WithTextDisplay(Helper.HtmlToMarkdown(CleanPixivHtml(illustrationDetails.Description)))))
                     .WithMediaGallery(response.Files.GetAllButLast().Select((attachment => $"attachment://{attachment.FileName}")))
                     .WithSeparator()
-                    .WithTextDisplay($"{illustrationDetails.Likes} 🙂    {illustrationDetails.Bookmarks} ❤️    {illustrationDetails.Views} 👀")
+                    .WithTextDisplay($"{illustrationDetails.Likes:N0} 🙂    {illustrationDetails.Bookmarks:N0} ❤️    {illustrationDetails.Views:N0} 👀")
                     .When(pageCount > postLimit, (builder => builder.WithTextDisplay($"-# This is part of a {pageCount} image set.")))
              );
         
