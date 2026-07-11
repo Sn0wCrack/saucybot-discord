@@ -19,17 +19,14 @@ public static class HentaiFoundryServiceRegistration
             Secure = false,
         });
         
-        services.AddHttpClient<IHentaiFoundryClient, HentaiFoundryClient>(client =>
-        {
-            client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
-            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/html"));
-        }).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
-        {
-            CookieContainer = cookieContainer,
-            UseCookies = true,
-            AllowAutoRedirect = true,
-        });
+        services.AddHtmlClient<IHentaiFoundryClient, HentaiFoundryClient>(
+            new HttpClientHandler
+            {
+                CookieContainer = cookieContainer,
+                UseCookies = true,
+                AllowAutoRedirect = true,
+            }
+        );
 
         return services;
     }
