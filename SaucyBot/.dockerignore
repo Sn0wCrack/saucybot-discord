@@ -1,7 +1,10 @@
 ﻿**/.dockerignore
+**/.containerignore
 **/.env
+**/.env.*
 **/.git
 **/.gitignore
+**/.gitkeep
 **/.project
 **/.settings
 **/.toolstarget
@@ -15,7 +18,9 @@
 **/bin
 **/charts
 **/docker-compose*
+**/compose*
 **/Dockerfile*
+**/Containerfile*
 **/node_modules
 **/npm-debug.log
 **/obj
