@@ -1,0 +1,23 @@
+{
+   "$schema": "https://alirezanet.github.io/Husky.Net/schema.json",
+   "variables": [
+      {
+         "name": "staged-diff-files",
+         "command": "git",
+         "args": ["diff", "--cached", "--name-only", "--no-ext-diff", "--diff-filter=ACMRTUXB"],
+         "staged": true
+      }
+   ],
+   "tasks": [
+      {
+         "name": "lint",
+         "group": "pre-commit",
+         "command": "env",
+         "args": [ "bash", "-c", "dotnet format" ],
+         "windows": {
+            "command": "dotnet",
+            "args": [ "format" ]
+         }
+      }
+   ]
+}
