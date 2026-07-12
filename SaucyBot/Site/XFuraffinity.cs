@@ -9,7 +9,7 @@ public sealed partial class XFuraffinity : BaseSite
 {
     public override string Identifier => "XFuraffinity";
 
-    [GeneratedRegex(@"https?://(?:(?!xfuraffinity\.net)(?:www\.)?)?furaffinity\.net/(?:view|full)/(?<id>\d+)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
+    [GeneratedRegex(@"https?://(?:(?!xfuraffinity\.net)(?:www\.)?)?furaffinity\.net/(?<path>(?:view|full)/(?<id>\d+))/?(?<query>\?[^\s#]*)?(?<fragment>\#[^\s]*)?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex XFuraffinityPattern();
 
     protected override Regex Pattern => XFuraffinityPattern();
@@ -26,11 +26,11 @@ public sealed partial class XFuraffinity : BaseSite
     public override Task<ProcessResponse?> Process(ProcessRequest request)
     {
         var originalUrl = request.Match.Value;
-        var path = request.Match.Groups["id"].Value;
+        var path = request.Match.Groups["path"].Value;
+        var query = request.Match.Groups["query"].Success ? request.Match.Groups["query"].Value : string.Empty;
+        var fragment = request.Match.Groups["fragment"].Success ? request.Match.Groups["fragment"].Value : string.Empty;
 
-        var pathSegment = originalUrl.Contains("/full/") ? "full" : "view";
-
-        var rewrittenUrl = $"https://xfuraffinity.net/{pathSegment}/{path}";
+        var rewrittenUrl = $"https://xfuraffinity.net/{path}{query}{fragment}";
 
         _logger.LogDebug("Rewrote FurAffinity URL: {Original} -> {Rewritten}", originalUrl, rewrittenUrl);
 
