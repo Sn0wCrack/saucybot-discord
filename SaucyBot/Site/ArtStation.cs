@@ -16,7 +16,7 @@ public sealed partial class ArtStation : BaseSite, IArtStationSite
     [GeneratedRegex(@"https?://(www\.)?artstation\.com/artwork/(?<hash>\S+)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex ArtStationPattern();
 
-    protected override Regex Pattern => ArtStationPattern();
+    public override Regex Pattern => ArtStationPattern();
 
     private readonly ILogger<ArtStation> _logger;
     private readonly IConfiguration _configuration;

@@ -15,7 +15,7 @@ public sealed partial class ExHentai : BaseSite, IExHentaiSite
     [GeneratedRegex(@"https?://(www\.)?e[x-]hentai\.org/g/(?<id>\d+)/(?<hash>\S+)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex ExHentaiPattern();
 
-    protected override Regex Pattern => ExHentaiPattern();
+    public override Regex Pattern => ExHentaiPattern();
 
     public override Color Color => new(0x660611);
 

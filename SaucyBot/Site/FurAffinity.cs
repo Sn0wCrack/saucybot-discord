@@ -14,7 +14,7 @@ public sealed partial class FurAffinity : BaseSite, IFurAffinitySite
     [GeneratedRegex(@"https?://(www\.)?furaffinity\.net/(?:view|full)/(?<id>\d+)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex FurAffinityPattern();
 
-    protected override Regex Pattern => FurAffinityPattern();
+    public override Regex Pattern => FurAffinityPattern();
 
     private readonly ILogger<FurAffinity> _logger;
     private readonly IFurAffinityClient _client;

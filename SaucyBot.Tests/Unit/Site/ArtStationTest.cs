@@ -102,7 +102,7 @@ public class ArtStationTest
 
         var site = new ArtStation(logger, config, client);
 
-        var match = site.Match("https://www.artstation.com/artwork/xYXO5X").First();
+        var match = site.Pattern.Matches("https://www.artstation.com/artwork/xYXO5X").First();
 
         var response = await site.Process(new ProcessRequest(match));
 
@@ -131,7 +131,7 @@ public class ArtStationTest
 
         var site = new ArtStation(logger, config, client);
 
-        var match = site.Match("https://www.artstation.com/artwork/xYXO5X").First();
+        var match = site.Pattern.Matches("https://www.artstation.com/artwork/xYXO5X").First();
 
         var response = await site.Process(new ProcessRequest(match));
 

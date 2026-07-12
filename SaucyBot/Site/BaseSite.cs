@@ -8,14 +8,9 @@ public abstract class BaseSite : IBaseSite
 {
     public virtual string Identifier => "Base";
 
-    protected virtual Regex Pattern { get; init; } = new(string.Empty);
+    public virtual Regex Pattern { get; init; } = new(string.Empty);
 
     public virtual Color Color => Color.Default;
-
-    public MatchCollection Match(string message)
-    {
-        return Pattern.Matches(message);
-    }
 
     public abstract Task<ProcessResponse?> Process(ProcessRequest request);
 }

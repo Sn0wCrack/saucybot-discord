@@ -12,7 +12,7 @@ public sealed partial class Instagram : BaseSite, IInstagramSite
     [GeneratedRegex(@"https?://(?<host>(?:www\.|m\.)?instagram\.com)/(?<path>(?:p|reel|reels)/[^/\s?#]+(?:/[^\s?#]*)?)(?<query>\?[^\s#]*)?(?<fragment>\#[^\s]*)?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex InstagramPattern();
 
-    protected override Regex Pattern => InstagramPattern();
+    public override Regex Pattern => InstagramPattern();
 
     public override Color Color => new(0xE4405F);
 

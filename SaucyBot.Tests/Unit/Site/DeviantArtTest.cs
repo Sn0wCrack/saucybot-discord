@@ -47,7 +47,7 @@ public class DeviantArtTest
             oembedClient
         );
 
-        var match = site.Match("https://www.deviantart.com/shadeofshinon/art/Frostbreath-VI-943346591").First();
+        var match = site.Pattern.Matches("https://www.deviantart.com/shadeofshinon/art/Frostbreath-VI-943346591").First();
 
         var response = await site.Process(new ProcessRequest(match));
 
@@ -89,7 +89,7 @@ public class DeviantArtTest
             oembedClient
         );
 
-        var match = site.Match("https://www.deviantart.com/shadeofshinon/art/Frostbreath-VI-943346591").First();
+        var match = site.Pattern.Matches("https://www.deviantart.com/shadeofshinon/art/Frostbreath-VI-943346591").First();
 
         var response = await site.Process(new ProcessRequest(match));
 

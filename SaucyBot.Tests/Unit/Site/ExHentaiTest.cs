@@ -58,7 +58,7 @@ public class ExHentaiTest
 
         var site = new ExHentai(logger, config, client);
 
-        var matches = site.Match("https://exhentai.org/g/12345/abcdef123/");
+        var matches = site.Pattern.Matches("https://exhentai.org/g/12345/abcdef123/");
         var match = matches[0];
 
         var result = await site.Process(new ProcessRequest(match));
@@ -89,7 +89,7 @@ public class ExHentaiTest
 
         var site = new ExHentai(logger, config, client);
 
-        var matches = site.Match("https://exhentai.org/g/12345/abcdef123/");
+        var matches = site.Pattern.Matches("https://exhentai.org/g/12345/abcdef123/");
         var match = matches[0];
 
         var result = await site.Process(new ProcessRequest(match));
@@ -114,7 +114,7 @@ public class ExHentaiTest
 
         var site = new ExHentai(logger, config, client);
 
-        var matches = site.Match("https://exhentai.org/g/12345/abcdef123/");
+        var matches = site.Pattern.Matches("https://exhentai.org/g/12345/abcdef123/");
         var match = matches[0];
 
         var result = await site.Process(new ProcessRequest(match));

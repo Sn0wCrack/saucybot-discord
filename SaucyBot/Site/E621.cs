@@ -14,7 +14,7 @@ public sealed partial class E621 : BaseSite, IE621Site
     [GeneratedRegex(@"https?://(www\.)?e621\.net/posts/(?<id>\d+)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex E621Pattern();
 
-    protected override Regex Pattern => E621Pattern();
+    public override Regex Pattern => E621Pattern();
 
     public override Color Color => new(0x00549E);
 

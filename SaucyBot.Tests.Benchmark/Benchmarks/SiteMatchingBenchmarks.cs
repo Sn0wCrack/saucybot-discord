@@ -86,46 +86,46 @@ public class SiteMatchingBenchmarks
     }
 
     [Benchmark]
-    public MatchCollection FxTwitter_MatchingTweet() => _fxTwitter.Match(TweetUrl);
+    public MatchCollection FxTwitter_MatchingTweet() => _fxTwitter.Pattern.Matches(TweetUrl);
 
     [Benchmark]
-    public MatchCollection ArtStation_MatchingArtwork() => _artStation.Match(ArtStationUrl);
+    public MatchCollection ArtStation_MatchingArtwork() => _artStation.Pattern.Matches(ArtStationUrl);
 
     [Benchmark]
-    public MatchCollection Bluesky_MatchingPost() => _bluesky.Match(BlueskyUrl);
+    public MatchCollection Bluesky_MatchingPost() => _bluesky.Pattern.Matches(BlueskyUrl);
 
     [Benchmark]
-    public MatchCollection DeviantArt_MatchingArt() => _deviantArt.Match(DeviantArtUrl);
+    public MatchCollection DeviantArt_MatchingArt() => _deviantArt.Pattern.Matches(DeviantArtUrl);
 
     [Benchmark]
-    public MatchCollection E621_MatchingPost() => _e621.Match(E621Url);
+    public MatchCollection E621_MatchingPost() => _e621.Pattern.Matches(E621Url);
 
     [Benchmark]
-    public MatchCollection ExHentai_MatchingGallery() => _exHentai.Match(ExHentaiUrl);
+    public MatchCollection ExHentai_MatchingGallery() => _exHentai.Pattern.Matches(ExHentaiUrl);
 
     [Benchmark]
-    public MatchCollection EHentai_MatchingGallery() => _exHentai.Match(EHentaiUrl);
+    public MatchCollection EHentai_MatchingGallery() => _exHentai.Pattern.Matches(EHentaiUrl);
 
     [Benchmark]
-    public MatchCollection FurAffinity_MatchingSubmission() => _furAffinity.Match(FurAffinityUrl);
+    public MatchCollection FurAffinity_MatchingSubmission() => _furAffinity.Pattern.Matches(FurAffinityUrl);
 
     [Benchmark]
-    public MatchCollection HentaiFoundry_MatchingPicture() => _hentaiFoundry.Match(HentaiFoundryUrl);
+    public MatchCollection HentaiFoundry_MatchingPicture() => _hentaiFoundry.Pattern.Matches(HentaiFoundryUrl);
 
     [Benchmark]
-    public MatchCollection Instagram_MatchingPost() => _instagram.Match(InstagramUrl);
+    public MatchCollection Instagram_MatchingPost() => _instagram.Pattern.Matches(InstagramUrl);
 
     [Benchmark]
-    public MatchCollection Misskey_MatchingNote() => _misskey.Match(MisskeyUrl);
+    public MatchCollection Misskey_MatchingNote() => _misskey.Pattern.Matches(MisskeyUrl);
 
     [Benchmark]
-    public MatchCollection Newgrounds_MatchingArt() => _newgrounds.Match(NewgroundsUrl);
+    public MatchCollection Newgrounds_MatchingArt() => _newgrounds.Pattern.Matches(NewgroundsUrl);
 
     [Benchmark]
-    public MatchCollection Pixiv_MatchingArtwork() => _pixiv.Match(PixivUrl);
+    public MatchCollection Pixiv_MatchingArtwork() => _pixiv.Pattern.Matches(PixivUrl);
 
     [Benchmark]
-    public MatchCollection Reddit_MatchingMedia() => _reddit.Match(RedditUrl);
+    public MatchCollection Reddit_MatchingMedia() => _reddit.Pattern.Matches(RedditUrl);
 
     [Benchmark]
     public int AllSites_NonMatchingText()
@@ -133,7 +133,7 @@ public class SiteMatchingBenchmarks
         var total = 0;
         foreach (var site in _allSites)
         {
-            total += site.Match(NonMatchingText).Count;
+            total += site.Pattern.Matches(NonMatchingText).Count;
         }
         return total;
     }
@@ -144,7 +144,7 @@ public class SiteMatchingBenchmarks
         var total = 0;
         foreach (var site in _allSites)
         {
-            total += site.Match(MixedText).Count;
+            total += site.Pattern.Matches(MixedText).Count;
         }
         return total;
     }
@@ -155,7 +155,7 @@ public class SiteMatchingBenchmarks
         var total = 0;
         foreach (var site in _allSites)
         {
-            total += site.Match(TweetUrl).Count;
+            total += site.Pattern.Matches(TweetUrl).Count;
         }
         return total;
     }

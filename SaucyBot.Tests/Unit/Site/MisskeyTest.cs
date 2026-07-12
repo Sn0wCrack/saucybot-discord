@@ -48,7 +48,7 @@ public class MisskeyTest
 
         var site = new Misskey(logger, config, client);
 
-        var match = site.Match("https://misskey.io/notes/note123").First();
+        var match = site.Pattern.Matches("https://misskey.io/notes/note123").First();
 
         var result = await site.Process(new ProcessRequest(match));
 
@@ -77,7 +77,7 @@ public class MisskeyTest
 
         var site = new Misskey(logger, config, client);
 
-        var match = site.Match("https://misskey.io/notes/note123").First();
+        var match = site.Pattern.Matches("https://misskey.io/notes/note123").First();
 
         var result = await site.Process(new ProcessRequest(match));
 
@@ -118,7 +118,7 @@ public class MisskeyTest
 
         var site = new Misskey(logger, config, client);
 
-        var match = site.Match("https://misskey.io/notes/note123").First();
+        var match = site.Pattern.Matches("https://misskey.io/notes/note123").First();
 
         var result = await site.Process(new ProcessRequest(match));
 

@@ -25,7 +25,7 @@ public sealed partial class Pixiv : BaseSite, IPixivSite
     [GeneratedRegex(@"/jump\.php\?(?<url>[^""'\s>]+)", RegexOptions.IgnoreCase)]
     private static partial Regex JumpUrlPattern();
 
-    protected override Regex Pattern => PixivPattern();
+    public override Regex Pattern => PixivPattern();
 
     public override Color Color => new(0x0096fa);
 

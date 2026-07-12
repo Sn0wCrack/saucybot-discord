@@ -42,7 +42,7 @@ public class NewgroundsTest
 
         var site = new Newgrounds(logger, client);
 
-        var matches = site.Match("https://www.newgrounds.com/art/view/testuser/test-slug");
+        var matches = site.Pattern.Matches("https://www.newgrounds.com/art/view/testuser/test-slug");
         var match = matches[0];
 
         var result = await site.Process(new ProcessRequest(match));
@@ -65,7 +65,7 @@ public class NewgroundsTest
 
         var site = new Newgrounds(logger, client);
 
-        var matches = site.Match("https://www.newgrounds.com/art/view/testuser/test-slug");
+        var matches = site.Pattern.Matches("https://www.newgrounds.com/art/view/testuser/test-slug");
         var match = matches[0];
 
         var result = await site.Process(new ProcessRequest(match));
@@ -86,7 +86,7 @@ public class NewgroundsTest
             "https://www.newgrounds.com/art/view/second/slug2 https://www.newgrounds.com/art/view/third/slug3\n" +
             "https://www.newgrounds.com/art/view/fourth/slug4";
 
-        var matches = site.Match(content);
+        var matches = site.Pattern.Matches(content);
 
         Assert.Equal(4, matches.Count);
 
@@ -113,7 +113,7 @@ public class NewgroundsTest
 
         var content = "art https://www.newgrounds.com/art/view/first/slug1 plus https://www.newgrounds.com/art/view/second/slug2 done";
 
-        var matches = site.Match(content);
+        var matches = site.Pattern.Matches(content);
 
         Assert.Equal(2, matches.Count);
 

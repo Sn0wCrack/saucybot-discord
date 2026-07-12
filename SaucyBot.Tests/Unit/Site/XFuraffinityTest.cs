@@ -20,7 +20,7 @@ public class XFuraffinityTest
     public async Task ViewUrlsAreRewrittenCorrectly(string originalUrl, string expectedUrl)
     {
         var site = new XFuraffinity(_logger);
-        var match = site.Match(originalUrl).First();
+        var match = site.Pattern.Matches(originalUrl).First();
         var response = await site.Process(new ProcessRequest(match));
 
         Assert.NotNull(response);
@@ -34,7 +34,7 @@ public class XFuraffinityTest
     public async Task FullUrlsAreRewrittenCorrectly(string originalUrl, string expectedUrl)
     {
         var site = new XFuraffinity(_logger);
-        var match = site.Match(originalUrl).First();
+        var match = site.Pattern.Matches(originalUrl).First();
         var response = await site.Process(new ProcessRequest(match));
 
         Assert.NotNull(response);
@@ -47,7 +47,7 @@ public class XFuraffinityTest
     public async Task QueryParametersArePreserved(string originalUrl, string expectedUrl)
     {
         var site = new XFuraffinity(_logger);
-        var match = site.Match(originalUrl).First();
+        var match = site.Pattern.Matches(originalUrl).First();
         var response = await site.Process(new ProcessRequest(match));
 
         Assert.NotNull(response);
@@ -60,7 +60,7 @@ public class XFuraffinityTest
     public async Task FragmentsArePreserved(string originalUrl, string expectedUrl)
     {
         var site = new XFuraffinity(_logger);
-        var match = site.Match(originalUrl).First();
+        var match = site.Pattern.Matches(originalUrl).First();
         var response = await site.Process(new ProcessRequest(match));
 
         Assert.NotNull(response);
@@ -72,7 +72,7 @@ public class XFuraffinityTest
     public async Task QueryAndFragmentAreBothPreserved(string originalUrl, string expectedUrl)
     {
         var site = new XFuraffinity(_logger);
-        var match = site.Match(originalUrl).First();
+        var match = site.Pattern.Matches(originalUrl).First();
         var response = await site.Process(new ProcessRequest(match));
 
         Assert.NotNull(response);
@@ -85,7 +85,7 @@ public class XFuraffinityTest
     public async Task BothHttpAndHttpsMatch(string originalUrl, string expectedUrl)
     {
         var site = new XFuraffinity(_logger);
-        var match = site.Match(originalUrl).First();
+        var match = site.Pattern.Matches(originalUrl).First();
         var response = await site.Process(new ProcessRequest(match));
 
         Assert.NotNull(response);
@@ -100,7 +100,7 @@ public class XFuraffinityTest
     public void XFuraffinityUrlsAreNotMatched(string url)
     {
         var site = new XFuraffinity(_logger);
-        var matches = site.Match(url);
+        var matches = site.Pattern.Matches(url);
 
         Assert.Empty(matches);
     }
@@ -111,7 +111,7 @@ public class XFuraffinityTest
     public void NonSupportedEndpointsAreNotMatched(string url)
     {
         var site = new XFuraffinity(_logger);
-        var matches = site.Match(url);
+        var matches = site.Pattern.Matches(url);
 
         Assert.Empty(matches);
     }
@@ -123,7 +123,7 @@ public class XFuraffinityTest
     {
         var site = new XFuraffinity(_logger);
         var content = "Check https://furaffinity.net/view/12345/ and https://twitter.com/user/status/123";
-        var matches = site.Match(content);
+        var matches = site.Pattern.Matches(content);
 
         Assert.Single(matches);
         Assert.Contains("furaffinity.net/view/12345", matches[0].Value);

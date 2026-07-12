@@ -50,7 +50,7 @@ public class FurAffinityTest
 
         var site = new FurAffinity(logger, client);
 
-        var match = site.Match("https://www.furaffinity.net/view/38790081/").First();
+        var match = site.Pattern.Matches("https://www.furaffinity.net/view/38790081/").First();
 
         var response = await site.Process(new ProcessRequest(match));
 
@@ -86,7 +86,7 @@ public class FurAffinityTest
 
         var site = new FurAffinity(logger, client);
 
-        var match = site.Match("https://www.furaffinity.net/view/38790081/").First();
+        var match = site.Pattern.Matches("https://www.furaffinity.net/view/38790081/").First();
 
         var response = await site.Process(new ProcessRequest(match));
 

@@ -15,7 +15,7 @@ public sealed partial class Bluesky : BaseSite, IBlueskySite
     [GeneratedRegex(@"https?://(www\.)?bsky\.app/profile/(?<user>\S*)/post/(?<id>\S*)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex BlueskyPattern();
 
-    protected override Regex Pattern => BlueskyPattern();
+    public override Regex Pattern => BlueskyPattern();
 
     public override Color Color => new(0x1083FE);
 

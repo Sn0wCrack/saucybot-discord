@@ -14,7 +14,7 @@ public sealed partial class Newgrounds : BaseSite, INewgroundsSite
     [GeneratedRegex(@"https?://(www\.)?newgrounds\.com/art/view/(?<user>\S*)/(?<slug>\S+)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex NewgroundsPattern();
 
-    protected override Regex Pattern => NewgroundsPattern();
+    public override Regex Pattern => NewgroundsPattern();
 
     public override Color Color => new(0xFFF17A);
 

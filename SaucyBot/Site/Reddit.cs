@@ -13,7 +13,7 @@ public sealed partial class Reddit : BaseSite, IRedditSite
     [GeneratedRegex(@"https?://(www\.)?reddit\.com/media\?url=(?<url>[A-Z0-9\%\.]+)", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex RedditPattern();
 
-    protected override Regex Pattern => RedditPattern();
+    public override Regex Pattern => RedditPattern();
 
     public override Color Color => new(0xFF4500);
 

@@ -12,7 +12,7 @@ public sealed partial class XFuraffinity : BaseSite, IXFuraffinitySite
     [GeneratedRegex(@"https?://(?:(?!xfuraffinity\.net)(?:www\.)?)?furaffinity\.net/(?<path>(?:view|full)/(?<id>\d+))/?(?<query>\?[^\s#]*)?(?<fragment>\#[^\s]*)?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex XFuraffinityPattern();
 
-    protected override Regex Pattern => XFuraffinityPattern();
+    public override Regex Pattern => XFuraffinityPattern();
 
     public override Color Color => new(0x8B5CF6);
 

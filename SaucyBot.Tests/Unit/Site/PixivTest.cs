@@ -131,7 +131,7 @@ public class PixivTest
             client
         );
 
-        var match = site.Match("https://www.pixiv.net/en/artworks/106848609").First();
+        var match = site.Pattern.Matches("https://www.pixiv.net/en/artworks/106848609").First();
 
         var response = await site.Process(new ProcessRequest(match));
 
@@ -168,7 +168,7 @@ public class PixivTest
             client
         );
 
-        var match = site.Match("https://www.pixiv.net/en/artworks/79124301").First();
+        var match = site.Pattern.Matches("https://www.pixiv.net/en/artworks/79124301").First();
 
         var response = await site.Process(new ProcessRequest(match));
 
@@ -195,7 +195,7 @@ public class PixivTest
             "https://www.pixiv.net/en/artworks/2 https://www.pixiv.net/artworks/3\n" +
             "https://www.pixiv.net/en/artworks/4";
 
-        var matches = site.Match(content);
+        var matches = site.Pattern.Matches(content);
 
         Assert.Equal(4, matches.Count);
 
@@ -222,7 +222,7 @@ public class PixivTest
 
         var content = "wow https://www.pixiv.net/en/artworks/1 and https://www.pixiv.net/artworks/2 cool";
 
-        var matches = site.Match(content);
+        var matches = site.Pattern.Matches(content);
 
         Assert.Equal(2, matches.Count);
 

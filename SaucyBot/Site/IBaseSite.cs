@@ -8,6 +8,6 @@ public interface IBaseSite
 {
     string Identifier { get; }
     Color Color { get; }
-    MatchCollection Match(string message);
+    Regex Pattern { get; }
     Task<ProcessResponse?> Process(ProcessRequest request);
 }

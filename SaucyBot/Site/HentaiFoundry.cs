@@ -15,7 +15,7 @@ public sealed partial class HentaiFoundry : BaseSite, IHentaiFoundrySite
     [GeneratedRegex(@"https?://(www\.)?hentai-foundry\.com/pictures/user/(?<user>\S*)/(?<id>\d+)/(?<slug>\S+)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex HentaiFoundryPattern();
 
-    protected override Regex Pattern => HentaiFoundryPattern();
+    public override Regex Pattern => HentaiFoundryPattern();
 
     public override Color Color => new(0xFF67A2);
 

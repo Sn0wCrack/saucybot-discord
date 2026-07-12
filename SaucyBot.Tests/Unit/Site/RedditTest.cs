@@ -15,7 +15,7 @@ public class RedditTest
 
         var site = new Reddit(logger);
 
-        var matches = site.Match("https://www.reddit.com/media?url=https%3A%2F%2Fexample.com%2Fimage.jpg");
+        var matches = site.Pattern.Matches("https://www.reddit.com/media?url=https%3A%2F%2Fexample.com%2Fimage.jpg");
         var match = matches[0];
 
         var result = await site.Process(new ProcessRequest(match));
@@ -31,7 +31,7 @@ public class RedditTest
 
         var site = new Reddit(logger);
 
-        var matches = site.Match("https://reddit.com/media?url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3Dabc123");
+        var matches = site.Pattern.Matches("https://reddit.com/media?url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3Dabc123");
         var match = matches[0];
 
         var result = await site.Process(new ProcessRequest(match));

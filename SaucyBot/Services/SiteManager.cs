@@ -87,7 +87,7 @@ public sealed partial class SiteManager
 
         foreach (var (identifier, site) in _sites)
         {
-            var matches = site.Match(content);
+            var matches = site.Pattern.Matches(content);
 
             foreach (Match match in matches)
             {
@@ -124,7 +124,7 @@ public sealed partial class SiteManager
 
         foreach (var (identifier, site) in _sites)
         {
-            var matches = site.Match(content);
+            var matches = site.Pattern.Matches(content);
 
             foreach (Match match in matches)
             {

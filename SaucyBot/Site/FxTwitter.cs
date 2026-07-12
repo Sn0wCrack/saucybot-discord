@@ -23,7 +23,7 @@ public sealed partial class FxTwitter : BaseSite, ITwitterSite
     [GeneratedRegex(@"(?<!https?://[\w.\-_%$@&?!:;/'()*]+)#([\w.]+)(?=\W|$)", RegexOptions.IgnoreCase)]
     private static partial Regex HashtagPattern();
 
-    protected override Regex Pattern => FxTwitterPattern();
+    public override Regex Pattern => FxTwitterPattern();
 
     public override Color Color => new(0x1DA1F2);
 

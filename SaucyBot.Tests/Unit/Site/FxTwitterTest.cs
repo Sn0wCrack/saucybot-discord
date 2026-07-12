@@ -55,7 +55,7 @@ public class FxTwitterTest
 
         var site = new FxTwitter(logger, config, client, httpClientFactory);
 
-        var matches = site.Match("https://twitter.com/testuser/status/123456789");
+        var matches = site.Pattern.Matches("https://twitter.com/testuser/status/123456789");
         var match = matches[0];
 
         var result = await site.Process(new ProcessRequest(match));
@@ -81,7 +81,7 @@ public class FxTwitterTest
 
         var site = new FxTwitter(logger, config, client, httpClientFactory);
 
-        var matches = site.Match("https://twitter.com/testuser/status/123456789");
+        var matches = site.Pattern.Matches("https://twitter.com/testuser/status/123456789");
         var match = matches[0];
 
         var result = await site.Process(new ProcessRequest(match));
@@ -139,7 +139,7 @@ public class FxTwitterTest
 
         var site = new FxTwitter(logger, config, client, httpClientFactory);
 
-        var matches = site.Match("https://twitter.com/testuser/status/123456789");
+        var matches = site.Pattern.Matches("https://twitter.com/testuser/status/123456789");
         var match = matches[0];
 
         var result = await site.Process(new ProcessRequest(match));
@@ -161,7 +161,7 @@ public class FxTwitterTest
 
         var site = new FxTwitter(logger, config, client, httpClientFactory);
 
-        var matches = site.Match("https://twitter.com/alice/status/111 https://twitter.com/bob/status/222");
+        var matches = site.Pattern.Matches("https://twitter.com/alice/status/111 https://twitter.com/bob/status/222");
 
         Assert.Equal(2, matches.Count);
         Assert.Equal("111", matches[0].Groups["id"].Value);
@@ -185,7 +185,7 @@ public class FxTwitterTest
 
         var site = new FxTwitter(logger, config, client, httpClientFactory);
 
-        var matches = site.Match(content);
+        var matches = site.Pattern.Matches(content);
 
         Assert.Equal(2, matches.Count);
 
@@ -213,7 +213,7 @@ public class FxTwitterTest
             "https://x.com/second/status/2 https://x.com/third/status/3\n" +
             "https://x.com/fourth/status/4";
 
-        var matches = site.Match(content);
+        var matches = site.Pattern.Matches(content);
 
         Assert.Equal(4, matches.Count);
 
@@ -244,7 +244,7 @@ public class FxTwitterTest
 
         var content = "check this https://x.com/first/status/1 out and also https://x.com/second/status/2 lol";
 
-        var matches = site.Match(content);
+        var matches = site.Pattern.Matches(content);
 
         Assert.Equal(2, matches.Count);
 

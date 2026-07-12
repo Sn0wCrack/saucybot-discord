@@ -49,7 +49,7 @@ public class BlueskyTest
 
         var site = new Bluesky(logger, config, client);
 
-        var match = site.Match("https://bsky.app/profile/testuser/post/3kabc123").First();
+        var match = site.Pattern.Matches("https://bsky.app/profile/testuser/post/3kabc123").First();
 
         var result = await site.Process(new ProcessRequest(match));
 
@@ -78,7 +78,7 @@ public class BlueskyTest
 
         var site = new Bluesky(logger, config, client);
 
-        var match = site.Match("https://bsky.app/profile/testuser/post/3kabc123").First();
+        var match = site.Pattern.Matches("https://bsky.app/profile/testuser/post/3kabc123").First();
 
         var result = await site.Process(new ProcessRequest(match));
 
@@ -118,7 +118,7 @@ public class BlueskyTest
 
         var site = new Bluesky(logger, config, client);
 
-        var match = site.Match("https://bsky.app/profile/testuser/post/3kabc123").First();
+        var match = site.Pattern.Matches("https://bsky.app/profile/testuser/post/3kabc123").First();
 
         var result = await site.Process(new ProcessRequest(match));
 
@@ -141,7 +141,7 @@ public class BlueskyTest
             "https://bsky.app/profile/second.bsky.social/post/p2 https://bsky.app/profile/third.bsky.social/post/p3\n" +
             "https://bsky.app/profile/fourth.bsky.social/post/p4";
 
-        var matches = site.Match(content);
+        var matches = site.Pattern.Matches(content);
 
         Assert.Equal(4, matches.Count);
 
@@ -169,7 +169,7 @@ public class BlueskyTest
 
         var content = "look https://bsky.app/profile/first.bsky.social/post/p1 and https://bsky.app/profile/second.bsky.social/post/p2 nice";
 
-        var matches = site.Match(content);
+        var matches = site.Pattern.Matches(content);
 
         Assert.Equal(2, matches.Count);
 
