@@ -19,7 +19,6 @@ public static class SiteServiceRegistration
         services.AddSingleton<IPixivSite, Pixiv>();
         services.AddSingleton<IRedditSite, Reddit>();
         services.AddSingleton<ITwitterSite, FxTwitter>();
-        services.AddSingleton<IXFuraffinitySite, XFurAffinity>();
         return services;
     }
 }

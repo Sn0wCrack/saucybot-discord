@@ -5,9 +5,9 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site;
 
-public sealed partial class XFurAffinity : BaseSite, IXFuraffinitySite
+public sealed partial class XFurAffinity : BaseSite, IFurAffinitySite
 {
-    public override string Identifier => "XFurAffinity";
+    public override string Identifier => "FurAffinity";
 
     [GeneratedRegex(@"https?://(?:(?!xfuraffinity\.net)(?:www\.)?)?furaffinity\.net/(?<path>(?:view|full)/(?<id>\d+))/?(?<query>\?[^\s#]*)?(?<fragment>\#[^\s]*)?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex XFurAffinityPattern();
