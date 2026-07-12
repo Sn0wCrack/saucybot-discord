@@ -19,6 +19,7 @@ public static class SiteServiceRegistration
         services.AddSingleton<Misskey>();
         services.AddSingleton<Bluesky>();
         services.AddSingleton<Instagram>();
+        services.AddSingleton<XFuraffinity>();
         return services;
     }
 }
