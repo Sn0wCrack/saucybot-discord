@@ -10,7 +10,7 @@ public sealed class Worker : BackgroundService
     private readonly ILogger<Worker> _logger;
     private readonly IConfiguration _configuration;
 
-    private readonly DatabaseManager _databaseManager;
+    private readonly IDatabaseManager _databaseManager;
     private readonly SiteManager _siteManager;
 
     private readonly SemaphoreSlim _throttle;
@@ -20,7 +20,7 @@ public sealed class Worker : BackgroundService
     public Worker(
         ILogger<Worker> logger,
         IConfiguration configuration,
-        DatabaseManager databaseManager,
+        IDatabaseManager databaseManager,
         SiteManager siteManager
     )
     {

@@ -24,6 +24,7 @@
     "MaximumEmbeds": 8
   },
   "Database": {
+    "Disabled": false,
     "ConnectionString": "server=database;user=root;password=secret;database=bot"
   },
   "Cache": {

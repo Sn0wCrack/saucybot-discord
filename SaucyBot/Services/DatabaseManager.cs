@@ -3,7 +3,7 @@ using SaucyBot.Database;
 
 namespace SaucyBot.Services;
 
-public sealed class DatabaseManager
+public sealed class DatabaseManager : IDatabaseManager
 {
     private readonly IServiceProvider _provider;
 

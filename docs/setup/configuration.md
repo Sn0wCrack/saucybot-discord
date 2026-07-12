@@ -59,6 +59,7 @@ Open `appsettings.json` in a text editor and configure each section as needed.
 
 | Key | Value Type | Description | Default |
 |---|---|---|---|
+| `Disabled` | Boolean | Disable all database features. When enabled, no database connection is created and per-guild configuration is ignored. | `false` |
 | `ConnectionString` | String | MariaDB connection string. Update `user`, `password`, and `database` to match your setup. | |
 
 For Docker:
