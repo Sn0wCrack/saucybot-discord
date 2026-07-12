@@ -1,4 +1,4 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 using Discord;
 using Discord.WebSocket;
 using SaucyBot.Library;
@@ -21,7 +21,8 @@ public sealed class Misskey : BaseSite
         ILogger<Misskey> logger,
         IConfiguration configuration,
         IMisskeyClient client
-    ) {
+    )
+    {
         _logger = logger;
         _configuration = configuration;
         _client = client;
@@ -39,7 +40,7 @@ public sealed class Misskey : BaseSite
         var url = request.Match.Groups["url"].Value;
 
         var id = request.Match.Groups["id"].Value;
-        
+
         var note = await _client.ShowNote(url, id);
 
         if (note is null)
@@ -75,7 +76,7 @@ public sealed class Misskey : BaseSite
             {
                 continue;
             }
-            
+
             var embed = new EmbedBuilder
             {
                 Url = request.Match.Value,
@@ -91,7 +92,7 @@ public sealed class Misskey : BaseSite
                 ImageUrl = file.Url,
                 Footer = new EmbedFooterBuilder { IconUrl = Constants.MisskeyIconUrl, Text = "Misskey" },
             };
-        
+
             response.Embeds.Add(embed.Build());
         }
 

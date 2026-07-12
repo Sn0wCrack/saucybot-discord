@@ -15,9 +15,9 @@ public class FurAffinityDirect : IFurAffinityClient
     private const string BaseUrl = "https://furaffinity.net";
 
     private readonly ICacheManager _cache;
-    
+
     private readonly HttpClient _client;
-    
+
     private readonly ILogger<FurAffinityDirect> _logger;
 
     private readonly ResiliencePipeline<string?> _pipeline;
@@ -27,7 +27,7 @@ public class FurAffinityDirect : IFurAffinityClient
         _cache = cacheManager;
         _client = client;
         _logger = logger;
-        
+
         _pipeline = new ResiliencePipelineBuilder<string?>()
             .AddFallback(new FallbackStrategyOptions<string?>
             {
@@ -35,7 +35,7 @@ public class FurAffinityDirect : IFurAffinityClient
                 ShouldHandle = arguments => arguments.Outcome switch
                 {
                     { Exception: HttpRequestException e } => e.StatusCode == HttpStatusCode.NotFound ? PredicateResult.True() : PredicateResult.False(),
-                    _ => PredicateResult.False(), 
+                    _ => PredicateResult.False(),
                 }
             })
             .AddRetry(new RetryStrategyOptions<string?>
@@ -53,11 +53,11 @@ public class FurAffinityDirect : IFurAffinityClient
             .AddTimeout(TimeSpan.FromSeconds(15))
             .Build();
     }
-    
+
     public async Task<FaExportSubmission?> GetSubmission(string identifier)
     {
         var url = $"{BaseUrl}/view/{identifier}";
-        
+
         var response = await _cache.Remember(
             $"furaffinity_direct.submission_response_{identifier}",
             TimeSpan.FromDays(7),
@@ -68,13 +68,13 @@ public class FurAffinityDirect : IFurAffinityClient
         {
             return null;
         }
-        
+
         var parsed = await _cache.Remember(
             $"furaffinity_direct.submission_parsed_{identifier}",
             TimeSpan.FromDays(7),
             () => Task.FromResult<FaExportSubmission?>(new FurAffinitySubmissionPage(response, identifier).ToFaExportSubmission())
         );
-        
+
         return parsed;
     }
 }

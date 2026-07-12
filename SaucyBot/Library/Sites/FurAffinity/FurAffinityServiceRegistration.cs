@@ -26,7 +26,7 @@ public static class FurAffinityServiceRegistration
             HttpOnly = true,
             Secure = true,
         });
-    
+
         services.AddHtmlClient<IFurAffinityClient, FurAffinityDirect>(
             new HttpClientHandler
             {
@@ -35,7 +35,7 @@ public static class FurAffinityServiceRegistration
                 AllowAutoRedirect = true,
             }
         );
-        
+
         // services.AddJsonApiClient<IFurAffinityClient, FaExportClient>();
 
         return services;

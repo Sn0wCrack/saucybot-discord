@@ -1,4 +1,4 @@
-﻿using Discord;
+using Discord;
 using Discord.WebSocket;
 using SaucyBot.Extensions;
 using SaucyBot.Extensions.Discord;
@@ -21,7 +21,7 @@ public sealed class MessageManager
     public async Task Send(SocketUserMessage received, ProcessResponse response)
     {
         var messages = await PartitionMessages(response);
-        
+
         foreach (var message in messages)
         {
             if (message.IsEmpty())
@@ -29,7 +29,7 @@ public sealed class MessageManager
                 _logger.LogDebug("Empty message was created from: \"{OriginalMessage}\"", received.Content);
                 continue;
             }
-            
+
             switch (message)
             {
                 case ComponentsV2Message c:
@@ -62,7 +62,7 @@ public sealed class MessageManager
     public async Task Send(SocketSlashCommand received, ProcessResponse response)
     {
         var messages = await PartitionMessages(response);
-        
+
         foreach (var message in messages)
         {
             if (message.IsEmpty())
@@ -115,7 +115,7 @@ public sealed class MessageManager
     private static Task<List<Message>> HandleComponentsV2(ProcessResponse response)
     {
         var files = response.Files.Count > 0 ? response.Files : [];
-        
+
         return Task.FromResult<List<Message>>([
             new ComponentsV2Message
             {
@@ -143,7 +143,7 @@ public sealed class MessageManager
         }
 
         var segments = new List<List<FileAttachment>>();
-        
+
         foreach (var file in response.Files)
         {
             if (segments.Count == 0)
@@ -161,7 +161,7 @@ public sealed class MessageManager
                 segments.Add([file]);
                 continue;
             }
-            
+
             segments[index].Add(file);
         }
 
@@ -175,20 +175,20 @@ public sealed class MessageManager
         var messages = new List<Message>();
 
         var embed = response.Embeds.First();
-        
+
         var message = new EmbedMessage
         {
             Embeds = [embed],
             Files = response.Files,
         };
-        
+
         messages.Add(message);
-        
+
         if (response.Text is not null)
         {
             messages.Add(new EmbedMessage { Content = response.Text });
         }
-        
+
         return Task.FromResult(messages);
     }
 
@@ -211,10 +211,10 @@ public sealed class MessageManager
                 var relatedFiles = GetRelatedFiles(embed, response.Files);
                 files.AddRange(relatedFiles);
             }
-            
+
             messages.Add(new EmbedMessage { Embeds = chunk, Files = files });
         }
-        
+
         return Task.FromResult(messages);
     }
 
@@ -249,13 +249,13 @@ public abstract record Message
 public sealed record EmbedMessage : Message
 {
     public List<Embed> Embeds { get; init; } = [];
-    
+
     public override bool IsEmpty() => base.IsEmpty() && Embeds.Count == 0;
 }
 
 public sealed record ComponentsV2Message : Message
 {
     public required MessageComponent? Components { get; init; }
-    
+
     public override bool IsEmpty() => base.IsEmpty() && Components is null;
 }

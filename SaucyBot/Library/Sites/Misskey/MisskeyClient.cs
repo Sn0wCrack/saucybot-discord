@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -10,9 +10,9 @@ namespace SaucyBot.Library.Sites.Misskey;
 public sealed class MisskeyClient : IMisskeyClient
 {
     private readonly ICacheManager _cache;
-    
+
     private readonly HttpClient _client;
-    
+
     public MisskeyClient(ICacheManager cacheManager, HttpClient client)
     {
         _cache = cacheManager;
@@ -24,7 +24,7 @@ public sealed class MisskeyClient : IMisskeyClient
         var response = await _cache.Remember($"misskey.{url}.note_{id}", async () =>
         {
             var request = JsonContent.Create(new { noteId = id });
-            
+
             var response = await _client.PostAsync($"{url}/api/notes/show", request);
 
             return await response.Content.ReadAsStringAsync();

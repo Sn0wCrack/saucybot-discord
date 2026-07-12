@@ -36,7 +36,7 @@ public sealed partial class Bluesky : BaseSite
             request.Match.Groups["user"].Value,
             request.Match.Groups["id"].Value
         );
-        
+
         var url = $"https://bsky.app/profile/{request.Match.Groups["user"].Value}/post/{request.Match.Groups["id"].Value}";
 
         var post = response?.Posts.FirstOrDefault();
@@ -67,7 +67,7 @@ public sealed partial class Bluesky : BaseSite
         }
 
         var photoMedia = await FindAllPhotoElements(post);
-        
+
         var videoMedia = await FindAllVideoElements(post);
 
         var hasPhoto = photoMedia.NotEmpty();
@@ -100,17 +100,17 @@ public sealed partial class Bluesky : BaseSite
         {
             output.Add(post.Embed.Playlist);
         }
-        
+
         return Task.FromResult(output);
     }
-    
+
 
     private ProcessResponse HandlePhoto(string url, VixBlueskyPost post, IEnumerable<VixBlueskyEmbedImage> results)
     {
         _logger.LogDebug("Processing as photo embed");
-        
+
         var response = new ProcessResponse();
-        
+
         foreach (var image in results)
         {
             var embed = new EmbedBuilder
@@ -154,22 +154,22 @@ public sealed partial class Bluesky : BaseSite
                 ImageUrl = image.Url,
                 Footer = new EmbedFooterBuilder { IconUrl = Constants.BlueskyIconUrl, Text = "Bluesky" },
             };
-            
+
             response.Embeds.Add(embed.Build());
         }
 
         return response;
     }
-    
+
 
     private ProcessResponse HandleVideo(string url, Match match, VixBlueskyPost post)
     {
         _logger.LogDebug("Processing as video embed");
-        
+
         var videoUrl = $"https://r.bskyx.app/profile/{match.Groups["user"].Value}/post/{match.Groups["id"].Value}";
-        
+
         var response = new ProcessResponse();
-        
+
         var embed = new EmbedBuilder
         {
             Url = url,
@@ -210,11 +210,11 @@ public sealed partial class Bluesky : BaseSite
             },
             Footer = new EmbedFooterBuilder { IconUrl = Constants.BlueskyIconUrl, Text = "Bluesky" },
         };
-        
+
         response.Embeds.Add(embed.Build());
 
         response.Text = videoUrl;
-        
+
         return response;
     }
 
@@ -227,12 +227,12 @@ public sealed partial class Bluesky : BaseSite
 
         return response;
     }
-    
-    
+
+
     private ProcessResponse HandleRegular(string url, VixBlueskyPost post)
     {
         var response = new ProcessResponse();
-        
+
         var embed = new EmbedBuilder
         {
             Url = url,
@@ -273,9 +273,9 @@ public sealed partial class Bluesky : BaseSite
             },
             Footer = new EmbedFooterBuilder { IconUrl = Constants.BlueskyIconUrl, Text = "Bluesky" },
         };
-        
+
         response.Embeds.Add(embed.Build());
-            
+
         return response;
     }
 }

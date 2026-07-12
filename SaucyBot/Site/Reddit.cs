@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Text.RegularExpressions;
 using Discord;
 using Discord.WebSocket;
@@ -18,7 +18,7 @@ public sealed partial class Reddit : BaseSite
     protected override Color Color => new(0xFF4500);
 
     private readonly ILogger<Reddit> _logger;
-    
+
     public Reddit(ILogger<Reddit> logger)
     {
         _logger = logger;
@@ -27,11 +27,11 @@ public sealed partial class Reddit : BaseSite
     public override async Task<ProcessResponse?> Process(ProcessRequest request)
     {
         // TODO: Handle v.redd.it links using youtube-dl or similar
-        
+
         var response = new ProcessResponse();
-        
+
         var originalUrl = WebUtility.UrlDecode(request.Match.Groups["url"].Value);
-        
+
         response.Text = originalUrl;
 
         return response;

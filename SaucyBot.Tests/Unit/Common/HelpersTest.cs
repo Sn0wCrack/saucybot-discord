@@ -14,10 +14,10 @@ public class HelpersTest
     public void RandomStringWillBeGeneratedWithTheCorrectLength(int length)
     {
         var random = Helper.RandomString(length);
-        
+
         Assert.Equal(length, random.Length);
     }
-    
+
     [Theory]
     [InlineData(100)]
     [InlineData(200)]
@@ -28,7 +28,7 @@ public class HelpersTest
         var random = Helper.RandomString(maxLength * 2);
 
         var processed = Helper.ProcessDescription(random, maxLength, "");
-        
+
         Assert.NotEqual(random.Length, processed.Length);
         Assert.Equal(processed.Length, maxLength);
     }
@@ -43,11 +43,11 @@ public class HelpersTest
         var random = Helper.RandomString(maxLength * 2);
 
         var processed = Helper.ProcessDescription(random, maxLength, suffix);
-        
+
         Assert.Equal(maxLength + suffix.Length, processed.Length);
         Assert.Equal(suffix, processed[^suffix.Length..]);
     }
-    
+
     [Theory]
     [InlineData("<p>Test</p>")]
     [InlineData("<p><span>Test</span> Test</p>")]
@@ -56,27 +56,27 @@ public class HelpersTest
     public void ProcessDescriptionWillRemoveHtml(string description)
     {
         var processed = Helper.ProcessDescription(description);
-        
+
         Assert.NotEqual(description, processed);
     }
-    
+
     [Theory]
     [InlineData("<p>Test</p>Test")]
     [InlineData("Test<br>Test")]
     public void ProcessDescriptionWillRetainBreaksAndParagraphs(string description)
     {
         var processed = Helper.ProcessDescription(description);
-        
+
         Assert.Contains("\n", processed);
     }
-    
+
     [Fact]
     public void ProcessDescriptionWillRetainBreaksAndRemoveExistingNewLines()
     {
         const string description = "Test\n<br>Test";
 
         var processed = Helper.ProcessDescription(description);
-        
+
         Assert.Contains("\n", processed);
         Assert.DoesNotContain("\n\n", processed);
     }
@@ -103,7 +103,7 @@ public class HelpersTest
     public void HtmlToMarkdown_ReturnsExpectedText(string html, string expected)
     {
         var result = Helper.HtmlToMarkdown(html);
-        
+
         Assert.Equal(expected, result);
     }
 
@@ -119,7 +119,7 @@ public class HelpersTest
     public void MarkdownToPlainText_ReturnsExpectedText(string markdown, string expected)
     {
         var result = Helper.MarkdownToPlainText(markdown);
-        
+
         Assert.Equal(expected, result);
     }
 
@@ -139,9 +139,9 @@ public class HelpersTest
             var parts = item.Split('=');
             queryString.Add(new KeyValuePair<string, string>(parts[0], parts[1]));
         }
-        
+
         var result = Helper.GetUriWithQueryString(uri, queryString);
-        
+
         Assert.Equal(expected, result);
     }
 
@@ -153,9 +153,9 @@ public class HelpersTest
             new("key", "value with spaces"),
             new("special&key", "value&special")
         };
-        
+
         var result = Helper.GetUriWithQueryString("https://example.com", queryString);
-        
+
         Assert.Contains("key=value+with+spaces", result);
         Assert.Contains("special%26key=value%26special", result);
     }

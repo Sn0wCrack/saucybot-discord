@@ -8,6 +8,10 @@ permissions:
   contents: read
   pull-requests: write
 
+env:
+  DOTNET_VERSION: '10.x'
+  HUSKY: 0
+
 jobs:
   metadata:
     name: 'Generate Metadata'
@@ -43,7 +47,7 @@ jobs:
     needs: package
     runs-on: ubuntu-latest
     environment: Production
-    
+
     steps:
       - name: 'Deploy'
         uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1.2.5

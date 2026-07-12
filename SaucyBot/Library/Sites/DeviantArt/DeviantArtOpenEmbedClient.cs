@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using SaucyBot.Extensions;
@@ -12,7 +12,7 @@ public sealed class DeviantArtOpenEmbedClient : IDeviantArtOpenEmbedClient
     private const string EndpointUrl = "https://backend.deviantart.com/oembed";
 
     private readonly ICacheManager _cache;
-    
+
     private readonly HttpClient _client;
 
     public DeviantArtOpenEmbedClient(ICacheManager cacheManager, HttpClient client)
@@ -24,7 +24,7 @@ public sealed class DeviantArtOpenEmbedClient : IDeviantArtOpenEmbedClient
     public async Task<OpenEmbedResponse?> Get(string url)
     {
         var query = new Dictionary<string, string> { ["url"] = url };
-        
+
         var response = await _cache.Remember($"deviantart.oembed_{url}", async () => await _client.GetStringWithQueryStringAsync(EndpointUrl, query));
 
         return response is null ? null : JsonSerializer.Deserialize<OpenEmbedResponse>(response);

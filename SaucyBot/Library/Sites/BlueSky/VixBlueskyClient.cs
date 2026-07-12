@@ -9,16 +9,16 @@ using SaucyBot.Services;
 
 namespace SaucyBot.Library.Sites.BlueSky;
 
-public class VixBlueskyClient: IVixBlueskyClient
+public class VixBlueskyClient : IVixBlueskyClient
 {
     private const string BaseUrl = "https://bskyx.app";
 
     private readonly ILogger<VixBlueskyClient> _logger;
-    
+
     private readonly ICacheManager _cache;
-    
+
     private readonly HttpClient _client;
-    
+
     private readonly ResiliencePipeline<string?> _pipeline;
 
     public VixBlueskyClient(ILogger<VixBlueskyClient> logger, ICacheManager cacheManager, HttpClient client)
@@ -26,7 +26,7 @@ public class VixBlueskyClient: IVixBlueskyClient
         _logger = logger;
         _cache = cacheManager;
         _client = client;
-        
+
         _pipeline = new ResiliencePipelineBuilder<string?>()
             .AddFallback(new FallbackStrategyOptions<string?>
             {
@@ -34,7 +34,7 @@ public class VixBlueskyClient: IVixBlueskyClient
                 ShouldHandle = arguments => arguments.Outcome switch
                 {
                     { Exception: HttpRequestException e } => e.StatusCode == HttpStatusCode.NotFound ? PredicateResult.True() : PredicateResult.False(),
-                    _ => PredicateResult.False(), 
+                    _ => PredicateResult.False(),
                 }
             })
             .AddRetry(new RetryStrategyOptions<string?>
@@ -52,7 +52,7 @@ public class VixBlueskyClient: IVixBlueskyClient
             .AddTimeout(TimeSpan.FromSeconds(15))
             .Build();
     }
-    
+
     public async Task<VixBlueskyResponse?> GetPost(string name, string identifier)
     {
         var response = await _cache.Remember(
@@ -73,14 +73,14 @@ public class VixBlueskyClient: IVixBlueskyClient
         {
             _logger.LogDebug(e, "Failed to deserialize VixBluesky response, response not JSON or is malformed.");
             return null;
-        } 
+        }
     }
 }
 
 #region Response Types
 
 public sealed record VixBlueskyResponse(
-    [property: JsonPropertyName("posts")] 
+    [property: JsonPropertyName("posts")]
     List<VixBlueskyPost> Posts
 );
 

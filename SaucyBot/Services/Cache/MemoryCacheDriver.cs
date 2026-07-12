@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace SaucyBot.Services.Cache;
 
@@ -6,14 +6,14 @@ public sealed class MemoryCacheDriver : ICacheDriver
 {
     private readonly IMemoryCache _cache;
     private readonly IConfiguration _configuration;
-    
+
     private readonly TimeSpan _defaultExpiry;
-    
+
     public MemoryCacheDriver(IMemoryCache cache, IConfiguration configuration)
     {
         _cache = cache;
         _configuration = configuration;
-        
+
         _defaultExpiry = TimeSpan.FromSeconds(
             _configuration.GetSection("Cache:Memory:DefaultLifetime").Get<int>()
         );

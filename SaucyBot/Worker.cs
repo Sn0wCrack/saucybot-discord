@@ -22,7 +22,8 @@ public sealed class Worker : BackgroundService
         IConfiguration configuration,
         DatabaseManager databaseManager,
         SiteManager siteManager
-    ) {
+    )
+    {
         _logger = logger;
         _configuration = configuration;
         _databaseManager = databaseManager;
@@ -65,7 +66,7 @@ public sealed class Worker : BackgroundService
     {
         var shardId = _configuration.GetSection("Bot:ShardId").Get<int?>();
         var totalShards = _configuration.GetSection("Bot:TotalShards").Get<int?>();
-        
+
         var config = new DiscordSocketConfig
         {
             TotalShards = totalShards,
@@ -82,13 +83,13 @@ public sealed class Worker : BackgroundService
 
         if (shardId is not null && totalShards is not null)
         {
-            ids = Enumerable.Range((int) (shardId * totalShards), (int) totalShards).ToArray();
+            ids = Enumerable.Range((int)(shardId * totalShards), (int)totalShards).ToArray();
         }
-        
+
         _logger.LogInformation("Starting in Automatic Sharing Mode with {ShardId} and {TotalShards}", shardId, totalShards);
-        
+
         var client = new DiscordShardedClient(ids, config);
-        
+
         client.Log += HandleLogAsync;
         client.ShardReady += HandleShardReadyAsync;
         client.MessageReceived += HandleMessageAsync;
@@ -101,7 +102,7 @@ public sealed class Worker : BackgroundService
     {
         var shardId = _configuration.GetSection("Bot:ShardId").Get<int?>();
         var totalShards = _configuration.GetSection("Bot:TotalShards").Get<int?>();
-        
+
         var config = new DiscordSocketConfig
         {
             ShardId = shardId,
@@ -114,11 +115,11 @@ public sealed class Worker : BackgroundService
             AlwaysResolveStickers = false,
             AlwaysDownloadDefaultStickers = false,
         };
-        
+
         _logger.LogInformation("Starting in Manual Mode with {ShardId} and {TotalShards}", shardId, totalShards);
 
         var client = new DiscordSocketClient(config);
-        
+
         client.Log += HandleLogAsync;
         client.Ready += HandleSocketClientReadyAsync;
         client.MessageReceived += HandleMessageAsync;
@@ -192,7 +193,7 @@ public sealed class Worker : BackgroundService
         {
             return;
         }
-        
+
         _logger.LogInformation("[{Source}] {Message}", $"Shard #{client.ShardId}", "Ready");
 
         if (client.ShardId == 0)
@@ -202,7 +203,7 @@ public sealed class Worker : BackgroundService
         }
 
         var status = _configuration.GetSection("Bot:DiscordStatus:Enabled").Get<bool?>() ?? false;
-        
+
         var parsed = Enum.TryParse(
             _configuration.GetSection("Bot:DiscordStatus:Type").Get<string?>() ?? "",
             out ActivityType activityType
@@ -230,7 +231,7 @@ public sealed class Worker : BackgroundService
         }
 
         var status = _configuration.GetSection("Bot:DiscordStatus:Enabled").Get<bool?>() ?? false;
-        
+
         var parsed = Enum.TryParse(
             _configuration.GetSection("Bot:DiscordStatus:Type").Get<string?>() ?? "",
             out ActivityType activityType
@@ -250,7 +251,7 @@ public sealed class Worker : BackgroundService
     private async Task CreateSlashCommands(DiscordSocketClient client)
     {
         var applicationCommandProperties = new List<ApplicationCommandProperties>();
-        
+
         try
         {
             var sauceCommand = new SlashCommandBuilder();
@@ -264,9 +265,9 @@ public sealed class Worker : BackgroundService
                 .WithDescription("The URL to create the embed from")
                 .WithType(ApplicationCommandOptionType.String)
                 .WithRequired(true);
-            
+
             sauceCommand.AddOption(sauceOption);
-            
+
             applicationCommandProperties.Add(sauceCommand.Build());
 
             await client.BulkOverwriteGlobalApplicationCommandsAsync(applicationCommandProperties.ToArray());
@@ -290,7 +291,7 @@ public sealed class Worker : BackgroundService
             LogSeverity.Debug => LogLevel.Debug,
             _ => LogLevel.Information
         };
-        
+
         _logger.Log(severity, message.Exception, "[{Source}] {Message}", message.Source, message.Message);
 
         return Task.CompletedTask;

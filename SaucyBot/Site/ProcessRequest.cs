@@ -7,7 +7,8 @@ public sealed record ProcessRequest(
     Match Match,
     SocketUserMessage? Message = null,
     SocketSlashCommand? Command = null
-)  {
+)
+{
     public bool IsSlashCommand => Command is not null;
 
     public bool IsMessage => Message is not null;

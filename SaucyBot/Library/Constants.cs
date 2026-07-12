@@ -1,4 +1,4 @@
-﻿using Discord;
+using Discord;
 
 namespace SaucyBot.Library;
 
@@ -37,9 +37,9 @@ public static class Constants
         "https://s3.arkjp.net/misskey/webpublic-0c66b1ca-b8c0-4eaa-9827-47674f4a1580.png";
 
     public const string BlueskyIconUrl = "https://bsky.app/static/apple-touch-icon.png";
-    
+
     #endregion
-    
+
     #region Bot
 
     public const GatewayIntents RequiredGatewayIntents =
@@ -51,30 +51,30 @@ public static class Constants
                                                                  ChannelPermission.AttachFiles;
 
     public const ChannelPermission RequiredThreadPermissions =
-        RequiredChannelPermissions | ChannelPermission.SendMessagesInThreads; 
-    
+        RequiredChannelPermissions | ChannelPermission.SendMessagesInThreads;
+
     /// <summary>
     /// The default maximum number of embeds to attempt to send in a single processing run.
     ///
     /// This is primarily used as a fallback value.
     /// </summary>
     public const int DefaultMaximumEmbeds = 8;
-    
+
     /// <summary>
     /// The default maximum number of Pixiv images to return for a Pixiv illustration.
     ///
     /// This is primarily used as a fallback value.
     /// </summary>
     public const int DefaultMaximumPixivImages = 5;
-    
+
     /// <summary>
     /// The default maximum number of ArtStation images to return for an ArtStation project.
     ///
     /// This is primarily used as a fallback value.
     /// </summary>
     public const int DefaultMaximumArtStationImages = 8;
-    
-    
+
+
     /// <summary>
     /// The default setting for sending the "Matched to site X, please wait..." message for guilds.
     /// </summary>

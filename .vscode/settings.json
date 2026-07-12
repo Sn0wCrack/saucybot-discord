@@ -1,0 +1,10 @@
+{
+    "[yaml]": {
+        "editor.defaultFormatter": "redhat.vscode-yaml"
+    },
+
+    "yaml.format.printWidth": 120,
+    "yaml.format.singleQuote": true,
+    "yaml.keyOrdering": false,
+    "yaml.format.proseWrap": "preserve"
+}

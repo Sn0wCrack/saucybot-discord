@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using SaucyBot.Services;
@@ -10,9 +10,9 @@ public class TwitterImageSyndicationClient : ITwitterImageSyndicationClient
     private const string BaseUrl = "https://cdn.syndication.twimg.com";
 
     private readonly ILogger<TwitterImageSyndicationClient> _logger;
-    
+
     private readonly ICacheManager _cache;
-    
+
     private readonly HttpClient _client;
 
     public TwitterImageSyndicationClient(ILogger<TwitterImageSyndicationClient> logger, ICacheManager cacheManager, HttpClient client)
@@ -21,7 +21,7 @@ public class TwitterImageSyndicationClient : ITwitterImageSyndicationClient
         _cache = cacheManager;
         _client = client;
     }
-    
+
     public async Task<TwitterImageSyndicationTweet?> GetTweet(string identifier)
     {
         var response = await _cache.Remember(
@@ -64,7 +64,7 @@ public sealed record TwitterImageSyndicationUser(
     [property: JsonPropertyName("screen_name")]
     string ScreenName,
     [property: JsonPropertyName("profile_image_url_https")]
-    string ProfileImageUrl 
+    string ProfileImageUrl
 );
 
 public sealed record TwitterImageSyndicationMediaDetail(

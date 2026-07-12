@@ -1,4 +1,4 @@
-﻿using System.IO.Compression;
+using System.IO.Compression;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -26,7 +26,7 @@ public sealed partial class Pixiv : BaseSite
     private static partial Regex JumpUrlPattern();
 
     protected override Regex Pattern => PixivPattern();
-    
+
     protected override Color Color => new(0x0096fa);
 
     private readonly IPixivClient _client;
@@ -39,7 +39,8 @@ public sealed partial class Pixiv : BaseSite
         IConfiguration configuration,
         IGuildConfigurationManager guildConfigurationManager,
         IPixivClient client
-    ) {
+    )
+    {
         _logger = logger;
         _configuration = configuration;
         _guildConfigurationManager = guildConfigurationManager;
@@ -62,9 +63,9 @@ public sealed partial class Pixiv : BaseSite
         {
             return null;
         }
-        
+
         var user = await _client.UserDetails(response.IllustrationDetails.UserId);
-        
+
         return response.IllustrationDetails.Type == IllustrationType.Ugoira
             ? await ProcessUgoira(response.IllustrationDetails, user?.User)
             : await ProcessImage(response.IllustrationDetails, user?.User, request.Message);
@@ -92,13 +93,13 @@ public sealed partial class Pixiv : BaseSite
         );
 
         var concatFile = Path.Join(basePath, "ffconcat");
-        
+
         var format = _configuration.GetSection("Sites:Pixiv:UgoiraFormat").Get<string?>() ?? "mp4";
 
         var videoFile = Path.Join(basePath, $"ugoira.{format}");
-        
+
         await zip.ExtractToDirectoryAsync(basePath, true);
-        
+
         await File.WriteAllTextAsync(concatFile, BuildConcatFile(metadata.UgoiraMetadata.Frames));
 
         try
@@ -122,11 +123,11 @@ public sealed partial class Pixiv : BaseSite
             .Trim();
 
         var fileName = $"{title}_ugoira.{format}";
-        
+
         response.Files.Add(
             new FileAttachment(fileStream, fileName)
         );
-        
+
         var componentBuilder = new ComponentBuilderV2()
             .WithContainer(
                 new ContainerBuilder()
@@ -139,9 +140,9 @@ public sealed partial class Pixiv : BaseSite
                     .WithSeparator()
                     .WithTextDisplay($"{illustrationDetails.Likes:N0} 🙂    {illustrationDetails.Bookmarks:N0} ❤️    {illustrationDetails.Views:N0} 👀")
             );
-        
+
         response.Components = componentBuilder.Build();
-        
+
         Directory.Delete(basePath, true);
 
         return response;
@@ -154,7 +155,7 @@ public sealed partial class Pixiv : BaseSite
         foreach (var (fileName, frameDelay) in frames)
         {
             var duration = Math.Round(frameDelay / 1000.0, 3);
-            
+
             builder
                 .Append($"file {fileName}\n")
                 .Append($"duration {duration}\n");
@@ -171,7 +172,7 @@ public sealed partial class Pixiv : BaseSite
     private async Task RenderUgoiraVideo(string concatFilePath, string videoFilePath)
     {
         var bitrate = _configuration.GetSection("Sites:Pixiv:UgoiraBitrate").Get<int?>() ?? 2_000;
-        
+
         var conversion = FFmpeg.Conversions.New()
             .SetOverwriteOutput(true)
             .AddParameter("-f concat", ParameterPosition.PreInput)
@@ -189,8 +190,8 @@ public sealed partial class Pixiv : BaseSite
         var response = new ProcessResponse();
 
         var pageCount = illustrationDetails.PageCount;
-        
-        var postLimit =  _configuration.GetSection("Sites:Pixiv:PostLimit").Get<int>();
+
+        var postLimit = _configuration.GetSection("Sites:Pixiv:PostLimit").Get<int>();
 
         if (message is not null)
         {
@@ -198,7 +199,7 @@ public sealed partial class Pixiv : BaseSite
 
             if (guildConfiguration is not null)
             {
-                postLimit = (int) guildConfiguration.MaximumPixivImages;
+                postLimit = (int)guildConfiguration.MaximumPixivImages;
             }
         }
 
@@ -236,7 +237,7 @@ public sealed partial class Pixiv : BaseSite
                 }
             }
         }
-        
+
         var componentBuilder = new ComponentBuilderV2()
             .WithContainer(
                 new ContainerBuilder()
@@ -250,12 +251,12 @@ public sealed partial class Pixiv : BaseSite
                     .WithTextDisplay($"{illustrationDetails.Likes:N0} 🙂    {illustrationDetails.Bookmarks:N0} ❤️    {illustrationDetails.Views:N0} 👀")
                     .When(pageCount > postLimit, (builder => builder.WithTextDisplay($"-# This is part of a {pageCount} image set.")))
              );
-        
+
         response.Components = componentBuilder.Build();
 
         return response;
     }
-    
+
     private async Task<FileAttachment?> GetUserAvatar(UserDetails? user)
     {
         if (user is null)
@@ -290,11 +291,11 @@ public sealed partial class Pixiv : BaseSite
     private async Task<FileAttachment> GetFile(string url)
     {
         _logger.LogDebug("Attempting to download {Url}...", url);
-        
+
         var response = await _client.GetFile(url);
 
         var parsed = new Uri(url);
-        
+
         return new FileAttachment(
             response,
             Path.GetFileName(parsed.AbsolutePath)

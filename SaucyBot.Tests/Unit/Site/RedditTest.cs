@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using SaucyBot.Site;
 using NSubstitute;
+using SaucyBot.Site;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Site;
@@ -12,7 +12,7 @@ public class RedditTest
     public async Task ReturnsDecodedUrlInResponseText()
     {
         var logger = Substitute.For<ILogger<Reddit>>();
-        
+
         var site = new Reddit(logger);
 
         var matches = site.Match("https://www.reddit.com/media?url=https%3A%2F%2Fexample.com%2Fimage.jpg");
@@ -28,7 +28,7 @@ public class RedditTest
     public async Task ReturnsDecodedUrlForComplexEncodedUrl()
     {
         var logger = Substitute.For<ILogger<Reddit>>();
-        
+
         var site = new Reddit(logger);
 
         var matches = site.Match("https://reddit.com/media?url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3Dabc123");

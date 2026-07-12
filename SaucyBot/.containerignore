@@ -1,10 +1,14 @@
-﻿**/.dockerignore
+﻿**/.containerignore
+**/.dockerignore
 **/.env
+**/.env*
+**/.editorconfig
 **/.git
 **/.github
 **/.idea
 **/.run
 **/.gitignore
+**/.git-blame-ignore-revs
 **/.project
 **/.settings
 **/.toolstarget
@@ -17,10 +21,10 @@
 **/azds.yaml
 **/bin
 **/charts
-**/compose*
+**/compose*.{yml,yaml}
 **/Containerfile*
 **/docs
-**/docker-compose*
+**/docker-compose*.{yml,yaml}
 **/Dockerfile*
 **/node_modules
 **/npm-debug.log
@@ -30,3 +34,4 @@
 **/appsettings*.json
 LICENSE
 README.md
+renovate.json

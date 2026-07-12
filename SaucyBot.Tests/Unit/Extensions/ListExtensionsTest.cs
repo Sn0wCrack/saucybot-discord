@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using SaucyBot.Extensions;
 using Xunit;
 
@@ -12,7 +12,7 @@ public class ListExtensionsTest
     public void SafeSliceTest(int from, int to, int output)
     {
         var list = Enumerable.Range(0, 10).ToList();
-        
+
         var sliced = list.SafeSlice(from, to);
 
         Assert.Equal(output, sliced.Count);
@@ -26,7 +26,7 @@ public class ListExtensionsTest
         var list = Enumerable.Range(0, 10).ToList();
 
         var sliced = list.SafeSlice(from, to);
-        
+
         Assert.Equal(output, sliced.Count);
     }
 
@@ -38,7 +38,7 @@ public class ListExtensionsTest
         var list = Enumerable.Range(0, 10).ToList();
 
         var sliced = list.SafeGetRange(index, count);
-        
+
         Assert.Equal(output, sliced.Count);
     }
 
@@ -51,7 +51,7 @@ public class ListExtensionsTest
         var list = Enumerable.Range(0, 10).ToList();
 
         var range = list.SafeGetRange(index, count);
-        
+
         Assert.Equal(output, range.Count);
     }
 }

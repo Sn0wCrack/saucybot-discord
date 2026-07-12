@@ -5,9 +5,9 @@ using Discord;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using NSubstitute;
 using SaucyBot.Library.Sites.Misskey;
 using SaucyBot.Site;
-using NSubstitute;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Site;
@@ -18,14 +18,14 @@ public class MisskeyTest
     public async Task AnEmbedIsCreatedForEachImageFile()
     {
         var logger = Substitute.For<ILogger<Misskey>>();
-        
+
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 {"Sites:Misskey:Delay", "3"}
             })
             .Build();
-        
+
         var client = Substitute.For<IMisskeyClient>();
 
         var note = new ShowNoteResponse(
@@ -51,7 +51,7 @@ public class MisskeyTest
         var match = site.Match("https://misskey.io/notes/note123").First();
 
         var result = await site.Process(new ProcessRequest(match));
-        
+
         Assert.NotNull(result);
         Assert.NotEmpty(result.Embeds);
         Assert.Equal(2, result.Embeds.Count);
@@ -61,14 +61,14 @@ public class MisskeyTest
     public async Task NothingIsReturnedWhenTheApiClientReturnsUnsuccessfully()
     {
         var logger = Substitute.For<ILogger<Misskey>>();
-        
+
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 {"Sites:Misskey:Delay", "3"}
             })
             .Build();
-        
+
         var client = Substitute.For<IMisskeyClient>();
 
         client
@@ -80,7 +80,7 @@ public class MisskeyTest
         var match = site.Match("https://misskey.io/notes/note123").First();
 
         var result = await site.Process(new ProcessRequest(match));
-        
+
         Assert.Null(result);
     }
 
@@ -88,14 +88,14 @@ public class MisskeyTest
     public async Task NonImageFilesAreSkipped()
     {
         var logger = Substitute.For<ILogger<Misskey>>();
-        
+
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 {"Sites:Misskey:Delay", "3"}
             })
             .Build();
-        
+
         var client = Substitute.For<IMisskeyClient>();
 
         var note = new ShowNoteResponse(
@@ -121,7 +121,7 @@ public class MisskeyTest
         var match = site.Match("https://misskey.io/notes/note123").First();
 
         var result = await site.Process(new ProcessRequest(match));
-        
+
         Assert.NotNull(result);
         Assert.NotEmpty(result.Embeds);
         Assert.Single(result.Embeds);

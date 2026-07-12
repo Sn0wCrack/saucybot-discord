@@ -1,6 +1,6 @@
-﻿using SaucyBot.Common;
 using System.Text;
 using Discord;
+using SaucyBot.Common;
 
 namespace SaucyBot.Extensions.Discord;
 
@@ -20,7 +20,8 @@ public static class MessageExtensions
             ISticker[]? stickers = null,
             Embed[]? embeds = null,
             MessageFlags flags = MessageFlags.None
-        ) {
+        )
+        {
             return await msg.Channel.SendFilesAsync(attachments, text, isTTS, embed, options, allowedMentions, new MessageReference(new ulong?(msg.Id)), components, stickers, embeds, flags)
                 .ConfigureAwait(false);
         }

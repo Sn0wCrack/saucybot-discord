@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk.Worker">
-
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
@@ -10,13 +9,11 @@
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
     <RestoreLockedMode Condition="'$(ContinuousIntegrationBuild)' == 'true'">true</RestoreLockedMode>
   </PropertyGroup>
-
   <PropertyGroup>
     <Version Condition="'$(RELEASE_VERSION)' != ''">$(RELEASE_VERSION)</Version>
     <VersionPrefix Condition="'$(RELEASE_VERSION)' == ''">0.0.0</VersionPrefix>
     <VersionSuffix Condition="'$(RELEASE_VERSION)' == ''">$([System.DateTime]::UtcNow.ToString(`yyyy-MM-dd`))</VersionSuffix>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="AngleSharp" Version="1.5.2" />
     <PackageReference Include="Discord.Net" Version="3.20.1" />
@@ -48,8 +45,15 @@
     
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3" />
   </ItemGroup>
-
   <ItemGroup>
     <Folder Include="Database\Migrations" />
   </ItemGroup>
+  <Target Name="Husky" AfterTargets="Restore" Condition="'$(HUSKY)' != 0" Inputs="../.config/dotnet-tools.json" Outputs="../.husky/_/install.stamp">
+    <Exec Command="dotnet tool restore" StandardOutputImportance="Low" StandardErrorImportance="High" />
+    <Exec Command="dotnet husky install" StandardOutputImportance="Low" StandardErrorImportance="High" WorkingDirectory=".." />
+    <Touch Files="../.husky/_/install.stamp" AlwaysCreate="true" Condition="Exists('../.husky/_')" />
+    <ItemGroup>
+      <FileWrites Include="../.husky/_/install.stamp" />
+    </ItemGroup>
+  </Target>
 </Project>

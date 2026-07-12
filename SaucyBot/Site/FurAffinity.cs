@@ -1,4 +1,4 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 using Discord;
 using Discord.WebSocket;
 using SaucyBot.Common;
@@ -24,7 +24,7 @@ public sealed partial class FurAffinity : BaseSite
         _logger = logger;
         _client = client;
     }
-    
+
     public override async Task<ProcessResponse?> Process(ProcessRequest request)
     {
         var response = new ProcessResponse();
@@ -32,7 +32,7 @@ public sealed partial class FurAffinity : BaseSite
         var submission = await _client.GetSubmission(
             request.Match.Groups["id"].Value
         );
-        
+
         if (submission is null)
         {
             return null;
@@ -75,9 +75,9 @@ public sealed partial class FurAffinity : BaseSite
             },
             Footer = new EmbedFooterBuilder { Text = "FurAffinity" },
         };
-        
+
         response.Embeds.Add(embed.Build());
-            
+
         return response;
     }
 }
