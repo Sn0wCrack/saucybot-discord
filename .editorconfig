@@ -12,6 +12,9 @@ trim_trailing_whitespace = true
 [*.{md}]
 trim_trailing_whitespace = false
 
+[*.{yml,yaml}]
+quote_style = single
+
 # XML project files
 [*.{slnx,csproj,vbproj,vcxproj,vcxproj.filters,proj,projitems,shproj}]
 indent_size = 2

@@ -1,4 +1,4 @@
-﻿namespace SaucyBot.Library.Sites.ExHentai;
+namespace SaucyBot.Library.Sites.ExHentai;
 
 public interface IExHentaiClient
 {

@@ -25,7 +25,7 @@ internal static class HttpClientRegistrationExtensions
 
                 client.DefaultRequestHeaders.AcceptLanguage.Add(new StringWithQualityHeaderValue("en-US"));
                 client.DefaultRequestHeaders.AcceptLanguage.Add(new StringWithQualityHeaderValue("en", 0.9));
-            
+
                 client.DefaultRequestHeaders.Add("Sec-Fetch-Dest", "document");
                 client.DefaultRequestHeaders.Add("Sec-Fetch-Mode", "navigate");
                 client.DefaultRequestHeaders.Add("Sec-Fetch-Site", "none");
@@ -33,7 +33,7 @@ internal static class HttpClientRegistrationExtensions
                 client.DefaultRequestHeaders.Add("Upgrade-Insecure-Requests", "1");
             }).ConfigurePrimaryHttpMessageHandler(() => handler ?? new HttpClientHandler { AllowAutoRedirect = true });
         }
-        
+
         public IHttpClientBuilder AddJsonApiClient<TInterface, TImplementation>(string userAgent = "SaucyBot/0.0.0")
             where TInterface : class
             where TImplementation : class, TInterface

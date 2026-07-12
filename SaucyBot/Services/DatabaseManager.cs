@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using SaucyBot.Database;
 
 namespace SaucyBot.Services;
@@ -6,7 +6,7 @@ namespace SaucyBot.Services;
 public sealed class DatabaseManager
 {
     private readonly IServiceProvider _provider;
-    
+
     public DatabaseManager(IServiceProvider provider)
     {
         _provider = provider;
@@ -19,7 +19,7 @@ public sealed class DatabaseManager
         var pendingMigrations = await context.Database.GetPendingMigrationsAsync();
 
         var migrations = pendingMigrations.ToArray();
-        
+
         if (migrations.Any())
         {
             await context.Database.MigrateAsync();

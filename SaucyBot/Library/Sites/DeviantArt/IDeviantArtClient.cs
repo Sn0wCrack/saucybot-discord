@@ -1,6 +1,6 @@
-﻿namespace SaucyBot.Library.Sites.DeviantArt;
+namespace SaucyBot.Library.Sites.DeviantArt;
 
 public interface IDeviantArtClient
 {
-    
+
 }

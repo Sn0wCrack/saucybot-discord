@@ -1,4 +1,4 @@
-﻿using Discord;
+using Discord;
 using SaucyBot.Database.Models;
 
 namespace SaucyBot.Services;

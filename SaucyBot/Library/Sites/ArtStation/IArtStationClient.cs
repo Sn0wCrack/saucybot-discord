@@ -1,4 +1,4 @@
-﻿namespace SaucyBot.Library.Sites.ArtStation;
+namespace SaucyBot.Library.Sites.ArtStation;
 
 public interface IArtStationClient
 {

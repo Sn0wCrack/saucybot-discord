@@ -1,4 +1,4 @@
-﻿namespace SaucyBot.Library.Sites.Twitter;
+namespace SaucyBot.Library.Sites.Twitter;
 
 public interface IFxTwitterClient
 {

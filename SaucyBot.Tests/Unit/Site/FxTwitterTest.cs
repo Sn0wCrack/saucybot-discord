@@ -3,9 +3,9 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using NSubstitute;
 using SaucyBot.Library.Sites.Twitter;
 using SaucyBot.Site;
-using NSubstitute;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Site;
@@ -59,7 +59,7 @@ public class FxTwitterTest
         var match = matches[0];
 
         var result = await site.Process(new ProcessRequest(match));
-        
+
         Assert.NotNull(result);
         Assert.NotEmpty(result.Embeds);
         Assert.Single(result.Embeds);
@@ -85,7 +85,7 @@ public class FxTwitterTest
         var match = matches[0];
 
         var result = await site.Process(new ProcessRequest(match));
-        
+
         Assert.Null(result);
     }
 

@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
 using SaucyBot.Library;
 
@@ -9,7 +9,7 @@ public sealed class GuildConfiguration
 {
     [Key]
     public uint Id { get; set; }
-    
+
     public ulong GuildId { get; set; }
 
     public uint MaximumEmbeds { get; set; } = Constants.DefaultMaximumEmbeds;

@@ -3,9 +3,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using NSubstitute;
 using SaucyBot.Library.Sites.BlueSky;
 using SaucyBot.Site;
-using NSubstitute;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Site;
@@ -16,14 +16,14 @@ public class BlueskyTest
     public async Task AnEmbedIsCreatedForEachImageInPost()
     {
         var logger = Substitute.For<ILogger<Bluesky>>();
-        
+
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 {"Sites:Bluesky:Delay", "3"}
             })
             .Build();
-        
+
         var client = Substitute.For<IVixBlueskyClient>();
 
         var post = new VixBlueskyPost(
@@ -52,7 +52,7 @@ public class BlueskyTest
         var match = site.Match("https://bsky.app/profile/testuser/post/3kabc123").First();
 
         var result = await site.Process(new ProcessRequest(match));
-        
+
         Assert.NotNull(result);
         Assert.NotEmpty(result.Embeds);
         Assert.Equal(2, result.Embeds.Count);
@@ -62,14 +62,14 @@ public class BlueskyTest
     public async Task NothingIsReturnedWhenTheApiClientReturnsUnsuccessfully()
     {
         var logger = Substitute.For<ILogger<Bluesky>>();
-        
+
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 {"Sites:Bluesky:Delay", "3"}
             })
             .Build();
-        
+
         var client = Substitute.For<IVixBlueskyClient>();
 
         client
@@ -81,7 +81,7 @@ public class BlueskyTest
         var match = site.Match("https://bsky.app/profile/testuser/post/3kabc123").First();
 
         var result = await site.Process(new ProcessRequest(match));
-        
+
         Assert.Null(result);
     }
 
@@ -89,14 +89,14 @@ public class BlueskyTest
     public async Task HandlesPostWithNoImages()
     {
         var logger = Substitute.For<ILogger<Bluesky>>();
-        
+
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 {"Sites:Bluesky:Delay", "3"}
             })
             .Build();
-        
+
         var client = Substitute.For<IVixBlueskyClient>();
 
         var post = new VixBlueskyPost(
@@ -121,7 +121,7 @@ public class BlueskyTest
         var match = site.Match("https://bsky.app/profile/testuser/post/3kabc123").First();
 
         var result = await site.Process(new ProcessRequest(match));
-        
+
         Assert.NotNull(result);
         Assert.NotEmpty(result.Embeds);
         Assert.Single(result.Embeds);

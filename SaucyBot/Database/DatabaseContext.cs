@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using SaucyBot.Database.Models;
 using SaucyBot.Library;
 
@@ -25,11 +25,11 @@ public sealed class DatabaseContext : DbContext
             .UseSnakeCaseNamingConvention()
             .UseMySql(_connectionString, version);
 
-        #if DEBUG
+#if DEBUG
         options
             .EnableSensitiveDataLogging()
             .EnableDetailedErrors();
-        #endif
+#endif
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

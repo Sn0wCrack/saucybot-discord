@@ -1,4 +1,4 @@
-Docker Production Setup
+Production Setup
 ==========
 
 > Setting up SaucyBot for production using a container runtime with Compose support.

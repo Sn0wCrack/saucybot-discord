@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using SaucyBot.Services;
@@ -8,10 +8,10 @@ namespace SaucyBot.Library.Sites.ArtStation;
 public sealed class ArtStationClient : IArtStationClient
 {
     private const string BaseUrl = "https://www.artstation.com";
-    
+
     private readonly ILogger<ArtStationClient> _logger;
     private readonly ICacheManager _cache;
-    
+
     private readonly HttpClient _client;
 
     public ArtStationClient(ILogger<ArtStationClient> logger, ICacheManager cacheManager, HttpClient client)

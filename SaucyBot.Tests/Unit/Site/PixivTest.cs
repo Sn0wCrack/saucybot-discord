@@ -1,14 +1,14 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using NSubstitute;
 using SaucyBot.Library.Sites.Pixiv;
 using SaucyBot.Services;
 using SaucyBot.Site;
-using NSubstitute;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Site;
@@ -19,18 +19,18 @@ public class PixivTest
     public async Task AFileIsCreatedForEachImageWithinMultiImagePost()
     {
         // Post: https://www.pixiv.net/en/artworks/106848609
-        
+
         var logger = Substitute.For<ILogger<Pixiv>>();
-        
+
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 {"Sites:Pixiv:PostLimit", "5"}
             })
             .Build();
-        
+
         var guildConfigurationManager = Substitute.For<IGuildConfigurationManager>();
-        
+
         var client = Substitute.For<IPixivClient>();
 
         var illustrationDetails = new IllustrationDetails(
@@ -47,7 +47,7 @@ public class PixivTest
             "testuser",
             "testaccount"
         );
-        
+
         var illustrationDetailsResponse = new IllustrationDetailsResponse(
             false,
             "Test Response",
@@ -58,9 +58,9 @@ public class PixivTest
         {
             new(
                 new IllustrationPagesUrls(
-                    "https://i.pximg.net/c/128x128/img-master/img/2023/04/04/06/00/11/106848609_p0_square1200.jpg", 
-                    "https://i.pximg.net/c/540x540_70/img-master/img/2023/04/04/06/00/11/106848609_p0_master1200.jpg", 
-                    "https://i.pximg.net/img-master/img/2023/04/04/06/00/11/106848609_p0_master1200.jpg", 
+                    "https://i.pximg.net/c/128x128/img-master/img/2023/04/04/06/00/11/106848609_p0_square1200.jpg",
+                    "https://i.pximg.net/c/540x540_70/img-master/img/2023/04/04/06/00/11/106848609_p0_master1200.jpg",
+                    "https://i.pximg.net/img-master/img/2023/04/04/06/00/11/106848609_p0_master1200.jpg",
                     "https://i.pximg.net/img-original/img/2023/04/04/06/00/11/106848609_p0.jpg"
                 ),
                 1296,
@@ -68,9 +68,9 @@ public class PixivTest
             ),
             new(
                 new IllustrationPagesUrls(
-                    "https://i.pximg.net/c/128x128/img-master/img/2023/04/04/06/00/11/106848609_p1_square1200.jpg", 
-                    "https://i.pximg.net/c/540x540_70/img-master/img/2023/04/04/06/00/11/106848609_p1_master1200.jpg", 
-                    "https://i.pximg.net/img-master/img/2023/04/04/06/00/11/106848609_p1_master1200.jpg", 
+                    "https://i.pximg.net/c/128x128/img-master/img/2023/04/04/06/00/11/106848609_p1_square1200.jpg",
+                    "https://i.pximg.net/c/540x540_70/img-master/img/2023/04/04/06/00/11/106848609_p1_master1200.jpg",
+                    "https://i.pximg.net/img-master/img/2023/04/04/06/00/11/106848609_p1_master1200.jpg",
                     "https://i.pximg.net/img-original/img/2023/04/04/06/00/11/106848609_p1.jpg"
                 ),
                 1296,
@@ -78,9 +78,9 @@ public class PixivTest
             ),
             new(
                 new IllustrationPagesUrls(
-                    "https://i.pximg.net/c/128x128/img-master/img/2023/04/04/06/00/11/106848609_p2_square1200.jpg", 
-                    "https://i.pximg.net/c/540x540_70/img-master/img/2023/04/04/06/00/11/106848609_p2_master1200.jpg", 
-                    "https://i.pximg.net/img-master/img/2023/04/04/06/00/11/106848609_p2_master1200.jpg", 
+                    "https://i.pximg.net/c/128x128/img-master/img/2023/04/04/06/00/11/106848609_p2_square1200.jpg",
+                    "https://i.pximg.net/c/540x540_70/img-master/img/2023/04/04/06/00/11/106848609_p2_master1200.jpg",
+                    "https://i.pximg.net/img-master/img/2023/04/04/06/00/11/106848609_p2_master1200.jpg",
                     "https://i.pximg.net/img-original/img/2023/04/04/06/00/11/106848609_p2.jpg"
                 ),
                 972,
@@ -88,9 +88,9 @@ public class PixivTest
             ),
             new(
                 new IllustrationPagesUrls(
-                    "https://i.pximg.net/c/128x128/img-master/img/2023/04/04/06/00/11/106848609_p3_square1200.jpg", 
-                    "https://i.pximg.net/c/540x540_70/img-master/img/2023/04/04/06/00/11/106848609_p3_master1200.jpg", 
-                    "https://i.pximg.net/img-master/img/2023/04/04/06/00/11/106848609_p3_master1200.jpg", 
+                    "https://i.pximg.net/c/128x128/img-master/img/2023/04/04/06/00/11/106848609_p3_square1200.jpg",
+                    "https://i.pximg.net/c/540x540_70/img-master/img/2023/04/04/06/00/11/106848609_p3_master1200.jpg",
+                    "https://i.pximg.net/img-master/img/2023/04/04/06/00/11/106848609_p3_master1200.jpg",
                     "https://i.pximg.net/img-original/img/2023/04/04/06/00/11/106848609_p3.jpg"
                 ),
                 1134,
@@ -110,11 +110,11 @@ public class PixivTest
 
         client
             .IllustrationDetails(Arg.Any<string>())
-            .Returns((IllustrationDetailsResponse?) illustrationDetailsResponse);
+            .Returns((IllustrationDetailsResponse?)illustrationDetailsResponse);
 
         client
             .IllustrationPages(Arg.Any<string>())
-            .Returns((IllustrationPagesResponse?) illustrationPagesResponse);
+            .Returns((IllustrationPagesResponse?)illustrationPagesResponse);
 
         client
             .PokeFile(Arg.Any<string>())
@@ -134,33 +134,33 @@ public class PixivTest
         var match = site.Match("https://www.pixiv.net/en/artworks/106848609").First();
 
         var response = await site.Process(new ProcessRequest(match));
-        
+
         Assert.NotNull(response);
         Assert.NotEmpty(response.Files);
         Assert.Equal(4, response.Files.Count);
     }
-    
+
     [Fact]
     public async Task NothingIsReturnedWhenTheApiClientReturnsUnsuccessfully()
     {
         var logger = Substitute.For<ILogger<Pixiv>>();
-        
+
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 {"Sites:Pixiv:PostLimit", "5"}
             })
             .Build();
-        
+
         var guildConfigurationManager = Substitute.For<IGuildConfigurationManager>();
-        
+
         var client = Substitute.For<IPixivClient>();
 
         client
             .IllustrationDetails(Arg.Any<string>())
             .Returns((IllustrationDetailsResponse?)null);
-        
-        
+
+
         var site = new Pixiv(
             logger,
             config,

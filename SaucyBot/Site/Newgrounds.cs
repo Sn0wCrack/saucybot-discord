@@ -1,4 +1,4 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 using Discord;
 using Discord.WebSocket;
 using SaucyBot.Common;
@@ -26,7 +26,7 @@ public sealed partial class Newgrounds : BaseSite
         _logger = logger;
         _client = client;
     }
-    
+
     public override async Task<ProcessResponse?> Process(ProcessRequest request)
     {
         var response = new ProcessResponse();
@@ -62,9 +62,9 @@ public sealed partial class Newgrounds : BaseSite
             },
             Footer = new EmbedFooterBuilder { Text = "Newgrounds" },
         };
-        
+
         response.Embeds.Add(embed.Build());
-        
+
         return response;
     }
 }

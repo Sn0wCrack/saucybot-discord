@@ -1,9 +1,9 @@
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using NSubstitute;
 using SaucyBot.Library.Sites.Newgrounds;
 using SaucyBot.Site;
-using NSubstitute;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Site;
@@ -14,7 +14,7 @@ public class NewgroundsTest
     public async Task AnEmbedIsCreatedForArtPost()
     {
         var logger = Substitute.For<ILogger<Newgrounds>>();
-        
+
         var client = Substitute.For<INewgroundsClient>();
 
         var html = @"
@@ -46,7 +46,7 @@ public class NewgroundsTest
         var match = matches[0];
 
         var result = await site.Process(new ProcessRequest(match));
-        
+
         Assert.NotNull(result);
         Assert.NotEmpty(result.Embeds);
         Assert.Single(result.Embeds);
@@ -56,7 +56,7 @@ public class NewgroundsTest
     public async Task NothingIsReturnedWhenTheApiClientReturnsUnsuccessfully()
     {
         var logger = Substitute.For<ILogger<Newgrounds>>();
-        
+
         var client = Substitute.For<INewgroundsClient>();
 
         client

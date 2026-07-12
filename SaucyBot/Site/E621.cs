@@ -1,4 +1,4 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 using Discord;
 using Discord.WebSocket;
 using SaucyBot.Extensions;
@@ -16,8 +16,8 @@ public sealed partial class E621 : BaseSite
 
     protected override Regex Pattern => E621Pattern();
 
-    protected override Color Color => new (0x00549E);
-    
+    protected override Color Color => new(0x00549E);
+
     private readonly ILogger<E621> _logger;
     private readonly IE621Client _client;
 
@@ -30,7 +30,7 @@ public sealed partial class E621 : BaseSite
     public override async Task<ProcessResponse?> Process(ProcessRequest request)
     {
         var response = new ProcessResponse();
-        
+
         var url = request.Match.Value;
 
         var post = await _client.GetPost(request.Match.Groups["id"].Value);
@@ -58,9 +58,9 @@ public sealed partial class E621 : BaseSite
         if (post.Post.Tags.Artist.Length >= 1)
         {
             var artists = post.Post.Tags.Artist.Select(artist => artist.ToTitleCase());
-            
+
             var value = string.Join(", ", artists);
-            
+
             fields.Add(new EmbedFieldBuilder
             {
                 Name = "Artist",
@@ -68,7 +68,7 @@ public sealed partial class E621 : BaseSite
                 IsInline = true
             });
         }
-        
+
         fields.Add(new EmbedFieldBuilder
         {
             Name = "Score",
@@ -87,7 +87,7 @@ public sealed partial class E621 : BaseSite
             Fields = fields,
             Footer = new EmbedFooterBuilder { Text = "e621" }
         };
-        
+
         response.Embeds.Add(embed.Build());
 
         return response;

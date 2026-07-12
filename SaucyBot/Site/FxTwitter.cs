@@ -1,4 +1,4 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 using System.Web;
 using Discord;
 using Discord.WebSocket;
@@ -38,10 +38,10 @@ public sealed partial class FxTwitter : BaseSite
         _configuration = configuration;
 
         _httpClient = httpClientFactory.CreateClient("FileDownload");
-        
+
         _client = client;
     }
-    
+
     private static readonly HashSet<string> SupportedLanguages = new(StringComparer.OrdinalIgnoreCase)
     {
         "en", "ja", "ko", "zh", "de", "fr", "es", "pt", "ru", "it",
@@ -103,15 +103,15 @@ public sealed partial class FxTwitter : BaseSite
     public override async Task<ProcessResponse?> Process(ProcessRequest request)
     {
         var translation = ResolveTranslationLanguage(request);
-        
+
         _logger.LogDebug("Using {Translation} as language for Tweet translation", translation ?? "Original");
-        
+
         var response = await _client.GetTweet(
             request.Match.Groups["user"].Value,
             request.Match.Groups["id"].Value,
             translation
         );
-        
+
         if (response is null)
         {
             return null;
@@ -120,17 +120,17 @@ public sealed partial class FxTwitter : BaseSite
         var tweet = response.Tweet;
 
         var photoMedia = await FindAllPhotoElements(tweet);
-        
+
         var videoMedia = await FindAllVideoElements(tweet);
 
         var mainTweetHasPhoto = photoMedia
             .Where(result => result.Source == ResultSource.MainTweet)
             .NotEmpty();
-        
+
         var mainTweetHasVideo = videoMedia
             .Where(result => result.Source == ResultSource.MainTweet)
             .NotEmpty();
-        
+
         var quotedTweetHasPhoto = photoMedia
             .Where(result => result.Source == ResultSource.QuotedTweet)
             .NotEmpty();
@@ -138,7 +138,7 @@ public sealed partial class FxTwitter : BaseSite
         var quotedTweetHasVideo = videoMedia
             .Where(result => result.Source == ResultSource.QuotedTweet)
             .NotEmpty();
-        
+
         var mainTweetHasMedia = mainTweetHasPhoto || mainTweetHasVideo;
 
         var quotedTweetHasMedia = quotedTweetHasPhoto || quotedTweetHasVideo;
@@ -151,11 +151,11 @@ public sealed partial class FxTwitter : BaseSite
                 ? HandleVideo(tweet, videoMedia, mainTweetHasMedia)
                 : HandlePhoto(tweet, photoMedia, mainTweetHasMedia);
         }
-        
+
         if (quotedTweetHasMedia)
         {
             _logger.LogDebug("Quoted tweet has media");
-            
+
             return quotedTweetHasVideo
                 ? HandleVideo(tweet, videoMedia, mainTweetHasMedia)
                 : HandlePhoto(tweet, photoMedia, mainTweetHasMedia);
@@ -163,11 +163,11 @@ public sealed partial class FxTwitter : BaseSite
 
         return HandleRegular(tweet);
     }
-    
+
     private Task<List<VideoResult>> FindAllVideoElements(FxTwitterTweet tweet)
     {
         var output = new List<VideoResult>();
-        
+
         var videos = tweet
             .Media?
             .Videos?
@@ -177,7 +177,7 @@ public sealed partial class FxTwitter : BaseSite
         {
             output.AddRange(videos.Select(video => new VideoResult(video, ResultSource.MainTweet)));
         }
-        
+
         var quotedVideos = tweet
             .QuotedTweet?
             .Media?
@@ -195,7 +195,7 @@ public sealed partial class FxTwitter : BaseSite
     private Task<List<PhotoResult>> FindAllPhotoElements(FxTwitterTweet tweet)
     {
         var output = new List<PhotoResult>();
-        
+
         var photos = tweet
             .Media?
             .Photos?
@@ -205,7 +205,7 @@ public sealed partial class FxTwitter : BaseSite
         {
             output.AddRange(photos.Select(photo => new PhotoResult(photo, ResultSource.MainTweet)));
         }
-        
+
         var quotedPhotos = tweet
             .QuotedTweet?
             .Media?
@@ -216,26 +216,26 @@ public sealed partial class FxTwitter : BaseSite
         {
             output.AddRange(quotedPhotos.Select(photo => new PhotoResult(photo, ResultSource.QuotedTweet)));
         }
-        
+
         return Task.FromResult(output);
     }
 
     private ProcessResponse? HandleVideo(FxTwitterTweet tweet, IEnumerable<VideoResult> results, bool mainTweetHasMedia)
     {
         _logger.LogDebug("Processing as a video embed");
-        
-        var video = mainTweetHasMedia 
-            ? results.FirstOrDefault(result => result.Source == ResultSource.MainTweet) 
-            : results.FirstOrDefault(result => result.Source == ResultSource.QuotedTweet); 
- 
-        if (video is null) 
+
+        var video = mainTweetHasMedia
+            ? results.FirstOrDefault(result => result.Source == ResultSource.MainTweet)
+            : results.FirstOrDefault(result => result.Source == ResultSource.QuotedTweet);
+
+        if (video is null)
         {
             _logger.LogDebug("No video found");
-            return null; 
+            return null;
         }
-        
-        var response = new ProcessResponse(); 
-        
+
+        var response = new ProcessResponse();
+
         var componentBuilder = new ComponentBuilderV2()
             .WithContainer(
                 new ContainerBuilder()
@@ -248,15 +248,15 @@ public sealed partial class FxTwitter : BaseSite
             );
 
         response.Components = componentBuilder.Build();
- 
-        return response; 
+
+        return response;
     }
-    
+
 
     private ProcessResponse HandlePhoto(FxTwitterTweet tweet, IEnumerable<PhotoResult> results, bool mainTweetHasMedia)
     {
         _logger.LogDebug("Processing as photo embed");
-        
+
         var response = new ProcessResponse();
 
         var photos = mainTweetHasMedia
@@ -306,17 +306,17 @@ public sealed partial class FxTwitter : BaseSite
                 ImageUrl = GetOriginalResolutionPhotoUrl(photo.Photo.Url),
                 Footer = new EmbedFooterBuilder { IconUrl = Constants.TwitterIconUrl, Text = "Twitter" },
             };
-            
+
             response.Embeds.Add(embed.Build());
         }
-        
+
         return response;
     }
 
     private ProcessResponse HandleRegular(FxTwitterTweet tweet)
     {
         var response = new ProcessResponse();
-        
+
         var embed = new EmbedBuilder
         {
             Url = tweet.Url,
@@ -357,9 +357,9 @@ public sealed partial class FxTwitter : BaseSite
             },
             Footer = new EmbedFooterBuilder { IconUrl = Constants.TwitterIconUrl, Text = "Twitter" },
         };
-            
+
         response.Embeds.Add(embed.Build());
-            
+
         return response;
     }
 
@@ -376,7 +376,7 @@ public sealed partial class FxTwitter : BaseSite
         }
 
         var author = tweet.QuotedTweet.Author;
-            
+
         text += $"\n\n> **[Quoting]({tweet.Url}) {author.Name} ([@{author.ScreenName}]({author.Url}))**\n" +
                 GetQuoteText(tweet.QuotedTweet);
 
@@ -389,8 +389,8 @@ public sealed partial class FxTwitter : BaseSite
 
         quotedText = LinkifyTwitterContent(quotedText);
         quotedText = Helper.EscapeDiscordMarkdown(quotedText);
-        
-        return quotedText.Insert(0, "> ").Replace("\n", "\n> "); 
+
+        return quotedText.Insert(0, "> ").Replace("\n", "\n> ");
     }
 
     private static string LinkifyTwitterContent(string text)
@@ -409,7 +409,7 @@ public sealed partial class FxTwitter : BaseSite
 
         return text;
     }
-    
+
     private async Task<string?> DetermineHighestUsableQualityFile(IEnumerable<string> urls)
     {
         foreach (var url in urls)
@@ -428,7 +428,7 @@ public sealed partial class FxTwitter : BaseSite
     private async Task<HttpResponseMessage> PokeFile(string url)
     {
         using var request = new HttpRequestMessage(HttpMethod.Head, url);
-        
+
         return await _httpClient.SendAsync(request);
     }
 

@@ -1,4 +1,4 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 using Discord;
 using Discord.WebSocket;
 using SaucyBot.Common;
@@ -29,10 +29,10 @@ public sealed partial class ExHentai : BaseSite
         _logger = logger;
         _configuration = configuration;
         _client = client;
-        
+
         _isConfiguredToEmbedExHentaiLinks = IsConfiguredToEmbedExHentaiLinks();
     }
-    
+
     public override async Task<ProcessResponse?> Process(ProcessRequest request)
     {
         var response = new ProcessResponse();
@@ -44,7 +44,8 @@ public sealed partial class ExHentai : BaseSite
         if (
             isExHentaiLink &&
             !_isConfiguredToEmbedExHentaiLinks
-        ) {
+        )
+        {
             return null;
         }
 
@@ -101,7 +102,7 @@ public sealed partial class ExHentai : BaseSite
                 Text = isExHentaiLink ? "exhentai" : "e-hentai",
             }
         };
-        
+
         response.Embeds.Add(embed.Build());
 
         return response;

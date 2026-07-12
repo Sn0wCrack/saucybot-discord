@@ -1,4 +1,4 @@
-﻿using Discord;
+using Discord;
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
 using SaucyBot.Database.Models;
@@ -11,7 +11,7 @@ public sealed class GuildConfigurationManager : IGuildConfigurationManager
 {
     private readonly DatabaseManager _database;
     private readonly ICacheManager _cache;
-    
+
     public GuildConfigurationManager(DatabaseManager database, ICacheManager cache)
     {
         _database = database;
@@ -31,7 +31,7 @@ public sealed class GuildConfigurationManager : IGuildConfigurationManager
     public async Task<GuildConfiguration?> GetByGuildId(ulong guildId)
     {
         var result = await _cache.Remember(
-            CacheKey(guildId), 
+            CacheKey(guildId),
             TimeSpan.FromDays(7),
             async () => await _database
                 .Context()

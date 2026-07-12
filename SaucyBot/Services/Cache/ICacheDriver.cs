@@ -1,4 +1,4 @@
-﻿namespace SaucyBot.Services.Cache;
+namespace SaucyBot.Services.Cache;
 
 public interface ICacheDriver
 {

@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -14,7 +14,7 @@ public sealed class FaExportClient : IFurAffinityClient
     private const string BaseUrl = "https://faexport.spangle.org.uk";
 
     private readonly ICacheManager _cache;
-    
+
     private readonly HttpClient _client;
 
     private readonly ResiliencePipeline<string?> _pipeline;
@@ -23,7 +23,7 @@ public sealed class FaExportClient : IFurAffinityClient
     {
         _cache = cacheManager;
         _client = client;
-        
+
         _pipeline = new ResiliencePipelineBuilder<string?>()
             .AddFallback(new FallbackStrategyOptions<string?>
             {
@@ -31,7 +31,7 @@ public sealed class FaExportClient : IFurAffinityClient
                 ShouldHandle = arguments => arguments.Outcome switch
                 {
                     { Exception: HttpRequestException e } => e.StatusCode == HttpStatusCode.NotFound ? PredicateResult.True() : PredicateResult.False(),
-                    _ => PredicateResult.False(), 
+                    _ => PredicateResult.False(),
                 }
             })
             .AddRetry(new RetryStrategyOptions<string?>

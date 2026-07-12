@@ -1,4 +1,4 @@
-﻿namespace SaucyBot.Library.Sites.HentaiFoundry;
+namespace SaucyBot.Library.Sites.HentaiFoundry;
 
 public interface IHentaiFoundryClient
 {

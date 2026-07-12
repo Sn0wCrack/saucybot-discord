@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using SaucyBot.Services;
@@ -10,9 +10,9 @@ public class E621Client : IE621Client
     private const string BaseUrl = "https://e621.net";
 
     private readonly ICacheManager _cache;
-    
+
     private readonly HttpClient _client;
-    
+
     public E621Client(ICacheManager cacheManager, HttpClient client)
     {
         _cache = cacheManager;

@@ -1,4 +1,4 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 using Discord;
 using Discord.WebSocket;
 using SaucyBot.Common;
@@ -28,7 +28,7 @@ public sealed partial class ArtStation : BaseSite
         _configuration = configuration;
         _client = client;
     }
-    
+
     public override async Task<ProcessResponse?> Process(ProcessRequest request)
     {
         var response = new ProcessResponse();
@@ -51,9 +51,9 @@ public sealed partial class ArtStation : BaseSite
             .Where(asset => asset.Type is "image" or "cover")
             .ToList()
             .SafeSlice(0, limit);
-        
+
         var description = Helper.ProcessDescription(project.Description);
-        
+
         foreach (var asset in assets)
         {
 
@@ -88,7 +88,7 @@ public sealed partial class ArtStation : BaseSite
                 },
                 Footer = new EmbedFooterBuilder { IconUrl = Constants.ArtStationIconUrl, Text = "ArtStation" },
             };
-            
+
             response.Embeds.Add(embed.Build());
         }
 

@@ -18,7 +18,7 @@ public static class HentaiFoundryServiceRegistration
             HttpOnly = true,
             Secure = false,
         });
-        
+
         services.AddHtmlClient<IHentaiFoundryClient, HentaiFoundryClient>(
             new HttpClientHandler
             {

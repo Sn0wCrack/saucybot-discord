@@ -1,4 +1,4 @@
-﻿namespace SaucyBot.Library.Sites.E621;
+namespace SaucyBot.Library.Sites.E621;
 
 public interface IE621Client
 {

@@ -12,7 +12,7 @@ public static class ExHentaiServiceRegistration
         var cookieContainer = new CookieContainer();
         cookieContainer.Add(new Cookie("ipb_member_id", configuration.GetSection("Sites:ExHentai:Cookies:MemberId").Get<string>(), "/", "exhentai.org"));
         cookieContainer.Add(new Cookie("ipb_pass_hash", configuration.GetSection("Sites:ExHentai:Cookies:PasswordHash").Get<string>(), "/", "exhentai.org"));
-        
+
         services.AddHtmlClient<IExHentaiClient, ExHentaiClient>(
             new HttpClientHandler
             {

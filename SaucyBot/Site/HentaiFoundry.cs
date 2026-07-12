@@ -1,4 +1,4 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 using Discord;
 using Discord.WebSocket;
 using SaucyBot.Common;
@@ -76,7 +76,7 @@ public sealed partial class HentaiFoundry : BaseSite
             },
             Footer = new EmbedFooterBuilder { IconUrl = Constants.HentaiFoundryIconUrl, Text = "HentaiFoundry" },
         };
-        
+
         response.Embeds.Add(embed.Build());
 
         return response;
