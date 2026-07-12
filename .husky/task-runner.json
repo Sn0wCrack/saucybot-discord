@@ -24,10 +24,10 @@
          "name": "test",
          "group": "pre-commit",
          "command": "dotnet",
-         "args": [ "test", "--verbosity", "normal" ],
+         "args": [ "test", "--verbosity", "quiet" ],
          "windows": {
             "command": "dotnet",
-            "args": [ "test", "--verbosity", "normal" ]
+            "args": [ "test", "--verbosity", "quiet" ]
          },
          "include": ["**/*.cs", "**/*.csproj", "**/*.slnx"]
       }
