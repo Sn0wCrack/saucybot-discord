@@ -5,7 +5,7 @@ using SaucyBot.Site.Response;
 namespace SaucyBot.Site.Instagram;
 
 
-public sealed partial class InstagramSite : BaseSite, IInstagramSite
+public sealed partial class VxInstagramSite : BaseSite, IInstagramSite
 {
     public override string Identifier => "Instagram";
 
@@ -16,9 +16,9 @@ public sealed partial class InstagramSite : BaseSite, IInstagramSite
 
     public override Color Color => new(0xE4405F);
 
-    private readonly ILogger<InstagramSite> _logger;
+    private readonly ILogger<VxInstagramSite> _logger;
 
-    public InstagramSite(ILogger<InstagramSite> logger)
+    public VxInstagramSite(ILogger<VxInstagramSite> logger)
     {
         _logger = logger;
     }
@@ -27,10 +27,8 @@ public sealed partial class InstagramSite : BaseSite, IInstagramSite
     {
         var originalUrl = request.Match.Value;
         var path = request.Match.Groups["path"].Value;
-        var query = request.Match.Groups["query"].Success ? request.Match.Groups["query"].Value : string.Empty;
-        var fragment = request.Match.Groups["fragment"].Success ? request.Match.Groups["fragment"].Value : string.Empty;
 
-        var rewrittenUrl = $"https://vxinstagram.com/{path}{query}{fragment}";
+        var rewrittenUrl = $"https://vxinstagram.com/{path}";
 
         _logger.LogDebug("Rewrote Instagram URL: {Original} -> {Rewritten}", originalUrl, rewrittenUrl);
 

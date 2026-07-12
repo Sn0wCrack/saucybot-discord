@@ -25,7 +25,7 @@ public static class SiteServiceRegistration
         services.AddSingleton<IExHentaiSite, ExHentaiSite>();
         services.AddSingleton<IFurAffinitySite, XFurAffinitySite>();
         services.AddSingleton<IHentaiFoundrySite, HentaiFoundrySite>();
-        services.AddSingleton<IInstagramSite, InstagramSite>();
+        services.AddSingleton<IInstagramSite, VxInstagramSite>();
         services.AddSingleton<IMisskeySite, MisskeySite>();
         services.AddSingleton<INewgroundsSite, NewgroundsSite>();
         services.AddSingleton<IPixivSite, PixivSite>();
