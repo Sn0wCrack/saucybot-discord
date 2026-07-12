@@ -9,10 +9,10 @@ namespace SaucyBot.Services;
 
 public sealed class GuildConfigurationManager : IGuildConfigurationManager
 {
-    private readonly DatabaseManager _database;
+    private readonly IDatabaseManager _database;
     private readonly ICacheManager _cache;
 
-    public GuildConfigurationManager(DatabaseManager database, ICacheManager cache)
+    public GuildConfigurationManager(IDatabaseManager database, ICacheManager cache)
     {
         _database = database;
         _cache = cache;
