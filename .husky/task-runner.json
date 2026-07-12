@@ -19,6 +19,17 @@
             "args": [ "format", "--include", "${staged-diff-files}" ]
          },
          "include": ["**/*.cs", "**/*.csproj", "**/*.slnx"]
+      },
+      {
+         "name": "test",
+         "group": "pre-commit",
+         "command": "dotnet",
+         "args": [ "test", "--verbosity", "normal" ],
+         "windows": {
+            "command": "dotnet",
+            "args": [ "test", "--verbosity", "normal" ]
+         },
+         "include": ["**/*.cs", "**/*.csproj", "**/*.slnx"]
       }
    ]
 }
