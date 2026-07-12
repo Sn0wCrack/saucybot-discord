@@ -39,8 +39,8 @@ jobs:
       tags: ${{ needs.metadata.outputs.tags }}
       labels: ${{ needs.metadata.outputs.labels }}
     permissions:
-      packages: write
       contents: read
+      packages: write
 
   deploy:
     name: 'Deploy'

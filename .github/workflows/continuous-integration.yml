@@ -29,6 +29,7 @@ on:
 
 permissions:
   contents: read
+  packages: read
   pull-requests: write
 
 env:
