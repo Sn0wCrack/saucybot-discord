@@ -6,7 +6,6 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
 
 env:
   DOTNET_VERSION: '10.x'
