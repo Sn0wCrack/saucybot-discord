@@ -12,12 +12,13 @@
       {
          "name": "lint",
          "group": "pre-commit",
-         "command": "env",
-         "args": [ "bash", "-c", "dotnet format" ],
+         "command": "dotnet",
+         "args": [ "format", "--include", "${staged-diff-files}" ],
          "windows": {
             "command": "dotnet",
-            "args": [ "format" ]
-         }
+            "args": [ "format", "--include", "${staged-diff-files}" ]
+         },
+         "include": ["**/*.cs", "**/*.csproj", "**/*.slnx"]
       }
    ]
 }
