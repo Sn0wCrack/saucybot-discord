@@ -29,8 +29,6 @@ on:
 
 permissions:
   contents: read
-  packages: read
-  pull-requests: write
 
 env:
   DOTNET_VERSION: '10.x'
