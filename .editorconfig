@@ -1,4 +1,3 @@
-# stop .editorconfig files search on current file.
 root = true
 
 # Unix-style newlines with a newline ending every file
@@ -8,9 +7,13 @@ indent_style = space
 end_of_line = lf
 indent_size = 4
 insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{md}]
+trim_trailing_whitespace = false
 
 # XML project files
-[*.{csproj,vbproj,vcxproj,vcxproj.filters,proj,projitems,shproj}]
+[*.{slnx,csproj,vbproj,vcxproj,vcxproj.filters,proj,projitems,shproj}]
 indent_size = 2
 
 # XML config files

@@ -9,6 +9,10 @@ on:
       - '**.csproj'
       - '**.sln'
       - '**.slnx'
+      - '**/Containerfile'
+      - '**/Containerfile.*'
+      - '**/Dockerfile'
+      - '**/Dockerfile.*'
     tags-ignore:
       - 'v*'
   pull_request:
@@ -18,6 +22,10 @@ on:
       - '**.csproj'
       - '**.sln'
       - '**.slnx'
+      - '**/Containerfile'
+      - '**/Containerfile.*'
+      - '**/Dockerfile'
+      - '**/Dockerfile.*'
 
 env:
   DOTNET_VERSION: '10.x'
@@ -53,9 +61,12 @@ jobs:
         
       - name: 'Build'
         run: |
-          dotnet build --configuration Debug --no-restore
           dotnet build --configuration Release --no-restore
         
       - name: Test
         run: |
           dotnet test --no-restore --verbosity normal
+
+  container:
+    name: 'Build Container'
+    uses: ./.github/workflows/build-container.yml
