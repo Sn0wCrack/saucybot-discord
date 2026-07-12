@@ -38,7 +38,7 @@ jobs:
   build:
     name: 'Build and Test'
     runs-on: ${{ matrix.os }}
-    
+
     strategy:
       fail-fast: false
       matrix:
@@ -51,7 +51,7 @@ jobs:
     steps:
       - name: 'Checkout Repository'
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
-      
+
       - name: 'Setup .NET Core SDK ${{ env.DOTNET_VERSION }}'
         uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
         with:
@@ -59,14 +59,18 @@ jobs:
           cache: true
           cache-dependency-path: 'SaucyBot/packages.lock.json'
 
+      - name: 'Lint'
+        run: |
+          dotnet format --verify-no-changes --verbosity diagnostic
+
       - name: 'Install Dependencies'
         run: |
           dotnet restore -a ${{ matrix.arch }} -restoreProperty:RestoreLockedMode=true
-        
+
       - name: 'Build'
         run: |
           dotnet build --configuration Release --no-restore
-        
+
       - name: Test
         run: |
           dotnet test --no-restore --verbosity normal
