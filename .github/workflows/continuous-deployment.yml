@@ -4,6 +4,10 @@ on:
   release:
     types: [released]
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   metadata:
     name: 'Generate Metadata'
