@@ -1,24 +1,24 @@
 using System.Text.RegularExpressions;
 using Discord;
-using Discord.WebSocket;
 using SaucyBot.Site.Response;
 
-namespace SaucyBot.Site;
+namespace SaucyBot.Site.Instagram;
 
-public sealed partial class Instagram : BaseSite
+
+public sealed partial class InstagramSite : BaseSite, IInstagramSite
 {
     public override string Identifier => "Instagram";
 
     [GeneratedRegex(@"https?://(?<host>(?:www\.|m\.)?instagram\.com)/(?<path>(?:p|reel|reels)/[^/\s?#]+(?:/[^\s?#]*)?)(?<query>\?[^\s#]*)?(?<fragment>\#[^\s]*)?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex InstagramPattern();
 
-    protected override Regex Pattern => InstagramPattern();
+    public override Regex Pattern => InstagramPattern();
 
-    protected override Color Color => new(0xE4405F);
+    public override Color Color => new(0xE4405F);
 
-    private readonly ILogger<Instagram> _logger;
+    private readonly ILogger<InstagramSite> _logger;
 
-    public Instagram(ILogger<Instagram> logger)
+    public InstagramSite(ILogger<InstagramSite> logger)
     {
         _logger = logger;
     }

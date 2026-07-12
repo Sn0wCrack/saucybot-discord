@@ -1,24 +1,23 @@
 using System.Text.RegularExpressions;
 using Discord;
-using Discord.WebSocket;
 using SaucyBot.Site.Response;
 
-namespace SaucyBot.Site;
+namespace SaucyBot.Site.FurAffinity;
 
-public sealed partial class XFuraffinity : BaseSite
+public sealed partial class XFurAffinitySite : BaseSite, IFurAffinitySite
 {
-    public override string Identifier => "XFuraffinity";
+    public override string Identifier => "FurAffinity";
 
     [GeneratedRegex(@"https?://(?:(?!xfuraffinity\.net)(?:www\.)?)?furaffinity\.net/(?<path>(?:view|full)/(?<id>\d+))/?(?<query>\?[^\s#]*)?(?<fragment>\#[^\s]*)?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
-    private static partial Regex XFuraffinityPattern();
+    private static partial Regex XFurAffinityPattern();
 
-    protected override Regex Pattern => XFuraffinityPattern();
+    public override Regex Pattern => XFurAffinityPattern();
 
-    protected override Color Color => new(0x8B5CF6);
+    public override Color Color => new(0x8B5CF6);
 
-    private readonly ILogger<XFuraffinity> _logger;
+    private readonly ILogger<XFurAffinitySite> _logger;
 
-    public XFuraffinity(ILogger<XFuraffinity> logger)
+    public XFurAffinitySite(ILogger<XFurAffinitySite> logger)
     {
         _logger = logger;
     }

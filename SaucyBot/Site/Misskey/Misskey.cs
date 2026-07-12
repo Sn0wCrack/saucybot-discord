@@ -1,24 +1,24 @@
 using System.Text.RegularExpressions;
 using Discord;
-using Discord.WebSocket;
 using SaucyBot.Library;
 using SaucyBot.Library.Sites.Misskey;
 using SaucyBot.Site.Response;
 
-namespace SaucyBot.Site;
+namespace SaucyBot.Site.Misskey;
 
-public sealed class Misskey : BaseSite
+
+public sealed class MisskeySite : BaseSite, IMisskeySite
 {
     public override string Identifier => "Misskey";
 
-    protected override Color Color => new(0x85B300);
+    public override Color Color => new(0x85B300);
 
-    private readonly ILogger<Misskey> _logger;
+    private readonly ILogger<MisskeySite> _logger;
     private readonly IConfiguration _configuration;
     private readonly IMisskeyClient _client;
 
-    public Misskey(
-        ILogger<Misskey> logger,
+    public MisskeySite(
+        ILogger<MisskeySite> logger,
         IConfiguration configuration,
         IMisskeyClient client
     )

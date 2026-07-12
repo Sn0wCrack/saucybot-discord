@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using NSubstitute;
 using SaucyBot.Library.Sites.HentaiFoundry;
 using SaucyBot.Site;
+using SaucyBot.Site.HentaiFoundry;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Site;
@@ -15,7 +16,7 @@ public class HentaiFoundryTest
     {
         // Post: https://www.hentai-foundry.com/pictures/user/cherry-gig/1042457/FOR-THE-GOD-EMPEROR
 
-        var logger = Substitute.For<ILogger<HentaiFoundry>>();
+        var logger = Substitute.For<ILogger<HentaiFoundrySite>>();
 
         var client = Substitute.For<IHentaiFoundryClient>();
 
@@ -25,12 +26,12 @@ public class HentaiFoundryTest
             .GetPage(Arg.Any<string>())
             .Returns((HentaiFoundryPicture?)picture);
 
-        var site = new HentaiFoundry(
+        var site = new HentaiFoundrySite(
             logger,
             client
         );
 
-        var match = site.Match("https://www.hentai-foundry.com/pictures/user/cherry-gig/1042457/FOR-THE-GOD-EMPEROR").First();
+        var match = site.Pattern.Matches("https://www.hentai-foundry.com/pictures/user/cherry-gig/1042457/FOR-THE-GOD-EMPEROR").First();
 
         var response = await site.Process(new ProcessRequest(match));
 
@@ -44,7 +45,7 @@ public class HentaiFoundryTest
     {
         // Post: https://www.hentai-foundry.com/pictures/user/cherry-gig/1042457/FOR-THE-GOD-EMPEROR
 
-        var logger = Substitute.For<ILogger<HentaiFoundry>>();
+        var logger = Substitute.For<ILogger<HentaiFoundrySite>>();
 
         var client = Substitute.For<IHentaiFoundryClient>();
 
@@ -52,12 +53,12 @@ public class HentaiFoundryTest
             .GetPage(Arg.Any<string>())
             .Returns((HentaiFoundryPicture?)null);
 
-        var site = new HentaiFoundry(
+        var site = new HentaiFoundrySite(
             logger,
             client
         );
 
-        var match = site.Match("https://www.hentai-foundry.com/pictures/user/cherry-gig/1042457/FOR-THE-GOD-EMPEROR").First();
+        var match = site.Pattern.Matches("https://www.hentai-foundry.com/pictures/user/cherry-gig/1042457/FOR-THE-GOD-EMPEROR").First();
 
         var response = await site.Process(new ProcessRequest(match));
 
@@ -67,17 +68,17 @@ public class HentaiFoundryTest
     [Fact]
     public void PicturesOnSeparateLinesBeforeAndAfterSameLinePicturesAreAllMatched()
     {
-        var logger = Substitute.For<ILogger<HentaiFoundry>>();
+        var logger = Substitute.For<ILogger<HentaiFoundrySite>>();
         var client = Substitute.For<IHentaiFoundryClient>();
 
-        var site = new HentaiFoundry(logger, client);
+        var site = new HentaiFoundrySite(logger, client);
 
         var content =
             "https://www.hentai-foundry.com/pictures/user/first/1/slug1\n" +
             "https://www.hentai-foundry.com/pictures/user/second/2/slug2 https://www.hentai-foundry.com/pictures/user/third/3/slug3\n" +
             "https://www.hentai-foundry.com/pictures/user/fourth/4/slug4";
 
-        var matches = site.Match(content);
+        var matches = site.Pattern.Matches(content);
 
         Assert.Equal(4, matches.Count);
 
@@ -97,14 +98,14 @@ public class HentaiFoundryTest
     [Fact]
     public void PicturesSurroundedByTextOnASingleLineAreAllMatched()
     {
-        var logger = Substitute.For<ILogger<HentaiFoundry>>();
+        var logger = Substitute.For<ILogger<HentaiFoundrySite>>();
         var client = Substitute.For<IHentaiFoundryClient>();
 
-        var site = new HentaiFoundry(logger, client);
+        var site = new HentaiFoundrySite(logger, client);
 
         var content = "pic https://www.hentai-foundry.com/pictures/user/first/1/slug1 also https://www.hentai-foundry.com/pictures/user/second/2/slug2 end";
 
-        var matches = site.Match(content);
+        var matches = site.Pattern.Matches(content);
 
         Assert.Equal(2, matches.Count);
 

@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using NSubstitute;
 using SaucyBot.Library.Sites.FurAffinity;
 using SaucyBot.Site;
+using SaucyBot.Site.FurAffinity;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Site;
@@ -14,7 +15,7 @@ public class FurAffinityTest
     [Fact]
     public async Task SingleEmbedIsReturnWhenTheApiClientReturnsSuccessfullyTest()
     {
-        var logger = Substitute.For<ILogger<FurAffinity>>();
+        var logger = Substitute.For<ILogger<FurAffinitySite>>();
 
         var client = Substitute.For<IFurAffinityClient>();
 
@@ -48,9 +49,9 @@ public class FurAffinityTest
             .GetSubmission(Arg.Any<string>())
             .Returns(submission);
 
-        var site = new FurAffinity(logger, client);
+        var site = new FurAffinitySite(logger, client);
 
-        var match = site.Match("https://www.furaffinity.net/view/38790081/").First();
+        var match = site.Pattern.Matches("https://www.furaffinity.net/view/38790081/").First();
 
         var response = await site.Process(new ProcessRequest(match));
 
@@ -76,7 +77,7 @@ public class FurAffinityTest
     [Fact]
     public async Task NothingIsReturnedWhenTheApiClientReturnsUnsuccessfully()
     {
-        var logger = Substitute.For<ILogger<FurAffinity>>();
+        var logger = Substitute.For<ILogger<FurAffinitySite>>();
 
         var client = Substitute.For<IFurAffinityClient>();
 
@@ -84,9 +85,9 @@ public class FurAffinityTest
             .GetSubmission(Arg.Any<string>())
             .Returns((FaExportSubmission?)null);
 
-        var site = new FurAffinity(logger, client);
+        var site = new FurAffinitySite(logger, client);
 
-        var match = site.Match("https://www.furaffinity.net/view/38790081/").First();
+        var match = site.Pattern.Matches("https://www.furaffinity.net/view/38790081/").First();
 
         var response = await site.Process(new ProcessRequest(match));
 

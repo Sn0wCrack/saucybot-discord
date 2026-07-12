@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using NSubstitute;
 using SaucyBot.Library.Sites.Twitter;
 using SaucyBot.Site;
+using SaucyBot.Site.Twitter;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Site;
@@ -15,7 +16,7 @@ public class FxTwitterTest
     [Fact]
     public async Task AnEmbedIsCreatedForTweet()
     {
-        var logger = Substitute.For<ILogger<FxTwitter>>();
+        var logger = Substitute.For<ILogger<FxTwitterSite>>();
         var config = new ConfigurationBuilder()
             .Build();
         var client = Substitute.For<IFxTwitterClient>();
@@ -53,9 +54,9 @@ public class FxTwitterTest
             .GetTweet(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string?>())
             .Returns(response);
 
-        var site = new FxTwitter(logger, config, client, httpClientFactory);
+        var site = new FxTwitterSite(logger, config, client, httpClientFactory);
 
-        var matches = site.Match("https://twitter.com/testuser/status/123456789");
+        var matches = site.Pattern.Matches("https://twitter.com/testuser/status/123456789");
         var match = matches[0];
 
         var result = await site.Process(new ProcessRequest(match));
@@ -68,7 +69,7 @@ public class FxTwitterTest
     [Fact]
     public async Task NothingIsReturnedWhenTheApiClientReturnsUnsuccessfully()
     {
-        var logger = Substitute.For<ILogger<FxTwitter>>();
+        var logger = Substitute.For<ILogger<FxTwitterSite>>();
         var config = new ConfigurationBuilder()
             .Build();
         var client = Substitute.For<IFxTwitterClient>();
@@ -79,9 +80,9 @@ public class FxTwitterTest
             .GetTweet(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string?>())
             .Returns((FxTwitterResponse?)null);
 
-        var site = new FxTwitter(logger, config, client, httpClientFactory);
+        var site = new FxTwitterSite(logger, config, client, httpClientFactory);
 
-        var matches = site.Match("https://twitter.com/testuser/status/123456789");
+        var matches = site.Pattern.Matches("https://twitter.com/testuser/status/123456789");
         var match = matches[0];
 
         var result = await site.Process(new ProcessRequest(match));
@@ -92,7 +93,7 @@ public class FxTwitterTest
     [Fact]
     public async Task HandlesTweetWithMedia()
     {
-        var logger = Substitute.For<ILogger<FxTwitter>>();
+        var logger = Substitute.For<ILogger<FxTwitterSite>>();
         var config = new ConfigurationBuilder()
             .Build();
         var client = Substitute.For<IFxTwitterClient>();
@@ -137,9 +138,9 @@ public class FxTwitterTest
             .GetTweet(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string?>())
             .Returns(response);
 
-        var site = new FxTwitter(logger, config, client, httpClientFactory);
+        var site = new FxTwitterSite(logger, config, client, httpClientFactory);
 
-        var matches = site.Match("https://twitter.com/testuser/status/123456789");
+        var matches = site.Pattern.Matches("https://twitter.com/testuser/status/123456789");
         var match = matches[0];
 
         var result = await site.Process(new ProcessRequest(match));
@@ -152,16 +153,16 @@ public class FxTwitterTest
     [Fact]
     public void MultipleTweetsOnTheSameLineAreAllMatched()
     {
-        var logger = Substitute.For<ILogger<FxTwitter>>();
+        var logger = Substitute.For<ILogger<FxTwitterSite>>();
         var config = new ConfigurationBuilder()
             .Build();
         var client = Substitute.For<IFxTwitterClient>();
         var httpClientFactory = Substitute.For<IHttpClientFactory>();
         httpClientFactory.CreateClient(Arg.Any<string>()).Returns(new HttpClient());
 
-        var site = new FxTwitter(logger, config, client, httpClientFactory);
+        var site = new FxTwitterSite(logger, config, client, httpClientFactory);
 
-        var matches = site.Match("https://twitter.com/alice/status/111 https://twitter.com/bob/status/222");
+        var matches = site.Pattern.Matches("https://twitter.com/alice/status/111 https://twitter.com/bob/status/222");
 
         Assert.Equal(2, matches.Count);
         Assert.Equal("111", matches[0].Groups["id"].Value);
@@ -176,16 +177,16 @@ public class FxTwitterTest
     [InlineData("https://x.com/testuser123/status/2072717186859471548 https://x.com/testuser456/status/2070445370250928375?t=123")]
     public void TwoTweetsOnTheSameLineAreBothMatchedRegardlessOfQueryParams(string content)
     {
-        var logger = Substitute.For<ILogger<FxTwitter>>();
+        var logger = Substitute.For<ILogger<FxTwitterSite>>();
         var config = new ConfigurationBuilder()
             .Build();
         var client = Substitute.For<IFxTwitterClient>();
         var httpClientFactory = Substitute.For<IHttpClientFactory>();
         httpClientFactory.CreateClient(Arg.Any<string>()).Returns(new HttpClient());
 
-        var site = new FxTwitter(logger, config, client, httpClientFactory);
+        var site = new FxTwitterSite(logger, config, client, httpClientFactory);
 
-        var matches = site.Match(content);
+        var matches = site.Pattern.Matches(content);
 
         Assert.Equal(2, matches.Count);
 
@@ -199,21 +200,21 @@ public class FxTwitterTest
     [Fact]
     public void TweetsOnSeparateLinesBeforeAndAfterSameLineTweetsAreAllMatched()
     {
-        var logger = Substitute.For<ILogger<FxTwitter>>();
+        var logger = Substitute.For<ILogger<FxTwitterSite>>();
         var config = new ConfigurationBuilder()
             .Build();
         var client = Substitute.For<IFxTwitterClient>();
         var httpClientFactory = Substitute.For<IHttpClientFactory>();
         httpClientFactory.CreateClient(Arg.Any<string>()).Returns(new HttpClient());
 
-        var site = new FxTwitter(logger, config, client, httpClientFactory);
+        var site = new FxTwitterSite(logger, config, client, httpClientFactory);
 
         var content =
             "https://x.com/first/status/1\n" +
             "https://x.com/second/status/2 https://x.com/third/status/3\n" +
             "https://x.com/fourth/status/4";
 
-        var matches = site.Match(content);
+        var matches = site.Pattern.Matches(content);
 
         Assert.Equal(4, matches.Count);
 
@@ -233,18 +234,18 @@ public class FxTwitterTest
     [Fact]
     public void TweetsSurroundedByTextOnASingleLineAreAllMatched()
     {
-        var logger = Substitute.For<ILogger<FxTwitter>>();
+        var logger = Substitute.For<ILogger<FxTwitterSite>>();
         var config = new ConfigurationBuilder()
             .Build();
         var client = Substitute.For<IFxTwitterClient>();
         var httpClientFactory = Substitute.For<IHttpClientFactory>();
         httpClientFactory.CreateClient(Arg.Any<string>()).Returns(new HttpClient());
 
-        var site = new FxTwitter(logger, config, client, httpClientFactory);
+        var site = new FxTwitterSite(logger, config, client, httpClientFactory);
 
         var content = "check this https://x.com/first/status/1 out and also https://x.com/second/status/2 lol";
 
-        var matches = site.Match(content);
+        var matches = site.Pattern.Matches(content);
 
         Assert.Equal(2, matches.Count);
 

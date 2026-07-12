@@ -1,22 +1,16 @@
 using System.Text.RegularExpressions;
 using Discord;
-using Discord.WebSocket;
 using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site;
 
-public abstract class BaseSite
+public abstract class BaseSite : IBaseSite
 {
     public virtual string Identifier => "Base";
 
-    protected virtual Regex Pattern { get; init; } = new(string.Empty);
+    public virtual Regex Pattern { get; init; } = new(string.Empty);
 
-    protected virtual Color Color => Color.Default;
-
-    public MatchCollection Match(string message)
-    {
-        return Pattern.Matches(message);
-    }
+    public virtual Color Color => Color.Default;
 
     public abstract Task<ProcessResponse?> Process(ProcessRequest request);
 }

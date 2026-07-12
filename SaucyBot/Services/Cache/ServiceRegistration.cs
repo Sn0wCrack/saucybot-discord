@@ -1,6 +1,3 @@
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-
 namespace SaucyBot.Services.Cache;
 
 public static class CacheServiceRegistration

@@ -1,28 +1,28 @@
 using System.Text.RegularExpressions;
 using Discord;
-using Discord.WebSocket;
 using SaucyBot.Common;
 using SaucyBot.Extensions;
 using SaucyBot.Library;
 using SaucyBot.Library.Sites.ArtStation;
 using SaucyBot.Site.Response;
 
-namespace SaucyBot.Site;
+namespace SaucyBot.Site.ArtStation;
 
-public sealed partial class ArtStation : BaseSite
+
+public sealed partial class ArtStationSite : BaseSite, IArtStationSite
 {
     public override string Identifier => "ArtStation";
 
     [GeneratedRegex(@"https?://(www\.)?artstation\.com/artwork/(?<hash>\S+)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex ArtStationPattern();
 
-    protected override Regex Pattern => ArtStationPattern();
+    public override Regex Pattern => ArtStationPattern();
 
-    private readonly ILogger<ArtStation> _logger;
+    private readonly ILogger<ArtStationSite> _logger;
     private readonly IConfiguration _configuration;
     private readonly IArtStationClient _client;
 
-    public ArtStation(ILogger<ArtStation> logger, IConfiguration configuration, IArtStationClient client)
+    public ArtStationSite(ILogger<ArtStationSite> logger, IConfiguration configuration, IArtStationClient client)
     {
         _logger = logger;
         _configuration = configuration;

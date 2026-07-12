@@ -1,29 +1,29 @@
 using System.Text.RegularExpressions;
 using Discord;
-using Discord.WebSocket;
 using SaucyBot.Library;
 using SaucyBot.Library.Sites.DeviantArt;
 using SaucyBot.Site.Response;
 
-namespace SaucyBot.Site;
+namespace SaucyBot.Site.DeviantArt;
 
-public sealed partial class DeviantArt : BaseSite
+
+public sealed partial class DeviantArtSite : BaseSite, IDeviantArtSite
 {
     public override string Identifier => "DeviantArt";
 
     [GeneratedRegex(@"https?://(www\.)?deviantart\.com/(?<author>\S+)/art/(?<slug>\S+)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex DeviantArtPattern();
 
-    protected override Regex Pattern => DeviantArtPattern();
+    public override Regex Pattern => DeviantArtPattern();
 
-    protected override Color Color => new(0x00E59B);
+    public override Color Color => new(0x00E59B);
 
-    private readonly ILogger<DeviantArt> _logger;
+    private readonly ILogger<DeviantArtSite> _logger;
     private readonly IConfiguration _configuration;
     private readonly IDeviantArtClient _client;
     private readonly IDeviantArtOpenEmbedClient _openEmbedClient;
 
-    public DeviantArt(ILogger<DeviantArt> logger, IConfiguration configuration, IDeviantArtClient client, IDeviantArtOpenEmbedClient openEmbedClient)
+    public DeviantArtSite(ILogger<DeviantArtSite> logger, IConfiguration configuration, IDeviantArtClient client, IDeviantArtOpenEmbedClient openEmbedClient)
     {
         _logger = logger;
         _configuration = configuration;

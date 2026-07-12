@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using NSubstitute;
 using SaucyBot.Library.Sites.ExHentai;
 using SaucyBot.Site;
+using SaucyBot.Site.ExHentai;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Site;
@@ -14,7 +15,7 @@ public class ExHentaiTest
     [Fact]
     public async Task AnEmbedIsCreatedForGallery()
     {
-        var logger = Substitute.For<ILogger<ExHentai>>();
+        var logger = Substitute.For<ILogger<ExHentaiSite>>();
 
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -56,9 +57,9 @@ public class ExHentaiTest
             .GetGallery(Arg.Any<ExHentaiGalleryRequest>())
             .Returns(page);
 
-        var site = new ExHentai(logger, config, client);
+        var site = new ExHentaiSite(logger, config, client);
 
-        var matches = site.Match("https://exhentai.org/g/12345/abcdef123/");
+        var matches = site.Pattern.Matches("https://exhentai.org/g/12345/abcdef123/");
         var match = matches[0];
 
         var result = await site.Process(new ProcessRequest(match));
@@ -71,7 +72,7 @@ public class ExHentaiTest
     [Fact]
     public async Task NothingIsReturnedWhenTheApiClientReturnsUnsuccessfully()
     {
-        var logger = Substitute.For<ILogger<ExHentai>>();
+        var logger = Substitute.For<ILogger<ExHentaiSite>>();
 
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -87,9 +88,9 @@ public class ExHentaiTest
             .GetGallery(Arg.Any<ExHentaiGalleryRequest>())
             .Returns((ExHentaiGalleryPage?)null);
 
-        var site = new ExHentai(logger, config, client);
+        var site = new ExHentaiSite(logger, config, client);
 
-        var matches = site.Match("https://exhentai.org/g/12345/abcdef123/");
+        var matches = site.Pattern.Matches("https://exhentai.org/g/12345/abcdef123/");
         var match = matches[0];
 
         var result = await site.Process(new ProcessRequest(match));
@@ -100,7 +101,7 @@ public class ExHentaiTest
     [Fact]
     public async Task NothingIsReturnedWhenExHentaiLinksNotConfigured()
     {
-        var logger = Substitute.For<ILogger<ExHentai>>();
+        var logger = Substitute.For<ILogger<ExHentaiSite>>();
 
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -112,9 +113,9 @@ public class ExHentaiTest
 
         var client = Substitute.For<IExHentaiClient>();
 
-        var site = new ExHentai(logger, config, client);
+        var site = new ExHentaiSite(logger, config, client);
 
-        var matches = site.Match("https://exhentai.org/g/12345/abcdef123/");
+        var matches = site.Pattern.Matches("https://exhentai.org/g/12345/abcdef123/");
         var match = matches[0];
 
         var result = await site.Process(new ProcessRequest(match));

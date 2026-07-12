@@ -1,9 +1,9 @@
-using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using SaucyBot.Library.Sites.E621;
 using SaucyBot.Site;
+using SaucyBot.Site.E621;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Site;
@@ -13,7 +13,7 @@ public class E621Test
     [Fact]
     public async Task SingleEmbedIsReturnedWhenTheApiClientReturnsSuccessfully()
     {
-        var logger = Substitute.For<ILogger<E621>>();
+        var logger = Substitute.For<ILogger<E621Site>>();
         var client = Substitute.For<IE621Client>();
 
         var post = new E621PostResponse(
@@ -34,9 +34,9 @@ public class E621Test
             .GetPost(Arg.Any<string>())
             .Returns(post);
 
-        var site = new E621(logger, client);
+        var site = new E621Site(logger, client);
 
-        var matches = site.Match("https://e621.net/posts/12345");
+        var matches = site.Pattern.Matches("https://e621.net/posts/12345");
         var match = matches[0];
 
         var result = await site.Process(new ProcessRequest(match));
@@ -50,16 +50,16 @@ public class E621Test
     [Fact]
     public async Task NothingIsReturnedWhenTheApiClientReturnsUnsuccessfully()
     {
-        var logger = Substitute.For<ILogger<E621>>();
+        var logger = Substitute.For<ILogger<E621Site>>();
         var client = Substitute.For<IE621Client>();
 
         client
             .GetPost(Arg.Any<string>())
             .Returns((E621PostResponse?)null);
 
-        var site = new E621(logger, client);
+        var site = new E621Site(logger, client);
 
-        var matches = site.Match("https://e621.net/posts/12345");
+        var matches = site.Pattern.Matches("https://e621.net/posts/12345");
         var match = matches[0];
 
         var result = await site.Process(new ProcessRequest(match));
@@ -70,7 +70,7 @@ public class E621Test
     [Fact]
     public async Task EmbedIsReturnedWithoutAnimTag()
     {
-        var logger = Substitute.For<ILogger<E621>>();
+        var logger = Substitute.For<ILogger<E621Site>>();
         var client = Substitute.For<IE621Client>();
 
         var post = new E621PostResponse(
@@ -91,9 +91,9 @@ public class E621Test
             .GetPost(Arg.Any<string>())
             .Returns(post);
 
-        var site = new E621(logger, client);
+        var site = new E621Site(logger, client);
 
-        var matches = site.Match("https://e621.net/posts/12346");
+        var matches = site.Pattern.Matches("https://e621.net/posts/12346");
         var match = matches[0];
 
         var result = await site.Process(new ProcessRequest(match));

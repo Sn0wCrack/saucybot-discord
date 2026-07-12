@@ -9,6 +9,7 @@ using NSubstitute;
 using SaucyBot.Library.Sites.Pixiv;
 using SaucyBot.Services;
 using SaucyBot.Site;
+using SaucyBot.Site.Pixiv;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Site;
@@ -20,7 +21,7 @@ public class PixivTest
     {
         // Post: https://www.pixiv.net/en/artworks/106848609
 
-        var logger = Substitute.For<ILogger<Pixiv>>();
+        var logger = Substitute.For<ILogger<PixivSite>>();
 
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -124,14 +125,14 @@ public class PixivTest
             .GetFile(Arg.Any<string>())
             .Returns(new MemoryStream() as Stream);
 
-        var site = new Pixiv(
+        var site = new PixivSite(
             logger,
             config,
             guildConfigurationManager,
             client
         );
 
-        var match = site.Match("https://www.pixiv.net/en/artworks/106848609").First();
+        var match = site.Pattern.Matches("https://www.pixiv.net/en/artworks/106848609").First();
 
         var response = await site.Process(new ProcessRequest(match));
 
@@ -143,7 +144,7 @@ public class PixivTest
     [Fact]
     public async Task NothingIsReturnedWhenTheApiClientReturnsUnsuccessfully()
     {
-        var logger = Substitute.For<ILogger<Pixiv>>();
+        var logger = Substitute.For<ILogger<PixivSite>>();
 
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -161,14 +162,14 @@ public class PixivTest
             .Returns((IllustrationDetailsResponse?)null);
 
 
-        var site = new Pixiv(
+        var site = new PixivSite(
             logger,
             config,
             guildConfigurationManager,
             client
         );
 
-        var match = site.Match("https://www.pixiv.net/en/artworks/79124301").First();
+        var match = site.Pattern.Matches("https://www.pixiv.net/en/artworks/79124301").First();
 
         var response = await site.Process(new ProcessRequest(match));
 
@@ -178,12 +179,12 @@ public class PixivTest
     [Fact]
     public void ArtworksOnSeparateLinesBeforeAndAfterSameLineArtworksAreAllMatched()
     {
-        var logger = Substitute.For<ILogger<Pixiv>>();
+        var logger = Substitute.For<ILogger<PixivSite>>();
         var config = new ConfigurationBuilder().Build();
         var guildConfigurationManager = Substitute.For<IGuildConfigurationManager>();
         var client = Substitute.For<IPixivClient>();
 
-        var site = new Pixiv(
+        var site = new PixivSite(
             logger,
             config,
             guildConfigurationManager,
@@ -195,7 +196,7 @@ public class PixivTest
             "https://www.pixiv.net/en/artworks/2 https://www.pixiv.net/artworks/3\n" +
             "https://www.pixiv.net/en/artworks/4";
 
-        var matches = site.Match(content);
+        var matches = site.Pattern.Matches(content);
 
         Assert.Equal(4, matches.Count);
 
@@ -208,12 +209,12 @@ public class PixivTest
     [Fact]
     public void ArtworksSurroundedByTextOnASingleLineAreAllMatched()
     {
-        var logger = Substitute.For<ILogger<Pixiv>>();
+        var logger = Substitute.For<ILogger<PixivSite>>();
         var config = new ConfigurationBuilder().Build();
         var guildConfigurationManager = Substitute.For<IGuildConfigurationManager>();
         var client = Substitute.For<IPixivClient>();
 
-        var site = new Pixiv(
+        var site = new PixivSite(
             logger,
             config,
             guildConfigurationManager,
@@ -222,7 +223,7 @@ public class PixivTest
 
         var content = "wow https://www.pixiv.net/en/artworks/1 and https://www.pixiv.net/artworks/2 cool";
 
-        var matches = site.Match(content);
+        var matches = site.Pattern.Matches(content);
 
         Assert.Equal(2, matches.Count);
 

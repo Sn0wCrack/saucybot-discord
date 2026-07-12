@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using AngleSharp.Html.Dom;
 using AngleSharp.Html.Parser;
 using SaucyBot.Services;

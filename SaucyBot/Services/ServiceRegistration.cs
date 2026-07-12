@@ -1,5 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
-
 namespace SaucyBot.Services;
 
 public static class CoreServiceRegistration

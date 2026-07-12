@@ -1,29 +1,29 @@
 using System.Text.RegularExpressions;
 using Discord;
-using Discord.WebSocket;
 using SaucyBot.Extensions;
 using SaucyBot.Library;
 using SaucyBot.Library.Sites.BlueSky;
 using SaucyBot.Site.Response;
 
-namespace SaucyBot.Site;
+namespace SaucyBot.Site.Bluesky;
 
-public sealed partial class Bluesky : BaseSite
+
+public sealed partial class BlueskySite : BaseSite, IBlueskySite
 {
     public override string Identifier => "Bluesky";
 
     [GeneratedRegex(@"https?://(www\.)?bsky\.app/profile/(?<user>\S*)/post/(?<id>\S*)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex BlueskyPattern();
 
-    protected override Regex Pattern => BlueskyPattern();
+    public override Regex Pattern => BlueskyPattern();
 
-    protected override Color Color => new(0x1083FE);
+    public override Color Color => new(0x1083FE);
 
-    private readonly ILogger<Bluesky> _logger;
+    private readonly ILogger<BlueskySite> _logger;
     private readonly IConfiguration _configuration;
     private readonly IVixBlueskyClient _client;
 
-    public Bluesky(ILogger<Bluesky> logger, IConfiguration configuration, IVixBlueskyClient client)
+    public BlueskySite(ILogger<BlueskySite> logger, IConfiguration configuration, IVixBlueskyClient client)
     {
         _logger = logger;
         _configuration = configuration;

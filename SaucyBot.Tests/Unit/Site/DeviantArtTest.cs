@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using NSubstitute;
 using SaucyBot.Library.Sites.DeviantArt;
 using SaucyBot.Site;
+using SaucyBot.Site.DeviantArt;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Site;
@@ -16,7 +17,7 @@ public class DeviantArtTest
     {
         // Post: https://www.deviantart.com/shadeofshinon/art/Frostbreath-VI-943346591
 
-        var logger = Substitute.For<ILogger<DeviantArt>>();
+        var logger = Substitute.For<ILogger<DeviantArtSite>>();
 
         var config = new ConfigurationBuilder()
             .Build();
@@ -40,14 +41,14 @@ public class DeviantArtTest
             .Get(Arg.Any<string>())
             .Returns(openEmbedResponse);
 
-        var site = new DeviantArt(
+        var site = new DeviantArtSite(
             logger,
             config,
             client,
             oembedClient
         );
 
-        var match = site.Match("https://www.deviantart.com/shadeofshinon/art/Frostbreath-VI-943346591").First();
+        var match = site.Pattern.Matches("https://www.deviantart.com/shadeofshinon/art/Frostbreath-VI-943346591").First();
 
         var response = await site.Process(new ProcessRequest(match));
 
@@ -69,7 +70,7 @@ public class DeviantArtTest
     {
         // Post: https://www.deviantart.com/shadeofshinon/art/Frostbreath-VI-943346591
 
-        var logger = Substitute.For<ILogger<DeviantArt>>();
+        var logger = Substitute.For<ILogger<DeviantArtSite>>();
 
         var config = new ConfigurationBuilder()
             .Build();
@@ -82,14 +83,14 @@ public class DeviantArtTest
             .Get(Arg.Any<string>())
             .Returns((OpenEmbedResponse?)null);
 
-        var site = new DeviantArt(
+        var site = new DeviantArtSite(
             logger,
             config,
             client,
             oembedClient
         );
 
-        var match = site.Match("https://www.deviantart.com/shadeofshinon/art/Frostbreath-VI-943346591").First();
+        var match = site.Pattern.Matches("https://www.deviantart.com/shadeofshinon/art/Frostbreath-VI-943346591").First();
 
         var response = await site.Process(new ProcessRequest(match));
 

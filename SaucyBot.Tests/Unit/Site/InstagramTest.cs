@@ -3,13 +3,14 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using SaucyBot.Site;
+using SaucyBot.Site.Instagram;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Site;
 
 public class InstagramTest
 {
-    private readonly ILogger<Instagram> _logger = Substitute.For<ILogger<Instagram>>();
+    private readonly ILogger<InstagramSite> _logger = Substitute.For<ILogger<InstagramSite>>();
 
     // Positive Cases - Should Rewrite
 
@@ -19,8 +20,8 @@ public class InstagramTest
     [InlineData("https://m.instagram.com/p/ABC123/", "https://vxinstagram.com/p/ABC123/")]
     public async Task PostUrlsAreRewrittenCorrectly(string originalUrl, string expectedUrl)
     {
-        var site = new Instagram(_logger);
-        var match = site.Match(originalUrl).First();
+        var site = new InstagramSite(_logger);
+        var match = site.Pattern.Matches(originalUrl).First();
         var response = await site.Process(new ProcessRequest(match));
 
         Assert.NotNull(response);
@@ -33,8 +34,8 @@ public class InstagramTest
     [InlineData("https://www.instagram.com/reel/DQLu_wVcA_Ba_/?utm_source=test", "https://vxinstagram.com/reel/DQLu_wVcA_Ba_/?utm_source=test")]
     public async Task ReelUrlsWithUnderscoresAreRewrittenCorrectly(string originalUrl, string expectedUrl)
     {
-        var site = new Instagram(_logger);
-        var match = site.Match(originalUrl).First();
+        var site = new InstagramSite(_logger);
+        var match = site.Pattern.Matches(originalUrl).First();
         var response = await site.Process(new ProcessRequest(match));
 
         Assert.NotNull(response);
@@ -47,8 +48,8 @@ public class InstagramTest
     [InlineData("https://m.instagram.com/reel/EFG456/", "https://vxinstagram.com/reel/EFG456/")]
     public async Task ReelUrlsAreRewrittenCorrectly(string originalUrl, string expectedUrl)
     {
-        var site = new Instagram(_logger);
-        var match = site.Match(originalUrl).First();
+        var site = new InstagramSite(_logger);
+        var match = site.Pattern.Matches(originalUrl).First();
         var response = await site.Process(new ProcessRequest(match));
 
         Assert.NotNull(response);
@@ -61,8 +62,8 @@ public class InstagramTest
     [InlineData("https://m.instagram.com/reels/HIJ789/", "https://vxinstagram.com/reels/HIJ789/")]
     public async Task ReelsUrlsAreRewrittenCorrectly(string originalUrl, string expectedUrl)
     {
-        var site = new Instagram(_logger);
-        var match = site.Match(originalUrl).First();
+        var site = new InstagramSite(_logger);
+        var match = site.Pattern.Matches(originalUrl).First();
         var response = await site.Process(new ProcessRequest(match));
 
         Assert.NotNull(response);
@@ -75,8 +76,8 @@ public class InstagramTest
     [InlineData("https://instagram.com/reels/HIJ789/?igsh=xyz&utm_source=share", "https://vxinstagram.com/reels/HIJ789/?igsh=xyz&utm_source=share")]
     public async Task QueryParametersArePreserved(string originalUrl, string expectedUrl)
     {
-        var site = new Instagram(_logger);
-        var match = site.Match(originalUrl).First();
+        var site = new InstagramSite(_logger);
+        var match = site.Pattern.Matches(originalUrl).First();
         var response = await site.Process(new ProcessRequest(match));
 
         Assert.NotNull(response);
@@ -89,8 +90,8 @@ public class InstagramTest
     [InlineData("https://instagram.com/reels/HIJ789/?igsh=xyz#frag", "https://vxinstagram.com/reels/HIJ789/?igsh=xyz#frag")]
     public async Task FragmentsArePreserved(string originalUrl, string expectedUrl)
     {
-        var site = new Instagram(_logger);
-        var match = site.Match(originalUrl).First();
+        var site = new InstagramSite(_logger);
+        var match = site.Pattern.Matches(originalUrl).First();
         var response = await site.Process(new ProcessRequest(match));
 
         Assert.NotNull(response);
@@ -102,8 +103,8 @@ public class InstagramTest
     [InlineData("https://instagram.com/p/ABC123/", "https://vxinstagram.com/p/ABC123/")]
     public async Task TrailingSlashesAreHandledCorrectly(string originalUrl, string expectedUrl)
     {
-        var site = new Instagram(_logger);
-        var match = site.Match(originalUrl).First();
+        var site = new InstagramSite(_logger);
+        var match = site.Pattern.Matches(originalUrl).First();
         var response = await site.Process(new ProcessRequest(match));
 
         Assert.NotNull(response);
@@ -115,8 +116,8 @@ public class InstagramTest
     [InlineData("https://instagram.com/reel/EFG456/another", "https://vxinstagram.com/reel/EFG456/another")]
     public async Task ExtraPathSegmentsArePreserved(string originalUrl, string expectedUrl)
     {
-        var site = new Instagram(_logger);
-        var match = site.Match(originalUrl).First();
+        var site = new InstagramSite(_logger);
+        var match = site.Pattern.Matches(originalUrl).First();
         var response = await site.Process(new ProcessRequest(match));
 
         Assert.NotNull(response);
@@ -129,8 +130,8 @@ public class InstagramTest
     [InlineData("https://WWW.INSTAGRAM.COM/reels/HIJ789/", "https://vxinstagram.com/reels/HIJ789/")]
     public async Task SchemeAndHostAreCaseInsensitive(string originalUrl, string expectedUrl)
     {
-        var site = new Instagram(_logger);
-        var match = site.Match(originalUrl).First();
+        var site = new InstagramSite(_logger);
+        var match = site.Pattern.Matches(originalUrl).First();
         var response = await site.Process(new ProcessRequest(match));
 
         Assert.NotNull(response);
@@ -145,8 +146,8 @@ public class InstagramTest
     [InlineData("https://vxinstagram.com/reels/HIJ789/")]
     public void AlreadyRewrittenUrlsAreNotMatched(string url)
     {
-        var site = new Instagram(_logger);
-        var matches = site.Match(url);
+        var site = new InstagramSite(_logger);
+        var matches = site.Pattern.Matches(url);
 
         Assert.Empty(matches);
     }
@@ -160,8 +161,8 @@ public class InstagramTest
     [InlineData("https://instagram.com/explore/")]
     public void NonSupportedEndpointsAreNotMatched(string url)
     {
-        var site = new Instagram(_logger);
-        var matches = site.Match(url);
+        var site = new InstagramSite(_logger);
+        var matches = site.Pattern.Matches(url);
 
         Assert.Empty(matches);
     }
@@ -173,8 +174,8 @@ public class InstagramTest
     [InlineData("https://notinstagram.com/p/ABC123/")]
     public void LookAlikeHostsAreNotMatched(string url)
     {
-        var site = new Instagram(_logger);
-        var matches = site.Match(url);
+        var site = new InstagramSite(_logger);
+        var matches = site.Pattern.Matches(url);
 
         Assert.Empty(matches);
     }
@@ -183,9 +184,9 @@ public class InstagramTest
     public void LinkShimUrlsAreNotMatched()
     {
         // l.instagram.com uses /?u= query parameter, not /p/ or /reel/ paths
-        var site = new Instagram(_logger);
+        var site = new InstagramSite(_logger);
         var url = "https://l.instagram.com/?u=https%3A%2F%2Finstagram.com%2Fp%2FABC123%2F";
-        var matches = site.Match(url);
+        var matches = site.Pattern.Matches(url);
 
         Assert.Empty(matches);
     }
@@ -195,9 +196,9 @@ public class InstagramTest
     [Fact]
     public async Task MultipleInstagramUrlsAreAllMatched()
     {
-        var site = new Instagram(_logger);
+        var site = new InstagramSite(_logger);
         var content = "Check https://instagram.com/p/ABC123/ and https://instagram.com/reel/EFG456/ out!";
-        var matches = site.Match(content);
+        var matches = site.Pattern.Matches(content);
 
         Assert.Equal(2, matches.Count);
 
@@ -215,9 +216,9 @@ public class InstagramTest
     public void OnlyInstagramUrlsAreMatched()
     {
         // Simulate a message with Instagram and other URLs
-        var site = new Instagram(_logger);
+        var site = new InstagramSite(_logger);
         var content = "Check https://instagram.com/p/ABC123/ and https://twitter.com/user/status/123 and https://pixiv.net/artworks/123";
-        var matches = site.Match(content);
+        var matches = site.Pattern.Matches(content);
 
         // This handler should match only the Instagram URL
         Assert.Single(matches);

@@ -1,25 +1,25 @@
 using System.Net;
 using System.Text.RegularExpressions;
 using Discord;
-using Discord.WebSocket;
 using SaucyBot.Site.Response;
 
-namespace SaucyBot.Site;
+namespace SaucyBot.Site.Reddit;
 
-public sealed partial class Reddit : BaseSite
+
+public sealed partial class RedditSite : BaseSite, IRedditSite
 {
     public override string Identifier => "Reddit";
 
     [GeneratedRegex(@"https?://(www\.)?reddit\.com/media\?url=(?<url>[A-Z0-9\%\.]+)", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex RedditPattern();
 
-    protected override Regex Pattern => RedditPattern();
+    public override Regex Pattern => RedditPattern();
 
-    protected override Color Color => new(0xFF4500);
+    public override Color Color => new(0xFF4500);
 
-    private readonly ILogger<Reddit> _logger;
+    private readonly ILogger<RedditSite> _logger;
 
-    public Reddit(ILogger<Reddit> logger)
+    public RedditSite(ILogger<RedditSite> logger)
     {
         _logger = logger;
     }

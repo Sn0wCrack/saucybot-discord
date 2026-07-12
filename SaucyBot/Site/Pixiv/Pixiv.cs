@@ -13,9 +13,10 @@ using SaucyBot.Services;
 using SaucyBot.Site.Response;
 using Xabe.FFmpeg;
 
-namespace SaucyBot.Site;
+namespace SaucyBot.Site.Pixiv;
 
-public sealed partial class Pixiv : BaseSite
+
+public sealed partial class PixivSite : BaseSite, IPixivSite
 {
     public override string Identifier => "Pixiv";
 
@@ -25,17 +26,17 @@ public sealed partial class Pixiv : BaseSite
     [GeneratedRegex(@"/jump\.php\?(?<url>[^""'\s>]+)", RegexOptions.IgnoreCase)]
     private static partial Regex JumpUrlPattern();
 
-    protected override Regex Pattern => PixivPattern();
+    public override Regex Pattern => PixivPattern();
 
-    protected override Color Color => new(0x0096fa);
+    public override Color Color => new(0x0096fa);
 
     private readonly IPixivClient _client;
-    private readonly ILogger<Pixiv> _logger;
+    private readonly ILogger<PixivSite> _logger;
     private readonly IGuildConfigurationManager _guildConfigurationManager;
     private readonly IConfiguration _configuration;
 
-    public Pixiv(
-        ILogger<Pixiv> logger,
+    public PixivSite(
+        ILogger<PixivSite> logger,
         IConfiguration configuration,
         IGuildConfigurationManager guildConfigurationManager,
         IPixivClient client

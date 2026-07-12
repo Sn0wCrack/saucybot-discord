@@ -1,30 +1,30 @@
 using System.Text.RegularExpressions;
 using Discord;
-using Discord.WebSocket;
 using SaucyBot.Common;
 using SaucyBot.Library;
 using SaucyBot.Library.Sites.ExHentai;
 using SaucyBot.Site.Response;
 
-namespace SaucyBot.Site;
+namespace SaucyBot.Site.ExHentai;
 
-public sealed partial class ExHentai : BaseSite
+
+public sealed partial class ExHentaiSite : BaseSite, IExHentaiSite
 {
     public override string Identifier => "ExHentai";
 
     [GeneratedRegex(@"https?://(www\.)?e[x-]hentai\.org/g/(?<id>\d+)/(?<hash>\S+)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex ExHentaiPattern();
 
-    protected override Regex Pattern => ExHentaiPattern();
+    public override Regex Pattern => ExHentaiPattern();
 
-    protected override Color Color => new(0x660611);
+    public override Color Color => new(0x660611);
 
-    private readonly ILogger<ExHentai> _logger;
+    private readonly ILogger<ExHentaiSite> _logger;
     private readonly IConfiguration _configuration;
     private readonly IExHentaiClient _client;
     private readonly bool _isConfiguredToEmbedExHentaiLinks;
 
-    public ExHentai(ILogger<ExHentai> logger, IConfiguration configuration, IExHentaiClient client)
+    public ExHentaiSite(ILogger<ExHentaiSite> logger, IConfiguration configuration, IExHentaiClient client)
     {
         _logger = logger;
         _configuration = configuration;

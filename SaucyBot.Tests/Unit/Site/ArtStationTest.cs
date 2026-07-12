@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using NSubstitute;
 using SaucyBot.Library.Sites.ArtStation;
 using SaucyBot.Site;
+using SaucyBot.Site.ArtStation;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Site;
@@ -15,7 +16,7 @@ public class ArtStationTest
     [Fact]
     public async Task AnEmbedIsCreatedForEachProjectImageAsset()
     {
-        var logger = Substitute.For<ILogger<ArtStation>>();
+        var logger = Substitute.For<ILogger<ArtStationSite>>();
 
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -100,9 +101,9 @@ public class ArtStationTest
             .GetProject(Arg.Any<string>())
             .Returns(project);
 
-        var site = new ArtStation(logger, config, client);
+        var site = new ArtStationSite(logger, config, client);
 
-        var match = site.Match("https://www.artstation.com/artwork/xYXO5X").First();
+        var match = site.Pattern.Matches("https://www.artstation.com/artwork/xYXO5X").First();
 
         var response = await site.Process(new ProcessRequest(match));
 
@@ -114,7 +115,7 @@ public class ArtStationTest
     [Fact]
     public async Task NothingIsReturnedWhenTheApiClientReturnsUnsuccessfully()
     {
-        var logger = Substitute.For<ILogger<ArtStation>>();
+        var logger = Substitute.For<ILogger<ArtStationSite>>();
 
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -129,9 +130,9 @@ public class ArtStationTest
             .GetProject(Arg.Any<string>())
             .Returns((Project?)null);
 
-        var site = new ArtStation(logger, config, client);
+        var site = new ArtStationSite(logger, config, client);
 
-        var match = site.Match("https://www.artstation.com/artwork/xYXO5X").First();
+        var match = site.Pattern.Matches("https://www.artstation.com/artwork/xYXO5X").First();
 
         var response = await site.Process(new ProcessRequest(match));
 

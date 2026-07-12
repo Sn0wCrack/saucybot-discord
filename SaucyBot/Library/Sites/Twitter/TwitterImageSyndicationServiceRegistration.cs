@@ -1,5 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
-
 namespace SaucyBot.Library.Sites.Twitter;
 
 public static class TwitterImageSyndicationServiceRegistration

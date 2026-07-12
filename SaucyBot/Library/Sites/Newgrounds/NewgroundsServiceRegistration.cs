@@ -1,5 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
-
 namespace SaucyBot.Library.Sites.Newgrounds;
 
 public static class NewgroundsServiceRegistration
