@@ -5,20 +5,20 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site;
 
-public sealed partial class XFuraffinity : BaseSite, IXFuraffinitySite
+public sealed partial class XFurAffinity : BaseSite, IXFuraffinitySite
 {
-    public override string Identifier => "XFuraffinity";
+    public override string Identifier => "XFurAffinity";
 
     [GeneratedRegex(@"https?://(?:(?!xfuraffinity\.net)(?:www\.)?)?furaffinity\.net/(?<path>(?:view|full)/(?<id>\d+))/?(?<query>\?[^\s#]*)?(?<fragment>\#[^\s]*)?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
-    private static partial Regex XFuraffinityPattern();
+    private static partial Regex XFurAffinityPattern();
 
-    public override Regex Pattern => XFuraffinityPattern();
+    public override Regex Pattern => XFurAffinityPattern();
 
     public override Color Color => new(0x8B5CF6);
 
-    private readonly ILogger<XFuraffinity> _logger;
+    private readonly ILogger<XFurAffinity> _logger;
 
-    public XFuraffinity(ILogger<XFuraffinity> logger)
+    public XFurAffinity(ILogger<XFurAffinity> logger)
     {
         _logger = logger;
     }
