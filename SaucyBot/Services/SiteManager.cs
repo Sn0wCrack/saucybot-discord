@@ -16,7 +16,7 @@ public sealed partial class SiteManager
     private readonly MessageManager _messageManager;
     private readonly IGuildConfigurationManager _guildConfigurationManager;
 
-    private readonly Dictionary<string, BaseSite> _sites = new();
+    private readonly Dictionary<string, IBaseSite> _sites = new();
 
     [GeneratedRegex(@"(<|\|\|)(?!@|#|:|a:).*(>|\|\|)", RegexOptions.IgnoreCase)]
     private static partial Regex IgnoreContentRegex();
@@ -36,29 +36,32 @@ public sealed partial class SiteManager
 
         var disabled = _configuration.GetSection("Bot:DisabledSites").Get<string[]>() ?? [];
 
-        var siteClasses = Assembly
+        var siteInterfaces = Assembly
             .GetExecutingAssembly()
             .GetTypes()
-            .Where(t => t is { Namespace: "SaucyBot.Site", IsClass: true, BaseType.FullName: "SaucyBot.Site.BaseSite" })
+            .Where(t => t.Namespace == "SaucyBot.Site"
+                && t.IsInterface
+                && typeof(IBaseSite).IsAssignableFrom(t)
+                && t != typeof(IBaseSite))
             .ToList();
 
-        foreach (var siteClass in siteClasses)
+        foreach (var siteInterface in siteInterfaces)
         {
-            _logger.LogDebug("Attempting to start site module: {Site}", siteClass.ToString());
+            _logger.LogDebug("Attempting to start site module: {Site}", siteInterface.ToString());
 
-            if (serviceProvider.GetService(siteClass) is not BaseSite instance)
+            if (serviceProvider.GetService(siteInterface) is not IBaseSite instance)
             {
-                _logger.LogDebug("Failed to start site module: {Site}", siteClass.ToString());
+                _logger.LogDebug("Failed to start site module: {Site}", siteInterface.ToString());
                 continue;
             }
 
             if (disabled.Contains(instance.Identifier))
             {
-                _logger.LogDebug("Did not start site module: {Site}, as it is disabled in configuration", siteClass.ToString());
+                _logger.LogDebug("Did not start site module: {Site}, as it is disabled in configuration", siteInterface.ToString());
                 continue;
             }
 
-            _logger.LogDebug("Successfully started site module: {Site}", siteClass.ToString());
+            _logger.LogDebug("Successfully started site module: {Site}", siteInterface.ToString());
 
             _sites.Add(instance.Identifier, instance);
         }
