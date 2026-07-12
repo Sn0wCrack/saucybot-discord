@@ -30,8 +30,8 @@ public class InstagramTest
     [Theory]
     [InlineData("https://www.instagram.com/reel/DQLuwVcABa_/", "https://vxinstagram.com/reel/DQLuwVcABa_/")]
     [InlineData("https://www.instagram.com/reel/DQLu_wVcA_Ba/", "https://vxinstagram.com/reel/DQLu_wVcA_Ba/")]
-    [InlineData("https://www.instagram.com/reel/DQLu_wVcA_Ba_/?utm_source=test", "https://vxinstagram.com/reel/DQLu_wVcA_Ba_/?utm_source=test")]
-    public async Task ReelUrlsWithUnderscoresAreRewrittenCorrectly(string originalUrl, string expectedUrl)
+    [InlineData("https://www.instagram.com/reel/DQLu_wVcA_Ba_/", "https://vxinstagram.com/reel/DQLu_wVcA_Ba_/")]
+    public async Task ReelsUrlsWithUnderscoresAreRewrittenCorrectly(string originalUrl, string expectedUrl)
     {
         var site = new Instagram(_logger);
         var match = site.Match(originalUrl).First();
@@ -60,34 +60,6 @@ public class InstagramTest
     [InlineData("https://www.instagram.com/reels/HIJ789/", "https://vxinstagram.com/reels/HIJ789/")]
     [InlineData("https://m.instagram.com/reels/HIJ789/", "https://vxinstagram.com/reels/HIJ789/")]
     public async Task ReelsUrlsAreRewrittenCorrectly(string originalUrl, string expectedUrl)
-    {
-        var site = new Instagram(_logger);
-        var match = site.Match(originalUrl).First();
-        var response = await site.Process(new ProcessRequest(match));
-
-        Assert.NotNull(response);
-        Assert.Equal(expectedUrl, response.Text);
-    }
-
-    [Theory]
-    [InlineData("https://instagram.com/p/ABC123/?igsh=MTIzZGFjYWQwYg==", "https://vxinstagram.com/p/ABC123/?igsh=MTIzZGFjYWQwYg==")]
-    [InlineData("https://instagram.com/reel/EFG456/?utm_source=ig_web_copy_link", "https://vxinstagram.com/reel/EFG456/?utm_source=ig_web_copy_link")]
-    [InlineData("https://instagram.com/reels/HIJ789/?igsh=xyz&utm_source=share", "https://vxinstagram.com/reels/HIJ789/?igsh=xyz&utm_source=share")]
-    public async Task QueryParametersArePreserved(string originalUrl, string expectedUrl)
-    {
-        var site = new Instagram(_logger);
-        var match = site.Match(originalUrl).First();
-        var response = await site.Process(new ProcessRequest(match));
-
-        Assert.NotNull(response);
-        Assert.Equal(expectedUrl, response.Text);
-    }
-
-    [Theory]
-    [InlineData("https://instagram.com/p/ABC123/#anchor", "https://vxinstagram.com/p/ABC123/#anchor")]
-    [InlineData("https://instagram.com/reel/EFG456/#comments", "https://vxinstagram.com/reel/EFG456/#comments")]
-    [InlineData("https://instagram.com/reels/HIJ789/?igsh=xyz#frag", "https://vxinstagram.com/reels/HIJ789/?igsh=xyz#frag")]
-    public async Task FragmentsArePreserved(string originalUrl, string expectedUrl)
     {
         var site = new Instagram(_logger);
         var match = site.Match(originalUrl).First();
