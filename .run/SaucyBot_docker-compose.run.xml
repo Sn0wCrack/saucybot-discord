@@ -9,7 +9,7 @@
           </list>
         </option>
         <option name="commandLineOptions" value="--build" />
-        <option name="sourceFilePath" value="SaucyBot/docker-compose.dev.yml" />
+        <option name="sourceFilePath" value="SaucyBot/compose.dev.yml" />
         <option name="upForceRecreate" value="true" />
         <option name="upRemoveOrphans" value="true" />
       </settings>

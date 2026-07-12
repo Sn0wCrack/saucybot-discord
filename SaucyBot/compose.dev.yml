@@ -1,6 +1,7 @@
 services:
     bot:
         build: 
+            dockerfile: Containerfile
             context: .
             args:
                 CONFIGURATION: "${CONFIGURATION}"

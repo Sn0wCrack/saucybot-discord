@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="SaucyBot/Dockerfile" type="docker-deploy" factoryName="dockerfile" server-name="Podman">
+  <configuration default="false" name="SaucyBot/Containerfile: Compose Deployment" type="docker-deploy" factoryName="dockerfile" server-name="Podman">
     <deployment type="dockerfile">
       <settings>
         <option name="buildArgs">
@@ -11,7 +11,7 @@
           </list>
         </option>
         <option name="containerName" value="" />
-        <option name="sourceFilePath" value="SaucyBot/Dockerfile" />
+        <option name="sourceFilePath" value="SaucyBot/Containerfile" />
       </settings>
     </deployment>
     <EXTENSION ID="com.jetbrains.rider.docker.debug" isFastModeEnabled="true" isSslEnabled="false" />
