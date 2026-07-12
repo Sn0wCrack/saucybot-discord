@@ -1,25 +1,24 @@
 using System.Text.RegularExpressions;
 using Discord;
-using Discord.WebSocket;
 using SaucyBot.Common;
 using SaucyBot.Library.Sites.FurAffinity;
 using SaucyBot.Site.Response;
 
-namespace SaucyBot.Site;
+namespace SaucyBot.Site.FurAffinity;
 
-public sealed partial class FurAffinity : BaseSite
+public sealed partial class FurAffinitySite : BaseSite, IFurAffinitySite
 {
     public override string Identifier => "FurAffinity";
 
     [GeneratedRegex(@"https?://(www\.)?furaffinity\.net/(?:view|full)/(?<id>\d+)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex FurAffinityPattern();
 
-    protected override Regex Pattern => FurAffinityPattern();
+    public override Regex Pattern => FurAffinityPattern();
 
-    private readonly ILogger<FurAffinity> _logger;
+    private readonly ILogger<FurAffinitySite> _logger;
     private readonly IFurAffinityClient _client;
 
-    public FurAffinity(ILogger<FurAffinity> logger, IFurAffinityClient client)
+    public FurAffinitySite(ILogger<FurAffinitySite> logger, IFurAffinityClient client)
     {
         _logger = logger;
         _client = client;

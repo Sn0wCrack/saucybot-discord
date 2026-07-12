@@ -1,28 +1,28 @@
 using System.Text.RegularExpressions;
 using Discord;
-using Discord.WebSocket;
 using SaucyBot.Common;
 using SaucyBot.Library;
 using SaucyBot.Library.Sites.HentaiFoundry;
 using SaucyBot.Site.Response;
 
-namespace SaucyBot.Site;
+namespace SaucyBot.Site.HentaiFoundry;
 
-public sealed partial class HentaiFoundry : BaseSite
+
+public sealed partial class HentaiFoundrySite : BaseSite, IHentaiFoundrySite
 {
     public override string Identifier => "HentaiFoundry";
 
     [GeneratedRegex(@"https?://(www\.)?hentai-foundry\.com/pictures/user/(?<user>\S*)/(?<id>\d+)/(?<slug>\S+)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex HentaiFoundryPattern();
 
-    protected override Regex Pattern => HentaiFoundryPattern();
+    public override Regex Pattern => HentaiFoundryPattern();
 
-    protected override Color Color => new(0xFF67A2);
+    public override Color Color => new(0xFF67A2);
 
-    private readonly ILogger<HentaiFoundry> _logger;
+    private readonly ILogger<HentaiFoundrySite> _logger;
     private readonly IHentaiFoundryClient _client;
 
-    public HentaiFoundry(ILogger<HentaiFoundry> logger, IHentaiFoundryClient client)
+    public HentaiFoundrySite(ILogger<HentaiFoundrySite> logger, IHentaiFoundryClient client)
     {
         _logger = logger;
         _client = client;

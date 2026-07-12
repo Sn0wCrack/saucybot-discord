@@ -1,27 +1,27 @@
 using System.Text.RegularExpressions;
 using Discord;
-using Discord.WebSocket;
 using SaucyBot.Common;
 using SaucyBot.Library.Sites.Newgrounds;
 using SaucyBot.Site.Response;
 
-namespace SaucyBot.Site;
+namespace SaucyBot.Site.Newgrounds;
 
-public sealed partial class Newgrounds : BaseSite
+
+public sealed partial class NewgroundsSite : BaseSite, INewgroundsSite
 {
     public override string Identifier => "Newgrounds";
 
     [GeneratedRegex(@"https?://(www\.)?newgrounds\.com/art/view/(?<user>\S*)/(?<slug>\S+)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex NewgroundsPattern();
 
-    protected override Regex Pattern => NewgroundsPattern();
+    public override Regex Pattern => NewgroundsPattern();
 
-    protected override Color Color => new(0xFFF17A);
+    public override Color Color => new(0xFFF17A);
 
-    private readonly ILogger<Newgrounds> _logger;
+    private readonly ILogger<NewgroundsSite> _logger;
     private readonly INewgroundsClient _client;
 
-    public Newgrounds(ILogger<Newgrounds> logger, INewgroundsClient client)
+    public NewgroundsSite(ILogger<NewgroundsSite> logger, INewgroundsClient client)
     {
         _logger = logger;
         _client = client;

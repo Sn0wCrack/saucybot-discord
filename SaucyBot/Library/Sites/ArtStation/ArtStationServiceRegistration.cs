@@ -1,5 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
-
 namespace SaucyBot.Library.Sites.ArtStation;
 
 public static class ArtStationServiceRegistration

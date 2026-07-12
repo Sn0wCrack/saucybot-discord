@@ -1,13 +1,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Discord;
-using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using SaucyBot.Library.Sites.Misskey;
 using SaucyBot.Site;
+using SaucyBot.Site.Misskey;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Site;
@@ -17,7 +16,7 @@ public class MisskeyTest
     [Fact]
     public async Task AnEmbedIsCreatedForEachImageFile()
     {
-        var logger = Substitute.For<ILogger<Misskey>>();
+        var logger = Substitute.For<ILogger<MisskeySite>>();
 
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -46,9 +45,9 @@ public class MisskeyTest
             .ShowNote(Arg.Any<string>(), Arg.Any<string>())
             .Returns(note);
 
-        var site = new Misskey(logger, config, client);
+        var site = new MisskeySite(logger, config, client);
 
-        var match = site.Match("https://misskey.io/notes/note123").First();
+        var match = site.Pattern.Matches("https://misskey.io/notes/note123").First();
 
         var result = await site.Process(new ProcessRequest(match));
 
@@ -60,7 +59,7 @@ public class MisskeyTest
     [Fact]
     public async Task NothingIsReturnedWhenTheApiClientReturnsUnsuccessfully()
     {
-        var logger = Substitute.For<ILogger<Misskey>>();
+        var logger = Substitute.For<ILogger<MisskeySite>>();
 
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -75,9 +74,9 @@ public class MisskeyTest
             .ShowNote(Arg.Any<string>(), Arg.Any<string>())
             .Returns((ShowNoteResponse?)null);
 
-        var site = new Misskey(logger, config, client);
+        var site = new MisskeySite(logger, config, client);
 
-        var match = site.Match("https://misskey.io/notes/note123").First();
+        var match = site.Pattern.Matches("https://misskey.io/notes/note123").First();
 
         var result = await site.Process(new ProcessRequest(match));
 
@@ -87,7 +86,7 @@ public class MisskeyTest
     [Fact]
     public async Task NonImageFilesAreSkipped()
     {
-        var logger = Substitute.For<ILogger<Misskey>>();
+        var logger = Substitute.For<ILogger<MisskeySite>>();
 
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -116,9 +115,9 @@ public class MisskeyTest
             .ShowNote(Arg.Any<string>(), Arg.Any<string>())
             .Returns(note);
 
-        var site = new Misskey(logger, config, client);
+        var site = new MisskeySite(logger, config, client);
 
-        var match = site.Match("https://misskey.io/notes/note123").First();
+        var match = site.Pattern.Matches("https://misskey.io/notes/note123").First();
 
         var result = await site.Process(new ProcessRequest(match));
 

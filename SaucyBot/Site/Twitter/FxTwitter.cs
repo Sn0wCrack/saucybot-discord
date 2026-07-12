@@ -1,16 +1,16 @@
 using System.Text.RegularExpressions;
 using System.Web;
 using Discord;
-using Discord.WebSocket;
 using SaucyBot.Common;
 using SaucyBot.Extensions;
 using SaucyBot.Library;
 using SaucyBot.Library.Sites.Twitter;
 using SaucyBot.Site.Response;
 
-namespace SaucyBot.Site;
+namespace SaucyBot.Site.Twitter;
 
-public sealed partial class FxTwitter : BaseSite
+
+public sealed partial class FxTwitterSite : BaseSite, ITwitterSite
 {
     public override string Identifier => "FxTwitter";
 
@@ -23,16 +23,16 @@ public sealed partial class FxTwitter : BaseSite
     [GeneratedRegex(@"(?<!https?://[\w.\-_%$@&?!:;/'()*]+)#([\w.]+)(?=\W|$)", RegexOptions.IgnoreCase)]
     private static partial Regex HashtagPattern();
 
-    protected override Regex Pattern => FxTwitterPattern();
+    public override Regex Pattern => FxTwitterPattern();
 
-    protected override Color Color => new(0x1DA1F2);
+    public override Color Color => new(0x1DA1F2);
 
-    private readonly ILogger<FxTwitter> _logger;
+    private readonly ILogger<FxTwitterSite> _logger;
     private readonly IConfiguration _configuration;
     private readonly HttpClient _httpClient;
     private readonly IFxTwitterClient _client;
 
-    public FxTwitter(ILogger<FxTwitter> logger, IConfiguration configuration, IFxTwitterClient client, IHttpClientFactory httpClientFactory)
+    public FxTwitterSite(ILogger<FxTwitterSite> logger, IConfiguration configuration, IFxTwitterClient client, IHttpClientFactory httpClientFactory)
     {
         _logger = logger;
         _configuration = configuration;

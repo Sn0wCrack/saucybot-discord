@@ -1,27 +1,27 @@
 using System.Text.RegularExpressions;
 using Discord;
-using Discord.WebSocket;
 using SaucyBot.Extensions;
 using SaucyBot.Library.Sites.E621;
 using SaucyBot.Site.Response;
 
-namespace SaucyBot.Site;
+namespace SaucyBot.Site.E621;
 
-public sealed partial class E621 : BaseSite
+
+public sealed partial class E621Site : BaseSite, IE621Site
 {
     public override string Identifier => "E621";
 
     [GeneratedRegex(@"https?://(www\.)?e621\.net/posts/(?<id>\d+)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex E621Pattern();
 
-    protected override Regex Pattern => E621Pattern();
+    public override Regex Pattern => E621Pattern();
 
-    protected override Color Color => new(0x00549E);
+    public override Color Color => new(0x00549E);
 
-    private readonly ILogger<E621> _logger;
+    private readonly ILogger<E621Site> _logger;
     private readonly IE621Client _client;
 
-    public E621(ILogger<E621> logger, IE621Client client)
+    public E621Site(ILogger<E621Site> logger, IE621Client client)
     {
         _logger = logger;
         _client = client;

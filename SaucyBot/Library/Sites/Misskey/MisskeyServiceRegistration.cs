@@ -1,5 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
-
 namespace SaucyBot.Library.Sites.Misskey;
 
 public static class MisskeyServiceRegistration
