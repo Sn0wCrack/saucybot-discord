@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
@@ -16,16 +16,16 @@ public class ArtStationTest
     public async Task AnEmbedIsCreatedForEachProjectImageAsset()
     {
         var logger = Substitute.For<ILogger<ArtStation>>();
-        
+
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 {"Sites:ArtStation:PostLimit", "8"}
             })
             .Build();
-        
+
         var client = Substitute.For<IArtStationClient>();
-        
+
         var user = new ProjectUser(
             "zhongguoduliu",
             "毒瘤",
@@ -105,7 +105,7 @@ public class ArtStationTest
         var match = site.Match("https://www.artstation.com/artwork/xYXO5X").First();
 
         var response = await site.Process(new ProcessRequest(match));
-        
+
         Assert.NotNull(response);
         Assert.NotEmpty(response.Embeds);
         Assert.Equal(4, response.Embeds.Count);
@@ -115,26 +115,26 @@ public class ArtStationTest
     public async Task NothingIsReturnedWhenTheApiClientReturnsUnsuccessfully()
     {
         var logger = Substitute.For<ILogger<ArtStation>>();
-        
+
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 {"Sites:ArtStation:PostLimit", "8"}
             })
             .Build();
-        
+
         var client = Substitute.For<IArtStationClient>();
 
         client
             .GetProject(Arg.Any<string>())
-            .Returns((Project?) null);
+            .Returns((Project?)null);
 
         var site = new ArtStation(logger, config, client);
 
         var match = site.Match("https://www.artstation.com/artwork/xYXO5X").First();
 
         var response = await site.Process(new ProcessRequest(match));
-        
+
         Assert.Null(response);
     }
 }

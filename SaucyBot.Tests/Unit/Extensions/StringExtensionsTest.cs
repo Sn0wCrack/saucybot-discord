@@ -1,4 +1,4 @@
-﻿using SaucyBot.Extensions;
+using SaucyBot.Extensions;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Extensions;

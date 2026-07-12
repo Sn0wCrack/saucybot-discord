@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using NSubstitute;
 using SaucyBot.Library.Sites.E621;
 using SaucyBot.Site;
-using NSubstitute;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Site;

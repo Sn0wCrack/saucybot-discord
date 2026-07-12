@@ -2,9 +2,9 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using NSubstitute;
 using SaucyBot.Library.Sites.ExHentai;
 using SaucyBot.Site;
-using NSubstitute;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Site;
@@ -15,7 +15,7 @@ public class ExHentaiTest
     public async Task AnEmbedIsCreatedForGallery()
     {
         var logger = Substitute.For<ILogger<ExHentai>>();
-        
+
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
@@ -23,7 +23,7 @@ public class ExHentaiTest
                 {"Sites:ExHentai:Cookies:PasswordHash", "abcdef"}
             })
             .Build();
-        
+
         var client = Substitute.For<IExHentaiClient>();
 
         var html = @"
@@ -62,7 +62,7 @@ public class ExHentaiTest
         var match = matches[0];
 
         var result = await site.Process(new ProcessRequest(match));
-        
+
         Assert.NotNull(result);
         Assert.NotEmpty(result.Embeds);
         Assert.Single(result.Embeds);
@@ -72,7 +72,7 @@ public class ExHentaiTest
     public async Task NothingIsReturnedWhenTheApiClientReturnsUnsuccessfully()
     {
         var logger = Substitute.For<ILogger<ExHentai>>();
-        
+
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
@@ -80,7 +80,7 @@ public class ExHentaiTest
                 {"Sites:ExHentai:Cookies:PasswordHash", "abcdef"}
             })
             .Build();
-        
+
         var client = Substitute.For<IExHentaiClient>();
 
         client
@@ -93,7 +93,7 @@ public class ExHentaiTest
         var match = matches[0];
 
         var result = await site.Process(new ProcessRequest(match));
-        
+
         Assert.Null(result);
     }
 
@@ -101,7 +101,7 @@ public class ExHentaiTest
     public async Task NothingIsReturnedWhenExHentaiLinksNotConfigured()
     {
         var logger = Substitute.For<ILogger<ExHentai>>();
-        
+
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
@@ -109,7 +109,7 @@ public class ExHentaiTest
                 {"Sites:ExHentai:Cookies:PasswordHash", ""}
             })
             .Build();
-        
+
         var client = Substitute.For<IExHentaiClient>();
 
         var site = new ExHentai(logger, config, client);
@@ -118,7 +118,7 @@ public class ExHentaiTest
         var match = matches[0];
 
         var result = await site.Process(new ProcessRequest(match));
-        
+
         Assert.Null(result);
     }
 }

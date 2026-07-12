@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using NSubstitute;
 using SaucyBot.Library.Sites.FurAffinity;
 using SaucyBot.Site;
-using NSubstitute;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Site;
@@ -47,18 +47,18 @@ public class FurAffinityTest
         client
             .GetSubmission(Arg.Any<string>())
             .Returns(submission);
-        
+
         var site = new FurAffinity(logger, client);
 
         var match = site.Match("https://www.furaffinity.net/view/38790081/").First();
 
         var response = await site.Process(new ProcessRequest(match));
-        
+
         Assert.NotNull(response);
         Assert.Single(response.Embeds);
 
         var embed = response.Embeds.First();
-        
+
         Assert.Equal(submission.Title, embed.Title);
         Assert.Equal(submission.Description, embed.Description);
         Assert.Equal(submission.Link, embed.Url);
@@ -67,12 +67,12 @@ public class FurAffinityTest
         Assert.Equal(submission.ProfileName, embed.Author?.Name);
         Assert.Equal(submission.Profile, embed.Author?.Url);
         Assert.Equal(submission.Avatar, embed.Author?.IconUrl);
-        
+
         Assert.NotEmpty(embed.Fields);
-        
+
         Assert.Equal("FurAffinity", embed.Footer?.Text);
     }
-    
+
     [Fact]
     public async Task NothingIsReturnedWhenTheApiClientReturnsUnsuccessfully()
     {
@@ -82,14 +82,14 @@ public class FurAffinityTest
 
         client
             .GetSubmission(Arg.Any<string>())
-            .Returns((FaExportSubmission?) null);
+            .Returns((FaExportSubmission?)null);
 
         var site = new FurAffinity(logger, client);
 
         var match = site.Match("https://www.furaffinity.net/view/38790081/").First();
 
         var response = await site.Process(new ProcessRequest(match));
-        
+
         Assert.Null(response);
     }
 }

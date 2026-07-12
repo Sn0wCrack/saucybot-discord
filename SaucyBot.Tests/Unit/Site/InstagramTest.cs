@@ -26,7 +26,7 @@ public class InstagramTest
         Assert.NotNull(response);
         Assert.Equal(expectedUrl, response.Text);
     }
-    
+
     [Theory]
     [InlineData("https://www.instagram.com/reel/DQLuwVcABa_/", "https://vxinstagram.com/reel/DQLuwVcABa_/")]
     [InlineData("https://www.instagram.com/reel/DQLu_wVcA_Ba/", "https://vxinstagram.com/reel/DQLu_wVcA_Ba/")]

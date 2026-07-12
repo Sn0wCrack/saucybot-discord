@@ -1,9 +1,9 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using NSubstitute;
 using SaucyBot.Library.Sites.HentaiFoundry;
 using SaucyBot.Site;
-using NSubstitute;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Site;
@@ -14,7 +14,7 @@ public class HentaiFoundryTest
     public async Task SingleEmbedIsCreatedWhenTheApiClientReturnsSuccessfully()
     {
         // Post: https://www.hentai-foundry.com/pictures/user/cherry-gig/1042457/FOR-THE-GOD-EMPEROR
-        
+
         var logger = Substitute.For<ILogger<HentaiFoundry>>();
 
         var client = Substitute.For<IHentaiFoundryClient>();
@@ -23,7 +23,7 @@ public class HentaiFoundryTest
 
         client
             .GetPage(Arg.Any<string>())
-            .Returns((HentaiFoundryPicture?) picture);
+            .Returns((HentaiFoundryPicture?)picture);
 
         var site = new HentaiFoundry(
             logger,
@@ -33,24 +33,24 @@ public class HentaiFoundryTest
         var match = site.Match("https://www.hentai-foundry.com/pictures/user/cherry-gig/1042457/FOR-THE-GOD-EMPEROR").First();
 
         var response = await site.Process(new ProcessRequest(match));
-        
+
         Assert.NotNull(response);
         Assert.Single(response.Embeds);
     }
-    
-    
+
+
     [Fact]
     public async Task NothingIsReturnedWhenTheApiClientReturnsUnsuccessfully()
     {
         // Post: https://www.hentai-foundry.com/pictures/user/cherry-gig/1042457/FOR-THE-GOD-EMPEROR
-        
+
         var logger = Substitute.For<ILogger<HentaiFoundry>>();
 
         var client = Substitute.For<IHentaiFoundryClient>();
 
         client
             .GetPage(Arg.Any<string>())
-            .Returns((HentaiFoundryPicture?) null);
+            .Returns((HentaiFoundryPicture?)null);
 
         var site = new HentaiFoundry(
             logger,
