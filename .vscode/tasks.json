@@ -1,0 +1,48 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Start Development Containers",
+            "type": "docker-compose",
+            "dockerCompose": {
+                "up": {
+                    "detached": true,
+                    "build": true
+                },
+                "files": [
+                    "${workspaceFolder}/SaucyBot/compose.dev.yml"
+                ]
+            }
+        },
+        {
+            "label": "Build Production",
+            "type": "shell",
+            "command": "dotnet",
+            "args": ["build", "--configuration", "Release"],
+        },
+        {
+            "label": "Build Development",
+            "type": "shell",
+            "command": "dotnet",
+            "args": ["build", "--configuration", "Debug"]
+        },
+        {
+            "label": "Cleanup Solution",
+            "type": "shell",
+            "command": "dotnet",
+            "args": ["clean"]
+        },
+        {
+            "label": "Run Lint",
+            "type": "shell",
+            "command": "dotnet",
+            "args": ["format"]
+        },
+        {
+            "label": "Run Tests",
+            "type": "shell",
+            "command": "dotnet",
+            "args": ["test", "--verbosity", "normal"]
+        }
+    ]
+}
