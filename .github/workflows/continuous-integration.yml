@@ -30,6 +30,10 @@ on:
 env:
   DOTNET_VERSION: '10.x'
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   build:
     name: 'Build and Test'
