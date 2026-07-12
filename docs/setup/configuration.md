@@ -6,7 +6,7 @@ Configuration Reference
 Environment Variables (.env)
 ----------
 
-The `.env` file is only used with Docker-based setups. Standalone installations do not use it.
+The `.env` file is only used with container-based setups (Docker, Podman, etc.). Standalone installations do not use it.
 
 ### Docker Production
 

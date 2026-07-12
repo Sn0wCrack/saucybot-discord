@@ -1,13 +1,15 @@
 Docker Production Setup
 ==========
 
-> Setting up SaucyBot for production using Docker Compose.
+> Setting up SaucyBot for production using a container runtime with Compose support.
 
 Prerequisites
 ----------
 
 - [Git](https://git-scm.com/)
-- [Docker](https://docs.docker.com/get-docker/) (includes Docker Compose)
+- A container runtime with Compose support, such as:
+  - [Docker](https://docs.docker.com/get-docker/) (includes Docker Compose)
+  - [Podman](https://podman.io/) with [Podman Compose](https://github.com/containers/podman-compose) or Docker Compose
 
 > [!CAUTION]
 > Ensure the full file path to your working directory contains no spaces.

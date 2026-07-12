@@ -5,8 +5,8 @@ Setup Guides
 
 Choose a setup method that fits your needs:
 
-- [Docker Production](docker-production.md) — Recommended for self-hosting SaucyBot in a production environment.
-- [Docker Development](docker-development.md) — For contributors who want to develop and test SaucyBot locally.
+- [Production](production.md) — Recommended for self-hosting SaucyBot in a production environment using a container runtime (Docker or Podman).
+- [Development](development.md) — For contributors who want to develop and test SaucyBot locally using a container runtime (Docker or Podman).
 - [Standalone](standalone.md) — For running SaucyBot directly on your machine without Docker.
 
 - [Configuration Reference](configuration.md) — Reference for all `.env` and `appsettings.json` settings.
