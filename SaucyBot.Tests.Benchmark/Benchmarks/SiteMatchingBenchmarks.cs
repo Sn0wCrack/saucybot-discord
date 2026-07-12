@@ -46,7 +46,7 @@ public class SiteMatchingBenchmarks
     private ExHentaiSite _exHentai = null!;
     private FurAffinitySite _furAffinity = null!;
     private HentaiFoundrySite _hentaiFoundry = null!;
-    private InstagramSite _instagram = null!;
+    private VxInstagramSite _vxInstagram = null!;
     private MisskeySite _misskey = null!;
     private NewgroundsSite _newgrounds = null!;
     private PixivSite _pixiv = null!;
@@ -84,7 +84,7 @@ public class SiteMatchingBenchmarks
         _exHentai = CreateExHentai(config);
         _furAffinity = CreateFurAffinity(config);
         _hentaiFoundry = CreateHentaiFoundry(config);
-        _instagram = CreateInstagram(config);
+        _vxInstagram = CreateInstagram(config);
         _misskey = CreateMisskey(config);
         _newgrounds = CreateNewgrounds(config);
         _pixiv = CreatePixiv(config);
@@ -93,7 +93,7 @@ public class SiteMatchingBenchmarks
         _allSites =
         [
             _artStation, _bluesky, _deviantArt, _e621, _exHentai,
-            _furAffinity, _fxTwitter, _hentaiFoundry, _instagram,
+            _furAffinity, _fxTwitter, _hentaiFoundry, _vxInstagram,
             _misskey, _newgrounds, _pixiv, _reddit
         ];
     }
@@ -126,7 +126,7 @@ public class SiteMatchingBenchmarks
     public MatchCollection HentaiFoundry_MatchingPicture() => _hentaiFoundry.Pattern.Matches(HentaiFoundryUrl);
 
     [Benchmark]
-    public MatchCollection Instagram_MatchingPost() => _instagram.Pattern.Matches(InstagramUrl);
+    public MatchCollection Instagram_MatchingPost() => _vxInstagram.Pattern.Matches(InstagramUrl);
 
     [Benchmark]
     public MatchCollection Misskey_MatchingNote() => _misskey.Pattern.Matches(MisskeyUrl);
@@ -232,10 +232,10 @@ public class SiteMatchingBenchmarks
         return new HentaiFoundrySite(logger, client);
     }
 
-    private static InstagramSite CreateInstagram(IConfiguration config)
+    private static VxInstagramSite CreateInstagram(IConfiguration config)
     {
-        var logger = Substitute.For<ILogger<InstagramSite>>();
-        return new InstagramSite(logger);
+        var logger = Substitute.For<ILogger<VxInstagramSite>>();
+        return new VxInstagramSite(logger);
     }
 
     private static MisskeySite CreateMisskey(IConfiguration config)
