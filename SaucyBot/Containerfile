@@ -8,13 +8,13 @@ FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0-alpine3.24@sha2
 
 WORKDIR /src
 
-COPY ["SaucyBot.csproj", "SaucyBot/"]
+COPY ["SaucyBot.csproj", "packages.lock.json", "SaucyBot/"]
 
 RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages \
     --mount=type=cache,target=/root/.local/share/NuGet/http-cache \
     --mount=type=cache,target=/root/.local/share/NuGet/plugin-cache \
     --mount=type=cache,target=/tmp/NuGetScratchs \
-    dotnet restore "SaucyBot/SaucyBot.csproj" -a "${TARGETARCH}"
+    dotnet restore "SaucyBot/SaucyBot.csproj" -a "${TARGETARCH}" -restoreProperty:RestoreLockedMode=true
 
 COPY . SaucyBot/
 

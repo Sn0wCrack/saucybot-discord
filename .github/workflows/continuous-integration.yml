@@ -25,7 +25,16 @@ env:
 jobs:
   build:
     name: 'Build and Test'
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            os: ubuntu-latest
+          - arch: arm64
+            os: ubuntu-24.04-arm64
 
     steps:
       - name: 'Checkout Repository'
@@ -35,18 +44,11 @@ jobs:
         uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-
-      - name: 'Cache Nuget Packages'
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
-        with:
-          path: ~/.nuget/packages
-          # Look to see if there is a cache hit for the corresponding requirements file
-          key: ${{ runner.os }}-${{ matrix.dotnet-version }}-nuget-${{ hashFiles('**/packages.lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ matrix.dotnet-version }}-nuget
+          cache: true
 
       - name: 'Install Dependencies'
-        run: dotnet restore
+        run: |
+          dotnet restore -a ${{ matrix.arch }} -restoreProperty:RestoreLockedMode=true
         
       - name: 'Build'
         run: |
@@ -54,4 +56,5 @@ jobs:
           dotnet build --configuration Release --no-restore
         
       - name: Test
-        run: dotnet test --no-restore --verbosity normal
+        run: |
+          dotnet test --no-restore --verbosity normal
