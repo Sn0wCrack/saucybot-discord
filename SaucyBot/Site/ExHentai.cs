@@ -17,7 +17,7 @@ public sealed partial class ExHentai : BaseSite
 
     protected override Regex Pattern => ExHentaiPattern();
 
-    protected override Color Color => new(0x660611);
+    public override Color Color => new(0x660611);
 
     private readonly ILogger<ExHentai> _logger;
     private readonly IConfiguration _configuration;

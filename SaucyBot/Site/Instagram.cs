@@ -14,7 +14,7 @@ public sealed partial class Instagram : BaseSite
 
     protected override Regex Pattern => InstagramPattern();
 
-    protected override Color Color => new(0xE4405F);
+    public override Color Color => new(0xE4405F);
 
     private readonly ILogger<Instagram> _logger;
 

@@ -14,7 +14,7 @@ public sealed partial class XFuraffinity : BaseSite
 
     protected override Regex Pattern => XFuraffinityPattern();
 
-    protected override Color Color => new(0x8B5CF6);
+    public override Color Color => new(0x8B5CF6);
 
     private readonly ILogger<XFuraffinity> _logger;
 

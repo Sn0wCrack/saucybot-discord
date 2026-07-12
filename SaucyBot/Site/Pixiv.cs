@@ -27,7 +27,7 @@ public sealed partial class Pixiv : BaseSite
 
     protected override Regex Pattern => PixivPattern();
 
-    protected override Color Color => new(0x0096fa);
+    public override Color Color => new(0x0096fa);
 
     private readonly IPixivClient _client;
     private readonly ILogger<Pixiv> _logger;

@@ -16,7 +16,7 @@ public sealed partial class E621 : BaseSite
 
     protected override Regex Pattern => E621Pattern();
 
-    protected override Color Color => new(0x00549E);
+    public override Color Color => new(0x00549E);
 
     private readonly ILogger<E621> _logger;
     private readonly IE621Client _client;

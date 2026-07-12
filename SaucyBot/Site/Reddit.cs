@@ -15,7 +15,7 @@ public sealed partial class Reddit : BaseSite
 
     protected override Regex Pattern => RedditPattern();
 
-    protected override Color Color => new(0xFF4500);
+    public override Color Color => new(0xFF4500);
 
     private readonly ILogger<Reddit> _logger;
 

@@ -25,7 +25,7 @@ public sealed partial class FxTwitter : BaseSite
 
     protected override Regex Pattern => FxTwitterPattern();
 
-    protected override Color Color => new(0x1DA1F2);
+    public override Color Color => new(0x1DA1F2);
 
     private readonly ILogger<FxTwitter> _logger;
     private readonly IConfiguration _configuration;

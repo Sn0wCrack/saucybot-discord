@@ -5,13 +5,13 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site;
 
-public abstract class BaseSite
+public abstract class BaseSite : IBaseSite
 {
     public virtual string Identifier => "Base";
 
     protected virtual Regex Pattern { get; init; } = new(string.Empty);
 
-    protected virtual Color Color => Color.Default;
+    public virtual Color Color => Color.Default;
 
     public MatchCollection Match(string message)
     {

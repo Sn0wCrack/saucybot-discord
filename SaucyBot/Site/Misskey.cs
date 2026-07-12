@@ -11,7 +11,7 @@ public sealed class Misskey : BaseSite
 {
     public override string Identifier => "Misskey";
 
-    protected override Color Color => new(0x85B300);
+    public override Color Color => new(0x85B300);
 
     private readonly ILogger<Misskey> _logger;
     private readonly IConfiguration _configuration;

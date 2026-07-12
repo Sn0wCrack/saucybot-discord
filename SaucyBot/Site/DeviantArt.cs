@@ -16,7 +16,7 @@ public sealed partial class DeviantArt : BaseSite
 
     protected override Regex Pattern => DeviantArtPattern();
 
-    protected override Color Color => new(0x00E59B);
+    public override Color Color => new(0x00E59B);
 
     private readonly ILogger<DeviantArt> _logger;
     private readonly IConfiguration _configuration;

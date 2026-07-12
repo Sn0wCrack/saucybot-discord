@@ -17,7 +17,7 @@ public sealed partial class Bluesky : BaseSite
 
     protected override Regex Pattern => BlueskyPattern();
 
-    protected override Color Color => new(0x1083FE);
+    public override Color Color => new(0x1083FE);
 
     private readonly ILogger<Bluesky> _logger;
     private readonly IConfiguration _configuration;

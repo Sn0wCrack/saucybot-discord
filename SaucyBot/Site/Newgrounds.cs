@@ -16,7 +16,7 @@ public sealed partial class Newgrounds : BaseSite
 
     protected override Regex Pattern => NewgroundsPattern();
 
-    protected override Color Color => new(0xFFF17A);
+    public override Color Color => new(0xFFF17A);
 
     private readonly ILogger<Newgrounds> _logger;
     private readonly INewgroundsClient _client;

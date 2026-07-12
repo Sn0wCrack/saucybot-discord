@@ -17,7 +17,7 @@ public sealed partial class HentaiFoundry : BaseSite
 
     protected override Regex Pattern => HentaiFoundryPattern();
 
-    protected override Color Color => new(0xFF67A2);
+    public override Color Color => new(0xFF67A2);
 
     private readonly ILogger<HentaiFoundry> _logger;
     private readonly IHentaiFoundryClient _client;
