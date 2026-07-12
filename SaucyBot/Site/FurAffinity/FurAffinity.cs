@@ -6,8 +6,6 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site.FurAffinity;
 
-using SaucyBot.Site;
-
 public sealed partial class FurAffinitySite : BaseSite, IFurAffinitySite
 {
     public override string Identifier => "FurAffinity";

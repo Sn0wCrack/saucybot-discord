@@ -7,7 +7,6 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site.Bluesky;
 
-using SaucyBot.Site;
 
 public sealed partial class BlueskySite : BaseSite, IBlueskySite
 {

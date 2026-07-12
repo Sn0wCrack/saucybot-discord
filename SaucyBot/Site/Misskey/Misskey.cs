@@ -6,7 +6,6 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site.Misskey;
 
-using SaucyBot.Site;
 
 public sealed class MisskeySite : BaseSite, IMisskeySite
 {

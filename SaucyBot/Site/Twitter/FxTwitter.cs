@@ -9,7 +9,6 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site.Twitter;
 
-using SaucyBot.Site;
 
 public sealed partial class FxTwitterSite : BaseSite, ITwitterSite
 {

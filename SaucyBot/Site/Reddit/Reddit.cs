@@ -5,7 +5,6 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site.Reddit;
 
-using SaucyBot.Site;
 
 public sealed partial class RedditSite : BaseSite, IRedditSite
 {

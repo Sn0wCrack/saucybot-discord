@@ -7,7 +7,6 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site.ExHentai;
 
-using SaucyBot.Site;
 
 public sealed partial class ExHentaiSite : BaseSite, IExHentaiSite
 {

@@ -8,7 +8,6 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site.ArtStation;
 
-using SaucyBot.Site;
 
 public sealed partial class ArtStationSite : BaseSite, IArtStationSite
 {

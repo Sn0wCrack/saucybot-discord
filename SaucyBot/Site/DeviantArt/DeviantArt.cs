@@ -6,7 +6,6 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site.DeviantArt;
 
-using SaucyBot.Site;
 
 public sealed partial class DeviantArtSite : BaseSite, IDeviantArtSite
 {

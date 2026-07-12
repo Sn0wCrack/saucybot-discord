@@ -4,7 +4,6 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site.Instagram;
 
-using SaucyBot.Site;
 
 public sealed partial class InstagramSite : BaseSite, IInstagramSite
 {

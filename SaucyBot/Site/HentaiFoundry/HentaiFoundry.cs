@@ -7,7 +7,6 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site.HentaiFoundry;
 
-using SaucyBot.Site;
 
 public sealed partial class HentaiFoundrySite : BaseSite, IHentaiFoundrySite
 {

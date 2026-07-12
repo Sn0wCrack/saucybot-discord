@@ -6,7 +6,6 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site.E621;
 
-using SaucyBot.Site;
 
 public sealed partial class E621Site : BaseSite, IE621Site
 {

@@ -6,7 +6,6 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site.Newgrounds;
 
-using SaucyBot.Site;
 
 public sealed partial class NewgroundsSite : BaseSite, INewgroundsSite
 {
