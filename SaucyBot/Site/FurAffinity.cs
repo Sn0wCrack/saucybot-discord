@@ -7,7 +7,7 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site;
 
-public sealed partial class FurAffinity : BaseSite
+public sealed partial class FurAffinity : BaseSite, IFurAffinitySite
 {
     public override string Identifier => "FurAffinity";
 

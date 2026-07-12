@@ -6,7 +6,7 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site;
 
-public sealed partial class Reddit : BaseSite
+public sealed partial class Reddit : BaseSite, IRedditSite
 {
     public override string Identifier => "Reddit";
 

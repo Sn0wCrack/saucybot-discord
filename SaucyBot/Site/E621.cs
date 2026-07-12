@@ -7,7 +7,7 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site;
 
-public sealed partial class E621 : BaseSite
+public sealed partial class E621 : BaseSite, IE621Site
 {
     public override string Identifier => "E621";
 

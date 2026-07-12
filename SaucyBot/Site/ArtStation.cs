@@ -9,7 +9,7 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site;
 
-public sealed partial class ArtStation : BaseSite
+public sealed partial class ArtStation : BaseSite, IArtStationSite
 {
     public override string Identifier => "ArtStation";
 

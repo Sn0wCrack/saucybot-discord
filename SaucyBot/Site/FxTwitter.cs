@@ -10,7 +10,7 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site;
 
-public sealed partial class FxTwitter : BaseSite
+public sealed partial class FxTwitter : BaseSite, ITwitterSite
 {
     public override string Identifier => "FxTwitter";
 

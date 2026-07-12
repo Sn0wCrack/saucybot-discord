@@ -15,7 +15,7 @@ using Xabe.FFmpeg;
 
 namespace SaucyBot.Site;
 
-public sealed partial class Pixiv : BaseSite
+public sealed partial class Pixiv : BaseSite, IPixivSite
 {
     public override string Identifier => "Pixiv";
 

@@ -5,7 +5,7 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site;
 
-public sealed partial class XFuraffinity : BaseSite
+public sealed partial class XFuraffinity : BaseSite, IXFuraffinitySite
 {
     public override string Identifier => "XFuraffinity";
 

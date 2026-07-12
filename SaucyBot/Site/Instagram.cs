@@ -5,7 +5,7 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site;
 
-public sealed partial class Instagram : BaseSite
+public sealed partial class Instagram : BaseSite, IInstagramSite
 {
     public override string Identifier => "Instagram";
 

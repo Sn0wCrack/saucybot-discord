@@ -8,7 +8,7 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site;
 
-public sealed partial class Bluesky : BaseSite
+public sealed partial class Bluesky : BaseSite, IBlueskySite
 {
     public override string Identifier => "Bluesky";
 

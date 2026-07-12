@@ -7,7 +7,7 @@ using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site;
 
-public sealed class Misskey : BaseSite
+public sealed class Misskey : BaseSite, IMisskeySite
 {
     public override string Identifier => "Misskey";
 
