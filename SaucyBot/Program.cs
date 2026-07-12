@@ -29,9 +29,15 @@ await Host.CreateDefaultBuilder(args)
     {
         var configuration = context.Configuration;
 
-        services.AddSaucyBotDatabase();
+        var databaseDisabled = configuration.GetSection("Database:Disabled").Get<bool?>() ?? false;
+
+        if (!databaseDisabled)
+        {
+            services.AddSaucyBotDatabase();
+        }
+
         services.AddSaucyBotCache(configuration);
-        services.AddSaucyBotServices();
+        services.AddSaucyBotServices(databaseDisabled);
         services.AddSaucyBotSites();
 
         services.AddFurAffinityClient(configuration);

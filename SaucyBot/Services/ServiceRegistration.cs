@@ -4,12 +4,22 @@ namespace SaucyBot.Services;
 
 public static class CoreServiceRegistration
 {
-    public static IServiceCollection AddSaucyBotServices(this IServiceCollection services)
+    public static IServiceCollection AddSaucyBotServices(this IServiceCollection services, bool databaseDisabled = false)
     {
         services.AddSingleton<SiteManager>();
         services.AddSingleton<MessageManager>();
-        services.AddSingleton<DatabaseManager>();
-        services.AddSingleton<IGuildConfigurationManager, GuildConfigurationManager>();
+
+        if (databaseDisabled)
+        {
+            services.AddSingleton<IDatabaseManager, NullDatabaseManager>();
+            services.AddSingleton<IGuildConfigurationManager, NullGuildConfigurationManager>();
+        }
+        else
+        {
+            services.AddSingleton<IDatabaseManager, DatabaseManager>();
+            services.AddSingleton<IGuildConfigurationManager, GuildConfigurationManager>();
+        }
+
         return services;
     }
 }
