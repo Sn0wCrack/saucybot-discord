@@ -1,5 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
-
 namespace SaucyBot.Database;
 
 public static class DatabaseServiceRegistration

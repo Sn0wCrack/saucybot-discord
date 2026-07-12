@@ -1,9 +1,9 @@
 using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using SaucyBot.Library.Sites.Newgrounds;
 using SaucyBot.Site;
+using SaucyBot.Site.Newgrounds;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Site;

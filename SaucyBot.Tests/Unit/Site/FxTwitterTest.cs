@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using NSubstitute;
 using SaucyBot.Library.Sites.Twitter;
 using SaucyBot.Site;
+using SaucyBot.Site.Twitter;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Site;

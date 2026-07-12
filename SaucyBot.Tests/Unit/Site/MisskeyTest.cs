@@ -1,13 +1,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Discord;
-using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using SaucyBot.Library.Sites.Misskey;
 using SaucyBot.Site;
+using SaucyBot.Site.Misskey;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Site;

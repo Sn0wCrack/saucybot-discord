@@ -1,5 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
-
 namespace SaucyBot.Library.Sites.E621;
 
 public static class E621ServiceRegistration

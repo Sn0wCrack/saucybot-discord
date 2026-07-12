@@ -1,5 +1,4 @@
 using AngleSharp.Dom;
-using AngleSharp.Html.Dom;
 using AngleSharp.Html.Parser;
 
 namespace SaucyBot.Library.Sites.FurAffinity;

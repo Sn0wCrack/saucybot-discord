@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using SaucyBot.Site;
+using SaucyBot.Site.Instagram;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Site;

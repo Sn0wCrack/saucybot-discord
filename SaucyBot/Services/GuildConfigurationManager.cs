@@ -1,8 +1,6 @@
 using Discord;
 using Discord.WebSocket;
-using Microsoft.EntityFrameworkCore;
 using SaucyBot.Database.Models;
-using SaucyBot.Extensions;
 using SaucyBot.Extensions.Database;
 
 namespace SaucyBot.Services;

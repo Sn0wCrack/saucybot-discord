@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using NSubstitute;
 using SaucyBot.Library.Sites.FurAffinity;
 using SaucyBot.Site;
+using SaucyBot.Site.FurAffinity;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Site;

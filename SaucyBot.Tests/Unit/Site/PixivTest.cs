@@ -9,6 +9,7 @@ using NSubstitute;
 using SaucyBot.Library.Sites.Pixiv;
 using SaucyBot.Services;
 using SaucyBot.Site;
+using SaucyBot.Site.Pixiv;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Site;

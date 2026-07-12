@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using NSubstitute;
 using SaucyBot.Library.Sites.ArtStation;
 using SaucyBot.Site;
+using SaucyBot.Site.ArtStation;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Site;

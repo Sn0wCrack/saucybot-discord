@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using NSubstitute;
 using SaucyBot.Library.Sites.ExHentai;
 using SaucyBot.Site;
+using SaucyBot.Site.ExHentai;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Site;

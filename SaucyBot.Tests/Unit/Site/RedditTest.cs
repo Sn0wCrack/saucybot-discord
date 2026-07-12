@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using SaucyBot.Site;
+using SaucyBot.Site.Reddit;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Site;

@@ -1,7 +1,4 @@
 using System.Net;
-using System.Net.Http.Headers;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace SaucyBot.Library.Sites.ExHentai;
 

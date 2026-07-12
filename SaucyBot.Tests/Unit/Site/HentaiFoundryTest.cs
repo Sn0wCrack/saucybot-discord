@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using NSubstitute;
 using SaucyBot.Library.Sites.HentaiFoundry;
 using SaucyBot.Site;
+using SaucyBot.Site.HentaiFoundry;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Site;

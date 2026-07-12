@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using NSubstitute;
 using SaucyBot.Library.Sites.BlueSky;
 using SaucyBot.Site;
+using SaucyBot.Site.Bluesky;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Site;
