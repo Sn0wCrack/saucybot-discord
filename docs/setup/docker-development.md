@@ -44,7 +44,7 @@ Step 4: Start the bot
 From the `SaucyBot` directory, run:
 
 ```shell
-docker-compose -f docker-compose.dev.yml up -d
+docker compose -f docker-compose.dev.yml up -d
 ```
 
 This will build the bot image and start three containers:
@@ -59,7 +59,7 @@ Step 5: Verify running containers
 ----------
 
 ```shell
-docker-compose -f docker-compose.dev.yml ps
+docker compose -f docker-compose.dev.yml ps
 ```
 
 All three services (`bot`, `database`, `cache`) should show status `Up` or `running`.
@@ -68,15 +68,15 @@ Step 6: View logs
 ----------
 
 ```shell
-docker-compose -f docker-compose.dev.yml logs -f
+docker compose -f docker-compose.dev.yml logs -f
 ```
 
 Append a service name to view logs for a single container:
 
 ```shell
-docker-compose -f docker-compose.dev.yml logs -f bot
-docker-compose -f docker-compose.dev.yml logs -f database
-docker-compose -f docker-compose.dev.yml logs -f cache
+docker compose -f docker-compose.dev.yml logs -f bot
+docker compose -f docker-compose.dev.yml logs -f database
+docker compose -f docker-compose.dev.yml logs -f cache
 ```
 
 Step 7: Rebuilding after code changes
@@ -85,7 +85,7 @@ Step 7: Rebuilding after code changes
 After modifying bot source code, rebuild and restart the `bot` container:
 
 ```shell
-docker-compose -f docker-compose.dev.yml up -d --build
+docker compose -f docker-compose.dev.yml up -d --build
 ```
 
 This rebuilds the .NET image with your latest changes and restarts the bot. The `database` and `cache` containers are unaffected.
