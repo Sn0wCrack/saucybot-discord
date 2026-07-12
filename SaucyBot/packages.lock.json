@@ -230,6 +230,16 @@
           "Serilog": "4.0.0"
         }
       },
+      "SQLitePCLRaw.bundle_e_sqlite3": {
+        "type": "Direct",
+        "requested": "[2.1.12-pre20260709125052, )",
+        "resolved": "2.1.12-pre20260709125052",
+        "contentHash": "JK1FzeoqRr5AXEOS3sXkQoW4dgQQvpfzx4sj/jYHKw7QgXkTh0IANiLgiG/6vCfKUb3x2xNR/fSoII5cJ7GRVw==",
+        "dependencies": {
+          "SQLitePCLRaw.lib.e_sqlite3": "2.1.12-pre20260709125052",
+          "SQLitePCLRaw.provider.e_sqlite3": "2.1.12-pre20260709125052"
+        }
+      },
       "StackExchange.Redis": {
         "type": "Direct",
         "requested": "[3.0.17, )",
@@ -728,31 +738,22 @@
           "Serilog": "4.2.0"
         }
       },
-      "SQLitePCLRaw.bundle_e_sqlite3": {
-        "type": "Transitive",
-        "resolved": "2.1.11",
-        "contentHash": "DC4nA7yWnf4UZdgJDF+9Mus4/cb0Y3Sfgi3gDnAoKNAIBwzkskNAbNbyu+u4atT0ruVlZNJfwZmwiEwE5oz9LQ==",
-        "dependencies": {
-          "SQLitePCLRaw.lib.e_sqlite3": "2.1.11",
-          "SQLitePCLRaw.provider.e_sqlite3": "2.1.11"
-        }
-      },
       "SQLitePCLRaw.core": {
         "type": "Transitive",
-        "resolved": "2.1.11",
-        "contentHash": "PK0GLFkfhZzLQeR3PJf71FmhtHox+U3vcY6ZtswoMjrefkB9k6ErNJEnwXqc5KgXDSjige2XXrezqS39gkpQKA=="
+        "resolved": "2.1.12-pre20260709125052",
+        "contentHash": "giBjBNNIBKXdzde+KJFj0BvH42rvfr4u+y9ssRWa8QXqP92LqfHFUdKk9FWtCx/7fMXxIgMX+MrKv5yYfWM6PA=="
       },
       "SQLitePCLRaw.lib.e_sqlite3": {
         "type": "Transitive",
-        "resolved": "2.1.11",
-        "contentHash": "Ev2ytaXiOlWZ4b3R67GZBsemTINslLD1DCJr2xiacpn4tbapu0Q4dHEzSvZSMnVWeE5nlObU3VZN2p81q3XOYQ=="
+        "resolved": "2.1.12-pre20260709125052",
+        "contentHash": "GIFAmF4SzcMNCUy0ECxT7/uxFtypVqnFzk9A6Xlpetvl1mmQ2x2gBUaEpaTgYBsbbbxyUDk6g2Jn8eY2PMmCJw=="
       },
       "SQLitePCLRaw.provider.e_sqlite3": {
         "type": "Transitive",
-        "resolved": "2.1.11",
-        "contentHash": "Y/0ZkR+r0Cg3DQFuCl1RBnv/tmxpIZRU3HUvelPw6MVaKHwYYR8YNvgs0vuNuXCMvlyJ+Fh88U1D4tah1tt6qw==",
+        "resolved": "2.1.12-pre20260709125052",
+        "contentHash": "YjKn8N+10bhE8hqAaxjqfbm6/oKoiFqAI69sZFlGftu2XRK+UFy6tu2+aY9GOwjtdtN5a+oXwi/Zs2F7xOQCZw==",
         "dependencies": {
-          "SQLitePCLRaw.core": "2.1.11"
+          "SQLitePCLRaw.core": "2.1.12-pre20260709125052"
         }
       },
       "System.CodeDom": {
