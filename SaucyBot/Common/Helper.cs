@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Text;
 using Markdig;
 
@@ -59,7 +59,7 @@ public static class Helper
         {
             return null;
         }
-        
+
         var anchorIndex = uri.IndexOf('#');
         var uriToBeAppended = uri;
         var anchorText = "";
@@ -69,7 +69,7 @@ public static class Helper
             anchorText = uri[anchorIndex..];
             uriToBeAppended = uri[..anchorIndex];
         }
-        
+
         var hasQuery = uriToBeAppended.Contains('?');
 
         var sb = new StringBuilder();

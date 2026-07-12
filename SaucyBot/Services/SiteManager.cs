@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using Discord;
 using Discord.WebSocket;
@@ -15,19 +15,20 @@ public sealed partial class SiteManager
     private readonly IConfiguration _configuration;
     private readonly MessageManager _messageManager;
     private readonly IGuildConfigurationManager _guildConfigurationManager;
-    
+
     private readonly Dictionary<string, BaseSite> _sites = new();
-    
+
     [GeneratedRegex(@"(<|\|\|)(?!@|#|:|a:).*(>|\|\|)", RegexOptions.IgnoreCase)]
     private static partial Regex IgnoreContentRegex();
-    
+
     public SiteManager(
         ILogger<SiteManager> logger,
         IConfiguration configuration,
         IServiceProvider serviceProvider,
         MessageManager messageManager,
         IGuildConfigurationManager guildConfigurationManager
-    ) {
+    )
+    {
         _logger = logger;
         _configuration = configuration;
         _messageManager = messageManager;
@@ -40,7 +41,7 @@ public sealed partial class SiteManager
             .GetTypes()
             .Where(t => t is { Namespace: "SaucyBot.Site", IsClass: true, BaseType.FullName: "SaucyBot.Site.BaseSite" })
             .ToList();
-        
+
         foreach (var siteClass in siteClasses)
         {
             _logger.LogDebug("Attempting to start site module: {Site}", siteClass.ToString());
@@ -56,9 +57,9 @@ public sealed partial class SiteManager
                 _logger.LogDebug("Did not start site module: {Site}, as it is disabled in configuration", siteClass.ToString());
                 continue;
             }
-            
+
             _logger.LogDebug("Successfully started site module: {Site}", siteClass.ToString());
-            
+
             _sites.Add(instance.Identifier, instance);
         }
 
@@ -67,20 +68,20 @@ public sealed partial class SiteManager
     public async Task<List<SiteManagerProcessResult>> Match(SocketUserMessage message)
     {
         var results = new List<SiteManagerProcessResult>();
-        
+
         var embedCount = 0u;
 
         var content = message.AllMessageCleanContent();
-            
+
         if (content is null or "")
         {
             return results;
         }
-        
+
         var guildConfiguration = await _guildConfigurationManager.GetByChannel(message.Channel);
-        
+
         var maximumEmbeds = guildConfiguration?.MaximumEmbeds ?? _configuration.GetSection("Bot:MaximumEmbeds").Get<uint>();
-        
+
         foreach (var (identifier, site) in _sites)
         {
             var matches = site.Match(content);
@@ -104,20 +105,20 @@ public sealed partial class SiteManager
     public async Task<List<SiteManagerProcessResult>> Match(SocketSlashCommand command)
     {
         var results = new List<SiteManagerProcessResult>();
-        
+
         var embedCount = 0u;
 
-        var content = (string?) command.Data.Options.First().Value;
+        var content = (string?)command.Data.Options.First().Value;
 
         if (content is null)
         {
             return results;
         }
-        
+
         var guildConfiguration = await _guildConfigurationManager.GetByChannel(command.Channel);
-        
+
         var maximumEmbeds = guildConfiguration?.MaximumEmbeds ?? _configuration.GetSection("Bot:MaximumEmbeds").Get<uint>();
-        
+
         foreach (var (identifier, site) in _sites)
         {
             var matches = site.Match(content);
@@ -145,14 +146,14 @@ public sealed partial class SiteManager
             _logger.LogDebug("Message was ignored with content: \"{Message}\"", message.AllMessageContent());
             return;
         }
-        
+
         var results = await Match(message);
-        
+
         if (results.Empty())
         {
             return;
         }
-        
+
         // Show a "typing..." indicator in the channel for as long as we are
         // processing matches. It is broadcast until the returned object is
         // disposed of, and Discord clears it once we send our reply.
@@ -190,26 +191,26 @@ public sealed partial class SiteManager
     public async Task HandleCommand(SocketSlashCommand command)
     {
         await command.DeferAsync();
-        
+
         if (!ShouldProcessCommand(command))
         {
             _logger.LogDebug("Command was ignored with content: \"{Message}\"", command.Data.ToString());
             await command.FollowupAsync("Failed to process provided URL or do not have correct permissions in Channel", ephemeral: true);
             return;
         }
-        
+
         var results = await Match(command);
-        
+
         if (results.Empty())
         {
             await command.FollowupAsync("Provided URL cannot be sauced", ephemeral: true);
             return;
         }
-        
+
         foreach (var (site, match) in results)
         {
             _logger.LogDebug("Matched link \"{Match}\" to site {Site}", match, site);
-            
+
             try
             {
                 var response = await _sites[site].Process(new ProcessRequest(match, Command: command));
@@ -260,7 +261,7 @@ public sealed partial class SiteManager
     {
         return IgnoreContentRegex().IsMatch(message.AllMessageContent());
     }
-    
+
     private static bool HasPermissionsToCreateEmbed(SocketMessage message)
     {
         if (message.Channel is SocketGuildChannel guildChannel)
@@ -276,7 +277,7 @@ public sealed partial class SiteManager
 
             return permissions.Has(Constants.RequiredThreadPermissions);
         }
-        
+
         return false;
     }
 
@@ -295,10 +296,10 @@ public sealed partial class SiteManager
 
             return permissions.Has(ChannelPermission.ManageMessages);
         }
-        
+
         return false;
     }
-    
+
     private static bool HasPermissionsToCreateEmbed(SocketInteraction message)
     {
         switch (message.Channel)
@@ -307,17 +308,17 @@ public sealed partial class SiteManager
             case SocketDMChannel or SocketGroupChannel:
                 return true;
             case SocketThreadChannel threadChannel:
-            {
-                var permissions = threadChannel.Guild.CurrentUser.GetPermissions(threadChannel);
+                {
+                    var permissions = threadChannel.Guild.CurrentUser.GetPermissions(threadChannel);
 
-                return permissions.Has(Constants.RequiredThreadPermissions);
-            }
+                    return permissions.Has(Constants.RequiredThreadPermissions);
+                }
             case SocketGuildChannel guildChannel:
-            {
-                var permissions = guildChannel.Guild.CurrentUser.GetPermissions(guildChannel);
+                {
+                    var permissions = guildChannel.Guild.CurrentUser.GetPermissions(guildChannel);
 
-                return permissions.Has(Constants.RequiredChannelPermissions);
-            }
+                    return permissions.Has(Constants.RequiredChannelPermissions);
+                }
             default:
                 return false;
         }

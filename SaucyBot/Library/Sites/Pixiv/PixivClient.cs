@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -32,7 +32,8 @@ public sealed class PixivClient : IPixivClient
         IConfiguration configuration,
         ICacheManager cacheManager,
         HttpClient client
-    ) {
+    )
+    {
         _logger = logger;
         _configuration = configuration;
         _cache = cacheManager;
@@ -70,7 +71,7 @@ public sealed class PixivClient : IPixivClient
         {
             return true;
         }
-        
+
         return _isLoggedIn = await CookieLogin();
     }
 
@@ -93,7 +94,7 @@ public sealed class PixivClient : IPixivClient
         catch (Exception e)
         {
             _logger.LogDebug("Failed logging into Pixiv with error: {Exception}", e.Message);
-            
+
             return false;
         }
     }
@@ -112,7 +113,7 @@ public sealed class PixivClient : IPixivClient
         var response = await _cache.Remember($"pixiv.illustration_pages_{id}", async () =>
             await _pipeline.ExecuteAsync(async token => await _client.GetStringAsync($"{WebApiUrl}/illust/{id}/pages", token))
         );
-        
+
         return response is null ? null : JsonSerializer.Deserialize<IllustrationPagesResponse>(response);
     }
 
@@ -121,23 +122,23 @@ public sealed class PixivClient : IPixivClient
         var response = await _cache.Remember($"pixiv.ugoira_metadata_{id}", async () =>
             await _pipeline.ExecuteAsync(async token => await _client.GetStringAsync($"{WebApiUrl}/illust/{id}/ugoira_meta", token))
         );
-        
+
         return response is null ? null : JsonSerializer.Deserialize<UgoiraMetadataResponse>(response);
     }
-    
+
     public async Task<UserDetailsResponse?> UserDetails(string id)
     {
         var response = await _cache.Remember($"pixiv.user_{id}", TimeSpan.FromDays(7), async () =>
             await _pipeline.ExecuteAsync(async token => await _client.GetStringAsync($"{WebApiUrl}/user/{id}", token))
         );
-        
+
         return response is null ? null : JsonSerializer.Deserialize<UserDetailsResponse>(response);
     }
 
     public async Task<HttpResponseMessage> PokeFile(string url)
     {
         using var request = new HttpRequestMessage(HttpMethod.Head, url);
-        
+
         return await _client.SendAsync(request);
     }
 

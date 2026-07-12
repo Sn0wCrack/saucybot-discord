@@ -1,4 +1,4 @@
-﻿using SaucyBot.Services.Cache;
+using SaucyBot.Services.Cache;
 
 namespace SaucyBot.Services;
 
@@ -9,7 +9,7 @@ public sealed class CacheManager : ICacheManager
     private readonly IServiceProvider _serviceProvider;
 
     private readonly ICacheDriver _driver;
-    
+
     public CacheManager(ILogger<CacheManager> logger, IConfiguration configuration, IServiceProvider serviceProvider)
     {
         _logger = logger;
@@ -30,7 +30,7 @@ public sealed class CacheManager : ICacheManager
             _ => typeof(MemoryCacheDriver),
         };
 
-        return _serviceProvider.GetService(driverType) as ICacheDriver 
+        return _serviceProvider.GetService(driverType) as ICacheDriver
                ?? throw new Exception($"Unable to create Cache Driver of type {driver}");
     }
 
@@ -38,7 +38,7 @@ public sealed class CacheManager : ICacheManager
     {
         return await _driver.Get<T>(key);
     }
-    
+
     public async Task<T> Set<T>(object key, T value)
     {
         return await _driver.Set(key, value);

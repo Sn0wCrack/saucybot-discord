@@ -1,4 +1,4 @@
-﻿namespace SaucyBot.Library.Sites.Newgrounds;
+namespace SaucyBot.Library.Sites.Newgrounds;
 
 public interface INewgroundsClient
 {

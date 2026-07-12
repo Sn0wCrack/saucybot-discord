@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -14,11 +14,11 @@ public sealed class FxTwitterClient : IFxTwitterClient
     private const string BaseUrl = "https://api.fxtwitter.com";
 
     private readonly ILogger<FxTwitterClient> _logger;
-    
+
     private readonly ICacheManager _cache;
-    
+
     private readonly HttpClient _client;
-    
+
     private readonly ResiliencePipeline<string?> _pipeline;
 
     public FxTwitterClient(ILogger<FxTwitterClient> logger, ICacheManager cacheManager, HttpClient client)
@@ -26,7 +26,7 @@ public sealed class FxTwitterClient : IFxTwitterClient
         _logger = logger;
         _cache = cacheManager;
         _client = client;
-        
+
         _pipeline = new ResiliencePipelineBuilder<string?>()
             .AddFallback(new FallbackStrategyOptions<string?>
             {
@@ -34,7 +34,7 @@ public sealed class FxTwitterClient : IFxTwitterClient
                 ShouldHandle = arguments => arguments.Outcome switch
                 {
                     { Exception: HttpRequestException e } => e.StatusCode == HttpStatusCode.NotFound ? PredicateResult.True() : PredicateResult.False(),
-                    _ => PredicateResult.False(), 
+                    _ => PredicateResult.False(),
                 }
             })
             .AddRetry(new RetryStrategyOptions<string?>
@@ -52,7 +52,7 @@ public sealed class FxTwitterClient : IFxTwitterClient
             .AddTimeout(TimeSpan.FromSeconds(15))
             .Build();
     }
-    
+
     public async Task<FxTwitterResponse?> GetTweet(string name, string identifier, string? translate = null)
     {
         var response = await _cache.Remember(
@@ -73,19 +73,19 @@ public sealed class FxTwitterClient : IFxTwitterClient
         {
             _logger.LogDebug(e, "Failed to deserialize FxTwitter response, response not JSON or is malformed.");
             return null;
-        } 
+        }
     }
-    
+
     private static string BuildUrl(string name, string identifier, string? translate = null)
     {
         return translate is null or "original"
             ? $"{BaseUrl}/{name}/status/{identifier}"
             : $"{BaseUrl}/{name}/status/{identifier}/{translate}";
     }
-    
+
     private static string BuildCacheKey(string name, string identifier, string? translate = null)
     {
-        return translate is null 
+        return translate is null
             ? $"fxtwitter.tweet_{name}_{identifier}"
             : $"fxtwitter.tweet_{name}_{identifier}_{translate}";
     }
@@ -187,7 +187,7 @@ public sealed record FxTwitterVideo(
     int Height,
     [property: JsonPropertyName("format")]
     string Format
-); 
+);
 
 public sealed record FxTwitterPhoto(
     [property: JsonPropertyName("type")]

@@ -1,4 +1,4 @@
-﻿namespace SaucyBot.Library.Sites.Misskey;
+namespace SaucyBot.Library.Sites.Misskey;
 
 public interface IMisskeyClient
 {

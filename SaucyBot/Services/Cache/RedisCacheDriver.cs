@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using Microsoft.Extensions.Caching.Distributed;
 
 namespace SaucyBot.Services.Cache;
@@ -28,7 +28,7 @@ public sealed class RedisCacheDriver : ICacheDriver
         {
             throw new Exception("Key could not be converted to a string correctly");
         }
-        
+
         var value = await _cache.GetStringAsync(keyAsString);
 
         return value is null ? default : JsonSerializer.Deserialize<T>(value);
@@ -42,7 +42,7 @@ public sealed class RedisCacheDriver : ICacheDriver
         {
             throw new Exception("Key could not be converted to a string correctly");
         }
-        
+
         await _cache.RemoveAsync(keyAsString);
 
         return true;
@@ -61,7 +61,7 @@ public sealed class RedisCacheDriver : ICacheDriver
         {
             throw new Exception("Key could not be converted to a string correctly");
         }
-        
+
         await _cache.SetStringAsync(
             keyAsString,
             JsonSerializer.Serialize(value),

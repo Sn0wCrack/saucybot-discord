@@ -1,4 +1,4 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 using AngleSharp.Dom;
 using AngleSharp.Html.Dom;
 using AngleSharp.Html.Parser;
@@ -23,7 +23,8 @@ public sealed class ExHentaiClient : IExHentaiClient
         IConfiguration configuration,
         ICacheManager cacheManager,
         HttpClient client
-    )  {
+    )
+    {
         _logger = logger;
         _configuration = configuration;
         _cache = cacheManager;
@@ -73,7 +74,7 @@ public sealed record ExHentaiGalleryRequest(ExHentaiRequestMode Mode, string Id,
 public sealed partial class ExHentaiGalleryPage
 {
     private readonly IHtmlDocument _document;
-    
+
     [GeneratedRegex(@"url\((?<url>.*)\)", RegexOptions.IgnoreCase)]
     private static partial Regex CssBackgroundUrlRegex();
 
@@ -94,9 +95,9 @@ public sealed partial class ExHentaiGalleryPage
 
     public string? Length() =>
         MetaContainer()?.QuerySelector("tr > td:contains('Length:')")?.NextSibling?.TextContent.Replace("pages", "").Trim();
-    
+
     public string? AuthorName() => _document.QuerySelector(".gm #gmid #gdn a")?.TextContent;
-    
+
     public string? AuthorUrl() => _document.QuerySelector(".gm #gmid #gdn a")?.GetAttribute("href");
 
     public string? ImageUrl()
@@ -121,7 +122,7 @@ public sealed partial class ExHentaiGalleryPage
         {
             return null;
         }
-        
+
         return DateTimeOffset.Parse(dateTime);
     }
 

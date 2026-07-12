@@ -1,4 +1,4 @@
-﻿namespace SaucyBot.Library.Sites.FurAffinity;
+namespace SaucyBot.Library.Sites.FurAffinity;
 
 public interface IFurAffinityClient
 {

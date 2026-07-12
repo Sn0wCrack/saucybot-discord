@@ -1,4 +1,4 @@
-﻿namespace SaucyBot.Extensions;
+namespace SaucyBot.Extensions;
 
 public static class ListExtensions
 {

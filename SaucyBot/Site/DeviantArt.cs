@@ -1,4 +1,4 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 using Discord;
 using Discord.WebSocket;
 using SaucyBot.Library;
@@ -22,7 +22,7 @@ public sealed partial class DeviantArt : BaseSite
     private readonly IConfiguration _configuration;
     private readonly IDeviantArtClient _client;
     private readonly IDeviantArtOpenEmbedClient _openEmbedClient;
-    
+
     public DeviantArt(ILogger<DeviantArt> logger, IConfiguration configuration, IDeviantArtClient client, IDeviantArtOpenEmbedClient openEmbedClient)
     {
         _logger = logger;
@@ -30,7 +30,7 @@ public sealed partial class DeviantArt : BaseSite
         _client = client;
         _openEmbedClient = openEmbedClient;
     }
-    
+
     public override async Task<ProcessResponse?> Process(ProcessRequest request)
     {
         var response = new ProcessResponse();
@@ -63,7 +63,7 @@ public sealed partial class DeviantArt : BaseSite
         };
 
         response.Embeds.Add(embed.Build());
-        
+
         return response;
     }
 }

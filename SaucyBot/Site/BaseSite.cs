@@ -1,4 +1,4 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 using Discord;
 using Discord.WebSocket;
 using SaucyBot.Site.Response;
@@ -12,7 +12,7 @@ public abstract class BaseSite
     protected virtual Regex Pattern { get; init; } = new(string.Empty);
 
     protected virtual Color Color => Color.Default;
-    
+
     public MatchCollection Match(string message)
     {
         return Pattern.Matches(message);

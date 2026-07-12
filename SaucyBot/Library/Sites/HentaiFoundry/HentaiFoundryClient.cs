@@ -1,4 +1,4 @@
-﻿using AngleSharp.Html.Dom;
+using AngleSharp.Html.Dom;
 using AngleSharp.Html.Parser;
 using SaucyBot.Services;
 
@@ -7,19 +7,20 @@ namespace SaucyBot.Library.Sites.HentaiFoundry;
 public sealed class HentaiFoundryClient : IHentaiFoundryClient
 {
     private const string BaseUrl = "https://www.hentai-foundry.com";
-    
+
     private readonly ILogger<HentaiFoundryClient> _logger;
     private readonly IConfiguration _configuration;
     private readonly ICacheManager _cache;
 
     private readonly HttpClient _client;
-    
+
     public HentaiFoundryClient(
         ILogger<HentaiFoundryClient> logger,
         IConfiguration configuration,
         ICacheManager cacheManager,
         HttpClient client
-    ) {
+    )
+    {
         _logger = logger;
         _configuration = configuration;
         _cache = cacheManager;
@@ -47,9 +48,9 @@ public sealed class HentaiFoundryClient : IHentaiFoundryClient
 public sealed class HentaiFoundryPicture
 {
     private const string BaseUrl = "https://www.hentai-foundry.com";
-    
+
     private readonly IHtmlDocument _document;
-    
+
     public HentaiFoundryPicture(string page)
     {
         var parser = new HtmlParser();
@@ -78,7 +79,7 @@ public sealed class HentaiFoundryPicture
 
         return DateTimeOffset.Parse(datetime);
     }
-    
+
     public string Views()
     {
         var views = _document.QuerySelector("#pictureGeneralInfoBox .boxbody .column span:contains('Views')")

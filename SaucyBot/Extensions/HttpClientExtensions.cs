@@ -1,4 +1,4 @@
-﻿using SaucyBot.Common;
+using SaucyBot.Common;
 
 namespace SaucyBot.Extensions;
 
