@@ -21,7 +21,7 @@ public class PixivTest
     {
         // Post: https://www.pixiv.net/en/artworks/106848609
 
-        var logger = Substitute.For<ILogger<Pixiv>>();
+        var logger = Substitute.For<ILogger<PixivSite>>();
 
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -125,7 +125,7 @@ public class PixivTest
             .GetFile(Arg.Any<string>())
             .Returns(new MemoryStream() as Stream);
 
-        var site = new Pixiv(
+        var site = new PixivSite(
             logger,
             config,
             guildConfigurationManager,
@@ -144,7 +144,7 @@ public class PixivTest
     [Fact]
     public async Task NothingIsReturnedWhenTheApiClientReturnsUnsuccessfully()
     {
-        var logger = Substitute.For<ILogger<Pixiv>>();
+        var logger = Substitute.For<ILogger<PixivSite>>();
 
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -162,7 +162,7 @@ public class PixivTest
             .Returns((IllustrationDetailsResponse?)null);
 
 
-        var site = new Pixiv(
+        var site = new PixivSite(
             logger,
             config,
             guildConfigurationManager,
@@ -179,12 +179,12 @@ public class PixivTest
     [Fact]
     public void ArtworksOnSeparateLinesBeforeAndAfterSameLineArtworksAreAllMatched()
     {
-        var logger = Substitute.For<ILogger<Pixiv>>();
+        var logger = Substitute.For<ILogger<PixivSite>>();
         var config = new ConfigurationBuilder().Build();
         var guildConfigurationManager = Substitute.For<IGuildConfigurationManager>();
         var client = Substitute.For<IPixivClient>();
 
-        var site = new Pixiv(
+        var site = new PixivSite(
             logger,
             config,
             guildConfigurationManager,
@@ -209,12 +209,12 @@ public class PixivTest
     [Fact]
     public void ArtworksSurroundedByTextOnASingleLineAreAllMatched()
     {
-        var logger = Substitute.For<ILogger<Pixiv>>();
+        var logger = Substitute.For<ILogger<PixivSite>>();
         var config = new ConfigurationBuilder().Build();
         var guildConfigurationManager = Substitute.For<IGuildConfigurationManager>();
         var client = Substitute.For<IPixivClient>();
 
-        var site = new Pixiv(
+        var site = new PixivSite(
             logger,
             config,
             guildConfigurationManager,

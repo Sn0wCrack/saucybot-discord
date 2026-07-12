@@ -16,7 +16,7 @@ public class HentaiFoundryTest
     {
         // Post: https://www.hentai-foundry.com/pictures/user/cherry-gig/1042457/FOR-THE-GOD-EMPEROR
 
-        var logger = Substitute.For<ILogger<HentaiFoundry>>();
+        var logger = Substitute.For<ILogger<HentaiFoundrySite>>();
 
         var client = Substitute.For<IHentaiFoundryClient>();
 
@@ -26,7 +26,7 @@ public class HentaiFoundryTest
             .GetPage(Arg.Any<string>())
             .Returns((HentaiFoundryPicture?)picture);
 
-        var site = new HentaiFoundry(
+        var site = new HentaiFoundrySite(
             logger,
             client
         );
@@ -45,7 +45,7 @@ public class HentaiFoundryTest
     {
         // Post: https://www.hentai-foundry.com/pictures/user/cherry-gig/1042457/FOR-THE-GOD-EMPEROR
 
-        var logger = Substitute.For<ILogger<HentaiFoundry>>();
+        var logger = Substitute.For<ILogger<HentaiFoundrySite>>();
 
         var client = Substitute.For<IHentaiFoundryClient>();
 
@@ -53,7 +53,7 @@ public class HentaiFoundryTest
             .GetPage(Arg.Any<string>())
             .Returns((HentaiFoundryPicture?)null);
 
-        var site = new HentaiFoundry(
+        var site = new HentaiFoundrySite(
             logger,
             client
         );
@@ -68,10 +68,10 @@ public class HentaiFoundryTest
     [Fact]
     public void PicturesOnSeparateLinesBeforeAndAfterSameLinePicturesAreAllMatched()
     {
-        var logger = Substitute.For<ILogger<HentaiFoundry>>();
+        var logger = Substitute.For<ILogger<HentaiFoundrySite>>();
         var client = Substitute.For<IHentaiFoundryClient>();
 
-        var site = new HentaiFoundry(logger, client);
+        var site = new HentaiFoundrySite(logger, client);
 
         var content =
             "https://www.hentai-foundry.com/pictures/user/first/1/slug1\n" +
@@ -98,10 +98,10 @@ public class HentaiFoundryTest
     [Fact]
     public void PicturesSurroundedByTextOnASingleLineAreAllMatched()
     {
-        var logger = Substitute.For<ILogger<HentaiFoundry>>();
+        var logger = Substitute.For<ILogger<HentaiFoundrySite>>();
         var client = Substitute.For<IHentaiFoundryClient>();
 
-        var site = new HentaiFoundry(logger, client);
+        var site = new HentaiFoundrySite(logger, client);
 
         var content = "pic https://www.hentai-foundry.com/pictures/user/first/1/slug1 also https://www.hentai-foundry.com/pictures/user/second/2/slug2 end";
 

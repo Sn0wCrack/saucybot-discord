@@ -17,7 +17,7 @@ public class DeviantArtTest
     {
         // Post: https://www.deviantart.com/shadeofshinon/art/Frostbreath-VI-943346591
 
-        var logger = Substitute.For<ILogger<DeviantArt>>();
+        var logger = Substitute.For<ILogger<DeviantArtSite>>();
 
         var config = new ConfigurationBuilder()
             .Build();
@@ -41,7 +41,7 @@ public class DeviantArtTest
             .Get(Arg.Any<string>())
             .Returns(openEmbedResponse);
 
-        var site = new DeviantArt(
+        var site = new DeviantArtSite(
             logger,
             config,
             client,
@@ -70,7 +70,7 @@ public class DeviantArtTest
     {
         // Post: https://www.deviantart.com/shadeofshinon/art/Frostbreath-VI-943346591
 
-        var logger = Substitute.For<ILogger<DeviantArt>>();
+        var logger = Substitute.For<ILogger<DeviantArtSite>>();
 
         var config = new ConfigurationBuilder()
             .Build();
@@ -83,7 +83,7 @@ public class DeviantArtTest
             .Get(Arg.Any<string>())
             .Returns((OpenEmbedResponse?)null);
 
-        var site = new DeviantArt(
+        var site = new DeviantArtSite(
             logger,
             config,
             client,

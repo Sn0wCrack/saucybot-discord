@@ -9,7 +9,7 @@ namespace SaucyBot.Site.ExHentai;
 
 using SaucyBot.Site;
 
-public sealed partial class ExHentai : BaseSite, IExHentaiSite
+public sealed partial class ExHentaiSite : BaseSite, IExHentaiSite
 {
     public override string Identifier => "ExHentai";
 
@@ -20,12 +20,12 @@ public sealed partial class ExHentai : BaseSite, IExHentaiSite
 
     public override Color Color => new(0x660611);
 
-    private readonly ILogger<ExHentai> _logger;
+    private readonly ILogger<ExHentaiSite> _logger;
     private readonly IConfiguration _configuration;
     private readonly IExHentaiClient _client;
     private readonly bool _isConfiguredToEmbedExHentaiLinks;
 
-    public ExHentai(ILogger<ExHentai> logger, IConfiguration configuration, IExHentaiClient client)
+    public ExHentaiSite(ILogger<ExHentaiSite> logger, IConfiguration configuration, IExHentaiClient client)
     {
         _logger = logger;
         _configuration = configuration;

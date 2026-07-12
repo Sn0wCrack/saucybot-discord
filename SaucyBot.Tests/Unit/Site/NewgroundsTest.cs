@@ -13,7 +13,7 @@ public class NewgroundsTest
     [Fact]
     public async Task AnEmbedIsCreatedForArtPost()
     {
-        var logger = Substitute.For<ILogger<Newgrounds>>();
+        var logger = Substitute.For<ILogger<NewgroundsSite>>();
 
         var client = Substitute.For<INewgroundsClient>();
 
@@ -40,7 +40,7 @@ public class NewgroundsTest
             .GetArt(Arg.Any<string>(), Arg.Any<string>())
             .Returns(art);
 
-        var site = new Newgrounds(logger, client);
+        var site = new NewgroundsSite(logger, client);
 
         var matches = site.Pattern.Matches("https://www.newgrounds.com/art/view/testuser/test-slug");
         var match = matches[0];
@@ -55,7 +55,7 @@ public class NewgroundsTest
     [Fact]
     public async Task NothingIsReturnedWhenTheApiClientReturnsUnsuccessfully()
     {
-        var logger = Substitute.For<ILogger<Newgrounds>>();
+        var logger = Substitute.For<ILogger<NewgroundsSite>>();
 
         var client = Substitute.For<INewgroundsClient>();
 
@@ -63,7 +63,7 @@ public class NewgroundsTest
             .GetArt(Arg.Any<string>(), Arg.Any<string>())
             .Returns((NewgroundsArt?)null);
 
-        var site = new Newgrounds(logger, client);
+        var site = new NewgroundsSite(logger, client);
 
         var matches = site.Pattern.Matches("https://www.newgrounds.com/art/view/testuser/test-slug");
         var match = matches[0];
@@ -76,10 +76,10 @@ public class NewgroundsTest
     [Fact]
     public void ArtPostsOnSeparateLinesBeforeAndAfterSameLinePostsAreAllMatched()
     {
-        var logger = Substitute.For<ILogger<Newgrounds>>();
+        var logger = Substitute.For<ILogger<NewgroundsSite>>();
         var client = Substitute.For<INewgroundsClient>();
 
-        var site = new Newgrounds(logger, client);
+        var site = new NewgroundsSite(logger, client);
 
         var content =
             "https://www.newgrounds.com/art/view/first/slug1\n" +
@@ -106,10 +106,10 @@ public class NewgroundsTest
     [Fact]
     public void ArtPostsSurroundedByTextOnASingleLineAreAllMatched()
     {
-        var logger = Substitute.For<ILogger<Newgrounds>>();
+        var logger = Substitute.For<ILogger<NewgroundsSite>>();
         var client = Substitute.For<INewgroundsClient>();
 
-        var site = new Newgrounds(logger, client);
+        var site = new NewgroundsSite(logger, client);
 
         var content = "art https://www.newgrounds.com/art/view/first/slug1 plus https://www.newgrounds.com/art/view/second/slug2 done";
 

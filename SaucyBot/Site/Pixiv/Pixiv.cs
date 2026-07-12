@@ -17,7 +17,7 @@ namespace SaucyBot.Site.Pixiv;
 
 using SaucyBot.Site;
 
-public sealed partial class Pixiv : BaseSite, IPixivSite
+public sealed partial class PixivSite : BaseSite, IPixivSite
 {
     public override string Identifier => "Pixiv";
 
@@ -32,12 +32,12 @@ public sealed partial class Pixiv : BaseSite, IPixivSite
     public override Color Color => new(0x0096fa);
 
     private readonly IPixivClient _client;
-    private readonly ILogger<Pixiv> _logger;
+    private readonly ILogger<PixivSite> _logger;
     private readonly IGuildConfigurationManager _guildConfigurationManager;
     private readonly IConfiguration _configuration;
 
-    public Pixiv(
-        ILogger<Pixiv> logger,
+    public PixivSite(
+        ILogger<PixivSite> logger,
         IConfiguration configuration,
         IGuildConfigurationManager guildConfigurationManager,
         IPixivClient client

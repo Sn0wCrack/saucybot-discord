@@ -6,7 +6,7 @@ namespace SaucyBot.Site.Instagram;
 
 using SaucyBot.Site;
 
-public sealed partial class Instagram : BaseSite, IInstagramSite
+public sealed partial class InstagramSite : BaseSite, IInstagramSite
 {
     public override string Identifier => "Instagram";
 
@@ -17,9 +17,9 @@ public sealed partial class Instagram : BaseSite, IInstagramSite
 
     public override Color Color => new(0xE4405F);
 
-    private readonly ILogger<Instagram> _logger;
+    private readonly ILogger<InstagramSite> _logger;
 
-    public Instagram(ILogger<Instagram> logger)
+    public InstagramSite(ILogger<InstagramSite> logger)
     {
         _logger = logger;
     }

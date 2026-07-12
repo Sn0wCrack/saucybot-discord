@@ -16,7 +16,7 @@ public class ArtStationTest
     [Fact]
     public async Task AnEmbedIsCreatedForEachProjectImageAsset()
     {
-        var logger = Substitute.For<ILogger<ArtStation>>();
+        var logger = Substitute.For<ILogger<ArtStationSite>>();
 
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -101,7 +101,7 @@ public class ArtStationTest
             .GetProject(Arg.Any<string>())
             .Returns(project);
 
-        var site = new ArtStation(logger, config, client);
+        var site = new ArtStationSite(logger, config, client);
 
         var match = site.Pattern.Matches("https://www.artstation.com/artwork/xYXO5X").First();
 
@@ -115,7 +115,7 @@ public class ArtStationTest
     [Fact]
     public async Task NothingIsReturnedWhenTheApiClientReturnsUnsuccessfully()
     {
-        var logger = Substitute.For<ILogger<ArtStation>>();
+        var logger = Substitute.For<ILogger<ArtStationSite>>();
 
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -130,7 +130,7 @@ public class ArtStationTest
             .GetProject(Arg.Any<string>())
             .Returns((Project?)null);
 
-        var site = new ArtStation(logger, config, client);
+        var site = new ArtStationSite(logger, config, client);
 
         var match = site.Pattern.Matches("https://www.artstation.com/artwork/xYXO5X").First();
 

@@ -8,7 +8,7 @@ namespace SaucyBot.Site.Newgrounds;
 
 using SaucyBot.Site;
 
-public sealed partial class Newgrounds : BaseSite, INewgroundsSite
+public sealed partial class NewgroundsSite : BaseSite, INewgroundsSite
 {
     public override string Identifier => "Newgrounds";
 
@@ -19,10 +19,10 @@ public sealed partial class Newgrounds : BaseSite, INewgroundsSite
 
     public override Color Color => new(0xFFF17A);
 
-    private readonly ILogger<Newgrounds> _logger;
+    private readonly ILogger<NewgroundsSite> _logger;
     private readonly INewgroundsClient _client;
 
-    public Newgrounds(ILogger<Newgrounds> logger, INewgroundsClient client)
+    public NewgroundsSite(ILogger<NewgroundsSite> logger, INewgroundsClient client)
     {
         _logger = logger;
         _client = client;

@@ -18,19 +18,19 @@ public static class SiteServiceRegistration
 {
     public static IServiceCollection AddSaucyBotSites(this IServiceCollection services)
     {
-        services.AddSingleton<IArtStationSite, ArtStation.ArtStation>();
-        services.AddSingleton<IBlueskySite, Bluesky.Bluesky>();
-        services.AddSingleton<IDeviantArtSite, DeviantArt.DeviantArt>();
-        services.AddSingleton<IE621Site, E621.E621>();
-        services.AddSingleton<IExHentaiSite, ExHentai.ExHentai>();
-        services.AddSingleton<IFurAffinitySite, FurAffinity.XFurAffinity>();
-        services.AddSingleton<IHentaiFoundrySite, HentaiFoundry.HentaiFoundry>();
-        services.AddSingleton<IInstagramSite, Instagram.Instagram>();
-        services.AddSingleton<IMisskeySite, Misskey.Misskey>();
-        services.AddSingleton<INewgroundsSite, Newgrounds.Newgrounds>();
-        services.AddSingleton<IPixivSite, Pixiv.Pixiv>();
-        services.AddSingleton<IRedditSite, Reddit.Reddit>();
-        services.AddSingleton<ITwitterSite, Twitter.FxTwitter>();
+        services.AddSingleton<IArtStationSite, ArtStation.ArtStationSite>();
+        services.AddSingleton<IBlueskySite, Bluesky.BlueskySite>();
+        services.AddSingleton<IDeviantArtSite, DeviantArt.DeviantArtSite>();
+        services.AddSingleton<IE621Site, E621.E621Site>();
+        services.AddSingleton<IExHentaiSite, ExHentai.ExHentaiSite>();
+        services.AddSingleton<IFurAffinitySite, FurAffinity.XFurAffinitySite>();
+        services.AddSingleton<IHentaiFoundrySite, HentaiFoundry.HentaiFoundrySite>();
+        services.AddSingleton<IInstagramSite, Instagram.InstagramSite>();
+        services.AddSingleton<IMisskeySite, Misskey.MisskeySite>();
+        services.AddSingleton<INewgroundsSite, Newgrounds.NewgroundsSite>();
+        services.AddSingleton<IPixivSite, Pixiv.PixivSite>();
+        services.AddSingleton<IRedditSite, Reddit.RedditSite>();
+        services.AddSingleton<ITwitterSite, Twitter.FxTwitterSite>();
         return services;
     }
 }

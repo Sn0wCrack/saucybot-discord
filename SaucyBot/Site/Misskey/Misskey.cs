@@ -8,18 +8,18 @@ namespace SaucyBot.Site.Misskey;
 
 using SaucyBot.Site;
 
-public sealed class Misskey : BaseSite, IMisskeySite
+public sealed class MisskeySite : BaseSite, IMisskeySite
 {
     public override string Identifier => "Misskey";
 
     public override Color Color => new(0x85B300);
 
-    private readonly ILogger<Misskey> _logger;
+    private readonly ILogger<MisskeySite> _logger;
     private readonly IConfiguration _configuration;
     private readonly IMisskeyClient _client;
 
-    public Misskey(
-        ILogger<Misskey> logger,
+    public MisskeySite(
+        ILogger<MisskeySite> logger,
         IConfiguration configuration,
         IMisskeyClient client
     )

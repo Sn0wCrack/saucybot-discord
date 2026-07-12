@@ -11,7 +11,7 @@ namespace SaucyBot.Site.Twitter;
 
 using SaucyBot.Site;
 
-public sealed partial class FxTwitter : BaseSite, ITwitterSite
+public sealed partial class FxTwitterSite : BaseSite, ITwitterSite
 {
     public override string Identifier => "FxTwitter";
 
@@ -28,12 +28,12 @@ public sealed partial class FxTwitter : BaseSite, ITwitterSite
 
     public override Color Color => new(0x1DA1F2);
 
-    private readonly ILogger<FxTwitter> _logger;
+    private readonly ILogger<FxTwitterSite> _logger;
     private readonly IConfiguration _configuration;
     private readonly HttpClient _httpClient;
     private readonly IFxTwitterClient _client;
 
-    public FxTwitter(ILogger<FxTwitter> logger, IConfiguration configuration, IFxTwitterClient client, IHttpClientFactory httpClientFactory)
+    public FxTwitterSite(ILogger<FxTwitterSite> logger, IConfiguration configuration, IFxTwitterClient client, IHttpClientFactory httpClientFactory)
     {
         _logger = logger;
         _configuration = configuration;

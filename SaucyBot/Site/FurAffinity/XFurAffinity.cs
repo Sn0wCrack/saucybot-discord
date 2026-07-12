@@ -6,7 +6,7 @@ namespace SaucyBot.Site.FurAffinity;
 
 using SaucyBot.Site;
 
-public sealed partial class XFurAffinity : BaseSite, IFurAffinitySite
+public sealed partial class XFurAffinitySite : BaseSite, IFurAffinitySite
 {
     public override string Identifier => "FurAffinity";
 
@@ -17,9 +17,9 @@ public sealed partial class XFurAffinity : BaseSite, IFurAffinitySite
 
     public override Color Color => new(0x8B5CF6);
 
-    private readonly ILogger<XFurAffinity> _logger;
+    private readonly ILogger<XFurAffinitySite> _logger;
 
-    public XFurAffinity(ILogger<XFurAffinity> logger)
+    public XFurAffinitySite(ILogger<XFurAffinitySite> logger)
     {
         _logger = logger;
     }

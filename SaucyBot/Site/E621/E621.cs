@@ -8,7 +8,7 @@ namespace SaucyBot.Site.E621;
 
 using SaucyBot.Site;
 
-public sealed partial class E621 : BaseSite, IE621Site
+public sealed partial class E621Site : BaseSite, IE621Site
 {
     public override string Identifier => "E621";
 
@@ -19,10 +19,10 @@ public sealed partial class E621 : BaseSite, IE621Site
 
     public override Color Color => new(0x00549E);
 
-    private readonly ILogger<E621> _logger;
+    private readonly ILogger<E621Site> _logger;
     private readonly IE621Client _client;
 
-    public E621(ILogger<E621> logger, IE621Client client)
+    public E621Site(ILogger<E621Site> logger, IE621Client client)
     {
         _logger = logger;
         _client = client;

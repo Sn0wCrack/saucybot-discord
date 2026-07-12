@@ -9,7 +9,7 @@ namespace SaucyBot.Site.Bluesky;
 
 using SaucyBot.Site;
 
-public sealed partial class Bluesky : BaseSite, IBlueskySite
+public sealed partial class BlueskySite : BaseSite, IBlueskySite
 {
     public override string Identifier => "Bluesky";
 
@@ -20,11 +20,11 @@ public sealed partial class Bluesky : BaseSite, IBlueskySite
 
     public override Color Color => new(0x1083FE);
 
-    private readonly ILogger<Bluesky> _logger;
+    private readonly ILogger<BlueskySite> _logger;
     private readonly IConfiguration _configuration;
     private readonly IVixBlueskyClient _client;
 
-    public Bluesky(ILogger<Bluesky> logger, IConfiguration configuration, IVixBlueskyClient client)
+    public BlueskySite(ILogger<BlueskySite> logger, IConfiguration configuration, IVixBlueskyClient client)
     {
         _logger = logger;
         _configuration = configuration;

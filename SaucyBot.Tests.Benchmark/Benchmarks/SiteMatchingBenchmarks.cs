@@ -38,19 +38,19 @@ namespace SaucyBot.Tests.Benchmark.Benchmarks;
 [MinIterationCount(3), MaxIterationCount(5)]
 public class SiteMatchingBenchmarks
 {
-    private FxTwitter _fxTwitter = null!;
-    private ArtStation _artStation = null!;
-    private Bluesky _bluesky = null!;
-    private DeviantArt _deviantArt = null!;
-    private E621 _e621 = null!;
-    private ExHentai _exHentai = null!;
-    private FurAffinity _furAffinity = null!;
-    private HentaiFoundry _hentaiFoundry = null!;
-    private Instagram _instagram = null!;
-    private Misskey _misskey = null!;
-    private Newgrounds _newgrounds = null!;
-    private Pixiv _pixiv = null!;
-    private Reddit _reddit = null!;
+    private FxTwitterSite _fxTwitter = null!;
+    private ArtStationSite _artStation = null!;
+    private BlueskySite _bluesky = null!;
+    private DeviantArtSite _deviantArt = null!;
+    private E621Site _e621 = null!;
+    private ExHentaiSite _exHentai = null!;
+    private FurAffinitySite _furAffinity = null!;
+    private HentaiFoundrySite _hentaiFoundry = null!;
+    private InstagramSite _instagram = null!;
+    private MisskeySite _misskey = null!;
+    private NewgroundsSite _newgrounds = null!;
+    private PixivSite _pixiv = null!;
+    private RedditSite _reddit = null!;
     private List<BaseSite> _allSites = null!;
 
     private const string TweetUrl = "https://twitter.com/username/status/1234567890123456789";
@@ -173,96 +173,96 @@ public class SiteMatchingBenchmarks
         return total;
     }
 
-    private static FxTwitter CreateFxTwitter(IConfiguration config)
+    private static FxTwitterSite CreateFxTwitter(IConfiguration config)
     {
-        var logger = Substitute.For<ILogger<FxTwitter>>();
+        var logger = Substitute.For<ILogger<FxTwitterSite>>();
         var client = Substitute.For<IFxTwitterClient>();
         var httpClientFactory = Substitute.For<IHttpClientFactory>();
         httpClientFactory.CreateClient(Arg.Any<string>()).Returns(new HttpClient());
-        return new FxTwitter(logger, config, client, httpClientFactory);
+        return new FxTwitterSite(logger, config, client, httpClientFactory);
     }
 
-    private static ArtStation CreateArtStation(IConfiguration config)
+    private static ArtStationSite CreateArtStation(IConfiguration config)
     {
-        var logger = Substitute.For<ILogger<ArtStation>>();
+        var logger = Substitute.For<ILogger<ArtStationSite>>();
         var client = Substitute.For<IArtStationClient>();
-        return new ArtStation(logger, config, client);
+        return new ArtStationSite(logger, config, client);
     }
 
-    private static Bluesky CreateBluesky(IConfiguration config)
+    private static BlueskySite CreateBluesky(IConfiguration config)
     {
-        var logger = Substitute.For<ILogger<Bluesky>>();
+        var logger = Substitute.For<ILogger<BlueskySite>>();
         var client = Substitute.For<IVixBlueskyClient>();
-        return new Bluesky(logger, config, client);
+        return new BlueskySite(logger, config, client);
     }
 
-    private static DeviantArt CreateDeviantArt(IConfiguration config)
+    private static DeviantArtSite CreateDeviantArt(IConfiguration config)
     {
-        var logger = Substitute.For<ILogger<DeviantArt>>();
+        var logger = Substitute.For<ILogger<DeviantArtSite>>();
         var client = Substitute.For<IDeviantArtClient>();
         var openEmbedClient = Substitute.For<IDeviantArtOpenEmbedClient>();
-        return new DeviantArt(logger, config, client, openEmbedClient);
+        return new DeviantArtSite(logger, config, client, openEmbedClient);
     }
 
-    private static E621 CreateE621(IConfiguration config)
+    private static E621Site CreateE621(IConfiguration config)
     {
-        var logger = Substitute.For<ILogger<E621>>();
+        var logger = Substitute.For<ILogger<E621Site>>();
         var client = Substitute.For<IE621Client>();
-        return new E621(logger, client);
+        return new E621Site(logger, client);
     }
 
-    private static ExHentai CreateExHentai(IConfiguration config)
+    private static ExHentaiSite CreateExHentai(IConfiguration config)
     {
-        var logger = Substitute.For<ILogger<ExHentai>>();
+        var logger = Substitute.For<ILogger<ExHentaiSite>>();
         var client = Substitute.For<IExHentaiClient>();
-        return new ExHentai(logger, config, client);
+        return new ExHentaiSite(logger, config, client);
     }
 
-    private static FurAffinity CreateFurAffinity(IConfiguration config)
+    private static FurAffinitySite CreateFurAffinity(IConfiguration config)
     {
-        var logger = Substitute.For<ILogger<FurAffinity>>();
+        var logger = Substitute.For<ILogger<FurAffinitySite>>();
         var client = Substitute.For<IFurAffinityClient>();
-        return new FurAffinity(logger, client);
+        return new FurAffinitySite(logger, client);
     }
 
-    private static HentaiFoundry CreateHentaiFoundry(IConfiguration config)
+    private static HentaiFoundrySite CreateHentaiFoundry(IConfiguration config)
     {
-        var logger = Substitute.For<ILogger<HentaiFoundry>>();
+        var logger = Substitute.For<ILogger<HentaiFoundrySite>>();
         var client = Substitute.For<IHentaiFoundryClient>();
-        return new HentaiFoundry(logger, client);
+        return new HentaiFoundrySite(logger, client);
     }
 
-    private static Instagram CreateInstagram(IConfiguration config)
+    private static InstagramSite CreateInstagram(IConfiguration config)
     {
-        var logger = Substitute.For<ILogger<Instagram>>();
-        return new Instagram(logger);
+        var logger = Substitute.For<ILogger<InstagramSite>>();
+        return new InstagramSite(logger);
     }
 
-    private static Misskey CreateMisskey(IConfiguration config)
+    private static MisskeySite CreateMisskey(IConfiguration config)
     {
-        var logger = Substitute.For<ILogger<Misskey>>();
+        var logger = Substitute.For<ILogger<MisskeySite>>();
         var client = Substitute.For<IMisskeyClient>();
-        return new Misskey(logger, config, client);
+        return new MisskeySite(logger, config, client);
     }
 
-    private static Newgrounds CreateNewgrounds(IConfiguration config)
+    private static NewgroundsSite CreateNewgrounds(IConfiguration config)
     {
-        var logger = Substitute.For<ILogger<Newgrounds>>();
+        var logger = Substitute.For<ILogger<NewgroundsSite>>();
         var client = Substitute.For<INewgroundsClient>();
-        return new Newgrounds(logger, client);
+        return new NewgroundsSite(logger, client);
     }
 
-    private static Pixiv CreatePixiv(IConfiguration config)
+    private static PixivSite CreatePixiv(IConfiguration config)
     {
-        var logger = Substitute.For<ILogger<Pixiv>>();
+        var logger = Substitute.For<ILogger<PixivSite>>();
         var client = Substitute.For<IPixivClient>();
         var guildConfigManager = Substitute.For<IGuildConfigurationManager>();
-        return new Pixiv(logger, config, guildConfigManager, client);
+        return new PixivSite(logger, config, guildConfigManager, client);
     }
 
-    private static Reddit CreateReddit(IConfiguration config)
+    private static RedditSite CreateReddit(IConfiguration config)
     {
-        var logger = Substitute.For<ILogger<Reddit>>();
-        return new Reddit(logger);
+        var logger = Substitute.For<ILogger<RedditSite>>();
+        return new RedditSite(logger);
     }
 }

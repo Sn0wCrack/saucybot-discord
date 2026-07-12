@@ -9,7 +9,7 @@ namespace SaucyBot.Site.HentaiFoundry;
 
 using SaucyBot.Site;
 
-public sealed partial class HentaiFoundry : BaseSite, IHentaiFoundrySite
+public sealed partial class HentaiFoundrySite : BaseSite, IHentaiFoundrySite
 {
     public override string Identifier => "HentaiFoundry";
 
@@ -20,10 +20,10 @@ public sealed partial class HentaiFoundry : BaseSite, IHentaiFoundrySite
 
     public override Color Color => new(0xFF67A2);
 
-    private readonly ILogger<HentaiFoundry> _logger;
+    private readonly ILogger<HentaiFoundrySite> _logger;
     private readonly IHentaiFoundryClient _client;
 
-    public HentaiFoundry(ILogger<HentaiFoundry> logger, IHentaiFoundryClient client)
+    public HentaiFoundrySite(ILogger<HentaiFoundrySite> logger, IHentaiFoundryClient client)
     {
         _logger = logger;
         _client = client;

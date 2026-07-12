@@ -7,7 +7,7 @@ namespace SaucyBot.Site.Reddit;
 
 using SaucyBot.Site;
 
-public sealed partial class Reddit : BaseSite, IRedditSite
+public sealed partial class RedditSite : BaseSite, IRedditSite
 {
     public override string Identifier => "Reddit";
 
@@ -18,9 +18,9 @@ public sealed partial class Reddit : BaseSite, IRedditSite
 
     public override Color Color => new(0xFF4500);
 
-    private readonly ILogger<Reddit> _logger;
+    private readonly ILogger<RedditSite> _logger;
 
-    public Reddit(ILogger<Reddit> logger)
+    public RedditSite(ILogger<RedditSite> logger)
     {
         _logger = logger;
     }

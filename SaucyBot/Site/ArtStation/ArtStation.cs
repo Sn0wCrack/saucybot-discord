@@ -10,7 +10,7 @@ namespace SaucyBot.Site.ArtStation;
 
 using SaucyBot.Site;
 
-public sealed partial class ArtStation : BaseSite, IArtStationSite
+public sealed partial class ArtStationSite : BaseSite, IArtStationSite
 {
     public override string Identifier => "ArtStation";
 
@@ -19,11 +19,11 @@ public sealed partial class ArtStation : BaseSite, IArtStationSite
 
     public override Regex Pattern => ArtStationPattern();
 
-    private readonly ILogger<ArtStation> _logger;
+    private readonly ILogger<ArtStationSite> _logger;
     private readonly IConfiguration _configuration;
     private readonly IArtStationClient _client;
 
-    public ArtStation(ILogger<ArtStation> logger, IConfiguration configuration, IArtStationClient client)
+    public ArtStationSite(ILogger<ArtStationSite> logger, IConfiguration configuration, IArtStationClient client)
     {
         _logger = logger;
         _configuration = configuration;

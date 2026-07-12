@@ -16,7 +16,7 @@ public class MisskeyTest
     [Fact]
     public async Task AnEmbedIsCreatedForEachImageFile()
     {
-        var logger = Substitute.For<ILogger<Misskey>>();
+        var logger = Substitute.For<ILogger<MisskeySite>>();
 
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -45,7 +45,7 @@ public class MisskeyTest
             .ShowNote(Arg.Any<string>(), Arg.Any<string>())
             .Returns(note);
 
-        var site = new Misskey(logger, config, client);
+        var site = new MisskeySite(logger, config, client);
 
         var match = site.Pattern.Matches("https://misskey.io/notes/note123").First();
 
@@ -59,7 +59,7 @@ public class MisskeyTest
     [Fact]
     public async Task NothingIsReturnedWhenTheApiClientReturnsUnsuccessfully()
     {
-        var logger = Substitute.For<ILogger<Misskey>>();
+        var logger = Substitute.For<ILogger<MisskeySite>>();
 
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -74,7 +74,7 @@ public class MisskeyTest
             .ShowNote(Arg.Any<string>(), Arg.Any<string>())
             .Returns((ShowNoteResponse?)null);
 
-        var site = new Misskey(logger, config, client);
+        var site = new MisskeySite(logger, config, client);
 
         var match = site.Pattern.Matches("https://misskey.io/notes/note123").First();
 
@@ -86,7 +86,7 @@ public class MisskeyTest
     [Fact]
     public async Task NonImageFilesAreSkipped()
     {
-        var logger = Substitute.For<ILogger<Misskey>>();
+        var logger = Substitute.For<ILogger<MisskeySite>>();
 
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -115,7 +115,7 @@ public class MisskeyTest
             .ShowNote(Arg.Any<string>(), Arg.Any<string>())
             .Returns(note);
 
-        var site = new Misskey(logger, config, client);
+        var site = new MisskeySite(logger, config, client);
 
         var match = site.Pattern.Matches("https://misskey.io/notes/note123").First();
 

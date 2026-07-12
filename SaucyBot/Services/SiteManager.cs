@@ -39,10 +39,10 @@ public sealed partial class SiteManager
         var siteInterfaces = Assembly
             .GetExecutingAssembly()
             .GetTypes()
-            .Where(t => t.Namespace == "SaucyBot.Site"
-                && t.IsInterface
-                && typeof(IBaseSite).IsAssignableFrom(t)
-                && t != typeof(IBaseSite))
+            .Where(t => t.Namespace != null
+                        && t.Namespace.StartsWith("SaucyBot.Site.")
+                        && t.IsInterface
+                        && typeof(IBaseSite).IsAssignableFrom(t))
             .ToList();
 
         foreach (var siteInterface in siteInterfaces)
@@ -65,7 +65,6 @@ public sealed partial class SiteManager
 
             _sites.Add(instance.Identifier, instance);
         }
-
     }
 
     public async Task<List<SiteManagerProcessResult>> Match(SocketUserMessage message)
