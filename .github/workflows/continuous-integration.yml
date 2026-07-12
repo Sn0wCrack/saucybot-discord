@@ -8,6 +8,7 @@ on:
       - '**.cs'
       - '**.csproj'
       - '**.sln'
+      - '**.slnx'
     tags-ignore:
       - 'v*'
   pull_request:
@@ -16,38 +17,45 @@ on:
       - '**.cs'
       - '**.csproj'
       - '**.sln'
+      - '**.slnx'
+
+env:
+  DOTNET_VERSION: '10.x'
 
 jobs:
   build:
     name: 'Build and Test'
-    continue-on-error: true
-    runs-on: ubuntu-latest
-
+    runs-on: ${{ matrix.os }}
+    
     strategy:
+      fail-fast: false
       matrix:
-        dotnet-version: ['10.x']
+        include:
+          - arch: amd64
+            os: ubuntu-24.04
+          - arch: arm64
+            os: ubuntu-24.04-arm64
 
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - name: 'Checkout Repository'
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
       
-      - name: Setup .NET Core SDK ${{ matrix.dotnet-version }}
+      - name: 'Setup .NET Core SDK ${{ env.DOTNET_VERSION }}'
         uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
         with:
-          dotnet-version: ${{ matrix.dotnet-version }}
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          cache: true
+          cache-dependency-path: 'SaucyBot/packages.lock.json'
 
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
-        with:
-          path: ~/.nuget/packages
-          # Look to see if there is a cache hit for the corresponding requirements file
-          key: ${{ runner.os }}-${{ matrix.dotnet-version }}-nuget-${{ hashFiles('**/packages.lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ matrix.dotnet-version }}-nuget
-
-      - name: Install Dependencies
-        run: dotnet restore
+      - name: 'Install Dependencies'
+        run: |
+          dotnet restore -a ${{ matrix.arch }} -restoreProperty:RestoreLockedMode=true
         
-      - name: Build
-        run: dotnet build --configuration Release --no-restore
+      - name: 'Build'
+        run: |
+          dotnet build --configuration Debug --no-restore
+          dotnet build --configuration Release --no-restore
         
       - name: Test
-        run: dotnet test --no-restore --verbosity normal
+        run: |
+          dotnet test --no-restore --verbosity normal

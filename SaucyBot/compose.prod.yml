@@ -1,6 +1,7 @@
 services:
     bot:
-        build: 
+        build:
+            dockerfile: Containerfile
             context: .
             args:
                 CONFIGURATION: "Release"

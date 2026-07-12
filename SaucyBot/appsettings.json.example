@@ -5,16 +5,17 @@
       "Override": {
         "Microsoft": "Information",
         "Microsoft.Hosting.Lifetime": "Information",
-        "Microsoft.EntityFrameworkCore": "Information"
+        "Microsoft.EntityFrameworkCore": "Information",
+        "System.Net.Http.HttpClient": "Warning"
       }
     }
   },
   "Bot": {
     "ShardMode": "Automatic",
     "DiscordStatus": {
-        "Enabled": true,
-        "Type": "Watching",
-        "Text": "your links..."
+      "Enabled": true,
+      "Type": "Watching",
+      "Text": "your links..."
     },
     "MessageCacheSize": 10,
     "DiscordToken": "",
@@ -28,13 +29,13 @@
   "Cache": {
     "Driver": "Redis",
     "Redis": {
-        "DefaultLifetime": 3600,
-        "ConnectionString": "cache:6379"
+      "DefaultLifetime": 3600,
+      "ConnectionString": "cache:6379"
     },
     "Memory": {
-        "DefaultLifetime": 3600
+      "DefaultLifetime": 3600
     }
-  }
+  },
   "Sites": {
     "ArtStation": {
       "PostLimit": 5
@@ -56,23 +57,29 @@
       "Delay": "2.00"
     },
     "ExHentai": {
-        "Cookies": {
-            "MemberId": "",
-            "PasswordHash": ""
-        }
+      "Cookies": {
+        "MemberId": "",
+        "PasswordHash": ""
+      }
     },
     "FxTwitter": {
-        "AutoDetectLanguage": false
+      "AutoDetectLanguage": false
     },
     "DeviantArt": {
       "ClientId": 0,
       "ClientSecret": ""
     },
     "Misskey": {
-       "Delay": "2.00"
+      "Delay": "2.00"
     },
     "Bluesky": {
-       "Delay": "2.00"
+      "Delay": "2.00"
+    },
+    "FurAffinity": {
+      "Cookies": {
+        "A": "",
+        "B": ""
+      }
     }
   }
 }

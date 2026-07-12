@@ -14,11 +14,20 @@ public static class HtmlToMarkdownConverter
         var currentBuffer = output;
         StringBuilder? linkBuffer = null;
         string? linkUrl = null;
+        var openInlineTags = new List<(string tagName, string marker)>();
+        var skipLeadingWhitespace = false;
 
         for (var i = 0; i < html.Length; i++)
         {
             if (html[i] != '<')
             {
+                if (skipLeadingWhitespace)
+                {
+                    if (html[i] is ' ' or '\t' or '\n' or '\r')
+                        continue;
+                    skipLeadingWhitespace = false;
+                }
+
                 if (html[i] is not '\n' and not '\r')
                     currentBuffer.Append(html[i]);
                 continue;
@@ -68,38 +77,66 @@ public static class HtmlToMarkdownConverter
             }
             else if (tagName.Equals("br", StringComparison.OrdinalIgnoreCase))
             {
+                while (currentBuffer.Length > 0 && currentBuffer[^1] is ' ' or '\t')
+                    currentBuffer.Length--;
+
+                for (var j = openInlineTags.Count - 1; j >= 0; j--)
+                    currentBuffer.Append(openInlineTags[j].marker);
+
                 currentBuffer.Append('\n');
+
+                foreach (var entry in openInlineTags)
+                    currentBuffer.Append(entry.marker);
+
+                skipLeadingWhitespace = true;
             }
             else if (tagName.Equals("hr", StringComparison.OrdinalIgnoreCase))
             {
                 currentBuffer.Append("\n---\n");
             }
-            else if (tagName is "strong" or "b")
+            else if (tagName is "strong" or "b" or "em" or "i" or "s" or "del" or "strike" or "u" or "code")
             {
-                currentBuffer.Append("**");
-            }
-            else if (tagName is "em" or "i")
-            {
-                currentBuffer.Append('*');
-            }
-            else if (tagName is "s" or "del" or "strike")
-            {
-                currentBuffer.Append("~~");
-            }
-            else if (tagName.Equals("u", StringComparison.OrdinalIgnoreCase))
-            {
-                currentBuffer.Append("__");
-            }
-            else if (tagName.Equals("code", StringComparison.OrdinalIgnoreCase))
-            {
-                currentBuffer.Append('`');
+                var tagStr = tagName.ToString();
+                var marker = tagStr.ToLowerInvariant() switch
+                {
+                    "b" or "strong" => "**",
+                    "i" or "em" => "*",
+                    "s" or "del" or "strike" => "~~",
+                    "u" => "__",
+                    "code" => "`",
+                    _ => null
+                };
+
+                if (marker is not null)
+                {
+                    if (!isClosing)
+                    {
+                        openInlineTags.Add((tagStr, marker));
+                        skipLeadingWhitespace = true;
+                    }
+                    else
+                    {
+                        while (currentBuffer.Length > 0 && currentBuffer[^1] is ' ' or '\t')
+                            currentBuffer.Length--;
+
+                        for (var j = openInlineTags.Count - 1; j >= 0; j--)
+                        {
+                            if (!string.Equals(openInlineTags[j].tagName, tagStr, StringComparison.OrdinalIgnoreCase))
+                            {
+                                continue;
+                            }
+
+                            openInlineTags.RemoveAt(j);
+                            break;
+                        }
+                    }
+
+                    currentBuffer.Append(marker);
+                }
             }
             else if (tagName.Equals("pre", StringComparison.OrdinalIgnoreCase))
             {
-                if (!isClosing)
-                    currentBuffer.Append("\n```\n");
-                else
-                    currentBuffer.Append("\n```\n");
+                currentBuffer.Append("\n```\n");
             }
             else if (tagName.Equals("a", StringComparison.OrdinalIgnoreCase))
             {
