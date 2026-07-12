@@ -149,6 +149,13 @@ Each site has its own configuration block. Only configure the sites you intend t
 |---|---|---|---|
 | `Delay` | String | Delay between API requests in seconds. | `2.00` |
 
+#### FurAffinity
+
+| Key | Value Type | Description | Default |
+|---|---|---|---|
+| `Cookies.A` | String | FurAffinity `a` cookie value. | *(empty)* |
+| `Cookies.B` | String | FurAffinity `b` cookie value. | *(empty)* |
+
 Value Types
 ----------
 
