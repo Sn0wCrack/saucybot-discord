@@ -50,7 +50,7 @@ public class SiteMatchingBenchmarks
     private MisskeySite _misskey = null!;
     private NewgroundsSite _newgrounds = null!;
     private PixivSite _pixiv = null!;
-    private RedditSite _reddit = null!;
+    private RxRedditSite _rxReddit = null!;
     private List<BaseSite> _allSites = null!;
 
     private const string TweetUrl = "https://twitter.com/username/status/1234567890123456789";
@@ -88,13 +88,13 @@ public class SiteMatchingBenchmarks
         _misskey = CreateMisskey(config);
         _newgrounds = CreateNewgrounds(config);
         _pixiv = CreatePixiv(config);
-        _reddit = CreateReddit(config);
+        _rxReddit = CreateReddit(config);
 
         _allSites =
         [
             _artStation, _bluesky, _deviantArt, _e621, _exHentai,
             _furAffinity, _fxTwitter, _hentaiFoundry, _vxInstagram,
-            _misskey, _newgrounds, _pixiv, _reddit
+            _misskey, _newgrounds, _pixiv, _rxReddit
         ];
     }
 
@@ -138,7 +138,7 @@ public class SiteMatchingBenchmarks
     public MatchCollection Pixiv_MatchingArtwork() => _pixiv.Pattern.Matches(PixivUrl);
 
     [Benchmark]
-    public MatchCollection Reddit_MatchingMedia() => _reddit.Pattern.Matches(RedditUrl);
+    public MatchCollection Reddit_MatchingMedia() => _rxReddit.Pattern.Matches(RedditUrl);
 
     [Benchmark]
     public int AllSites_NonMatchingText()
@@ -260,9 +260,9 @@ public class SiteMatchingBenchmarks
         return new PixivSite(logger, config, guildConfigManager, client);
     }
 
-    private static RedditSite CreateReddit(IConfiguration config)
+    private static RxRedditSite CreateReddit(IConfiguration config)
     {
-        var logger = Substitute.For<ILogger<RedditSite>>();
-        return new RedditSite(logger);
+        var logger = Substitute.For<ILogger<RxRedditSite>>();
+        return new RxRedditSite(logger);
     }
 }
