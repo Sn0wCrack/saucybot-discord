@@ -4,6 +4,10 @@ on:
   release:
     types: [released]
 
+concurrency:
+  group: deployment
+  cancel-in-progress: true
+
 permissions:
   contents: read
   packages: write

@@ -1,49 +1,49 @@
 services:
-    bot:
-        build:
-            dockerfile: Containerfile
-            context: .
-            args:
-                CONFIGURATION: "Release"
-        env_file:
-            - .env
-        volumes:
-            - ./appsettings.json:/app/appsettings.json
-        depends_on: 
-            cache:
-                condition: service_healthy
-            database:
-                condition: service_healthy
-        
-    database:
-        image: mariadb:12.3@sha256:628f228f0fd5913a220438693576b29b6fe4dc1fa0a1298c0e98579fae28635f
-        env_file:
-            - .env
-        ports:
-            - "3306:3306"
-        volumes:
-            - database:/var/lib/mysql
-        restart: unless-stopped
-        healthcheck:
-            test: [ "CMD", "healthcheck.sh", "--connect", "--innodb_initialized" ]
-            start_period: 10s
-            interval: 10s
-            timeout: 5s
-            retries: 3
-        
-    cache:
-        image: "valkey/valkey:9-alpine@sha256:c9b77919daeba2c02ad954d0c844cc4e7142069d177b89c5fd771f405daf9e02"
-        ports:
-            - "6379:6379"
-        volumes:
-            - cache:/data
-        restart: unless-stopped
-        healthcheck:
-            test: '[ $(valkey-cli -h 127.0.0.1 ping) = "PONG" ]'
-            timeout: 30s
-            retries: 10
-            start_period: 10s
+  bot:
+    build:
+      dockerfile: Containerfile
+      context: .
+      args:
+        CONFIGURATION: 'Release'
+    env_file:
+      - .env
+    volumes:
+      - ./appsettings.json:/app/appsettings.json
+    depends_on:
+      cache:
+        condition: service_healthy
+      database:
+        condition: service_healthy
 
-volumes: 
-    cache:
-    database:
+  database:
+    image: mariadb:12.3@sha256:628f228f0fd5913a220438693576b29b6fe4dc1fa0a1298c0e98579fae28635f
+    env_file:
+      - .env
+    ports:
+      - '3306:3306'
+    volumes:
+      - database:/var/lib/mysql
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'healthcheck.sh', '--connect', '--innodb_initialized']
+      start_period: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  cache:
+    image: 'valkey/valkey:9-alpine@sha256:c9b77919daeba2c02ad954d0c844cc4e7142069d177b89c5fd771f405daf9e02'
+    ports:
+      - '6379:6379'
+    volumes:
+      - cache:/data
+    restart: unless-stopped
+    healthcheck:
+      test: '[ $(valkey-cli -h 127.0.0.1 ping) = "PONG" ]'
+      timeout: 30s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  cache:
+  database:

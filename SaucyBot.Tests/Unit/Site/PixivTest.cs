@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -39,6 +40,7 @@ public class PixivTest
             "vs鬼",
             "",
             IllustrationType.Illustration,
+            AiType.None,
             new IllustrationDetailsUrls("", "", "", "", ""),
             1,
             1,
@@ -46,7 +48,9 @@ public class PixivTest
             4,
             "12345",
             "testuser",
-            "testaccount"
+            "testaccount",
+            DateTimeOffset.Now,
+            DateTimeOffset.Now
         );
 
         var illustrationDetailsResponse = new IllustrationDetailsResponse(

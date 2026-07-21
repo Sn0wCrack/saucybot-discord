@@ -173,6 +173,13 @@ public enum IllustrationType
     Ugoira = 2,
 }
 
+public enum AiType
+{
+    None = 0,
+    AiAssisted = 1,
+    AiGenerated = 2,
+}
+
 public sealed record IllustrationDetails(
     [property: JsonPropertyName("id")]
     string Id,
@@ -182,6 +189,8 @@ public sealed record IllustrationDetails(
     string Description,
     [property: JsonPropertyName("illustType")]
     IllustrationType Type,
+    [property: JsonPropertyName("aiType")]
+    AiType AiType,
     [property: JsonPropertyName("urls")]
     IllustrationDetailsUrls IllustrationDetailsUrls,
     [property: JsonPropertyName("likeCount")]
@@ -197,12 +206,18 @@ public sealed record IllustrationDetails(
     [property: JsonPropertyName("userName")]
     string UserName,
     [property: JsonPropertyName("userAccount")]
-    string UserAccount
+    string UserAccount,
+    [property: JsonPropertyName("createDate")]
+    DateTimeOffset CreateDate,
+    [property: JsonPropertyName("uploadDate")]
+    DateTimeOffset UploadDate
 )
 {
     public string Url => $"https://www.pixiv.net/en/artworks/{Id}";
 
     public string UserUrl => $"https://www.pixiv.net/en/users/{UserId}";
+
+    public bool IsAi = AiType is AiType.AiAssisted or AiType.AiGenerated;
 };
 
 public sealed record IllustrationDetailsUrls(

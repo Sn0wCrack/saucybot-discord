@@ -72,11 +72,11 @@ public sealed partial class PixivSite : BaseSite, IPixivSite
             : await ProcessImage(response.IllustrationDetails, user?.User, request.Message);
     }
 
-    private async Task<ProcessResponse?> ProcessUgoira(IllustrationDetails illustrationDetails, UserDetails? user)
+    private async Task<ProcessResponse?> ProcessUgoira(IllustrationDetails details, UserDetails? user)
     {
         var response = new ProcessResponse();
 
-        var metadata = await _client.UgoiraMetadata(illustrationDetails.Id);
+        var metadata = await _client.UgoiraMetadata(details.Id);
 
         if (metadata is null)
         {
@@ -90,7 +90,7 @@ public sealed partial class PixivSite : BaseSite, IPixivSite
         var basePath = Path.Join(
             Path.GetTempPath(),
             "pixiv",
-            $"{illustrationDetails.Id}_{Helper.RandomString()}"
+            $"{details.Id}_{Helper.RandomString()}"
         );
 
         var concatFile = Path.Join(basePath, "ffconcat");
@@ -117,7 +117,7 @@ public sealed partial class PixivSite : BaseSite, IPixivSite
             await File.ReadAllBytesAsync(videoFile)
         );
 
-        var title = illustrationDetails.Title
+        var title = details.Title
             .ToLowerInvariant()
             .Replace("-", "")
             .Replace(" ", "_")
@@ -131,17 +131,8 @@ public sealed partial class PixivSite : BaseSite, IPixivSite
 
         var componentBuilder = new ComponentBuilderV2()
             .WithContainer(
-                new ContainerBuilder()
-                    .WithAccentColor(this.Color)
-                    .WithTextDisplay($"### [{illustrationDetails.Title}]({illustrationDetails.Url})")
-                    .WithTextDisplay($"👤 [{illustrationDetails.UserName}]({illustrationDetails.UserUrl})")
-                    .WithSeparator()
-                    .When(illustrationDetails.Description is not "", (builder => builder.WithTextDisplay(Helper.HtmlToMarkdown(CleanPixivHtml(illustrationDetails.Description)))))
-                    .WithMediaGallery(response.Files.Select((attachment => $"attachment://{attachment.FileName}")))
-                    .WithSeparator()
-                    .WithTextDisplay($"{illustrationDetails.Likes:N0} 🙂    {illustrationDetails.Bookmarks:N0} ❤️    {illustrationDetails.Views:N0} 👀")
+                BuildContainerComponent(details, response.Files)
             );
-
         response.Components = componentBuilder.Build();
 
         Directory.Delete(basePath, true);
@@ -186,11 +177,11 @@ public sealed partial class PixivSite : BaseSite, IPixivSite
         await conversion.Start();
     }
 
-    private async Task<ProcessResponse?> ProcessImage(IllustrationDetails illustrationDetails, UserDetails? user, SocketUserMessage? message)
+    private async Task<ProcessResponse?> ProcessImage(IllustrationDetails details, UserDetails? user, SocketUserMessage? message)
     {
         var response = new ProcessResponse();
 
-        var pageCount = illustrationDetails.PageCount;
+        var pageCount = details.PageCount;
 
         var postLimit = _configuration.GetSection("Sites:Pixiv:PostLimit").Get<int>();
 
@@ -207,7 +198,7 @@ public sealed partial class PixivSite : BaseSite, IPixivSite
         if (pageCount == 1)
         {
             var file = await DetermineHighestUsableQualityFile(
-                illustrationDetails.IllustrationDetailsUrls.AllWithoutThumbnails
+                details.IllustrationDetailsUrls.AllWithoutThumbnails
             );
 
             if (file is not null)
@@ -217,7 +208,7 @@ public sealed partial class PixivSite : BaseSite, IPixivSite
         }
         else
         {
-            var illustrationPagesResponse = await _client.IllustrationPages(illustrationDetails.Id);
+            var illustrationPagesResponse = await _client.IllustrationPages(details.Id);
 
             if (illustrationPagesResponse is null)
             {
@@ -241,21 +232,40 @@ public sealed partial class PixivSite : BaseSite, IPixivSite
 
         var componentBuilder = new ComponentBuilderV2()
             .WithContainer(
-                new ContainerBuilder()
-                    .WithAccentColor(this.Color)
-                    .WithTextDisplay($"### [{illustrationDetails.Title}]({illustrationDetails.Url})")
-                    .WithTextDisplay($"👤 [{illustrationDetails.UserName}]({illustrationDetails.UserUrl})")
-                    .WithSeparator()
-                    .When(illustrationDetails.Description is not "", (builder => builder.WithTextDisplay(Helper.HtmlToMarkdown(CleanPixivHtml(illustrationDetails.Description)))))
-                    .WithMediaGallery(response.Files.Select((attachment => $"attachment://{attachment.FileName}")))
-                    .WithSeparator()
-                    .WithTextDisplay($"{illustrationDetails.Likes:N0} 🙂    {illustrationDetails.Bookmarks:N0} ❤️    {illustrationDetails.Views:N0} 👀")
-                    .When(pageCount > postLimit, (builder => builder.WithTextDisplay($"-# This is part of a {pageCount} image set.")))
+                BuildContainerComponent(details, response.Files)
+                    .When(pageCount > postLimit, (builder => builder.WithTextDisplay($"-## This is part of a {pageCount} image set.")))
              );
 
         response.Components = componentBuilder.Build();
 
         return response;
+    }
+
+    private ContainerBuilder BuildContainerComponent(IllustrationDetails details, IEnumerable<FileAttachment> files)
+    {
+        var stats = new List<string>();
+
+        if (details.IsAi)
+        {
+            stats.Add("🤖 AI Generated");
+        }
+
+        stats.AddRange([
+            $"{details.Likes:N0} 🙂",
+            $"{details.Bookmarks:N0} ❤️",
+            $"{details.Views:N0} 👀",
+        ]);
+
+        return new ContainerBuilder()
+            .WithAccentColor(this.Color)
+            .WithTextDisplay($"### [{details.Title}]({details.Url})")
+            .WithTextDisplay($"👤 [{details.UserName}]({details.UserUrl})")
+            .WithSeparator()
+            .When(details.Description is not "", (builder => builder.WithTextDisplay(Helper.HtmlToMarkdown(CleanPixivHtml(details.Description)))))
+            .WithMediaGallery(files.Select(x => $"attachment://{x.FileName}"))
+            .WithSeparator()
+            .WithTextDisplay(string.Join("    ", stats))
+            .WithTextDisplay($"-# Posted: <t:{details.CreateDate.ToUnixTimeSeconds()}:F>");
     }
 
     private async Task<FileAttachment?> GetUserAvatar(UserDetails? user)
