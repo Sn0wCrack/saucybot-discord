@@ -175,9 +175,9 @@ public enum IllustrationType
 
 public enum AiType
 {
-    None = 0,
-    AiAssisted = 1,
-    AiGenerated = 2,
+    None = 0, // Legacy post from prior to AI image generation
+    NotAi = 1, // Specifically declared not AI
+    AiGenerated = 2, // Specifically declared AI
 }
 
 public sealed record IllustrationDetails(
@@ -217,7 +217,7 @@ public sealed record IllustrationDetails(
 
     public string UserUrl => $"https://www.pixiv.net/en/users/{UserId}";
 
-    public bool IsAi = AiType is AiType.AiAssisted or AiType.AiGenerated;
+    public bool IsAi = AiType is AiType.AiGenerated;
 };
 
 public sealed record IllustrationDetailsUrls(
