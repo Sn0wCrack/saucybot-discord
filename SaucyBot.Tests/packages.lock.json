@@ -612,12 +612,12 @@
       },
       "Microting.EntityFrameworkCore.MySql.Json.Microsoft": {
         "type": "Transitive",
-        "resolved": "10.0.9",
-        "contentHash": "SgyQ3VgGoJ8XExti/5KSSlM7PLr4vOpNpGWmZ4L03TFv8cqNCpaBZSnBeCBuzpOS9ZwViavxBoJ9k0Q/7dksew==",
+        "resolved": "10.0.10",
+        "contentHash": "pEtue63eexKTsvuWW+q1ErWS+OUUFTcTwO7FeAt7w1bjA5xs++3ON6xsXZn/bjAXtma+9lbqFlfzneta1XDyfg==",
         "dependencies": {
-          "Microsoft.EntityFrameworkCore.Relational": "[10.0.8, 10.0.999]",
-          "Microting.EntityFrameworkCore.MySql": "10.0.9",
-          "MySqlConnector": "2.6.0"
+          "Microsoft.EntityFrameworkCore.Relational": "[10.0.10, 10.0.999]",
+          "Microting.EntityFrameworkCore.MySql": "10.0.10",
+          "MySqlConnector": "2.6.1"
         }
       },
       "MySqlConnector": {
@@ -829,7 +829,7 @@
           "Microsoft.Extensions.Hosting": "[10.0.10, )",
           "Microsoft.Extensions.Http": "[10.0.10, )",
           "Microting.EntityFrameworkCore.MySql": "[10.0.10, )",
-          "Microting.EntityFrameworkCore.MySql.Json.Microsoft": "[10.0.9, )",
+          "Microting.EntityFrameworkCore.MySql.Json.Microsoft": "[10.0.10, )",
           "Polly.Core": "[8.7.0, )",
           "SQLitePCLRaw.bundle_e_sqlite3": "[3.0.3, )",
           "Serilog": "[4.4.0, )",
