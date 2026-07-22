@@ -750,37 +750,37 @@
       },
       "SourceGear.sqlite3": {
         "type": "Transitive",
-        "resolved": "3.50.4.5",
-        "contentHash": "UtnipXhJYZKQOQIfpws/msLK7IRhMplE1CZCaZLIQXRnGD474QVpO/J9nMlQQY8NZueGz1aidjoxDRnrC1NT3Q=="
+        "resolved": "3.53.3",
+        "contentHash": "PaDT7JwQ00HmXZT1xSGSC0c24A5lVpJYHMrXBuJATdpB2t0nf4Kq9HyPaZhxVW0elPq4XI1s5BLh7qLuObmzFA=="
       },
       "SQLitePCLRaw.bundle_e_sqlite3": {
         "type": "Transitive",
-        "resolved": "3.0.3",
-        "contentHash": "Zt8jmSL5zcDWGk8rmzhWBJ6IRyLWh1yWS04Pg72+GIvo3Ba4E/rG4Y/4l7AWlSEogEbzyKRTCXUAs1v/O7Pkkg==",
+        "resolved": "3.0.4",
+        "contentHash": "gg8vENKV/o0pWLI0eJxnTA4X9e63rOvzkCDMAOePDGLieNSHPCGUiJ4CQDqDyNqIf6IPVzD4TOjqY5ACygZkkA==",
         "dependencies": {
-          "SQLitePCLRaw.config.e_sqlite3": "3.0.3",
-          "SourceGear.sqlite3": "3.50.4.5"
+          "SQLitePCLRaw.config.e_sqlite3": "3.0.4",
+          "SourceGear.sqlite3": "3.53.3"
         }
       },
       "SQLitePCLRaw.config.e_sqlite3": {
         "type": "Transitive",
-        "resolved": "3.0.3",
-        "contentHash": "caP/ap0X2fyVmstCXu5ueOmcr2XWAxA2XyKghV7H4bOAFmq3nWcsGl9q44iY1HYG+i8Qr4G9XEqdfti0rV6/ZQ==",
+        "resolved": "3.0.4",
+        "contentHash": "W2HMmjAZ1v27fbyzZtONCdC8Ma/tTr5wLAIr4Iq7T4oKrYaI4occJ5TBhSdK4pltwBJLQBG5DcQMz+/w9X4bbg==",
         "dependencies": {
-          "SQLitePCLRaw.provider.e_sqlite3": "3.0.3"
+          "SQLitePCLRaw.provider.e_sqlite3": "3.0.4"
         }
       },
       "SQLitePCLRaw.core": {
         "type": "Transitive",
-        "resolved": "3.0.3",
-        "contentHash": "bjm6FY4lZyP+t7GmiuvSM0QXpFihAvyE0Y9O2yibm3g95AAWJPNnHOKVNJGyPTGIKuK7Pr4Wh8Rd8/aOtAclQw=="
+        "resolved": "3.0.4",
+        "contentHash": "cOjxfdjE4zQDvDVDUBfucKGXEaYos4l4l+TVwePJEHp/nl9fkgBz/lIVgfMH5dOyKRmNi6RsptUGtZsvsD7iYQ=="
       },
       "SQLitePCLRaw.provider.e_sqlite3": {
         "type": "Transitive",
-        "resolved": "3.0.3",
-        "contentHash": "wd+fGvZTrr3BJNe48opSczmC176Okd61ZgoZNQcdvZwkek6to978ccdpcFmNo5GHxCnk29KwT+f+lAZYgfLVZg==",
+        "resolved": "3.0.4",
+        "contentHash": "L4uiEKeRSXxppkGE4iSpgBgC5lNvw2zEN/hAaxTecUS1+DhC6UEFhHaakSYYvnFq7x16B7DQcaXgXy0SkhSwnw==",
         "dependencies": {
-          "SQLitePCLRaw.core": "3.0.3"
+          "SQLitePCLRaw.core": "3.0.4"
         }
       },
       "StackExchange.Redis": {
@@ -842,7 +842,7 @@
           "Microting.EntityFrameworkCore.MySql": "[10.0.10, )",
           "Microting.EntityFrameworkCore.MySql.Json.Microsoft": "[10.0.10, )",
           "Polly.Core": "[8.7.0, )",
-          "SQLitePCLRaw.bundle_e_sqlite3": "[3.0.3, )",
+          "SQLitePCLRaw.bundle_e_sqlite3": "[3.0.4, )",
           "Serilog": "[4.4.0, )",
           "Serilog.Extensions.Hosting": "[10.0.0, )",
           "Serilog.Settings.Configuration": "[10.0.1, )",

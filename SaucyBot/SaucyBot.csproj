@@ -43,7 +43,7 @@
     <PackageReference Include="StackExchange.Redis" Version="3.0.17" />
     <PackageReference Include="Xabe.FFmpeg" Version="6.0.2" />
     
-    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3" />
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.4" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Database\Migrations" />
