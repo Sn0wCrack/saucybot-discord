@@ -176,13 +176,13 @@
       },
       "Microting.EntityFrameworkCore.MySql.Json.Microsoft": {
         "type": "Direct",
-        "requested": "[10.0.9, )",
-        "resolved": "10.0.9",
-        "contentHash": "SgyQ3VgGoJ8XExti/5KSSlM7PLr4vOpNpGWmZ4L03TFv8cqNCpaBZSnBeCBuzpOS9ZwViavxBoJ9k0Q/7dksew==",
+        "requested": "[10.0.10, )",
+        "resolved": "10.0.10",
+        "contentHash": "pEtue63eexKTsvuWW+q1ErWS+OUUFTcTwO7FeAt7w1bjA5xs++3ON6xsXZn/bjAXtma+9lbqFlfzneta1XDyfg==",
         "dependencies": {
-          "Microsoft.EntityFrameworkCore.Relational": "[10.0.8, 10.0.999]",
-          "Microting.EntityFrameworkCore.MySql": "10.0.9",
-          "MySqlConnector": "2.6.0"
+          "Microsoft.EntityFrameworkCore.Relational": "[10.0.10, 10.0.999]",
+          "Microting.EntityFrameworkCore.MySql": "10.0.10",
+          "MySqlConnector": "2.6.1"
         }
       },
       "Polly.Core": {
