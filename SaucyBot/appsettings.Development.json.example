@@ -46,8 +46,12 @@
       "Password": "",
       "SessionCookie": "",
       "PostLimit": 5,
-      "UgoiraFormat": "mp4",
-      "UgoiraBitrate": 2000
+      "Ugoira": {
+        "Codec": "H264",
+        "Bitrate": 2000,
+        "Preset": 6,
+        "CRF": 40
+      }
     },
     "Twitter": {
       "ApiKey": "",

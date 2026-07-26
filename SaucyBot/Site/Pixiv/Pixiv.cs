@@ -95,9 +95,16 @@ public sealed partial class PixivSite : BaseSite, IPixivSite
 
         var concatFile = Path.Join(basePath, "ffconcat");
 
-        var format = _configuration.GetSection("Sites:Pixiv:UgoiraFormat").Get<string?>() ?? "mp4";
+        var codec =  _configuration.GetSection("Sites:Pixiv:Ugoira:Codec").Get<UgoiraCodec?>() ?? UgoiraCodec.H264;
 
-        var videoFile = Path.Join(basePath, $"ugoira.{format}");
+        var fileExtension = codec switch
+        {
+            UgoiraCodec.H264 or UgoiraCodec.AV1 => "mp4",
+            UgoiraCodec.VP9 => "webm",
+            _ => "mp4"
+        };
+
+        var videoFile = Path.Join(basePath, $"ugoira.{fileExtension}");
 
         await zip.ExtractToDirectoryAsync(basePath, true);
 
@@ -123,7 +130,7 @@ public sealed partial class PixivSite : BaseSite, IPixivSite
             .Replace(" ", "_")
             .Trim();
 
-        var fileName = $"{title}_ugoira.{format}";
+        var fileName = $"{title}_ugoira.{fileExtension}";
 
         response.Files.Add(
             new FileAttachment(fileStream, fileName)
@@ -163,16 +170,43 @@ public sealed partial class PixivSite : BaseSite, IPixivSite
 
     private async Task RenderUgoiraVideo(string concatFilePath, string videoFilePath)
     {
-        var bitrate = _configuration.GetSection("Sites:Pixiv:UgoiraBitrate").Get<int?>() ?? 2_000;
-
         var conversion = FFmpeg.Conversions.New()
             .SetOverwriteOutput(true)
             .AddParameter("-f concat", ParameterPosition.PreInput)
             .AddParameter($"-i \"{concatFilePath}\"", ParameterPosition.PreInput)
-            .AddParameter($"-b:v {bitrate}k")
             .AddParameter("-pix_fmt yuv420p")
             .AddParameter("-filter:v \"pad=ceil(iw/2)*2:ceil(ih/2)*2\"")
             .SetOutput(videoFilePath);
+
+        var codec = _configuration.GetSection("Sites:Pixiv:Ugoira:Codec").Get<UgoiraCodec?>() ?? UgoiraCodec.H264;
+        var bitrate = _configuration.GetSection("Sites:Pixiv:Ugoira:Bitrate").Get<int?>() ?? 2_000;
+
+        switch (codec)
+        {
+            default:
+            case UgoiraCodec.H264:
+                conversion
+                    .AddParameter("-c:v libx264")
+                    .AddParameter($"-b:v {bitrate}k");
+                break;
+            case UgoiraCodec.AV1:
+                var preset = _configuration.GetSection("Sites:Pixiv:Ugoira:Preset").Get<int?>() ?? 6;
+                var crf = _configuration.GetSection("Sites:Pixiv:Ugoira:CRF").Get<int?>() ?? 40;
+
+                conversion
+                    .AddParameter("-c:v libsvtav1")
+                    .AddParameter($"-preset {preset}")
+                    .AddParameter($"-crf {crf}")
+                    .AddParameter($"-maxrate {bitrate}k")
+                    .AddParameter($"-bufsize {bitrate * 2}k");
+                break;
+            case UgoiraCodec.VP9:
+                conversion
+                    .AddParameter("-c:v libvp9")
+                    .AddParameter($"-b:v {bitrate}k");
+
+                break;
+        }
 
         await conversion.Start();
     }
