@@ -45,7 +45,7 @@ jobs:
 
       - name: 'Login to Container Registry'
         if: ${{ inputs.push && github.event_name == 'release' }}
-        uses: docker/login-action@abd2ef45e78c5afb21d64d4ca52ee8550d9572c7 # v4
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
         with:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
