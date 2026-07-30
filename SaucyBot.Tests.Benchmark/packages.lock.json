@@ -43,8 +43,8 @@
       },
       "AngleSharp": {
         "type": "Transitive",
-        "resolved": "1.5.2",
-        "contentHash": "LVZ7rrr6GHbhERhTgVDarVygl1e6KwE96pronA90LBOMacDhxR4lB+xYLjn/vlnUu+xbOB2RM9fuCPEx5bdyWA=="
+        "resolved": "1.6.0",
+        "contentHash": "kVnhnZlM4Yww2KWqW3uSL8isvhYsrTTBMSPAgoF8ZhMrLSoay6783AP6dQxAj1J9gvWKi3OIM4ZezdE2Y4ufCQ=="
       },
       "BenchmarkDotNet.Annotations": {
         "type": "Transitive",
@@ -829,7 +829,7 @@
       "saucybot": {
         "type": "Project",
         "dependencies": {
-          "AngleSharp": "[1.5.2, )",
+          "AngleSharp": "[1.6.0, )",
           "Discord.Net": "[3.20.1, )",
           "EFCore.NamingConventions": "[10.0.1, )",
           "Markdig": "[1.3.2, )",
