@@ -80,5 +80,12 @@ public static class Constants
     /// </summary>
     public const bool DefaultSendMatchedMessage = true;
 
+
+    /// <summary>
+    /// Discord's maximum size for an embed Payload is 6kb. We set this slightly lower than that to allow for the data
+    /// in all fields related to the embed to be taken into account when determining if an embed can be made or not.
+    /// </summary>
+    public const int MaximumEmbedBodyLength = 5_000;
+
     #endregion
 }

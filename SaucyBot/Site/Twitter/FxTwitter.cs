@@ -233,7 +233,14 @@ public sealed partial class FxTwitterSite : BaseSite, ITwitterSite
     {
         _logger.LogDebug("Processing as photo embed");
 
+        var description = GetTweetText(tweet);
+
         var response = new ProcessResponse();
+
+        if (description.Length >= Constants.MaximumEmbedBodyLength)
+        {
+            response.Text = $"https://fxtwitter.com/{tweet.Author.ScreenName}/status/{tweet.Id}";
+        }
 
         var photos = mainTweetHasMedia
             ? results.Where(result => result.Source == ResultSource.MainTweet).ToList()
@@ -246,7 +253,7 @@ public sealed partial class FxTwitterSite : BaseSite, ITwitterSite
                 Url = tweet.Url,
                 Timestamp = DateTimeOffset.FromUnixTimeSeconds(tweet.CreatedTimestamp),
                 Color = this.Color,
-                Description = GetTweetText(tweet),
+                Description = description,
                 Author = new EmbedAuthorBuilder
                 {
                     Name = $"{tweet.Author.Name} (@{tweet.Author.ScreenName})",
@@ -293,12 +300,19 @@ public sealed partial class FxTwitterSite : BaseSite, ITwitterSite
     {
         var response = new ProcessResponse();
 
+        var description = GetTweetText(tweet);
+
+        if (description.Length >= Constants.MaximumEmbedBodyLength)
+        {
+            response.Text = $"https://fxtwitter.com/{tweet.Author.ScreenName}/status/{tweet.Id}";
+        }
+
         var embed = new EmbedBuilder
         {
             Url = tweet.Url,
             Timestamp = DateTimeOffset.FromUnixTimeSeconds(tweet.CreatedTimestamp),
             Color = this.Color,
-            Description = GetTweetText(tweet),
+            Description = description,
             Author = new EmbedAuthorBuilder
             {
                 Name = $"{tweet.Author.Name} (@{tweet.Author.ScreenName})",

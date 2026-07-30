@@ -32,7 +32,7 @@ public sealed class FxTwitterClient : IFxTwitterClient
                 FallbackAction = _ => Outcome.FromResultAsValueTask<string?>(null),
                 ShouldHandle = arguments => arguments.Outcome switch
                 {
-                    { Exception: HttpRequestException e } => e.StatusCode == HttpStatusCode.NotFound ? PredicateResult.True() : PredicateResult.False(),
+                    { Exception: HttpRequestException e } => e.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.NotFound ? PredicateResult.True() : PredicateResult.False(),
                     _ => PredicateResult.False(),
                 }
             })

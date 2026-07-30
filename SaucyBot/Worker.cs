@@ -90,10 +90,14 @@ public sealed class Worker : BackgroundService
 
         var client = new DiscordShardedClient(ids, config);
 
-        client.Log += HandleLogAsync;
-        client.ShardReady += HandleShardReadyAsync;
         client.MessageReceived += HandleMessageAsync;
         client.SlashCommandExecuted += HandleSlashCommandAsync;
+
+        client.Log += HandleLogAsync;
+        client.ShardReady += HandleShardReadyAsync;
+        client.ShardConnected += HandleShardConnectedAsync;
+        client.ShardDisconnected += HandleShardDisconnectedAsync;
+        client.ShardLatencyUpdated += HandleShardLatencyUpdated;
 
         return client;
     }
@@ -120,10 +124,11 @@ public sealed class Worker : BackgroundService
 
         var client = new DiscordSocketClient(config);
 
-        client.Log += HandleLogAsync;
-        client.Ready += HandleSocketClientReadyAsync;
         client.MessageReceived += HandleMessageAsync;
         client.SlashCommandExecuted += HandleSlashCommandAsync;
+
+        client.Log += HandleLogAsync;
+        client.Ready += HandleSocketClientReadyAsync;
 
         return client;
     }
@@ -246,6 +251,21 @@ public sealed class Worker : BackgroundService
                 )
             );
         }
+    }
+
+    private async Task HandleShardConnectedAsync(DiscordSocketClient client)
+    {
+        _logger.LogInformation("[{Source}] {Message}", $"Shard #{client.ShardId}", "Connected");
+    }
+
+    private async Task HandleShardLatencyUpdated(int oldLatency, int newLatency, DiscordSocketClient client)
+    {
+        _logger.LogInformation("[{Source}] {Message}", $"Shard #{client.ShardId}", $"Latency Updated: {oldLatency} -> {newLatency}");
+    }
+
+    private async Task HandleShardDisconnectedAsync(Exception exception, DiscordSocketClient client)
+    {
+        _logger.LogError(exception, "[{Source}] {Message}", "Shard #{client.ShardId}", "Disconnected");
     }
 
     private async Task CreateSlashCommands(DiscordSocketClient client)
