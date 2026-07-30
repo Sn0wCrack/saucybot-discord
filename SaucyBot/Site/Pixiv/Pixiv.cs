@@ -95,7 +95,7 @@ public sealed partial class PixivSite : BaseSite, IPixivSite
 
         var concatFile = Path.Join(basePath, "ffconcat");
 
-        var codec =  _configuration.GetSection("Sites:Pixiv:Ugoira:Codec").Get<UgoiraCodec?>() ?? UgoiraCodec.H264;
+        var codec = _configuration.GetSection("Sites:Pixiv:Ugoira:Codec").Get<UgoiraCodec?>() ?? UgoiraCodec.H264;
 
         var fileExtension = codec switch
         {
