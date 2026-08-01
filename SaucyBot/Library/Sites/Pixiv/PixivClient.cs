@@ -217,7 +217,7 @@ public sealed record IllustrationDetails(
 
     public string UserUrl => $"https://www.pixiv.net/en/users/{UserId}";
 
-    public bool IsAi = AiType is AiType.AiGenerated;
+    public bool IsAi => AiType is AiType.AiGenerated;
 };
 
 public sealed record IllustrationDetailsUrls(
