@@ -260,7 +260,7 @@ public sealed class Worker : BackgroundService
 
     private async Task HandleShardLatencyUpdated(int oldLatency, int newLatency, DiscordSocketClient client)
     {
-        _logger.LogInformation("[{Source}] {Message}", $"Shard #{client.ShardId}", $"Latency Updated: {oldLatency} -> {newLatency}");
+        _logger.LogDebug("[{Source}] {Message}", $"Shard #{client.ShardId}", $"Latency Updated: {oldLatency} -> {newLatency}");
     }
 
     private async Task HandleShardDisconnectedAsync(Exception exception, DiscordSocketClient client)
