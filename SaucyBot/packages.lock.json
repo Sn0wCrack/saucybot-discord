@@ -242,12 +242,12 @@
       },
       "StackExchange.Redis": {
         "type": "Direct",
-        "requested": "[3.0.17, )",
-        "resolved": "3.0.17",
-        "contentHash": "ItAm9lokZ1mWsQLF3u4Yw4eb/gvkX6Rp9bLAe1KUKgKAjPkALoQwTc6jJLtBZoOv9LT7RwvSIXZZb9FF30QhOg==",
+        "requested": "[3.1.0, )",
+        "resolved": "3.1.0",
+        "contentHash": "brWRCTBSKJjQxbiJhKfvLPinEAyUScUsGOrf8EHiWcOLaFzeM0367Co5YEzHywLdueXOtZCr6zKhSRU/tiEXxQ==",
         "dependencies": {
           "Microsoft.Extensions.Logging.Abstractions": "10.0.5",
-          "RESPite": "3.0.17",
+          "RESPite": "3.1.0",
           "System.IO.Hashing": "10.0.5"
         }
       },
@@ -726,8 +726,8 @@
       },
       "RESPite": {
         "type": "Transitive",
-        "resolved": "3.0.17",
-        "contentHash": "68slEMyRTUNLc75DruEDsEohFmFfNwkHLLtwQ46bobF+8Tl+UXMKM1kM87ihhKy6JdAqy1RrvAfvBWeLmcY9Gg=="
+        "resolved": "3.1.0",
+        "contentHash": "Xf2mFsMahfIpcF2rAkCd0TLSOz0Zwmg2SuI5zv5Lagmx/BiZbjoAU8VQyGUgpx8C1V0qdfXznsUgDLx4OLPpkg=="
       },
       "Serilog.Extensions.Logging": {
         "type": "Transitive",
