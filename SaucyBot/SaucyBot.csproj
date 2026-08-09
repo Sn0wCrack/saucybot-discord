@@ -40,7 +40,7 @@
     <PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0" />
     <PackageReference Include="Serilog.Settings.Configuration" Version="10.0.1" />
     <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
-    <PackageReference Include="StackExchange.Redis" Version="3.1.0" />
+    <PackageReference Include="StackExchange.Redis" Version="3.1.13" />
     <PackageReference Include="Xabe.FFmpeg" Version="6.0.2" />
     
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.5" />
