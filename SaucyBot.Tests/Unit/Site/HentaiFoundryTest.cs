@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -11,25 +12,50 @@ namespace SaucyBot.Tests.Unit.Site;
 
 public class HentaiFoundryTest
 {
-    [Fact(Skip = "Need to find way to mock HTML parser style classes")]
+    private const string SamplePageHtml = @"
+        <html>
+        <body>
+            <div class='imageTitle'>Test Art Title</div>
+            <div class='picDescript'>This is a test description</div>
+            <div id='picBox'>
+                <div class='boxbody'>
+                    <img src='//pictures/user/cherry-gig/1042457/sample.jpg' />
+                </div>
+            </div>
+            <div id='descriptionBox'>
+                <div class='boxbody'>
+                    <a href='/pictures/user/cherry-gig'>
+                        <img src='//pictures/user/cherry-gig/avatar.png' title='cherry-gig' />
+                    </a>
+                </div>
+            </div>
+            <div id='pictureGeneralInfoBox'>
+                <div class='boxbody'>
+                    <div class='column'>
+                        <time datetime='2024-01-15T10:30:00+00:00'>Jan 15, 2024</time>
+                    </div>
+                    <div class='column'><span>Views</span><span>1234</span></div>
+                    <div class='column'><span>Vote Score</span><span>42</span></div>
+                </div>
+            </div>
+        </body>
+        </html>";
+
+    [Fact]
     public async Task SingleEmbedIsCreatedWhenTheApiClientReturnsSuccessfully()
     {
-        // Post: https://www.hentai-foundry.com/pictures/user/cherry-gig/1042457/FOR-THE-GOD-EMPEROR
-
         var logger = Substitute.For<ILogger<HentaiFoundrySite>>();
-
         var client = Substitute.For<IHentaiFoundryClient>();
 
-        var picture = new HentaiFoundryPicture("");
+        client.Agree().Returns(true);
+
+        var picture = new HentaiFoundryPicture(SamplePageHtml);
 
         client
             .GetPage(Arg.Any<string>())
             .Returns((HentaiFoundryPicture?)picture);
 
-        var site = new HentaiFoundrySite(
-            logger,
-            client
-        );
+        var site = new HentaiFoundrySite(logger, client);
 
         var match = site.Pattern.Matches("https://www.hentai-foundry.com/pictures/user/cherry-gig/1042457/FOR-THE-GOD-EMPEROR").First();
 
@@ -37,26 +63,49 @@ public class HentaiFoundryTest
 
         Assert.NotNull(response);
         Assert.Single(response.Embeds);
-    }
 
+        var embed = response.Embeds[0];
+
+        Assert.Equal("Test Art Title", embed.Title);
+        Assert.Equal("This is a test description", embed.Description);
+        Assert.Equal("https://www.hentai-foundry.com/pictures/user/cherry-gig/1042457/FOR-THE-GOD-EMPEROR", embed.Url);
+        Assert.Equal("https://pictures/user/cherry-gig/1042457/sample.jpg", embed.Image?.Url);
+        Assert.Equal(new DateTimeOffset(2024, 1, 15, 10, 30, 0, TimeSpan.Zero), embed.Timestamp);
+        Assert.Equal("cherry-gig", embed.Author?.Name);
+        Assert.Equal("https://www.hentai-foundry.com/pictures/user/cherry-gig", embed.Author?.Url);
+        Assert.Equal("https://pictures/user/cherry-gig/avatar.png", embed.Author?.IconUrl);
+    }
 
     [Fact]
     public async Task NothingIsReturnedWhenTheApiClientReturnsUnsuccessfully()
     {
-        // Post: https://www.hentai-foundry.com/pictures/user/cherry-gig/1042457/FOR-THE-GOD-EMPEROR
-
         var logger = Substitute.For<ILogger<HentaiFoundrySite>>();
-
         var client = Substitute.For<IHentaiFoundryClient>();
+
+        client.Agree().Returns(true);
 
         client
             .GetPage(Arg.Any<string>())
             .Returns((HentaiFoundryPicture?)null);
 
-        var site = new HentaiFoundrySite(
-            logger,
-            client
-        );
+        var site = new HentaiFoundrySite(logger, client);
+
+        var match = site.Pattern.Matches("https://www.hentai-foundry.com/pictures/user/cherry-gig/1042457/FOR-THE-GOD-EMPEROR").First();
+
+        var response = await site.Process(new ProcessRequest(match));
+
+        Assert.Null(response);
+    }
+
+    [Fact]
+    public async Task NothingIsReturnedWhenTheAgreeCheckFails()
+    {
+        var logger = Substitute.For<ILogger<HentaiFoundrySite>>();
+        var client = Substitute.For<IHentaiFoundryClient>();
+
+        client.Agree().Returns(false);
+
+        var site = new HentaiFoundrySite(logger, client);
 
         var match = site.Pattern.Matches("https://www.hentai-foundry.com/pictures/user/cherry-gig/1042457/FOR-THE-GOD-EMPEROR").First();
 
