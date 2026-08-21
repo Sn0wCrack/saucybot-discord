@@ -256,8 +256,7 @@ public class SiteMatchingBenchmarks
     {
         var logger = Substitute.For<ILogger<PixivSite>>();
         var client = Substitute.For<IPixivClient>();
-        var guildConfigManager = Substitute.For<IGuildConfigurationManager>();
-        return new PixivSite(logger, config, guildConfigManager, client);
+        return new PixivSite(logger, config, client);
     }
 
     private static RedditSite CreateReddit(IConfiguration config)

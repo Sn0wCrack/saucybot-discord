@@ -31,8 +31,6 @@ public class PixivTest
             })
             .Build();
 
-        var guildConfigurationManager = Substitute.For<IGuildConfigurationManager>();
-
         var client = Substitute.For<IPixivClient>();
 
         var illustrationDetails = new IllustrationDetails(
@@ -132,7 +130,6 @@ public class PixivTest
         var site = new PixivSite(
             logger,
             config,
-            guildConfigurationManager,
             client
         );
 
@@ -157,8 +154,6 @@ public class PixivTest
             })
             .Build();
 
-        var guildConfigurationManager = Substitute.For<IGuildConfigurationManager>();
-
         var client = Substitute.For<IPixivClient>();
 
         client
@@ -169,7 +164,6 @@ public class PixivTest
         var site = new PixivSite(
             logger,
             config,
-            guildConfigurationManager,
             client
         );
 
@@ -185,13 +179,11 @@ public class PixivTest
     {
         var logger = Substitute.For<ILogger<PixivSite>>();
         var config = new ConfigurationBuilder().Build();
-        var guildConfigurationManager = Substitute.For<IGuildConfigurationManager>();
         var client = Substitute.For<IPixivClient>();
 
         var site = new PixivSite(
             logger,
             config,
-            guildConfigurationManager,
             client
         );
 
@@ -215,13 +207,11 @@ public class PixivTest
     {
         var logger = Substitute.For<ILogger<PixivSite>>();
         var config = new ConfigurationBuilder().Build();
-        var guildConfigurationManager = Substitute.For<IGuildConfigurationManager>();
         var client = Substitute.For<IPixivClient>();
 
         var site = new PixivSite(
             logger,
             config,
-            guildConfigurationManager,
             client
         );
 

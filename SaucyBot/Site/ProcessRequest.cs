@@ -1,10 +1,12 @@
 using System.Text.RegularExpressions;
 using Discord.WebSocket;
+using SaucyBot.Database.Models;
 
 namespace SaucyBot.Site;
 
 public sealed record ProcessRequest(
     Match Match,
+    GuildConfiguration? GuildConfiguration = null,
     SocketUserMessage? Message = null,
     SocketSlashCommand? Command = null
 )

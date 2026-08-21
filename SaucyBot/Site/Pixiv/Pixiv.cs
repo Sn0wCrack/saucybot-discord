@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using Discord;
 using Discord.WebSocket;
 using SaucyBot.Common;
+using SaucyBot.Database.Models;
 using SaucyBot.Extensions;
 using SaucyBot.Extensions.Discord;
 using SaucyBot.Library;
@@ -32,19 +33,16 @@ public sealed partial class PixivSite : BaseSite, IPixivSite
 
     private readonly IPixivClient _client;
     private readonly ILogger<PixivSite> _logger;
-    private readonly IGuildConfigurationManager _guildConfigurationManager;
     private readonly IConfiguration _configuration;
 
     public PixivSite(
         ILogger<PixivSite> logger,
         IConfiguration configuration,
-        IGuildConfigurationManager guildConfigurationManager,
         IPixivClient client
     )
     {
         _logger = logger;
         _configuration = configuration;
-        _guildConfigurationManager = guildConfigurationManager;
         _client = client;
     }
 
@@ -65,14 +63,12 @@ public sealed partial class PixivSite : BaseSite, IPixivSite
             return null;
         }
 
-        var user = await _client.UserDetails(response.IllustrationDetails.UserId);
-
         return response.IllustrationDetails.Type == IllustrationType.Ugoira
-            ? await ProcessUgoira(response.IllustrationDetails, user?.User)
-            : await ProcessImage(response.IllustrationDetails, user?.User, request.Message);
+            ? await ProcessUgoira(response.IllustrationDetails)
+            : await ProcessImage(response.IllustrationDetails, request.GuildConfiguration);
     }
 
-    private async Task<ProcessResponse?> ProcessUgoira(IllustrationDetails details, UserDetails? user)
+    private async Task<ProcessResponse?> ProcessUgoira(IllustrationDetails details)
     {
         var response = new ProcessResponse();
 
@@ -211,23 +207,13 @@ public sealed partial class PixivSite : BaseSite, IPixivSite
         await conversion.Start();
     }
 
-    private async Task<ProcessResponse?> ProcessImage(IllustrationDetails details, UserDetails? user, SocketUserMessage? message)
+    private async Task<ProcessResponse?> ProcessImage(IllustrationDetails details, GuildConfiguration? guildConfiguration)
     {
         var response = new ProcessResponse();
 
         var pageCount = details.PageCount;
 
-        var postLimit = _configuration.GetSection("Sites:Pixiv:PostLimit").Get<int>();
-
-        if (message is not null)
-        {
-            var guildConfiguration = await _guildConfigurationManager.GetByChannel(message.Channel);
-
-            if (guildConfiguration is not null)
-            {
-                postLimit = (int)guildConfiguration.MaximumPixivImages;
-            }
-        }
+        var postLimit = (int?)guildConfiguration?.MaximumPixivImages ?? _configuration.GetSection("Sites:Pixiv:PostLimit").Get<int>();
 
         if (pageCount == 1)
         {

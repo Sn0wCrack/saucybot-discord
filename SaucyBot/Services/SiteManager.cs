@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using Discord;
 using Discord.WebSocket;
+using SaucyBot.Database.Models;
 using SaucyBot.Extensions;
 using SaucyBot.Extensions.Discord;
 using SaucyBot.Library;
@@ -67,7 +68,7 @@ public sealed partial class SiteManager
         }
     }
 
-    public async Task<List<SiteManagerProcessResult>> Match(SocketUserMessage message)
+    public async Task<List<SiteManagerProcessResult>> Match(SocketUserMessage message, GuildConfiguration? guildConfiguration = null)
     {
         var results = new List<SiteManagerProcessResult>();
 
@@ -79,8 +80,6 @@ public sealed partial class SiteManager
         {
             return results;
         }
-
-        var guildConfiguration = await _guildConfigurationManager.GetByChannel(message.Channel);
 
         var maximumEmbeds = guildConfiguration?.MaximumEmbeds ?? _configuration.GetSection("Bot:MaximumEmbeds").Get<uint>();
 
@@ -104,7 +103,7 @@ public sealed partial class SiteManager
         return results;
     }
 
-    public async Task<List<SiteManagerProcessResult>> Match(SocketSlashCommand command)
+    public async Task<List<SiteManagerProcessResult>> Match(SocketSlashCommand command, GuildConfiguration? guildConfiguration = null)
     {
         var results = new List<SiteManagerProcessResult>();
 
@@ -116,8 +115,6 @@ public sealed partial class SiteManager
         {
             return results;
         }
-
-        var guildConfiguration = await _guildConfigurationManager.GetByChannel(command.Channel);
 
         var maximumEmbeds = guildConfiguration?.MaximumEmbeds ?? _configuration.GetSection("Bot:MaximumEmbeds").Get<uint>();
 
@@ -149,7 +146,9 @@ public sealed partial class SiteManager
             return;
         }
 
-        var results = await Match(message);
+        var guildConfiguration = await _guildConfigurationManager.GetByChannel(message.Channel);
+
+        var results = await Match(message, guildConfiguration);
 
         if (results.Empty())
         {
@@ -167,7 +166,7 @@ public sealed partial class SiteManager
 
                 try
                 {
-                    var response = await _sites[site].Process(new ProcessRequest(match, message));
+                    var response = await _sites[site].Process(new ProcessRequest(match, guildConfiguration, message));
 
                     if (response is null)
                     {
@@ -201,7 +200,9 @@ public sealed partial class SiteManager
             return;
         }
 
-        var results = await Match(command);
+        var guildConfiguration = await _guildConfigurationManager.GetByChannel(command.Channel);
+
+        var results = await Match(command, guildConfiguration);
 
         if (results.Empty())
         {
@@ -215,7 +216,7 @@ public sealed partial class SiteManager
 
             try
             {
-                var response = await _sites[site].Process(new ProcessRequest(match, Command: command));
+                var response = await _sites[site].Process(new ProcessRequest(match, guildConfiguration, Command: command));
 
                 if (response is null)
                 {
