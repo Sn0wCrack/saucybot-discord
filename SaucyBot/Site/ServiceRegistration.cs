@@ -29,7 +29,7 @@ public static class SiteServiceRegistration
         services.AddSingleton<IMisskeySite, MisskeySite>();
         services.AddSingleton<INewgroundsSite, NewgroundsSite>();
         services.AddSingleton<IPixivSite, PixivSite>();
-        services.AddSingleton<IRedditSite, RedditSite>();
+        services.AddSingleton<IRedditSite, RxRedditSite>();
         services.AddSingleton<ITwitterSite, FxTwitterSite>();
         return services;
     }
