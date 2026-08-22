@@ -2,7 +2,6 @@ using System.Text.RegularExpressions;
 using Discord;
 using SaucyBot.Common;
 using SaucyBot.Library.Sites.FurAffinity;
-using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site.FurAffinity;
 
@@ -26,8 +25,6 @@ public sealed partial class FurAffinitySite : BaseSite, IFurAffinitySite
 
     public override async Task<ProcessResponse?> Process(ProcessRequest request)
     {
-        var response = new ProcessResponse();
-
         var submission = await _client.GetSubmission(
             request.Match.Groups["id"].Value
         );
@@ -36,6 +33,11 @@ public sealed partial class FurAffinitySite : BaseSite, IFurAffinitySite
         {
             return null;
         }
+
+        var response = new ProcessResponse
+        {
+            IsNsfw = submission.IsNsfw,
+        };
 
         var embed = new EmbedBuilder
         {

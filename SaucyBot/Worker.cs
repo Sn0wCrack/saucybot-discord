@@ -274,11 +274,14 @@ public sealed class Worker : BackgroundService
 
         try
         {
+            // TODO: Split the Server install and User install into separate commands
+            // TODO: Server install should not be marked NSFW as we can determine the channel posted in ourselves.
             var sauceCommand = new SlashCommandBuilder();
             sauceCommand.WithName("sauce")
                 .WithIntegrationTypes(ApplicationIntegrationType.GuildInstall, ApplicationIntegrationType.UserInstall)
                 .WithContextTypes(InteractionContextType.Guild, InteractionContextType.BotDm, InteractionContextType.PrivateChannel)
-                .WithDescription("Create an embed from the provided URL");
+                .WithDescription("Create an embed from the provided URL")
+                .WithNsfw(_configuration.GetValue<bool?>("Bot:RestrictNSFW") ?? false);
 
             var sauceOption = new SlashCommandOptionBuilder();
             sauceOption.WithName("url")
@@ -290,7 +293,7 @@ public sealed class Worker : BackgroundService
 
             applicationCommandProperties.Add(sauceCommand.Build());
 
-            await client.BulkOverwriteGlobalApplicationCommandsAsync(applicationCommandProperties.ToArray());
+            await client.BulkOverwriteGlobalApplicationCommandsAsync([.. applicationCommandProperties]);
         }
         catch (Exception ex)
         {
@@ -300,7 +303,6 @@ public sealed class Worker : BackgroundService
 
     private Task HandleLogAsync(LogMessage message)
     {
-
         var severity = message.Severity switch
         {
             LogSeverity.Critical => LogLevel.Critical,

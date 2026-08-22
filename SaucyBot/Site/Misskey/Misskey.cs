@@ -2,7 +2,6 @@ using System.Text.RegularExpressions;
 using Discord;
 using SaucyBot.Library;
 using SaucyBot.Library.Sites.Misskey;
-using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site.Misskey;
 
@@ -75,6 +74,11 @@ public sealed class MisskeySite : BaseSite, IMisskeySite
             if (!file.Type.StartsWith("image/"))
             {
                 continue;
+            }
+
+            if (file.IsSensitive)
+            {
+                response.IsNsfw = true;
             }
 
             var embed = new EmbedBuilder

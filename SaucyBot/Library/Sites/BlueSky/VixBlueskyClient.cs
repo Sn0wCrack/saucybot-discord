@@ -4,13 +4,14 @@ using System.Text.Json.Serialization;
 using Polly;
 using Polly.Fallback;
 using Polly.Retry;
+using SaucyBot.Extensions;
 using SaucyBot.Services;
 
 namespace SaucyBot.Library.Sites.BlueSky;
 
 public class VixBlueskyClient : IVixBlueskyClient
 {
-    private const string BaseUrl = "https://bskyx.app";
+    private const string BaseUrl = "https://bskx.app";
 
     private readonly ILogger<VixBlueskyClient> _logger;
 
@@ -119,7 +120,25 @@ public sealed record VixBlueskyRecord(
     [property: JsonPropertyName("text")]
     string Text,
     [property: JsonPropertyName("embed")]
-    VixBlueskyRecordEmbed? Embed
+    VixBlueskyRecordEmbed? Embed,
+    [property: JsonPropertyName("labels")]
+    VixBlueSkyRecordLabels? RecordLabels
+)
+{
+    public bool IsNsfw => RecordLabels is not null && RecordLabels.Values.Select(x => x.Value.IsIn(["porn", "mature"])).Any();
+};
+
+public sealed record VixBlueSkyRecordLabels(
+    [property: JsonPropertyName("$type")]
+    string Type,
+    [property: JsonPropertyName("values")]
+    List<VixBlueSkyRecordLabelValue> Values
+);
+
+public sealed record VixBlueSkyRecordLabelValue(
+    [property: JsonPropertyName("val")]
+    string Value
+
 );
 
 public sealed record VixBlueskyRecordEmbed(

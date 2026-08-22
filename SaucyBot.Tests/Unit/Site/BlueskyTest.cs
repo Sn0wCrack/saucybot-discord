@@ -29,7 +29,7 @@ public class BlueskyTest
 
         var post = new VixBlueskyPost(
             new VixBlueskyUser("testuser", "Test User", "https://example.com/avatar.jpg"),
-            new VixBlueskyRecord("app.bsky.feed.post", "2024-01-01T00:00:00Z", "Test post content", null),
+            new VixBlueskyRecord("app.bsky.feed.post", "2024-01-01T00:00:00Z", "Test post content", null, null),
             new VixBlueskyEmbed("app.bsky.embed.images#view", null, new List<VixBlueskyEmbedImage>
             {
                 new("https://example.com/thumb1.jpg", "https://example.com/image1.jpg"),
@@ -102,7 +102,7 @@ public class BlueskyTest
 
         var post = new VixBlueskyPost(
             new VixBlueskyUser("testuser", "Test User", "https://example.com/avatar.jpg"),
-            new VixBlueskyRecord("app.bsky.feed.post", "2024-01-01T00:00:00Z", "Test post content", null),
+            new VixBlueskyRecord("app.bsky.feed.post", "2024-01-01T00:00:00Z", "Test post content", null, null),
             null,
             null,
             5,

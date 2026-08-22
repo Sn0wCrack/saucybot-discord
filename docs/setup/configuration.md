@@ -42,18 +42,19 @@ Open `appsettings.json` in a text editor and configure each section as needed.
 
 ### Bot
 
-| Key | Value Type | Description | Default |
-|---|---|---|---|
+| Key | Value Type | Description                                                                                              | Default |
+|---|---|----------------------------------------------------------------------------------------------------------|---|
 | `DiscordToken` | String | Your Discord bot token from the [Discord Developer Portal](https://discord.com/developers/applications). | *(empty)* |
-| `DisabledSites` | List of Strings | Site names to disable. Add a site name here if you do not intend to use it. | `[]` |
-| `MaximumEmbeds` | Integer | Maximum number of images to embed per message. | `8` |
-| `ShardMode` | String | Sharding mode for the bot. | `Automatic` |
-| `DiscordStatus` | Object | Status display configuration. See sub-keys below. | |
-| `DiscordStatus.Enabled` | Boolean | Whether the bot displays a custom status. | `true` |
-| `DiscordStatus.Type` | String | Status activity type. | `Watching` |
-| `DiscordStatus.Text` | String | Status text displayed by the bot. | `your links...` |
-| `MessageCacheSize` | Integer | Number of messages to keep in the cache. | `10` |
-| `ConnectionTimeout` | Integer | Connection timeout in milliseconds. | `120000` |
+| `DisabledSites` | List of Strings | Site names to disable. Add a site name here if you do not intend to use it.                              | `[]` |
+| `MaximumEmbeds` | Integer | Maximum number of images to embed per message.                                                           | `8` |
+| `ShardMode` | String | Sharding mode for the bot.                                                                               | `Automatic` |
+| `DiscordStatus` | Object | Status display configuration. See sub-keys below.                                                        | |
+| `DiscordStatus.Enabled` | Boolean | Whether the bot displays a custom status.                                                                | `true` |
+| `DiscordStatus.Type` | String | Status activity type.                                                                                    | `Watching` |
+| `DiscordStatus.Text` | String | Status text displayed by the bot.                                                                        | `your links...` |
+| `MessageCacheSize` | Integer | Number of messages to keep in the cache.                                                                 | `10` |
+| `ConnectionTimeout` | Integer | Connection timeout in milliseconds.                                                                      | `120000` |
+| `RestrictNSFW` | Boolean | Restricts SaucyBot to only post NSFW content in a NSFW channel. Disables slash command for DMs.          | false
 
 ### Database
 

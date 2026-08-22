@@ -32,7 +32,7 @@ internal static class HttpClientRegistrationExtensions
             }).ConfigurePrimaryHttpMessageHandler(() => handler ?? new HttpClientHandler { AllowAutoRedirect = true });
         }
 
-        public IHttpClientBuilder AddJsonApiClient<TInterface, TImplementation>(string userAgent = "SaucyBot/0.0.0")
+        public IHttpClientBuilder AddJsonApiClient<TInterface, TImplementation>(string userAgent = "SaucyBot/0.0.0 (https://github.com/Sn0wCrack/saucybot-discord)")
             where TInterface : class
             where TImplementation : class, TInterface
         {

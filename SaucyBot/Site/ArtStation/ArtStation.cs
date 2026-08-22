@@ -4,7 +4,6 @@ using SaucyBot.Common;
 using SaucyBot.Extensions;
 using SaucyBot.Library;
 using SaucyBot.Library.Sites.ArtStation;
-using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site.ArtStation;
 

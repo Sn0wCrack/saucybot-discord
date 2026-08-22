@@ -47,6 +47,7 @@ public class PixivTest
             "12345",
             "testuser",
             "testaccount",
+            ContentRestrictionType.General,
             DateTimeOffset.Now,
             DateTimeOffset.Now
         );

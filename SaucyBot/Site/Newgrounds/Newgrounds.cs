@@ -2,7 +2,6 @@ using System.Text.RegularExpressions;
 using Discord;
 using SaucyBot.Common;
 using SaucyBot.Library.Sites.Newgrounds;
-using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site.Newgrounds;
 

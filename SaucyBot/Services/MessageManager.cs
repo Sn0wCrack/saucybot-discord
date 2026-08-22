@@ -3,7 +3,7 @@ using Discord.WebSocket;
 using SaucyBot.Extensions;
 using SaucyBot.Extensions.Discord;
 using SaucyBot.Library;
-using SaucyBot.Site.Response;
+using SaucyBot.Site;
 
 namespace SaucyBot.Services;
 
@@ -20,6 +20,11 @@ public sealed class MessageManager
 
     public async Task Send(SocketUserMessage received, ProcessResponse response)
     {
+        if (!ShouldSend(received, response))
+        {
+            return;
+        }
+
         var messages = await PartitionMessages(response);
 
         foreach (var message in messages)
@@ -61,6 +66,11 @@ public sealed class MessageManager
 
     public async Task Send(SocketSlashCommand received, ProcessResponse response)
     {
+        if (!ShouldSend(received, response))
+        {
+            return;
+        }
+
         var messages = await PartitionMessages(response);
 
         foreach (var message in messages)
@@ -98,6 +108,31 @@ public sealed class MessageManager
                     break;
             }
         }
+    }
+
+    private bool ShouldSend(SocketUserMessage received, ProcessResponse response)
+    {
+        // Determine if we are able to post this content freely in in the channel we received the message in.
+        var restrictNsfw = _configuration.GetValue<bool?>("Bot:RestrictNSFW") ?? false;
+
+        if (!restrictNsfw || !response.IsNsfw)
+        {
+            return true;
+        }
+
+        // If the content is NSFW, we can only post it if the channel is a NSFW channel.
+        var isNsfwChannel = received.Channel is ITextChannel { IsNsfw: true };
+
+        return isNsfwChannel;
+    }
+
+    private bool ShouldSend(SocketSlashCommand received, ProcessResponse response)
+    {
+        // TODO: Determine if this is from a Guild or a DM and restrict based on that.
+        // Only allow sending NSFW in slash commands if restrict mode is off.
+        var restrictNsfw = _configuration.GetValue<bool?>("Bot:RestrictNSFW") ?? false;
+
+        return !restrictNsfw || !response.IsNsfw;
     }
 
     public static async Task<List<Message>> PartitionMessages(ProcessResponse response)

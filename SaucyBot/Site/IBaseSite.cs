@@ -1,6 +1,5 @@
 using System.Text.RegularExpressions;
 using Discord;
-using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site;
 

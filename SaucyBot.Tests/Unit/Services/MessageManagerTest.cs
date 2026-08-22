@@ -4,7 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using SaucyBot.Services;
-using SaucyBot.Site.Response;
+using SaucyBot.Site;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Services;

@@ -3,7 +3,6 @@ using Discord;
 using SaucyBot.Extensions;
 using SaucyBot.Library;
 using SaucyBot.Library.Sites.BlueSky;
-using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site.Bluesky;
 
@@ -76,7 +75,7 @@ public sealed partial class BlueskySite : BaseSite, IBlueskySite
 
         if (hasVideo)
         {
-            return HandleVideoLazy(request.Match);
+            return HandleVideoLazy(post, request.Match);
         }
 
         if (hasPhoto)
@@ -109,7 +108,10 @@ public sealed partial class BlueskySite : BaseSite, IBlueskySite
     {
         _logger.LogDebug("Processing as photo embed");
 
-        var response = new ProcessResponse();
+        var response = new ProcessResponse
+        {
+            IsNsfw = post.Record.IsNsfw,
+        };
 
         foreach (var image in results)
         {
@@ -168,7 +170,10 @@ public sealed partial class BlueskySite : BaseSite, IBlueskySite
 
         var videoUrl = $"https://r.bskyx.app/profile/{match.Groups["user"].Value}/post/{match.Groups["id"].Value}";
 
-        var response = new ProcessResponse();
+        var response = new ProcessResponse
+        {
+            IsNsfw = post.Record.IsNsfw,
+        };
 
         var embed = new EmbedBuilder
         {
@@ -218,11 +223,12 @@ public sealed partial class BlueskySite : BaseSite, IBlueskySite
         return response;
     }
 
-    private ProcessResponse HandleVideoLazy(Match match)
+    private ProcessResponse HandleVideoLazy(VixBlueskyPost post, Match match)
     {
         var response = new ProcessResponse
         {
-            Text = $"https://bskyx.app/profile/{match.Groups["user"].Value}/post/{match.Groups["id"].Value}"
+            Text = $"https://bskyx.app/profile/{match.Groups["user"].Value}/post/{match.Groups["id"].Value}",
+            IsNsfw = post.Record.IsNsfw,
         };
 
         return response;
@@ -231,7 +237,10 @@ public sealed partial class BlueskySite : BaseSite, IBlueskySite
 
     private ProcessResponse HandleRegular(string url, VixBlueskyPost post)
     {
-        var response = new ProcessResponse();
+        var response = new ProcessResponse
+        {
+            IsNsfw = post.Record.IsNsfw,
+        };
 
         var embed = new EmbedBuilder
         {
