@@ -145,15 +145,19 @@ public sealed partial class FxTwitterSite : BaseSite, ITwitterSite
 
         if (mainTweetHasMedia)
         {
+            _logger.LogDebug("Main tweet has media");
+
             return mainTweetHasVideo
-                ? HandleVideo(tweet)
+                ? HandleVideo(tweet, videoMedia, mainTweetHasMedia)
                 : HandlePhoto(tweet, photoMedia, mainTweetHasMedia);
         }
 
         if (quotedTweetHasMedia)
         {
+            _logger.LogDebug("Quoted tweet has media");
+
             return quotedTweetHasVideo
-                ? HandleVideo(tweet)
+                ? HandleVideo(tweet, videoMedia, mainTweetHasMedia)
                 : HandlePhoto(tweet, photoMedia, mainTweetHasMedia);
         }
 
@@ -216,14 +220,34 @@ public sealed partial class FxTwitterSite : BaseSite, ITwitterSite
         return Task.FromResult(output);
     }
 
-    private ProcessResponse HandleVideo(FxTwitterTweet tweet)
+    private ProcessResponse? HandleVideo(FxTwitterTweet tweet, IEnumerable<VideoResult> results, bool mainTweetHasMedia)
     {
-        _logger.LogDebug("Processing as video embed");
+        _logger.LogDebug("Processing as a video embed");
 
-        var response = new ProcessResponse
+        var video = mainTweetHasMedia
+            ? results.FirstOrDefault(result => result.Source == ResultSource.MainTweet)
+            : results.FirstOrDefault(result => result.Source == ResultSource.QuotedTweet);
+
+        if (video is null)
         {
-            Text = $"https://fxtwitter.com/{tweet.Author.ScreenName}/status/{tweet.Id}",
-        };
+            _logger.LogDebug("No video found");
+            return null;
+        }
+
+        var response = new ProcessResponse();
+
+        var componentBuilder = new ComponentBuilderV2()
+            .WithContainer(
+                new ContainerBuilder()
+                    .WithAccentColor(this.Color)
+                    .WithTextDisplay($"👤 [{tweet.Author.Name} (@{tweet.Author.ScreenName})]({tweet.Author.Url})")
+                    .WithSeparator()
+                    .WithTextDisplay(GetTweetText(tweet))
+                    .WithMediaGallery(new MediaGalleryBuilder().AddItem(video.Video.Url))
+                    .WithSeparator()
+            );
+
+        response.Components = componentBuilder.Build();
 
         return response;
     }
