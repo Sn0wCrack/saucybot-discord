@@ -1,6 +1,5 @@
 using System.Text.RegularExpressions;
 using Discord;
-using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site.FurAffinity;
 
@@ -33,6 +32,12 @@ public sealed partial class XFurAffinitySite : BaseSite, IFurAffinitySite
 
         _logger.LogDebug("Rewrote FurAffinity URL: {Original} -> {Rewritten}", originalUrl, rewrittenUrl);
 
-        return Task.FromResult<ProcessResponse?>(new ProcessResponse { Text = rewrittenUrl });
+        var response = new ProcessResponse
+        {
+            Text = rewrittenUrl,
+            IsNsfw = true,
+        };
+
+        return Task.FromResult<ProcessResponse?>(response);
     }
 }

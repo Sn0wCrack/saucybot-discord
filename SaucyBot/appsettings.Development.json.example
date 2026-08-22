@@ -21,7 +21,8 @@
     "DiscordToken": "",
     "ConnectionTimeout": 120000,
     "DisabledSites": [],
-    "MaximumEmbeds": 8
+    "MaximumEmbeds": 8,
+    "RestrictNSFW": false
   },
   "Database": {
     "Disabled": false,

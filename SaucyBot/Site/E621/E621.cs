@@ -2,7 +2,6 @@ using System.Text.RegularExpressions;
 using Discord;
 using SaucyBot.Extensions;
 using SaucyBot.Library.Sites.E621;
-using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site.E621;
 
@@ -29,7 +28,10 @@ public sealed partial class E621Site : BaseSite, IE621Site
 
     public override async Task<ProcessResponse?> Process(ProcessRequest request)
     {
-        var response = new ProcessResponse();
+        var response = new ProcessResponse
+        {
+            IsNsfw = true,
+        };
 
         var url = request.Match.Value;
 

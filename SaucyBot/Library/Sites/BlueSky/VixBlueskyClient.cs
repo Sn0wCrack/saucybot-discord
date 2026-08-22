@@ -10,7 +10,7 @@ namespace SaucyBot.Library.Sites.BlueSky;
 
 public class VixBlueskyClient : IVixBlueskyClient
 {
-    private const string BaseUrl = "https://bskyx.app";
+    private const string BaseUrl = "https://bskx.app";
 
     private readonly ILogger<VixBlueskyClient> _logger;
 
@@ -55,7 +55,7 @@ public class VixBlueskyClient : IVixBlueskyClient
     public async Task<VixBlueskyResponse?> GetPost(string name, string identifier)
     {
         var response = await _cache.Remember(
-            $"vixbluesky.post_{name}_{identifier}",
+            $"vixbluesky .post_{name}_{identifier}",
             async () => await _pipeline.ExecuteAsync(async token => await _client.GetStringAsync($"{BaseUrl}/profile/{name}/post/{identifier}/json", token))
         );
 

@@ -180,6 +180,13 @@ public enum AiType
     AiGenerated = 2, // Specifically declared AI
 }
 
+public enum ContentRestrictionType
+{
+    General = 0,
+    R18 = 1,
+    R18G = 2
+}
+
 public sealed record IllustrationDetails(
     [property: JsonPropertyName("id")]
     string Id,
@@ -207,6 +214,8 @@ public sealed record IllustrationDetails(
     string UserName,
     [property: JsonPropertyName("userAccount")]
     string UserAccount,
+    [property: JsonPropertyName("xRestrict")]
+    ContentRestrictionType ContentRestriction,
     [property: JsonPropertyName("createDate")]
     DateTimeOffset CreateDate,
     [property: JsonPropertyName("uploadDate")]
@@ -218,6 +227,8 @@ public sealed record IllustrationDetails(
     public string UserUrl => $"https://www.pixiv.net/en/users/{UserId}";
 
     public bool IsAi => AiType is AiType.AiGenerated;
+
+    public bool IsNsfw => ContentRestriction is ContentRestrictionType.R18 or ContentRestrictionType.R18G;
 };
 
 public sealed record IllustrationDetailsUrls(

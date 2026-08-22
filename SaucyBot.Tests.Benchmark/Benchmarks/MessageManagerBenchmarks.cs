@@ -5,7 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using SaucyBot.Services;
-using SaucyBot.Site.Response;
+using SaucyBot.Site;
 
 namespace SaucyBot.Tests.Benchmark.Benchmarks;
 

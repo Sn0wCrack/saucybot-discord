@@ -3,15 +3,12 @@ using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using Discord;
-using Discord.WebSocket;
 using SaucyBot.Common;
 using SaucyBot.Database.Models;
 using SaucyBot.Extensions;
 using SaucyBot.Extensions.Discord;
 using SaucyBot.Library;
 using SaucyBot.Library.Sites.Pixiv;
-using SaucyBot.Services;
-using SaucyBot.Site.Response;
 using Xabe.FFmpeg;
 
 namespace SaucyBot.Site.Pixiv;
@@ -70,7 +67,10 @@ public sealed partial class PixivSite : BaseSite, IPixivSite
 
     private async Task<ProcessResponse?> ProcessUgoira(IllustrationDetails details)
     {
-        var response = new ProcessResponse();
+        var response = new ProcessResponse
+        {
+            IsNsfw = details.IsNsfw,
+        };
 
         var metadata = await _client.UgoiraMetadata(details.Id);
 
@@ -209,7 +209,10 @@ public sealed partial class PixivSite : BaseSite, IPixivSite
 
     private async Task<ProcessResponse?> ProcessImage(IllustrationDetails details, GuildConfiguration? guildConfiguration)
     {
-        var response = new ProcessResponse();
+        var response = new ProcessResponse
+        {
+            IsNsfw = details.IsNsfw,
+        };
 
         var pageCount = details.PageCount;
 
@@ -286,16 +289,6 @@ public sealed partial class PixivSite : BaseSite, IPixivSite
             .WithSeparator()
             .WithTextDisplay(string.Join("    ", stats))
             .WithTextDisplay($"-# Posted: <t:{details.CreateDate.ToUnixTimeSeconds()}:F>");
-    }
-
-    private async Task<FileAttachment?> GetUserAvatar(UserDetails? user)
-    {
-        if (user is null)
-        {
-            return null;
-        }
-
-        return await GetFile(user.AvatarUrl);
     }
 
     private async Task<FileAttachment?> DetermineHighestUsableQualityFile(IEnumerable<string> urls)

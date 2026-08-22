@@ -3,7 +3,6 @@ using Discord;
 using SaucyBot.Common;
 using SaucyBot.Library;
 using SaucyBot.Library.Sites.HentaiFoundry;
-using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site.HentaiFoundry;
 
@@ -30,8 +29,6 @@ public sealed partial class HentaiFoundrySite : BaseSite, IHentaiFoundrySite
 
     public override async Task<ProcessResponse?> Process(ProcessRequest request)
     {
-        var response = new ProcessResponse();
-
         if (!await _client.Agree())
         {
             _logger.LogError("HentaiFoundry over 18 agreement failed, cookie was not present");
@@ -44,6 +41,11 @@ public sealed partial class HentaiFoundrySite : BaseSite, IHentaiFoundrySite
         {
             return null;
         }
+
+        var response = new ProcessResponse
+        {
+            IsNsfw = true,
+        };
 
         var embed = new EmbedBuilder
         {

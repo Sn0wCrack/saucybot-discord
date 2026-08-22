@@ -3,7 +3,6 @@ using Discord;
 using SaucyBot.Common;
 using SaucyBot.Library;
 using SaucyBot.Library.Sites.ExHentai;
-using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site.ExHentai;
 
@@ -35,7 +34,10 @@ public sealed partial class ExHentaiSite : BaseSite, IExHentaiSite
 
     public override async Task<ProcessResponse?> Process(ProcessRequest request)
     {
-        var response = new ProcessResponse();
+        var response = new ProcessResponse
+        {
+            IsNsfw = true,
+        };
 
         var url = request.Match.Value;
 

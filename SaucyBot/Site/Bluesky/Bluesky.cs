@@ -3,7 +3,6 @@ using Discord;
 using SaucyBot.Extensions;
 using SaucyBot.Library;
 using SaucyBot.Library.Sites.BlueSky;
-using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site.Bluesky;
 

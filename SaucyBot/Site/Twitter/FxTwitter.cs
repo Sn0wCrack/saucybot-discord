@@ -5,7 +5,6 @@ using SaucyBot.Common;
 using SaucyBot.Extensions;
 using SaucyBot.Library;
 using SaucyBot.Library.Sites.Twitter;
-using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site.Twitter;
 
@@ -49,56 +48,6 @@ public sealed partial class FxTwitterSite : BaseSite, ITwitterSite
         "nl", "sv", "da", "fi", "el", "cs", "ro", "hu", "uk", "he",
         "nb", "ca"
     };
-
-    private static string? DiscordLocaleToLanguageCode(string? locale)
-    {
-        if (locale is null || locale.Length < 2)
-        {
-            return null;
-        }
-
-        var code = locale[..2].ToLowerInvariant();
-
-        return SupportedLanguages.Contains(code) ? code : null;
-    }
-
-    private string? ResolveTranslationLanguage(ProcessRequest request)
-    {
-        // 1. Requested language from URL (highest priority)
-        if (request.Match.Groups["translate"].Success)
-        {
-            return request.Match.Groups["translate"].Value;
-        }
-
-        var autoDetect = _configuration.GetSection("Sites:FxTwitter:AutoDetectLanguage").Get<bool?>() ?? false;
-
-        if (!autoDetect)
-        {
-            return null;
-        }
-
-        // 2. Guild locale (only reliable for community servers)
-        var guild = request.Guild;
-
-        if (guild is not null && guild.Features.HasFeature(GuildFeature.Community))
-        {
-            var guildCode = DiscordLocaleToLanguageCode(guild.PreferredLocale);
-            if (guildCode is not null)
-            {
-                return guildCode;
-            }
-        }
-
-        // 3. User locale (only available on slash commands)
-        var userCode = DiscordLocaleToLanguageCode(request.UserLocale);
-        if (userCode is not null)
-        {
-            return userCode;
-        }
-
-        // 4. Original (no translation)
-        return null;
-    }
 
     public override async Task<ProcessResponse?> Process(ProcessRequest request)
     {
@@ -223,6 +172,7 @@ public sealed partial class FxTwitterSite : BaseSite, ITwitterSite
         var response = new ProcessResponse
         {
             Text = $"https://fxtwitter.com/{tweet.Author.ScreenName}/status/{tweet.Id}",
+            IsNsfw = tweet.PossiblySensitive,
         };
 
         return response;
@@ -235,12 +185,18 @@ public sealed partial class FxTwitterSite : BaseSite, ITwitterSite
 
         var description = GetTweetText(tweet);
 
-        var response = new ProcessResponse();
-
         if (description.Length >= Constants.MaximumEmbedBodyLength)
         {
-            response.Text = $"https://fxtwitter.com/{tweet.Author.ScreenName}/status/{tweet.Id}";
+            var early = new ProcessResponse
+            {
+                Text = $"https://fxtwitter.com/{tweet.Author.ScreenName}/status/{tweet.Id}",
+                IsNsfw = tweet.PossiblySensitive,
+            };
+
+            return early;
         }
+
+        var response = new ProcessResponse();
 
         var photos = mainTweetHasMedia
             ? results.Where(result => result.Source == ResultSource.MainTweet).ToList()
@@ -292,6 +248,8 @@ public sealed partial class FxTwitterSite : BaseSite, ITwitterSite
 
             response.Embeds.Add(embed.Build());
         }
+
+        response.IsNsfw = tweet.PossiblySensitive;
 
         return response;
     }
@@ -350,6 +308,8 @@ public sealed partial class FxTwitterSite : BaseSite, ITwitterSite
 
         response.Embeds.Add(embed.Build());
 
+        response.IsNsfw = tweet.PossiblySensitive;
+
         return response;
     }
 
@@ -400,21 +360,6 @@ public sealed partial class FxTwitterSite : BaseSite, ITwitterSite
         return text;
     }
 
-    private async Task<string?> DetermineHighestUsableQualityFile(IEnumerable<string> urls)
-    {
-        foreach (var url in urls)
-        {
-            var response = await PokeFile(url);
-
-            if (response.Content.Headers.ContentLength < Constants.MaximumFileSize)
-            {
-                return url;
-            }
-        }
-
-        return null;
-    }
-
     private async Task<HttpResponseMessage> PokeFile(string url)
     {
         using var request = new HttpRequestMessage(HttpMethod.Head, url);
@@ -454,6 +399,52 @@ public sealed partial class FxTwitterSite : BaseSite, ITwitterSite
             Query = queryDictionary.ToString()
         };
         return builder.Uri.ToString();
+    }
+
+    private static string? DiscordLocaleToLanguageCode(string? locale)
+    {
+        if (locale is null || locale.Length < 2)
+        {
+            return null;
+        }
+
+        var code = locale[..2].ToLowerInvariant();
+
+        return SupportedLanguages.Contains(code) ? code : null;
+    }
+
+    private string? ResolveTranslationLanguage(ProcessRequest request)
+    {
+        // 1. Requested language from URL (highest priority)
+        if (request.Match.Groups["translate"].Success)
+        {
+            return request.Match.Groups["translate"].Value;
+        }
+
+        var autoDetect = _configuration.GetSection("Sites:FxTwitter:AutoDetectLanguage").Get<bool?>() ?? false;
+
+        if (!autoDetect)
+        {
+            return null;
+        }
+
+        // 2. Guild locale (only reliable for community servers)
+        var guild = request.Guild;
+
+        if (guild is not null && guild.Features.HasFeature(GuildFeature.Community))
+        {
+            var guildCode = DiscordLocaleToLanguageCode(guild.PreferredLocale);
+
+            if (guildCode is not null)
+            {
+                return guildCode;
+            }
+        }
+
+        // 3. User locale (only available on slash commands)
+        var userCode = DiscordLocaleToLanguageCode(request.UserLocale);
+
+        return userCode;
     }
 }
 

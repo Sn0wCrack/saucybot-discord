@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using Polly;
 using Polly.Fallback;
 using Polly.Retry;
+using SaucyBot.Extensions;
 using SaucyBot.Services;
 
 namespace SaucyBot.Library.Sites.FurAffinity;
@@ -61,6 +62,7 @@ public sealed class FaExportClient : IFurAffinityClient
 }
 
 #region Response Types
+
 public sealed record FaExportSubmission(
     [property: JsonPropertyName("title")]
     string Title,
@@ -108,5 +110,8 @@ public sealed record FaExportSubmission(
     string Rating,
     [property: JsonPropertyName("keywords")]
     string[] Keywords
-);
+)
+{
+    public bool IsNsfw => Rating != "general";
+};
 #endregion

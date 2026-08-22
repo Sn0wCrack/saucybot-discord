@@ -1,7 +1,6 @@
 using System.Net;
 using System.Text.RegularExpressions;
 using Discord;
-using SaucyBot.Site.Response;
 
 namespace SaucyBot.Site.Reddit;
 
@@ -28,7 +27,10 @@ public sealed partial class RedditSite : BaseSite, IRedditSite
     {
         // TODO: Handle v.redd.it links using youtube-dl or similar
 
-        var response = new ProcessResponse();
+        var response = new ProcessResponse
+        {
+            IsNsfw = true, // No way to determine this currently
+        };
 
         var originalUrl = WebUtility.UrlDecode(request.Match.Groups["url"].Value);
 
