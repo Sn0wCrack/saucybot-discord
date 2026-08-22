@@ -11,6 +11,8 @@ SaucyBot
 
 If you would like to add this bot to your server [click here](https://discord.com/oauth2/authorize?client_id=647368715742216193) and authorize it through your discord account.
 
+**NOTE**: The live version specifically gates NSFW content to NSFW channels. If it fails to embed content, try again in a NSFW channel. This is a requirement set by Discord to me and I cannot change this.
+
 * Currently, Supports:
   * ArtStation - Embeds up to 8 extra images (configurable)
   * Twitter - Embeds posts when native embeds fail
@@ -19,23 +21,24 @@ If you would like to add this bot to your server [click here](https://discord.co
     * Will embed a video if it cannot be played natively in Discord
     * If the images or video are larger than the Discord maximum file size will reply with an fxtwitter link instead.
   * DeviantArt - Embeds main image or thumbnail, includes more information than built-in embed
-    * NOTE: This is disabled on live version due to IP rate limiting from DeviantArt
+    * **NOTE**: This is disabled on live version due to IP rate limiting from DeviantArt
   * Hentai Foundry - Creates embed as none exists for site.
   * Pixiv - Posts up to 5 images of the set (configurable)
     * Pixiv Ugoira - Uploads a video with correct framerate and frame-timing (Video format is configurable, requires ffmpeg)
   * FurAffinity - Creates image embed as none exists for site
   * Newgrounds - Creates embed for site as image isn't fully embedded, this also displays the rating the image has.
-    * NOTE: No longer functions due to issues with Newgrounds authentication system.
-    * NOTE: Doesn't support embedding videos
+    * **NOTE**: No longer functions due to issues with Newgrounds authentication system.
+    * **NOTE**: Doesn't support embedding videos
   * e621 - Creates an embed similar to what discord embeds but with higher quality image and slightly more information
-    * NOTE: This is disabled on live version as I think it doesn't add much right now
+    * **NOTE**: This is disabled on live version as I think it doesn't add much right now
   * E(x-)Hentai - Creates an embed to preview cover art, title, current score, etc.
-    * NOTE: Live version only supports e-hentai.org right now
+    * **NOTE**: Live version only supports e-hentai.org right now
   * Misskey - Creates an embed for multi-image posts and NSFW posts
     * NOTE: Only supports misskey.io
   * Instagram - Rewrites URLs to kkinstagram.com for improved embeds
     * Supports Posts (/p/) and Reels (/reel/, /reels/)
     * No external API calls, simple URL domain rewrite
+    * **NOTE**: This is disabled on live version as it is currently broken. 
 
 Setup
 ----------
