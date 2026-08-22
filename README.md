@@ -61,7 +61,7 @@ This will be something that will hopefully be configurable in SaucyBot v2 when t
 
 ### Question: Can I have SaucyBot ignore certain channels?
 **Answer:** This is not something SaucyBot needs to do itself and can be accomplished in Discord, you are able adjust the permissions on that channel and remove the SaucyBot groups permission to view that channel.
-If you have provided Administrator privileges to SaucyBot that override that value, I would **highly suggest** removing SaucyBot from any additional groups that provide it with escalated privileges it does not require.
+If you have provided Administrator privileges to SaucyBot that will override any restrictions for viewing channels you have set on it. I would **highly suggest** removing SaucyBot from any additional groups that provide it with escalated privileges it does not require.
 
 Credits
 -------
