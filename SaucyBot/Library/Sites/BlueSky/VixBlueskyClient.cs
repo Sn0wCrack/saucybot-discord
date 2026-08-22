@@ -56,7 +56,7 @@ public class VixBlueskyClient : IVixBlueskyClient
     public async Task<VixBlueskyResponse?> GetPost(string name, string identifier)
     {
         var response = await _cache.Remember(
-            $"vixbluesky .post_{name}_{identifier}",
+            $"vixbluesky.post_{name}_{identifier}",
             async () => await _pipeline.ExecuteAsync(async token => await _client.GetStringAsync($"{BaseUrl}/profile/{name}/post/{identifier}/json", token))
         );
 
