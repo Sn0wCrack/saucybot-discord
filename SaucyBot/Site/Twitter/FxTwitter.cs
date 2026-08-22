@@ -318,8 +318,6 @@ public sealed partial class FxTwitterSite : BaseSite, ITwitterSite
 
         response.Embeds.Add(embed.Build());
 
-        response.IsNsfw = tweet.PossiblySensitive;
-
         return response;
     }
 
