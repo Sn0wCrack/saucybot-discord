@@ -196,7 +196,10 @@ public sealed partial class FxTwitterSite : BaseSite, ITwitterSite
             return early;
         }
 
-        var response = new ProcessResponse();
+        var response = new ProcessResponse
+        {
+            IsNsfw = tweet.PossiblySensitive,
+        };
 
         var photos = mainTweetHasMedia
             ? results.Where(result => result.Source == ResultSource.MainTweet).ToList()
@@ -249,21 +252,28 @@ public sealed partial class FxTwitterSite : BaseSite, ITwitterSite
             response.Embeds.Add(embed.Build());
         }
 
-        response.IsNsfw = tweet.PossiblySensitive;
-
         return response;
     }
 
     private ProcessResponse HandleRegular(FxTwitterTweet tweet)
     {
-        var response = new ProcessResponse();
-
         var description = GetTweetText(tweet);
 
         if (description.Length >= Constants.MaximumEmbedBodyLength)
         {
-            response.Text = $"https://fxtwitter.com/{tweet.Author.ScreenName}/status/{tweet.Id}";
+            var early = new ProcessResponse
+            {
+                Text = $"https://fxtwitter.com/{tweet.Author.ScreenName}/status/{tweet.Id}",
+                IsNsfw = tweet.PossiblySensitive,
+            };
+
+            return early;
         }
+
+        var response = new ProcessResponse
+        {
+            IsNsfw = tweet.PossiblySensitive,
+        };
 
         var embed = new EmbedBuilder
         {
