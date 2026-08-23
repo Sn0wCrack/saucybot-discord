@@ -260,7 +260,8 @@ public sealed class MessageManager
     {
         var embedUrls = new[] { embed.Image?.Url, embed.Video?.Url }
             .Where(url => url is not null)
-            .Select(url => url.Replace("attachment://", ""))
+            // URL can't be null at this point, dotnet just doesn't understand that
+            .Select(url => url!.Replace("attachment://", ""))
             .ToList();
 
         return files
