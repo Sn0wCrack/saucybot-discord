@@ -112,7 +112,7 @@ public sealed class MessageManager
 
     private bool ShouldSend(SocketUserMessage received, ProcessResponse response)
     {
-        // Determine if we are able to post this content freely in in the channel we received the message in.
+        // Determine if we are able to post this content freely in the channel we received the message in.
         var restrictNsfw = _configuration.GetValue<bool?>("Bot:RestrictNSFW") ?? false;
 
         if (!restrictNsfw || !response.IsNsfw)
@@ -120,10 +120,13 @@ public sealed class MessageManager
             return true;
         }
 
-        // If the content is NSFW, we can only post it if the channel is a NSFW channel.
-        var isNsfwChannel = received.Channel is ITextChannel { IsNsfw: true };
-
-        return isNsfwChannel;
+        return received.Channel switch
+        {
+            // Threads need their parent channel checked instead
+            SocketThreadChannel { ParentChannel: ITextChannel { IsNsfw: true } } => true,
+            ITextChannel { IsNsfw: true } => true,
+            _ => false,
+        };
     }
 
     private bool ShouldSend(SocketSlashCommand received, ProcessResponse response)
@@ -255,17 +258,10 @@ public sealed class MessageManager
 
     private static List<FileAttachment> GetRelatedFiles(Embed embed, IEnumerable<FileAttachment> files)
     {
-        var embedUrls = new List<string>();
-
-        if (embed.Image?.Url is not null)
-        {
-            embedUrls.Add(embed.Image?.Url.Replace("attachment://", "")!);
-        }
-
-        if (embed.Video?.Url is not null)
-        {
-            embedUrls.Add(embed.Video?.Url.Replace("attachment://", "")!);
-        }
+        var embedUrls = new[] { embed.Image?.Url, embed.Video?.Url }
+            .Where(url => url is not null)
+            .Select(url => url.Replace("attachment://", ""))
+            .ToList();
 
         return files
             .Where(item => embedUrls.Contains(item.FileName))
