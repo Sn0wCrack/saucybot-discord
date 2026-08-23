@@ -281,7 +281,7 @@ public sealed partial class PixivSite : BaseSite, IPixivSite
 
         return new ContainerBuilder()
             .WithAccentColor(this.Color)
-            .WithTextDisplay($"### [{details.Title}]({details.Url})")
+            .WithTextDisplay($"### [{Helper.RemoveEmojis(details.Title)}]({details.Url})")
             .WithTextDisplay($"👤 [{details.UserName}]({details.UserUrl})")
             .WithSeparator()
             .When(details.Description is not "", (builder => builder.WithTextDisplay(Helper.HtmlToMarkdown(CleanPixivHtml(details.Description)))))

@@ -1,12 +1,16 @@
 using System.Net;
 using System.Text;
+using System.Text.RegularExpressions;
 using Markdig;
 
 namespace SaucyBot.Common;
 
-public static class Helper
+public static partial class Helper
 {
     private const string Characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+    [GeneratedRegex(@"[\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]")]
+    private static partial Regex EmojiRegex();
 
     public static string? HtmlToMarkdown(string html)
     {
@@ -85,5 +89,13 @@ public static class Helper
 
         sb.Append(anchorText);
         return sb.ToString();
+    }
+
+    public static string RemoveEmojis(string input)
+    {
+        return string.IsNullOrEmpty(input)
+            ? input
+            // Remove emojis and fix any resulting double spaces
+            : EmojiRegex().Replace(input, "");
     }
 }
