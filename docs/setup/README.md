@@ -11,6 +11,11 @@ Choose a setup method that fits your needs:
 
 - [Configuration Reference](configuration.md) — Reference for all `.env` and `appsettings.json` settings.
 
+Moderation & Server Owner Guides
+------------
+
+- [Moderation Guide](../moderation.md) — Guidance for server owners, admins, and moderators on NSFW handling, role whitelisting via `/settings`, and disabling the bot per-channel with Discord permissions.
+
 Supported Sites
 ------------
 
