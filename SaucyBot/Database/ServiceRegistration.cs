@@ -4,8 +4,7 @@ public static class DatabaseServiceRegistration
 {
     public static IServiceCollection AddSaucyBotDatabase(this IServiceCollection services)
     {
-        services.AddDbContext<DatabaseContext>(ServiceLifetime.Transient);
-        services.AddDbContextFactory<DatabaseContext>(lifetime: ServiceLifetime.Transient);
+        services.AddDbContext<DatabaseContext>(ServiceLifetime.Scoped);
         return services;
     }
 }

@@ -13,9 +13,11 @@ public static class CacheServiceRegistration
         {
             options.Configuration = configuration.GetSection("Cache:Redis:ConnectionString").Get<string>();
         });
+        services.AddHybridCache();
 
         services.AddSingleton<MemoryCacheDriver>();
         services.AddSingleton<RedisCacheDriver>();
+        services.AddSingleton<HybridCacheDriver>();
         services.AddSingleton<ICacheManager, CacheManager>();
 
         return services;

@@ -27,6 +27,7 @@ public sealed class CacheManager : ICacheManager
         {
             "redis" => typeof(RedisCacheDriver),
             "memory" => typeof(MemoryCacheDriver),
+            "hybrid" => typeof(HybridCacheDriver),
             _ => typeof(MemoryCacheDriver),
         };
 

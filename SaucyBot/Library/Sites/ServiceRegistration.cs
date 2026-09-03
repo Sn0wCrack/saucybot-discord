@@ -29,7 +29,10 @@ internal static class HttpClientRegistrationExtensions
                 client.DefaultRequestHeaders.Add("Sec-Fetch-Site", "none");
                 client.DefaultRequestHeaders.Add("Sec-Fetch-User", "?1");
                 client.DefaultRequestHeaders.Add("Upgrade-Insecure-Requests", "1");
-            }).ConfigurePrimaryHttpMessageHandler(() => handler ?? new HttpClientHandler { AllowAutoRedirect = true });
+            })
+            .SetHandlerLifetime(TimeSpan.FromMinutes(2) + TimeSpan.FromSeconds(Random.Shared.Next(0, 31)))
+            .ConfigurePrimaryHttpMessageHandler(() => handler ?? new HttpClientHandler { AllowAutoRedirect = true });
+
         }
 
         public IHttpClientBuilder AddJsonApiClient<TInterface, TImplementation>(string userAgent = "SaucyBot/0.0.0 (https://github.com/Sn0wCrack/saucybot-discord)")
@@ -41,7 +44,8 @@ internal static class HttpClientRegistrationExtensions
                 client.DefaultRequestHeaders.UserAgent.ParseAdd(userAgent);
                 client.DefaultRequestHeaders.Accept.Add(
                     new MediaTypeWithQualityHeaderValue("application/json"));
-            });
+            })
+            .SetHandlerLifetime(TimeSpan.FromMinutes(2) + TimeSpan.FromSeconds(Random.Shared.Next(0, 31)));
         }
 
         public IServiceCollection AddFileDownloadClient()
@@ -49,10 +53,13 @@ internal static class HttpClientRegistrationExtensions
             services.AddHttpClient("FileDownload", client =>
             {
                 client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
-            }).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+            })
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
             {
                 AllowAutoRedirect = true,
-            });
+            })
+            .SetHandlerLifetime(TimeSpan.FromMinutes(2) + TimeSpan.FromSeconds(Random.Shared.Next(0, 31)));
+
             return services;
         }
     }

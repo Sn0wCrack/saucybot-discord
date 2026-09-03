@@ -1,5 +1,6 @@
 using Discord;
 using Discord.WebSocket;
+using Microsoft.Extensions.DependencyInjection;
 using SaucyBot.Library;
 using SaucyBot.Services;
 
@@ -9,25 +10,31 @@ public sealed class Worker : BackgroundService
 {
     private readonly ILogger<Worker> _logger;
     private readonly IConfiguration _configuration;
+    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly IServiceProvider _services;
 
-    private readonly IDatabaseManager _databaseManager;
-    private readonly SiteManager _siteManager;
+    private readonly IDatabaseMigrator _databaseMigrator;
 
     private readonly SemaphoreSlim _throttle;
+    private readonly InteractionHandler _interactionHandler;
 
     private BaseSocketClient? _client;
 
     public Worker(
         ILogger<Worker> logger,
         IConfiguration configuration,
-        IDatabaseManager databaseManager,
-        SiteManager siteManager
+        IServiceScopeFactory scopeFactory,
+        IServiceProvider services,
+        IDatabaseMigrator databaseMigrator,
+        InteractionHandler interactionHandler
     )
     {
         _logger = logger;
         _configuration = configuration;
-        _databaseManager = databaseManager;
-        _siteManager = siteManager;
+        _scopeFactory = scopeFactory;
+        _services = services;
+        _databaseMigrator = databaseMigrator;
+        _interactionHandler = interactionHandler;
 
         var limit = _configuration.GetSection("Bot:ConcurrencyLimit").Get<int?>() ?? 5;
 
@@ -36,7 +43,7 @@ public sealed class Worker : BackgroundService
 
     public override async Task StartAsync(CancellationToken cancellationToken)
     {
-        await _databaseManager.EnsureAllMigrationsHaveRun();
+        await _databaseMigrator.EnsureAllMigrationsHaveRun();
 
         var shardMode = _configuration.GetSection("Bot:ShardMode").Get<string?>() ?? "Automatic";
 
@@ -91,13 +98,16 @@ public sealed class Worker : BackgroundService
         var client = new DiscordShardedClient(ids, config);
 
         client.MessageReceived += HandleMessageAsync;
-        client.SlashCommandExecuted += HandleSlashCommandAsync;
+        client.InteractionCreated += HandleInteractionAsync;
 
         client.Log += HandleLogAsync;
         client.ShardReady += HandleShardReadyAsync;
         client.ShardConnected += HandleShardConnectedAsync;
         client.ShardDisconnected += HandleShardDisconnectedAsync;
         client.ShardLatencyUpdated += HandleShardLatencyUpdated;
+
+        _interactionHandler.Log += HandleLogAsync;
+        _interactionHandler.Initialize(client);
 
         return client;
     }
@@ -125,28 +135,31 @@ public sealed class Worker : BackgroundService
         var client = new DiscordSocketClient(config);
 
         client.MessageReceived += HandleMessageAsync;
-        client.SlashCommandExecuted += HandleSlashCommandAsync;
+        client.InteractionCreated += HandleInteractionAsync;
 
         client.Log += HandleLogAsync;
         client.Ready += HandleSocketClientReadyAsync;
 
+        _interactionHandler.Log += HandleLogAsync;
+        _interactionHandler.Initialize(client);
+
         return client;
     }
 
-    private Task HandleSlashCommandAsync(SocketSlashCommand socketSlashCommand)
+    private Task HandleInteractionAsync(SocketInteraction socketInteraction)
     {
         Task.Run(async () =>
         {
             if (_throttle.CurrentCount == 0)
             {
-                _logger.LogDebug("Concurrency limit reached, waiting for available slot before handling slash command...");
+                _logger.LogDebug("Concurrency limit reached, waiting for available slot before handling interaction...");
             }
 
             await _throttle.WaitAsync();
 
             try
             {
-                await _siteManager.HandleCommand(socketSlashCommand);
+                await _interactionHandler.ExecuteAsync(socketInteraction, _services);
             }
             finally
             {
@@ -181,7 +194,9 @@ public sealed class Worker : BackgroundService
 
             try
             {
-                await _siteManager.HandleMessage(message);
+                using var scope = _scopeFactory.CreateScope();
+                var siteManager = scope.ServiceProvider.GetRequiredService<SiteManager>();
+                await siteManager.HandleMessage(message);
             }
             finally
             {
@@ -203,8 +218,9 @@ public sealed class Worker : BackgroundService
 
         if (client.ShardId == 0)
         {
-            await CreateSlashCommands(client);
-            _logger.LogDebug("Created or Updated Slash Commands");
+            await _interactionHandler.RegisterAsync();
+
+            _logger.LogDebug("Created or Updated Interaction Commands");
         }
 
         var status = _configuration.GetSection("Bot:DiscordStatus:Enabled").Get<bool?>() ?? false;
@@ -231,8 +247,9 @@ public sealed class Worker : BackgroundService
 
         if (client.ShardId == 0)
         {
-            await CreateSlashCommands(client);
-            _logger.LogDebug("Created or Updated Slash Commands");
+            await _interactionHandler.RegisterAsync();
+
+            _logger.LogDebug("Created or Updated Interaction Commands");
         }
 
         var status = _configuration.GetSection("Bot:DiscordStatus:Enabled").Get<bool?>() ?? false;
@@ -266,39 +283,6 @@ public sealed class Worker : BackgroundService
     private async Task HandleShardDisconnectedAsync(Exception exception, DiscordSocketClient client)
     {
         _logger.LogError(exception, "[{Source}] {Message}", "Shard #{client.ShardId}", "Disconnected");
-    }
-
-    private async Task CreateSlashCommands(DiscordSocketClient client)
-    {
-        var applicationCommandProperties = new List<ApplicationCommandProperties>();
-
-        try
-        {
-            // TODO: Split the Server install and User install into separate commands
-            // TODO: Server install should not be marked NSFW as we can determine the channel posted in ourselves.
-            var sauceCommand = new SlashCommandBuilder();
-            sauceCommand.WithName("sauce")
-                .WithIntegrationTypes(ApplicationIntegrationType.GuildInstall, ApplicationIntegrationType.UserInstall)
-                .WithContextTypes(InteractionContextType.Guild, InteractionContextType.BotDm, InteractionContextType.PrivateChannel)
-                .WithDescription("Create an embed from the provided URL")
-                .WithNsfw(_configuration.GetValue<bool?>("Bot:RestrictNSFW") ?? false);
-
-            var sauceOption = new SlashCommandOptionBuilder();
-            sauceOption.WithName("url")
-                .WithDescription("The URL to create the embed from")
-                .WithType(ApplicationCommandOptionType.String)
-                .WithRequired(true);
-
-            sauceCommand.AddOption(sauceOption);
-
-            applicationCommandProperties.Add(sauceCommand.Build());
-
-            await client.BulkOverwriteGlobalApplicationCommandsAsync([.. applicationCommandProperties]);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError("Failed to create global application commands with message: {Message}", ex.Message);
-        }
     }
 
     private Task HandleLogAsync(LogMessage message)

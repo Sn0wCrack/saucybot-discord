@@ -4,9 +4,9 @@
     "net10.0": {
       "AngleSharp": {
         "type": "Direct",
-        "requested": "[1.7.1, )",
-        "resolved": "1.7.1",
-        "contentHash": "QBblGpRB3SYD66Mls7fHyl1mWkP93n7ErWDWHc1vd9sPHhdlTkmUoY3CjgfjcWNxGF9m7xjNyztRfErXqoBKOA=="
+        "requested": "[1.7.3, )",
+        "resolved": "1.7.3",
+        "contentHash": "I8TpSvgOPAVQHjVvXaROZOkIGZdX0tn+e9CUix6mv5pMqfyKO+/zm/dofsXgsxVTJl/sSTnEMFwrdnqxTt2axQ=="
       },
       "Discord.Net": {
         "type": "Direct",
@@ -95,6 +95,18 @@
           "Microsoft.EntityFrameworkCore.Design": "10.0.11"
         }
       },
+      "Microsoft.Extensions.Caching.Hybrid": {
+        "type": "Direct",
+        "requested": "[10.9.0, )",
+        "resolved": "10.9.0",
+        "contentHash": "D0tHRbUCliInxTfPgN9K6RxrCVaWu9kyIT66vbIJ/YwA6BV2xa8vTqoE3JQXA2Rf2vRdgd29+HR6Ay6KmzDslw==",
+        "dependencies": {
+          "Microsoft.Extensions.Caching.Abstractions": "10.0.11",
+          "Microsoft.Extensions.Caching.Memory": "10.0.11",
+          "Microsoft.Extensions.Logging.Abstractions": "10.0.11",
+          "Microsoft.Extensions.Options": "10.0.11"
+        }
+      },
       "Microsoft.Extensions.Caching.Memory": {
         "type": "Direct",
         "requested": "[10.0.11, )",
@@ -166,23 +178,23 @@
       },
       "Microting.EntityFrameworkCore.MySql": {
         "type": "Direct",
-        "requested": "[10.0.10, )",
-        "resolved": "10.0.10",
-        "contentHash": "bhtn71uqov7sQ63kqSatxtE1Nmq75bHmoakr1g50/efbsyqBFDH4ADVfJLceAPQFObGkCs2CKq1yQ+Nd3cNZVA==",
+        "requested": "[10.0.11, )",
+        "resolved": "10.0.11",
+        "contentHash": "h8bAt0fSaASNkFKBLUToamz7ZfrXGqwoyp15NFblzrcC/wTJjIjkma593ArP40rm30wOMrywzToHah1oeh0GXg==",
         "dependencies": {
-          "Microsoft.EntityFrameworkCore.Relational": "[10.0.10, 10.0.999]",
-          "MySqlConnector": "2.6.1"
+          "Microsoft.EntityFrameworkCore.Relational": "[10.0.11, 10.0.999]",
+          "MySqlConnector": "2.6.2"
         }
       },
       "Microting.EntityFrameworkCore.MySql.Json.Microsoft": {
         "type": "Direct",
-        "requested": "[10.0.10, )",
-        "resolved": "10.0.10",
-        "contentHash": "pEtue63eexKTsvuWW+q1ErWS+OUUFTcTwO7FeAt7w1bjA5xs++3ON6xsXZn/bjAXtma+9lbqFlfzneta1XDyfg==",
+        "requested": "[10.0.11, )",
+        "resolved": "10.0.11",
+        "contentHash": "l2ksEvfNkJ4g5yaszRu9RVI5RFQdt4WqSzdkHyJJfeMZ6vlW5Zpo8mt+VVFP/zYDGNzvHe1L3g3ttcOYiMiJTg==",
         "dependencies": {
-          "Microsoft.EntityFrameworkCore.Relational": "[10.0.10, 10.0.999]",
-          "Microting.EntityFrameworkCore.MySql": "10.0.10",
-          "MySqlConnector": "2.6.1"
+          "Microsoft.EntityFrameworkCore.Relational": "[10.0.11, 10.0.999]",
+          "Microting.EntityFrameworkCore.MySql": "10.0.11",
+          "MySqlConnector": "2.6.2"
         }
       },
       "Polly.Core": {
@@ -242,12 +254,12 @@
       },
       "StackExchange.Redis": {
         "type": "Direct",
-        "requested": "[3.1.13, )",
-        "resolved": "3.1.13",
-        "contentHash": "OvhFdV2ucee2hnN2v2EOcOTMvIzGsq1PX4kAbIYC8cax+MyabSa7Eu3hWY6D//SbxzZQ/eYFvD8Tvg+pK+969g==",
+        "requested": "[3.1.31, )",
+        "resolved": "3.1.31",
+        "contentHash": "QillloeZxgw9+IWmnowTrjrn+JV7JIMVzr1JiUpCa7pJQI48rtcqG9yy6u5UBRiTuCiKU5909aRu67Ch6gWVMg==",
         "dependencies": {
           "Microsoft.Extensions.Logging.Abstractions": "10.0.5",
-          "RESPite": "3.1.13",
+          "RESPite": "3.1.31",
           "System.IO.Hashing": "10.0.5"
         }
       },
@@ -712,8 +724,8 @@
       },
       "MySqlConnector": {
         "type": "Transitive",
-        "resolved": "2.6.1",
-        "contentHash": "MzNSfnHWBc0Mo3zVbYxG+556zuex9obs8NYtwcPCwFahel40e49stH+osjX4k/doEHp4LT/zTtGdax4nlGWhcw==",
+        "resolved": "2.6.2",
+        "contentHash": "dlTc/tsBa42szdvpj4nrHvQVUb0gsMwR9HT6J0Zz2OSqfP0CdYlGw+qQPqCpbnO97idfvclSjKYtM6y5QaBQaQ==",
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.2",
           "Microsoft.Extensions.Logging.Abstractions": "8.0.2"
@@ -726,8 +738,8 @@
       },
       "RESPite": {
         "type": "Transitive",
-        "resolved": "3.1.13",
-        "contentHash": "wqViG+Dl4Ln/X33IyfmciyGirm1ET+M7kjwbb+oJAbDXLP2u2hX1eOnaEgyIAerJNSP98BytyddcW3ZQH55wgw=="
+        "resolved": "3.1.31",
+        "contentHash": "u+MFK6FzGWngKaY3wJ/V9vQSVe/NSqpk0IYYw6ACwmlPq5eTnsyZGlzEa3YMifJGVs3omrl5MkgigB1jZYNnGg=="
       },
       "Serilog.Extensions.Logging": {
         "type": "Transitive",

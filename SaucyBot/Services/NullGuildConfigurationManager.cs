@@ -14,4 +14,9 @@ public sealed class NullGuildConfigurationManager : IGuildConfigurationManager
     {
         return Task.FromResult<GuildConfiguration?>(null);
     }
+
+    public Task<bool> UpdateGuildConfiguration(GuildConfiguration guildConfiguration)
+    {
+        return Task.FromResult(true);
+    }
 }

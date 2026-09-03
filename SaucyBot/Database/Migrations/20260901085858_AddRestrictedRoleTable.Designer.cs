@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SaucyBot.Database;
 
@@ -11,9 +12,11 @@ using SaucyBot.Database;
 namespace SaucyBot.Database.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20260901085858_AddRestrictedRoleTable")]
+    partial class AddRestrictedRoleTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -74,7 +77,7 @@ namespace SaucyBot.Database.Migrations
                 });
 
             modelBuilder.Entity("SaucyBot.Database.Models.GuildConfigurationRestrictedRole", b =>
-            {
+                {
                     b.Property<Guid>("Id")
                         .ValueGeneratedNever()
                         .HasColumnType("uuid")
