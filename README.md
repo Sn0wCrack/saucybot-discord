@@ -48,7 +48,7 @@ See [docs/setup](docs/setup) for installation and configuration guides covering 
 Moderation
 ----------
 
-See [docs/moderation.md] for information on available moderation tools.
+See [docs/moderation](docs/moderation.md) for information on available moderation tools.
 
 FAQ
 ---
