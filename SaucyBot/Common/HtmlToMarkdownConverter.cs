@@ -157,7 +157,7 @@ public static class HtmlToMarkdownConverter
                         if (!string.IsNullOrEmpty(linkUrl))
                         {
                             output.Append('[');
-                            output.Append(linkText);
+                            output.Append(Helper.RemoveEmojis(linkText));
                             output.Append("](");
                             output.Append(linkUrl);
                             output.Append(')');

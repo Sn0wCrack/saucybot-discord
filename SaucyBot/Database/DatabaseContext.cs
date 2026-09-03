@@ -1,3 +1,4 @@
+using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using SaucyBot.Database.Models;
 using SaucyBot.Library;
@@ -9,6 +10,8 @@ public sealed class DatabaseContext : DbContext
     private readonly string _connectionString;
 
     public DbSet<GuildConfiguration> GuildConfigurations => Set<GuildConfiguration>();
+
+    public DbSet<GuildConfigurationRestrictedRole> GuildConfigurationRestrictedRoles => Set<GuildConfigurationRestrictedRole>();
 
     public DatabaseContext(IConfiguration configuration)
     {
@@ -34,9 +37,9 @@ public sealed class DatabaseContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder
-            .Entity<GuildConfiguration>()
-            .Property(gc => gc.MaximumEmbeds)
-            .HasDefaultValue(Constants.DefaultMaximumEmbeds);
+        base.OnModelCreating(modelBuilder);
+
+        // Automatically loads all classes implementing IEntityTypeConfiguration in this assembly
+        modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
     }
 }

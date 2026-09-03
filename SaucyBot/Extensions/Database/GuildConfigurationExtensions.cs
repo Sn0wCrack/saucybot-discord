@@ -11,7 +11,9 @@ public static class GuildConfigurationExtensions
         ulong guildId
     )
     {
-        var config = await context.Set<GuildConfiguration>().FirstOrDefaultAsync(gc => gc.GuildId == guildId);
+        var config = await context.Set<GuildConfiguration>()
+            .Include(gc => gc.RestrictedRoles)
+            .FirstOrDefaultAsync(gc => gc.GuildId == guildId);
 
         if (config is not null)
         {

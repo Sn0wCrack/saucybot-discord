@@ -3,18 +3,20 @@ using SaucyBot.Database;
 
 namespace SaucyBot.Services;
 
-public sealed class DatabaseManager : IDatabaseManager
+public sealed class DatabaseMigrator : IDatabaseMigrator
 {
-    private readonly IServiceProvider _provider;
+    private readonly IServiceScopeFactory _scopeFactory;
 
-    public DatabaseManager(IServiceProvider provider)
+    public DatabaseMigrator(IServiceScopeFactory scopeFactory)
     {
-        _provider = provider;
+        _scopeFactory = scopeFactory;
     }
 
     public async Task<int> EnsureAllMigrationsHaveRun()
     {
-        await using var context = Context();
+        using var scope = _scopeFactory.CreateScope();
+
+        var context = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
 
         var pendingMigrations = await context.Database.GetPendingMigrationsAsync();
 
@@ -27,11 +29,4 @@ public sealed class DatabaseManager : IDatabaseManager
 
         return migrations.Length;
     }
-
-    private DatabaseContext CreateDatabaseContext()
-    {
-        return _provider.GetRequiredService<DatabaseContext>();
-    }
-
-    public DatabaseContext Context() => CreateDatabaseContext();
 }

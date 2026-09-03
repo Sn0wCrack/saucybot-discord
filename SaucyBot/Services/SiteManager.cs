@@ -1,71 +1,34 @@
-using System.Reflection;
 using System.Text.RegularExpressions;
 using Discord;
 using Discord.WebSocket;
 using SaucyBot.Database.Models;
 using SaucyBot.Extensions;
 using SaucyBot.Extensions.Discord;
-using SaucyBot.Library;
 using SaucyBot.Site;
 
 namespace SaucyBot.Services;
 
-public sealed partial class SiteManager
+public sealed class SiteManager
 {
     private readonly ILogger<SiteManager> _logger;
     private readonly IConfiguration _configuration;
     private readonly MessageManager _messageManager;
     private readonly IGuildConfigurationManager _guildConfigurationManager;
-
-    private readonly Dictionary<string, IBaseSite> _sites = new();
-
-    [GeneratedRegex(@"(<|\|\|)(?!@|#|:|a:).*(>|\|\|)", RegexOptions.IgnoreCase)]
-    private static partial Regex IgnoreContentRegex();
+    private readonly SiteRegistry _siteRegistry;
 
     public SiteManager(
         ILogger<SiteManager> logger,
         IConfiguration configuration,
-        IServiceProvider serviceProvider,
         MessageManager messageManager,
-        IGuildConfigurationManager guildConfigurationManager
+        IGuildConfigurationManager guildConfigurationManager,
+        SiteRegistry siteRegistry
     )
     {
         _logger = logger;
         _configuration = configuration;
         _messageManager = messageManager;
         _guildConfigurationManager = guildConfigurationManager;
-
-        var disabled = _configuration.GetSection("Bot:DisabledSites").Get<string[]>() ?? [];
-
-        var siteInterfaces = Assembly
-            .GetExecutingAssembly()
-            .GetTypes()
-            .Where(t => t.Namespace != null
-                        && t.Namespace.StartsWith("SaucyBot.Site.")
-                        && t.IsInterface
-                        && typeof(IBaseSite).IsAssignableFrom(t))
-            .ToList();
-
-        foreach (var siteInterface in siteInterfaces)
-        {
-            _logger.LogDebug("Attempting to start site module: {Site}", siteInterface.ToString());
-
-            if (serviceProvider.GetService(siteInterface) is not IBaseSite instance)
-            {
-                _logger.LogDebug("Failed to start site module: {Site}", siteInterface.ToString());
-                continue;
-            }
-
-            if (disabled.Contains(instance.Identifier))
-            {
-                _logger.LogDebug("Did not start site module: {Site}, as it is disabled in configuration", siteInterface.ToString());
-                continue;
-            }
-
-            _logger.LogDebug("Successfully started site module: {Site}", siteInterface.ToString());
-
-            _sites.Add(instance.Identifier, instance);
-        }
+        _siteRegistry = siteRegistry;
     }
 
     public async Task<List<SiteManagerProcessResult>> Match(SocketUserMessage message, GuildConfiguration? guildConfiguration = null)
@@ -83,7 +46,7 @@ public sealed partial class SiteManager
 
         var maximumEmbeds = guildConfiguration?.MaximumEmbeds ?? _configuration.GetSection("Bot:MaximumEmbeds").Get<uint>();
 
-        foreach (var (identifier, site) in _sites)
+        foreach (var (identifier, site) in _siteRegistry.Sites)
         {
             var matches = site.Pattern.Matches(content);
 
@@ -118,7 +81,7 @@ public sealed partial class SiteManager
 
         var maximumEmbeds = guildConfiguration?.MaximumEmbeds ?? _configuration.GetSection("Bot:MaximumEmbeds").Get<uint>();
 
-        foreach (var (identifier, site) in _sites)
+        foreach (var (identifier, site) in _siteRegistry.Sites)
         {
             var matches = site.Pattern.Matches(content);
 
@@ -140,13 +103,16 @@ public sealed partial class SiteManager
 
     public async Task HandleMessage(SocketUserMessage message)
     {
-        if (!ShouldProcessMessage(message))
+        var guildConfiguration = await _guildConfigurationManager.GetByChannel(message.Channel);
+
+        var validation = MessageValidator.ValidateMessage(message, guildConfiguration);
+
+        if (!validation.Passed)
         {
-            _logger.LogDebug("Message was ignored with content: \"{Message}\"", message.AllMessageContent());
+            _logger.LogDebug("Message was ignored: {Reason} (content: \"{Message}\")",
+                validation.Reason, message.AllMessageContent());
             return;
         }
-
-        var guildConfiguration = await _guildConfigurationManager.GetByChannel(message.Channel);
 
         var results = await Match(message, guildConfiguration);
 
@@ -155,9 +121,7 @@ public sealed partial class SiteManager
             return;
         }
 
-        // Show a "typing..." indicator in the channel for as long as we are
-        // processing matches. It is broadcast until the returned object is
-        // disposed of, and Discord clears it once we send our reply.
+        // Show a "typing..." indicator in the channel for as long as we are processing matches. It is broadcast until the returned object is disposed of, and Discord clears it once we send our reply.
         using (message.Channel.EnterTypingState())
         {
             foreach (var (site, match) in results)
@@ -166,7 +130,7 @@ public sealed partial class SiteManager
 
                 try
                 {
-                    var response = await _sites[site].Process(new ProcessRequest(match, guildConfiguration, message));
+                    var response = await _siteRegistry[site].Process(new ProcessRequest(match, guildConfiguration, message));
 
                     if (response is null)
                     {
@@ -176,7 +140,7 @@ public sealed partial class SiteManager
 
                     await _messageManager.Send(message, response);
 
-                    if (HasPermissionToHideEmbed(message))
+                    if (MessageValidator.HasPermissionToHideEmbed(message))
                     {
                         await message.ModifyAsync(x => x.Flags = MessageFlags.SuppressEmbeds);
                     }
@@ -193,14 +157,17 @@ public sealed partial class SiteManager
     {
         await command.DeferAsync();
 
-        if (!ShouldProcessCommand(command))
+        var guildConfiguration = await _guildConfigurationManager.GetByChannel(command.Channel);
+
+        var validation = MessageValidator.ValidateCommand(command, guildConfiguration);
+
+        if (!validation.Passed)
         {
-            _logger.LogDebug("Command was ignored with content: \"{Message}\"", command.Data.ToString());
+            _logger.LogDebug("Command was ignored: {Reason} (content: \"{Message}\")",
+                validation.Reason, command.Data.ToString());
             await command.FollowupAsync("Failed to process provided URL or do not have correct permissions in Channel", ephemeral: true);
             return;
         }
-
-        var guildConfiguration = await _guildConfigurationManager.GetByChannel(command.Channel);
 
         var results = await Match(command, guildConfiguration);
 
@@ -216,7 +183,7 @@ public sealed partial class SiteManager
 
             try
             {
-                var response = await _sites[site].Process(new ProcessRequest(match, guildConfiguration, Command: command));
+                var response = await _siteRegistry[site].Process(new ProcessRequest(match, guildConfiguration, Command: command));
 
                 if (response is null)
                 {
@@ -232,98 +199,6 @@ public sealed partial class SiteManager
                 _logger.LogError(ex, "Exception occured processing or sending messages");
                 await command.FollowupAsync("Failed to create embed information for provided URL", ephemeral: true);
             }
-        }
-    }
-
-    private static bool ShouldProcessMessage(SocketUserMessage message)
-    {
-        if (HasIgnoreMessageTagsInContent(message))
-        {
-            return false;
-        }
-
-        if (!HasPermissionsToCreateEmbed(message))
-        {
-            return false;
-        }
-
-        return true;
-    }
-
-    private static bool ShouldProcessCommand(SocketSlashCommand command)
-    {
-        if (!HasPermissionsToCreateEmbed(command))
-        {
-            return false;
-        }
-
-        return true;
-    }
-
-    private static bool HasIgnoreMessageTagsInContent(SocketUserMessage message)
-    {
-        return IgnoreContentRegex().IsMatch(message.AllMessageContent());
-    }
-
-    private static bool HasPermissionsToCreateEmbed(SocketMessage message)
-    {
-        if (message.Channel is SocketGuildChannel guildChannel)
-        {
-            var permissions = guildChannel.Guild.CurrentUser.GetPermissions(guildChannel);
-
-            return permissions.Has(Constants.RequiredChannelPermissions);
-        }
-
-        if (message.Channel is SocketThreadChannel threadChannel)
-        {
-            var permissions = threadChannel.Guild.CurrentUser.GetPermissions(threadChannel);
-
-            return permissions.Has(Constants.RequiredThreadPermissions);
-        }
-
-        return false;
-    }
-
-    private static bool HasPermissionToHideEmbed(SocketMessage message)
-    {
-        if (message.Channel is SocketGuildChannel guildChannel)
-        {
-            var permissions = guildChannel.Guild.CurrentUser.GetPermissions(guildChannel);
-
-            return permissions.Has(ChannelPermission.ManageMessages);
-        }
-
-        if (message.Channel is SocketThreadChannel threadChannel)
-        {
-            var permissions = threadChannel.Guild.CurrentUser.GetPermissions(threadChannel);
-
-            return permissions.Has(ChannelPermission.ManageMessages);
-        }
-
-        return false;
-    }
-
-    private static bool HasPermissionsToCreateEmbed(SocketInteraction message)
-    {
-        switch (message.Channel)
-        {
-            // User Commands _should_ always have the correct permissions in these channels to do what we need to do
-            case SocketDMChannel or SocketGroupChannel:
-                return true;
-            case SocketThreadChannel threadChannel:
-                {
-                    var permissions = threadChannel.Guild.CurrentUser.GetPermissions(threadChannel);
-
-                    return permissions.Has(Constants.RequiredThreadPermissions);
-                }
-            case SocketGuildChannel guildChannel:
-                {
-                    var permissions = guildChannel.Guild.CurrentUser.GetPermissions(guildChannel);
-
-                    return permissions.Has(Constants.RequiredChannelPermissions);
-                }
-            default:
-                return false;
         }
     }
 }
