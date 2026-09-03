@@ -45,6 +45,11 @@ Setup
 
 See [docs/setup](docs/setup) for installation and configuration guides covering Docker (production and development) and standalone setups.
 
+Moderation
+----------
+
+See [docs/moderation.md] for information on available moderation tools.
+
 FAQ
 ---
 
