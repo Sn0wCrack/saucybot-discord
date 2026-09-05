@@ -49,6 +49,8 @@ services:
 
   queue:
     image: docker.io/valkey/valkey:9-alpine@sha256:a174b894902bd3367e330d47cc2054367dc4917701776aaf336f41d83b65ec7a
+    volumes:
+        - queue:/data
     restart: unless-stopped
     healthcheck:
       test: '[ $(valkey-cli -h 127.0.0.1 ping) = "PONG" ]'
@@ -59,3 +61,4 @@ services:
 volumes:
   database:
   cache:
+  queue:
