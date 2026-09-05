@@ -7,6 +7,8 @@ public interface IInteractionWorkItem
 {
     ulong Id { get; }
     SocketInteraction? SocketInteraction { get; }
+    bool HasResponded { get; }
+    Task RespondAsync(string content, bool ephemeral, CancellationToken cancellationToken = default);
     Task FollowupAsync(string content, bool ephemeral, CancellationToken cancellationToken = default);
 }
 
@@ -14,9 +16,19 @@ public sealed class SocketInteractionWorkItem(SocketInteraction interaction) : I
 {
     public ulong Id => interaction.Id;
     public SocketInteraction SocketInteraction => interaction;
+    public bool HasResponded => interaction.HasResponded;
+
+    public Task RespondAsync(string content, bool ephemeral, CancellationToken cancellationToken = default) =>
+        RespondAsyncCore(content, ephemeral, cancellationToken);
 
     public Task FollowupAsync(string content, bool ephemeral, CancellationToken cancellationToken = default) =>
         FollowupAsyncCore(content, ephemeral, cancellationToken);
+
+    private async Task RespondAsyncCore(string content, bool ephemeral, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        await interaction.RespondAsync(content, ephemeral: ephemeral);
+    }
 
     private async Task FollowupAsyncCore(string content, bool ephemeral, CancellationToken cancellationToken)
     {

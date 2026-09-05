@@ -249,7 +249,13 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
 
         try
         {
-            await interaction.FollowupAsync("Failed to process this interaction.", ephemeral: true, cancellationToken);
+            if (interaction.HasResponded)
+            {
+                await interaction.FollowupAsync("Failed to process this interaction.", ephemeral: true, cancellationToken);
+                return;
+            }
+
+            await interaction.RespondAsync("Failed to process this interaction.", ephemeral: true, cancellationToken);
         }
         catch (Exception followupException)
         {

@@ -294,23 +294,16 @@ public sealed class WorkerTest
     }
 
     [Fact]
-    public async Task WorkerInteractionAdmissionUsesShutdownCancellationAfterDefer()
+    public async Task WorkerInteractionAdmissionUsesShutdownCancellationWithoutPredeferring()
     {
         var queue = new FakeWorkQueue();
         await using var queueService = CreateQueueService(queue);
-        var deferred = false;
         var worker = CreateWorker(queue, queueService);
         queueService.StopIntake();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => worker.AdmitInteractionAsync(
             new RecordingInteraction(),
-            () =>
-            {
-                deferred = true;
-                return Task.CompletedTask;
-            }));
-
-        Assert.True(deferred);
+            defer: null));
     }
 
     [Fact]
@@ -335,11 +328,11 @@ public sealed class WorkerTest
             channel);
 
         await service.StartAsync(TestContext.Current.CancellationToken);
-        await worker.AdmitInteractionAsync(interaction, () => Task.CompletedTask);
+        await worker.AdmitInteractionAsync(interaction);
         await interaction.FollowupSent.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         await service.StopAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal("Failed to process this interaction.", interaction.FollowupContent);
+        Assert.Equal("Failed to process this interaction.", interaction.ResponseContent);
     }
 
     [Fact]
@@ -466,11 +459,20 @@ public sealed class WorkerTest
         public ulong Id => 42;
         public Discord.WebSocket.SocketInteraction? SocketInteraction => null;
         public TaskCompletionSource FollowupSent { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        public string? FollowupContent { get; private set; }
+        public bool HasResponded { get; private set; }
+        public string? ResponseContent { get; private set; }
+
+        public Task RespondAsync(string content, bool ephemeral, CancellationToken cancellationToken = default)
+        {
+            HasResponded = true;
+            ResponseContent = content;
+            FollowupSent.TrySetResult();
+            return Task.CompletedTask;
+        }
 
         public Task FollowupAsync(string content, bool ephemeral, CancellationToken cancellationToken = default)
         {
-            FollowupContent = content;
+            ResponseContent = content;
             FollowupSent.TrySetResult();
             return Task.CompletedTask;
         }

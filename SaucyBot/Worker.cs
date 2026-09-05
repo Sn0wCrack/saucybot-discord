@@ -158,7 +158,7 @@ public sealed class Worker : BackgroundService
     }
 
     internal Task HandleInteractionAsync(SocketInteraction socketInteraction) =>
-        AdmitInteractionAsync(new SocketInteractionWorkItem(socketInteraction), () => socketInteraction.DeferAsync());
+        AdmitInteractionAsync(new SocketInteractionWorkItem(socketInteraction));
 
     internal async Task HandleMessageAsync(SocketMessage socketMessage)
     {
@@ -188,9 +188,13 @@ public sealed class Worker : BackgroundService
         await _messageWorkQueue.EnqueueAsync(item, _workQueueHostedService.AdmissionToken);
     }
 
-    internal async Task AdmitInteractionAsync(IInteractionWorkItem item, Func<Task> defer)
+    internal async Task AdmitInteractionAsync(IInteractionWorkItem item, Func<Task>? defer = null)
     {
-        await defer();
+        if (defer is not null)
+        {
+            await defer();
+        }
+
         try
         {
             await _interactionWorkChannel.WriteAsync(item, _workQueueHostedService.AdmissionToken);
