@@ -10,7 +10,8 @@ public interface IValkeyStreamClient
 {
     Task EnsureGroupAsync(CancellationToken cancellationToken);
     Task<string> AddAsync(string payload, CancellationToken cancellationToken);
-    Task<ValkeyStreamEntry?> ReadAsync(string consumer, CancellationToken cancellationToken);
+    Task<ValkeyStreamEntry?> ClaimPendingAsync(string consumer, CancellationToken cancellationToken);
+    Task<ValkeyStreamEntry?> ReadNewAsync(string consumer, CancellationToken cancellationToken);
     Task AcknowledgeAsync(string entryId, CancellationToken cancellationToken);
     Task ClearPendingAsync(CancellationToken cancellationToken);
 }
@@ -52,7 +53,14 @@ public sealed class ValkeyWorkQueue : IMessageWorkQueue
 
         while (!cancellationToken.IsCancellationRequested)
         {
-            var entry = await _client.ReadAsync(consumer, cancellationToken);
+            var pending = await _client.ClaimPendingAsync(consumer, cancellationToken);
+            if (pending is not null)
+            {
+                yield return new QueuedMessageWorkItem(pending.EntryId, MessageWorkItem.Deserialize(pending.Payload));
+                continue;
+            }
+
+            var entry = await _client.ReadNewAsync(consumer, cancellationToken);
             if (entry is not null)
             {
                 yield return new QueuedMessageWorkItem(entry.EntryId, MessageWorkItem.Deserialize(entry.Payload));
@@ -82,7 +90,8 @@ public sealed class StackExchangeValkeyStreamClient : IValkeyStreamClient
     {
         try
         {
-            await _database.StreamCreateConsumerGroupAsync(_options.StreamName, _options.ConsumerGroup, "0-0", createStream: true);
+            await _database.StreamCreateConsumerGroupAsync(_options.StreamName, _options.ConsumerGroup, "0-0", createStream: true)
+                .WaitAsync(cancellationToken);
         }
         catch (RedisServerException exception) when (exception.Message.Contains("BUSYGROUP", StringComparison.OrdinalIgnoreCase))
         {
@@ -93,7 +102,8 @@ public sealed class StackExchangeValkeyStreamClient : IValkeyStreamClient
     {
         try
         {
-            var id = await _database.StreamAddAsync(_options.StreamName, ValkeyWorkQueue.PayloadField, payload);
+            var id = await _database.StreamAddAsync(_options.StreamName, ValkeyWorkQueue.PayloadField, payload)
+                .WaitAsync(cancellationToken);
             return id.ToString();
         }
         catch (RedisServerException exception) when (exception.Message.Contains("MISCONF", StringComparison.OrdinalIgnoreCase)
@@ -107,22 +117,43 @@ public sealed class StackExchangeValkeyStreamClient : IValkeyStreamClient
         }
     }
 
-    public async Task<ValkeyStreamEntry?> ReadAsync(string consumer, CancellationToken cancellationToken)
+    public async Task<ValkeyStreamEntry?> ClaimPendingAsync(string consumer, CancellationToken cancellationToken)
     {
-        var entries = await _database.StreamReadGroupAsync(_options.StreamName, _options.ConsumerGroup, consumer, ">", count: 1);
+        var claimed = await _database.StreamAutoClaimAsync(
+                _options.StreamName,
+                _options.ConsumerGroup,
+                consumer,
+                (long)_options.PendingClaimIdleTime.TotalMilliseconds,
+                "0-0",
+                count: 1)
+            .WaitAsync(cancellationToken);
+
+        return claimed.ClaimedEntries.Length == 0 ? null : ToEntry(claimed.ClaimedEntries[0]);
+    }
+
+    public async Task<ValkeyStreamEntry?> ReadNewAsync(string consumer, CancellationToken cancellationToken)
+    {
+        var entries = await _database.StreamReadGroupAsync(_options.StreamName, _options.ConsumerGroup, consumer, ">", count: 1)
+            .WaitAsync(cancellationToken);
         if (entries.Length == 0)
         {
             await Task.Delay(_options.RetryDelay, cancellationToken);
             return null;
         }
 
-        var payload = entries[0].Values.FirstOrDefault(x => x.Name == ValkeyWorkQueue.PayloadField).Value;
-        return new ValkeyStreamEntry(entries[0].Id.ToString(), payload.ToString());
+        return ToEntry(entries[0]);
     }
 
     public Task AcknowledgeAsync(string entryId, CancellationToken cancellationToken) =>
-        _database.StreamAcknowledgeAsync(_options.StreamName, _options.ConsumerGroup, entryId);
+        _database.StreamAcknowledgeAsync(_options.StreamName, _options.ConsumerGroup, entryId)
+            .WaitAsync(cancellationToken);
 
     public Task ClearPendingAsync(CancellationToken cancellationToken) =>
-        _database.KeyDeleteAsync(_options.StreamName);
+        _database.KeyDeleteAsync(_options.StreamName).WaitAsync(cancellationToken);
+
+    private static ValkeyStreamEntry ToEntry(StreamEntry entry)
+    {
+        var payload = entry.Values.FirstOrDefault(x => x.Name == ValkeyWorkQueue.PayloadField).Value;
+        return new ValkeyStreamEntry(entry.Id.ToString(), payload.ToString());
+    }
 }
