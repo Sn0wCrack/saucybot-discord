@@ -12,6 +12,8 @@ services:
     depends_on:
       cache:
         condition: service_healthy
+      queue:
+        condition: service_healthy
       database:
         condition: service_healthy
     restart: unless-stopped
@@ -38,6 +40,15 @@ services:
       - '6379:6379'
     volumes:
       - cache:/data
+    restart: unless-stopped
+    healthcheck:
+      test: '[ $(valkey-cli -h 127.0.0.1 ping) = "PONG" ]'
+      timeout: 30s
+      retries: 10
+      start_period: 10s
+
+  queue:
+    image: docker.io/valkey/valkey:9-alpine@sha256:a174b894902bd3367e330d47cc2054367dc4917701776aaf336f41d83b65ec7a
     restart: unless-stopped
     healthcheck:
       test: '[ $(valkey-cli -h 127.0.0.1 ping) = "PONG" ]'
