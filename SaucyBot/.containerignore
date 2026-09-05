@@ -33,6 +33,7 @@
 **/values.dev.yaml
 **/appsettings.json
 **/appsettings*.json
+**/otel-collector-config.yaml
 LICENSE
 README.md
 renovate.json

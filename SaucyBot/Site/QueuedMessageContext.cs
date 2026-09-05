@@ -9,7 +9,6 @@ public sealed class QueuedMessageContext : IMessageContext
 {
     private readonly MessageWorkItem _item;
     private readonly IMessageResolver _resolver;
-    private IReadOnlyList<Embed> _embeds;
     private IUserMessage? _resolvedMessage;
     private bool _attemptedResolution;
 
@@ -17,7 +16,7 @@ public sealed class QueuedMessageContext : IMessageContext
     {
         _item = item;
         _resolver = resolver;
-        _embeds = item.Embeds.Select(embed => new EmbedBuilder
+        CurrentEmbeds = item.Embeds.Select(embed => new EmbedBuilder
         {
             Title = embed.Title,
             Description = embed.Description,
@@ -49,24 +48,24 @@ public sealed class QueuedMessageContext : IMessageContext
     public bool CanCreateEmbed => _item.CanCreateEmbed;
     public bool CanManageMessages => _item.CanManageMessages;
     public bool IsNsfw => _resolver.IsNsfw(ChannelId);
-    public IReadOnlyList<Embed> CurrentEmbeds => _embeds;
+    public IReadOnlyList<Embed> CurrentEmbeds { get; private set; }
 
     public async Task<IReadOnlyList<Embed>> GetLatestEmbedsAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        if (_embeds.Count != 0)
+        if (CurrentEmbeds.Count != 0)
         {
-            return _embeds;
+            return CurrentEmbeds;
         }
 
         var message = await ResolveMessageAsync(cancellationToken);
         if (message is not null)
         {
-            _embeds = message.Embeds.OfType<Embed>().ToArray();
+            CurrentEmbeds = message.Embeds.OfType<Embed>().ToArray();
         }
 
-        return _embeds;
+        return CurrentEmbeds;
     }
 
     public async Task<IUserMessage?> ResolveMessageAsync(CancellationToken cancellationToken)

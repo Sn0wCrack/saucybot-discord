@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using SaucyBot.Diagnostics;
 using StackExchange.Redis;
 
@@ -34,7 +35,7 @@ public sealed class RedisWorkQueue : IMessageWorkQueue
         _client = client;
         _options = options;
         _metrics = metrics;
-        _logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<RedisWorkQueue>.Instance;
+        _logger = logger ?? NullLogger<RedisWorkQueue>.Instance;
     }
 
     public async Task EnqueueAsync(MessageWorkItem item, CancellationToken cancellationToken)

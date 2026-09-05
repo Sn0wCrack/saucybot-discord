@@ -128,9 +128,7 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
                 }
 
                 _metrics.ActiveWorkers.Add(1);
-                using var activity = QueueTelemetry.ActivitySource.StartActivity(
-                    "saucybot.process.message",
-                    ActivityKind.Consumer);
+                using var activity = QueueTelemetry.ActivitySource.StartActivity(ActivityKind.Consumer);
                 activity?.SetTag("saucybot.work.type", "message");
                 activity?.SetTag("saucybot.queue.consumer", consumer);
                 activity?.SetTag("saucybot.queue.entry_id", item.EntryId);
@@ -177,9 +175,7 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
                 _metrics.Dequeued.Add(1);
                 _metrics.QueueDepth.Add(-1);
                 _metrics.ActiveWorkers.Add(1);
-                using var activity = QueueTelemetry.ActivitySource.StartActivity(
-                    "saucybot.process.interaction",
-                    ActivityKind.Consumer);
+                using var activity = QueueTelemetry.ActivitySource.StartActivity(ActivityKind.Consumer);
                 activity?.SetTag("saucybot.work.type", "interaction");
                 activity?.SetTag("saucybot.interaction.id", interaction.Id);
                 try

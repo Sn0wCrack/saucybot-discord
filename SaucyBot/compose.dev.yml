@@ -7,12 +7,6 @@ services:
         CONFIGURATION: '${CONFIGURATION}'
     env_file:
       - .env
-    environment:
-      OpenTelemetry__Enabled: 'true'
-      OpenTelemetry__OtlpEndpoint: 'http://otel-collector:4317'
-      OpenTelemetry__OtlpProtocol: 'Grpc'
-      OpenTelemetry__Tracing__Enabled: 'true'
-      OpenTelemetry__Tracing__SamplingRatio: '1'
     volumes:
       - ./appsettings.Development.json:/app/appsettings.Development.json
     depends_on:
@@ -44,6 +38,7 @@ services:
 
   cache:
     image: docker.io/valkey/valkey:9-alpine@sha256:a174b894902bd3367e330d47cc2054367dc4917701776aaf336f41d83b65ec7a
+    command: [ 'valkey-server', '--bind', '0.0.0.0' ]
     ports:
       - '6379:6379'
     volumes:
@@ -57,6 +52,9 @@ services:
 
   queue:
     image: docker.io/valkey/valkey:9-alpine@sha256:a174b894902bd3367e330d47cc2054367dc4917701776aaf336f41d83b65ec7a
+    command: ['valkey-server', '--bind', '0.0.0.0']
+    ports:
+        - '6380:6379'
     volumes:
         - queue:/data
     restart: unless-stopped
@@ -67,14 +65,12 @@ services:
       start_period: 10s
 
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:0.160.0
+    image: docker.io/otel/opentelemetry-collector-contrib:0.160.0@sha256:799dc6cf12c96192af37b5bdba804da8c10b3bc563b43cb90c3f3c58d9572ad6
     command: ['--config=/etc/otelcol-contrib/config.yaml']
     volumes:
       - ./otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml:ro
     ports:
-      - '4317:4317'
-      - '4318:4318'
-      - '13133:13133'
+      - '8888:8888'
     restart: unless-stopped
 
 volumes:

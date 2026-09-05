@@ -1,3 +1,5 @@
+# Local Development OpenTelemetry Collector Configuration
+
 extensions:
   health_check:
     endpoint: 0.0.0.0:13133
@@ -17,6 +19,9 @@ exporters:
 service:
   extensions:
     - health_check
+  telemetry:
+    logs:
+      level: "debug"
   pipelines:
     metrics:
       receivers:
