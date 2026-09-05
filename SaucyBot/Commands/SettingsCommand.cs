@@ -8,7 +8,7 @@ using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
 
-public class SettingsModule : InteractionModuleBase<SocketInteractionContext<SocketInteraction>>, IConditionallyRegisteredModule
+public class SettingsModule : InteractionModuleBase<SocketInteractionContext<SocketInteraction>>
 {
     private readonly IGuildConfigurationManager _configurationManager;
 
@@ -16,9 +16,6 @@ public class SettingsModule : InteractionModuleBase<SocketInteractionContext<Soc
     {
         _configurationManager = configurationManager;
     }
-
-    public bool ShouldRegister(IServiceProvider services) =>
-        !(services.GetRequiredService<IConfiguration>().GetValue<bool?>("Database:Disabled") ?? false);
 
     [SlashCommand("settings", "Open the server configuration modal.")]
     [IntegrationType(ApplicationIntegrationType.GuildInstall)]
@@ -118,4 +115,3 @@ public class SettingsModal : IModal
             .ToArray();
     }
 }
-

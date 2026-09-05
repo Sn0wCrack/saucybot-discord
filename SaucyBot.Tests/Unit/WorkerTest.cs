@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using NSubstitute;
 using SaucyBot;
 using SaucyBot.Diagnostics;
 using SaucyBot.Queue;
@@ -350,7 +351,7 @@ public sealed class WorkerTest
         Func<Discord.WebSocket.SocketInteraction, Task>? interactionDeferrer = null) => new(
         Microsoft.Extensions.Logging.Abstractions.NullLogger<Worker>.Instance,
         new ConfigurationBuilder().Build(),
-        new NullDatabaseMigrator(),
+        Substitute.For<IDatabaseMigrator>(),
         new InteractionHandler(
             Microsoft.Extensions.Logging.Abstractions.NullLogger<InteractionHandler>.Instance,
             new ServiceCollection().BuildServiceProvider()),

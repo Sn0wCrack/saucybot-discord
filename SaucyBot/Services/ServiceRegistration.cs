@@ -5,7 +5,7 @@ namespace SaucyBot.Services;
 
 public static class CoreServiceRegistration
 {
-    public static IServiceCollection AddSaucyBotServices(this IServiceCollection services, bool databaseDisabled = false)
+    public static IServiceCollection AddSaucyBotServices(this IServiceCollection services)
     {
         services.AddSingleton<SiteRegistry>();
         services.AddSingleton<InteractionHandler>();
@@ -15,16 +15,8 @@ public static class CoreServiceRegistration
         services.AddSingleton<DiscordMessageResolver>();
         services.AddSingleton<IMessageResolver>(services => services.GetRequiredService<DiscordMessageResolver>());
 
-        if (databaseDisabled)
-        {
-            services.AddSingleton<IDatabaseMigrator, NullDatabaseMigrator>();
-            services.AddScoped<IGuildConfigurationManager, NullGuildConfigurationManager>();
-        }
-        else
-        {
-            services.AddSingleton<IDatabaseMigrator, DatabaseMigrator>();
-            services.AddScoped<IGuildConfigurationManager, GuildConfigurationManager>();
-        }
+        services.AddSingleton<IDatabaseMigrator, DatabaseMigrator>();
+        services.AddScoped<IGuildConfigurationManager, GuildConfigurationManager>();
 
         return services;
     }

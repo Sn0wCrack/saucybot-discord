@@ -34,12 +34,7 @@ await Host.CreateDefaultBuilder(args)
 
         services.AddSaucyBotTelemetry(configuration);
 
-        var databaseDisabled = configuration.GetSection("Database:Disabled").Get<bool?>() ?? false;
-
-        if (!databaseDisabled)
-        {
-            services.AddSaucyBotDatabase();
-        }
+        services.AddSaucyBotDatabase();
 
         services.AddSaucyBotCache(configuration);
         var queueOptions = configuration.GetSection("Queue").Get<WorkQueueOptions>() ?? new();
@@ -49,7 +44,7 @@ await Host.CreateDefaultBuilder(args)
         services.AddSingleton<IValkeyStreamClient, StackExchangeValkeyStreamClient>();
         services.AddSingleton<IMessageWorkQueue, ValkeyWorkQueue>();
         services.AddSingleton<IWorkItemProcessor, WorkItemProcessor>();
-        services.AddSaucyBotServices(databaseDisabled);
+        services.AddSaucyBotServices();
         services.AddSaucyBotSites();
 
         services.AddFurAffinityClient(configuration);
