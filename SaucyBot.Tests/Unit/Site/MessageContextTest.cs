@@ -69,23 +69,27 @@ public sealed class MessageContextTest
     }
 
     [Fact]
-    public async Task LiveContextRereadsTheCurrentCacheWhenInitialEmbedsExist()
+    public async Task LiveContextRereadsTheCurrentCacheAcrossSuccessiveCalls()
     {
         var message = (SocketUserMessage)RuntimeHelpers.GetUninitializedObject(typeof(SocketUserMessage));
 
         var resolver = Substitute.For<IMessageResolver>();
-        var cached = Substitute.For<IUserMessage>();
-        cached.Embeds.Returns([new EmbedBuilder { Title = "updated" }.Build()]);
-        resolver.GetCachedMessage(0, 0).Returns(cached);
+        var initial = Substitute.For<IUserMessage>();
+        initial.Embeds.Returns([new EmbedBuilder { Title = "initial" }.Build()]);
+        var updated = Substitute.For<IUserMessage>();
+        updated.Embeds.Returns([new EmbedBuilder { Title = "updated" }.Build()]);
+        resolver.GetCachedMessage(0, 0).Returns(initial, updated);
 
         var context = new DiscordMessageContext(
             message,
             resolver,
             [new EmbedBuilder { Title = "initial" }.Build()]);
 
-        var embeds = await context.GetLatestEmbedsAsync(TestContext.Current.CancellationToken);
+        var initialEmbeds = await context.GetLatestEmbedsAsync(TestContext.Current.CancellationToken);
+        var updatedEmbeds = await context.GetLatestEmbedsAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal("updated", embeds.Single().Title);
+        Assert.Equal("initial", initialEmbeds.Single().Title);
+        Assert.Equal("updated", updatedEmbeds.Single().Title);
         await resolver.DidNotReceiveWithAnyArgs().FetchMessageAsync(default, default, TestContext.Current.CancellationToken);
     }
 

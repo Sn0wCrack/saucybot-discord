@@ -136,10 +136,11 @@ public class BlueskyTest
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                {"Sites:Bluesky:Delay", "60"}
+                {"Sites:Bluesky:Delay", "1"}
             })
-            .Build();
+        .Build();
         var client = Substitute.For<IVixBlueskyClient>();
+        var apiCompleted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var post = new VixBlueskyPost(
             new VixBlueskyUser("testuser", "Test User", "https://example.com/avatar.jpg"),
             new VixBlueskyRecord("app.bsky.feed.post", "2024-01-01T00:00:00Z", "Test post content", null, null),
@@ -150,16 +151,22 @@ public class BlueskyTest
             20,
             3);
         client.GetPost(Arg.Any<string>(), Arg.Any<string>())
-            .Returns(new VixBlueskyResponse(new List<VixBlueskyPost> { post }));
+            .Returns(_ =>
+            {
+                apiCompleted.SetResult(true);
+                return new VixBlueskyResponse(new List<VixBlueskyPost> { post });
+            });
         var site = new BlueskySite(Substitute.For<ILogger<BlueskySite>>(), config, client);
         using var cancellation = new CancellationTokenSource();
-        cancellation.Cancel();
         var message = Substitute.For<IMessageContext>();
         var match = site.Pattern.Matches("https://bsky.app/profile/testuser/post/3kabc123").First();
-
-        await Assert.ThrowsAsync<TaskCanceledException>(() => site.Process(new ProcessRequest(
+        var processing = site.Process(new ProcessRequest(
             match,
-            Context: new ProcessingContext(cancellation.Token, true, Message: message))));
+            Context: new ProcessingContext(cancellation.Token, true, Message: message)));
+        await apiCompleted.Task;
+        cancellation.Cancel();
+
+        await Assert.ThrowsAsync<TaskCanceledException>(() => processing);
     }
 
     [Fact]
