@@ -21,6 +21,12 @@ public interface IRedisStreamClient
 
 public sealed class RedisWorkQueue : IMessageWorkQueue
 {
+    private enum MalformedCleanupOperation
+    {
+        Acknowledge,
+        Delete,
+    }
+
     internal const string PayloadField = "payload";
     private readonly IRedisStreamClient _client;
     private readonly WorkQueueOptions _options;
@@ -128,7 +134,7 @@ public sealed class RedisWorkQueue : IMessageWorkQueue
     {
         if (!await RetryMalformedCleanupAsync(
                 entryId,
-                "acknowledge",
+                MalformedCleanupOperation.Acknowledge,
                 () => _client.AcknowledgeAsync(entryId, cancellationToken),
                 cancellationToken))
         {
@@ -137,14 +143,14 @@ public sealed class RedisWorkQueue : IMessageWorkQueue
 
         await RetryMalformedCleanupAsync(
             entryId,
-            "delete",
+            MalformedCleanupOperation.Delete,
             () => _client.DeleteAsync(entryId, cancellationToken),
             cancellationToken);
     }
 
     private async Task<bool> RetryMalformedCleanupAsync(
         string entryId,
-        string operation,
+        MalformedCleanupOperation operation,
         Func<Task> cleanup,
         CancellationToken cancellationToken)
     {
