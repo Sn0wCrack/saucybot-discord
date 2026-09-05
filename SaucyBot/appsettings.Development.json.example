@@ -38,6 +38,13 @@
       "DefaultLifetime": 3600
     }
   },
+  "Queue": {
+    "ConnectionString": "localhost:6379",
+    "StreamName": "saucybot:messages",
+    "ConsumerGroup": "saucybot-workers",
+    "RetryDelay": "00:00:01",
+    "ClearPendingOnStartup": false
+  },
   "Sites": {
     "ArtStation": {
       "PostLimit": 5

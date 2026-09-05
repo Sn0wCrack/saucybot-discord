@@ -13,10 +13,12 @@ using SaucyBot.Library.Sites.Misskey;
 using SaucyBot.Library.Sites.Newgrounds;
 using SaucyBot.Library.Sites.Pixiv;
 using SaucyBot.Library.Sites.Twitter;
+using SaucyBot.Queue;
 using SaucyBot.Services;
 using SaucyBot.Services.Cache;
 using SaucyBot.Site;
 using Serilog;
+using StackExchange.Redis;
 
 await Host.CreateDefaultBuilder(args)
     .UseSerilog((context, configuration) =>
@@ -40,6 +42,11 @@ await Host.CreateDefaultBuilder(args)
         }
 
         services.AddSaucyBotCache(configuration);
+        var queueOptions = configuration.GetSection("Queue").Get<WorkQueueOptions>() ?? new();
+        services.AddSingleton(queueOptions);
+        services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(queueOptions.ConnectionString));
+        services.AddSingleton<IValkeyStreamClient, StackExchangeValkeyStreamClient>();
+        services.AddSingleton<IMessageWorkQueue, ValkeyWorkQueue>();
         services.AddSaucyBotServices(databaseDisabled);
         services.AddSaucyBotSites();
 
