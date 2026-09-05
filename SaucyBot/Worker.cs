@@ -15,6 +15,9 @@ public sealed class Worker : BackgroundService
     private readonly InteractionWorkChannel _interactionWorkChannel;
     private readonly WorkQueueHostedService _workQueueHostedService;
     private readonly SaucyBotMetrics? _metrics;
+    private readonly Func<SocketMessage, MessageWorkItem?> _messageWorkItemFactory;
+    private readonly Func<SocketInteraction, IInteractionWorkItem> _interactionWorkItemFactory;
+    private readonly Func<SocketInteraction, Task> _interactionDeferrer;
 
     private readonly IDatabaseMigrator _databaseMigrator;
 
@@ -30,7 +33,10 @@ public sealed class Worker : BackgroundService
         IMessageWorkQueue messageWorkQueue,
         InteractionWorkChannel interactionWorkChannel,
         WorkQueueHostedService workQueueHostedService,
-        SaucyBotMetrics? metrics = null
+        SaucyBotMetrics? metrics = null,
+        Func<SocketMessage, MessageWorkItem?>? messageWorkItemFactory = null,
+        Func<SocketInteraction, IInteractionWorkItem>? interactionWorkItemFactory = null,
+        Func<SocketInteraction, Task>? interactionDeferrer = null
     )
     {
         _logger = logger;
@@ -41,6 +47,10 @@ public sealed class Worker : BackgroundService
         _interactionWorkChannel = interactionWorkChannel;
         _workQueueHostedService = workQueueHostedService;
         _metrics = metrics;
+        _messageWorkItemFactory = messageWorkItemFactory ?? (message =>
+            message is SocketUserMessage userMessage ? CreateMessageWorkItem(userMessage) : null);
+        _interactionWorkItemFactory = interactionWorkItemFactory ?? (interaction => new SocketInteractionWorkItem(interaction));
+        _interactionDeferrer = interactionDeferrer ?? (interaction => interaction.DeferAsync());
     }
 
     public override async Task StartAsync(CancellationToken cancellationToken)
@@ -150,39 +160,36 @@ public sealed class Worker : BackgroundService
         return client;
     }
 
-    private async Task HandleInteractionAsync(SocketInteraction socketInteraction)
+    internal Task HandleInteractionAsync(SocketInteraction socketInteraction) =>
+        HandleInteractionAsync(socketInteraction, _interactionDeferrer);
+
+    internal async Task HandleInteractionAsync(
+        SocketInteraction socketInteraction,
+        Func<SocketInteraction, Task> defer)
     {
-        await AdmitInteractionAsync(new SocketInteractionWorkItem(socketInteraction), () => socketInteraction.DeferAsync());
+        await AdmitInteractionAsync(
+            _interactionWorkItemFactory(socketInteraction),
+            () => defer(socketInteraction));
     }
 
-    private async Task HandleMessageAsync(SocketMessage socketMessage)
+    internal async Task HandleMessageAsync(SocketMessage socketMessage)
     {
-        if (socketMessage is not SocketUserMessage message)
+        if (socketMessage is not SocketUserMessage)
         {
             return;
         }
 
         // Ignore Messages created by the Bot itself
-        if (socketMessage.Author.Id == _client?.CurrentUser.Id)
+        if (_client is not null && socketMessage.Author.Id == _client.CurrentUser.Id)
         {
             return;
         }
 
-        var guildChannel = message.Channel as SocketGuildChannel;
-        var permissions = guildChannel?.Guild.CurrentUser.GetPermissions(guildChannel);
-        var item = new MessageWorkItem(
-            message.Id,
-            guildChannel?.Guild.Id ?? 0,
-            message.Channel.Id,
-            message.Author.Id,
-            (message.Author as SocketGuildUser)?.Roles.Select(role => role.Id).ToArray() ?? [],
-            message.Content ?? "",
-            null,
-            message.Embeds.Select(embed => new MessageEmbed(embed.Title, embed.Description, embed.Url)).ToArray(),
-            permissions?.Has(ChannelPermission.EmbedLinks) ?? false,
-            permissions?.Has(ChannelPermission.ManageMessages) ?? false,
-            Guid.NewGuid(),
-            DateTimeOffset.UtcNow);
+        var item = _messageWorkItemFactory(socketMessage);
+        if (item is null)
+        {
+            return;
+        }
 
         await AdmitMessageAsync(item);
     }
@@ -206,6 +213,25 @@ public sealed class Worker : BackgroundService
             _metrics?.Cancelled.Add(1);
             throw;
         }
+    }
+
+    private static MessageWorkItem CreateMessageWorkItem(SocketUserMessage message)
+    {
+        var guildChannel = message.Channel as SocketGuildChannel;
+        var permissions = guildChannel?.Guild.CurrentUser.GetPermissions(guildChannel);
+        return new MessageWorkItem(
+            message.Id,
+            guildChannel?.Guild.Id ?? 0,
+            message.Channel.Id,
+            message.Author.Id,
+            (message.Author as SocketGuildUser)?.Roles.Select(role => role.Id).ToArray() ?? [],
+            message.Content ?? "",
+            null,
+            message.Embeds.Select(embed => new MessageEmbed(embed.Title, embed.Description, embed.Url)).ToArray(),
+            permissions?.Has(ChannelPermission.EmbedLinks) ?? false,
+            permissions?.Has(ChannelPermission.ManageMessages) ?? false,
+            Guid.NewGuid(),
+            DateTimeOffset.UtcNow);
     }
 
     private async Task HandleSocketClientReadyAsync()

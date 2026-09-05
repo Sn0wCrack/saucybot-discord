@@ -216,11 +216,11 @@ public sealed class WorkerTest
     {
         var queue = new FakeWorkQueue();
         await using var queueService = CreateQueueService(queue);
-        var worker = CreateWorker(queue, queueService);
+        var worker = CreateWorker(queue, queueService, messageWorkItemFactory: _ => CreateQueuedItem("1-0").Item);
         queueService.StopIntake();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-            worker.AdmitMessageAsync(CreateQueuedItem("1-0").Item));
+            worker.HandleMessageAsync((Discord.WebSocket.SocketMessage)RuntimeHelpers.GetUninitializedObject(typeof(Discord.WebSocket.SocketUserMessage))));
     }
 
     [Fact]
@@ -233,11 +233,13 @@ public sealed class WorkerTest
         queueService.StopIntake();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-            worker.AdmitInteractionAsync(new RecordingInteraction(), () =>
-            {
-                deferred = true;
-                return Task.CompletedTask;
-            }));
+            worker.HandleInteractionAsync(
+                (Discord.WebSocket.SocketInteraction)RuntimeHelpers.GetUninitializedObject(typeof(Discord.WebSocket.SocketSlashCommand)),
+                _ =>
+                {
+                    deferred = true;
+                    return Task.CompletedTask;
+                }));
 
         Assert.True(deferred);
     }
@@ -248,7 +250,6 @@ public sealed class WorkerTest
         var queue = new FakeWorkQueue();
         var channel = new InteractionWorkChannel(new WorkQueueOptions { InteractionChannelCapacity = 1 });
         var interaction = new RecordingInteraction();
-        await channel.WriteAsync(interaction, CancellationToken.None);
 
         await using var service = new WorkQueueHostedService(
             queue,
@@ -258,7 +259,16 @@ public sealed class WorkerTest
             interactionChannel: channel,
             interactionProcessor: (_, _) => Task.FromException(new InvalidOperationException("failed")));
 
+        var worker = CreateWorker(
+            queue,
+            service,
+            channel,
+            interactionWorkItemFactory: _ => interaction,
+            interactionDeferrer: _ => Task.CompletedTask);
+
         await service.StartAsync(TestContext.Current.CancellationToken);
+        await worker.HandleInteractionAsync(
+            (Discord.WebSocket.SocketInteraction)RuntimeHelpers.GetUninitializedObject(typeof(Discord.WebSocket.SocketSlashCommand)));
         await interaction.FollowupSent.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         await service.StopAsync(TestContext.Current.CancellationToken);
 
@@ -331,7 +341,13 @@ public sealed class WorkerTest
         new WorkQueueOptions { ShutdownDrainTimeout = TimeSpan.FromMilliseconds(100) },
         SubstituteLogger<WorkQueueHostedService>());
 
-    private static Worker CreateWorker(FakeWorkQueue queue, WorkQueueHostedService queueService) => new(
+    private static Worker CreateWorker(
+        FakeWorkQueue queue,
+        WorkQueueHostedService queueService,
+        InteractionWorkChannel? interactionChannel = null,
+        Func<Discord.WebSocket.SocketMessage, MessageWorkItem?>? messageWorkItemFactory = null,
+        Func<Discord.WebSocket.SocketInteraction, IInteractionWorkItem>? interactionWorkItemFactory = null,
+        Func<Discord.WebSocket.SocketInteraction, Task>? interactionDeferrer = null) => new(
         Microsoft.Extensions.Logging.Abstractions.NullLogger<Worker>.Instance,
         new ConfigurationBuilder().Build(),
         new NullDatabaseMigrator(),
@@ -339,9 +355,12 @@ public sealed class WorkerTest
             Microsoft.Extensions.Logging.Abstractions.NullLogger<InteractionHandler>.Instance,
             new ServiceCollection().BuildServiceProvider()),
         queue,
-        new InteractionWorkChannel(new WorkQueueOptions()),
+        interactionChannel ?? new InteractionWorkChannel(new WorkQueueOptions()),
         queueService,
-        new SaucyBotMetrics());
+        new SaucyBotMetrics(),
+        messageWorkItemFactory,
+        interactionWorkItemFactory,
+        interactionDeferrer);
 
     private sealed class RecordingInteraction : IInteractionWorkItem
     {
