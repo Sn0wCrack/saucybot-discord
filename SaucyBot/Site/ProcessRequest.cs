@@ -1,8 +1,6 @@
 using System.Text.RegularExpressions;
-using Discord;
 using Discord.WebSocket;
 using SaucyBot.Database.Models;
-using SaucyBot.Extensions.Discord;
 
 namespace SaucyBot.Site;
 
