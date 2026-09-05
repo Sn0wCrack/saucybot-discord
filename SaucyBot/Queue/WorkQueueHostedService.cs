@@ -16,6 +16,7 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
     private readonly CancellationTokenSource _admissionCancellation = new();
     private readonly CancellationTokenSource _workerCancellation = new();
     private readonly CancellationTokenSource _readCancellation = new();
+    private readonly TaskCompletionSource _workersReady = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private Task? _completion;
 
     public CancellationToken AdmissionToken => _admissionCancellation.Token;
@@ -53,7 +54,13 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
             _workers.Add(RunInteractionWorkerAsync(linkedCancellation.Token));
         }
 
+        _logger.LogInformation(
+            "Queue workers started with {MessageWorkerCount} message workers and {InteractionWorkerCount} interaction workers",
+            count,
+            Math.Max(1, _options.InteractionWorkerCount));
+
         _completion = Task.WhenAll(_workers);
+        _workersReady.TrySetResult();
         _ = _completion.ContinueWith(
             completed => _ = completed.Exception,
             CancellationToken.None,
@@ -70,6 +77,7 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
 
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
+        _logger.LogInformation("Stopping queue workers and draining admitted work");
         StopIntake();
 
         using var timeout = new CancellationTokenSource();
@@ -81,10 +89,15 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
             {
                 await _completion.WaitAsync(timeout.Token);
             }
+
+            _logger.LogInformation("Queue workers drained admitted work successfully");
         }
         catch (OperationCanceledException) when (timeout.IsCancellationRequested)
         {
-            await _workerCancellation.CancelAsync();
+            _logger.LogWarning(
+                "Queue worker drain exceeded {ShutdownDrainTimeout}; cancelling remaining work",
+                _options.ShutdownDrainTimeout);
+            _workerCancellation.Cancel();
         }
 
     }
@@ -114,6 +127,7 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
     {
         try
         {
+            await _workersReady.Task.WaitAsync(cancellationToken);
             using var readCancellation = CancellationTokenSource.CreateLinkedTokenSource(
                 cancellationToken,
                 _readCancellation.Token);
@@ -122,6 +136,10 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
             {
                 _metrics.Dequeued.Add(1);
                 _metrics.QueueDepth.Add(-1);
+                _logger.LogDebug(
+                    "Message worker {Consumer} picked up queue entry {EntryId}",
+                    consumer,
+                    item.EntryId);
                 if (item.Item.EnqueuedAt != default)
                 {
                     _metrics.QueueAge.Record((DateTimeOffset.UtcNow - item.Item.EnqueuedAt).TotalMilliseconds);
@@ -138,6 +156,10 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
                     await _queue.AcknowledgeAsync(item, cancellationToken);
                     _metrics.Succeeded.Add(1);
                     activity?.SetStatus(ActivityStatusCode.Ok);
+                    _logger.LogDebug(
+                        "Message worker {Consumer} completed queue entry {EntryId}",
+                        consumer,
+                        item.EntryId);
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {
@@ -170,19 +192,22 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
     {
         try
         {
+            await _workersReady.Task.WaitAsync(cancellationToken);
             await foreach (var interaction in _interactionChannel!.ReadAllAsync(cancellationToken))
             {
                 _metrics.Dequeued.Add(1);
                 _metrics.QueueDepth.Add(-1);
                 _metrics.ActiveWorkers.Add(1);
+                _logger.LogDebug("Interaction worker picked up interaction {InteractionId}", interaction?.Id);
                 using var activity = QueueTelemetry.ActivitySource.StartActivity(ActivityKind.Consumer);
                 activity?.SetTag("saucybot.work.type", "interaction");
-                activity?.SetTag("saucybot.interaction.id", interaction.Id);
+                activity?.SetTag("saucybot.interaction.id", interaction?.Id);
                 try
                 {
-                    await _interactionProcessor.ProcessAsync(interaction, cancellationToken);
+                    await _interactionProcessor.ProcessAsync(interaction!, cancellationToken);
                     _metrics.Succeeded.Add(1);
                     activity?.SetStatus(ActivityStatusCode.Ok);
+                    _logger.LogDebug("Interaction worker completed interaction {InteractionId}", interaction?.Id);
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {

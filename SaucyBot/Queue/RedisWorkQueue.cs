@@ -62,6 +62,9 @@ public sealed class RedisWorkQueue : IMessageWorkQueue
                 catch (RedisBackpressureException)
                 {
                     _metrics?.Retried.Add(1);
+                    _logger.LogDebug(
+                        "Redis queue is applying backpressure; retrying enqueue after {RetryDelay}",
+                        _options.RetryDelay);
                     await Task.Delay(_options.RetryDelay, cancellationToken);
                 }
             }
