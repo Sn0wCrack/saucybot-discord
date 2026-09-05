@@ -5,6 +5,7 @@ using Polly;
 using Polly.Fallback;
 using Polly.Retry;
 using SaucyBot.Common;
+using SaucyBot.Diagnostics;
 using SaucyBot.Services;
 
 namespace SaucyBot.Library.Sites.Pixiv;
@@ -19,6 +20,7 @@ public sealed class PixivClient : IPixivClient
     private readonly ILogger<PixivClient> _logger;
     private readonly IConfiguration _configuration;
     private readonly ICacheManager _cache;
+    private readonly SaucyBotMetrics? _metrics;
 
     private readonly HttpClient _client;
 
@@ -30,12 +32,14 @@ public sealed class PixivClient : IPixivClient
         ILogger<PixivClient> logger,
         IConfiguration configuration,
         ICacheManager cacheManager,
-        HttpClient client
+        HttpClient client,
+        SaucyBotMetrics? metrics = null
     )
     {
         _logger = logger;
         _configuration = configuration;
         _cache = cacheManager;
+        _metrics = metrics;
         _client = client;
 
         _pipeline = new ResiliencePipelineBuilder<string?>()
@@ -152,7 +156,7 @@ public sealed class PixivClient : IPixivClient
             var contentLength = response.Content.Headers.ContentLength ?? -1;
             var stream = await response.Content.ReadAsStreamAsync();
 
-            return new KnownLengthStream(new HttpResponseStream(response, stream), contentLength);
+            return new KnownLengthStream(new HttpResponseStream(response, stream, _metrics), contentLength);
         }
         catch
         {

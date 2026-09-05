@@ -221,7 +221,7 @@ public sealed class Worker : BackgroundService
         }
     }
 
-    private static MessageWorkItem CreateMessageWorkItem(SocketUserMessage message)
+    internal static MessageWorkItem CreateMessageWorkItem(SocketUserMessage message)
     {
         var guildChannel = message.Channel as SocketGuildChannel;
         var permissions = guildChannel?.Guild.CurrentUser.GetPermissions(guildChannel);
@@ -232,7 +232,9 @@ public sealed class Worker : BackgroundService
             message.Author.Id,
             (message.Author as SocketGuildUser)?.Roles.Select(role => role.Id).ToArray() ?? [],
             message.Content ?? "",
-            null,
+            message.ForwardedMessages.Count == 0
+                ? null
+                : string.Join('\n', message.ForwardedMessages.Select(forwarded => forwarded.Message.Content ?? "")),
             message.Embeds.Select(embed => new MessageEmbed(embed.Title, embed.Description, embed.Url)).ToArray(),
             permissions?.Has(ChannelPermission.EmbedLinks) ?? false,
             permissions?.Has(ChannelPermission.ManageMessages) ?? false,

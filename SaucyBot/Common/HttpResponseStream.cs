@@ -1,4 +1,5 @@
 using System.Net.Http;
+using SaucyBot.Diagnostics;
 
 namespace SaucyBot.Common;
 
@@ -6,12 +7,15 @@ public sealed class HttpResponseStream : Stream
 {
     private readonly HttpResponseMessage _response;
     private readonly Stream _inner;
+    private readonly SaucyBotMetrics? _metrics;
     private int _disposed;
 
-    public HttpResponseStream(HttpResponseMessage response, Stream inner)
+    public HttpResponseStream(HttpResponseMessage response, Stream inner, SaucyBotMetrics? metrics = null)
     {
         _response = response;
         _inner = inner;
+        _metrics = metrics;
+        _metrics?.DownloadConcurrency.Add(1);
     }
 
     public override bool CanRead => _inner.CanRead;
@@ -29,16 +33,15 @@ public sealed class HttpResponseStream : Stream
     public override Task FlushAsync(CancellationToken cancellationToken) =>
         _inner.FlushAsync(cancellationToken);
 
-    public override int Read(byte[] buffer, int offset, int count) =>
-        _inner.Read(buffer, offset, count);
+    public override int Read(byte[] buffer, int offset, int count) => RecordRead(_inner.Read(buffer, offset, count));
 
-    public override int Read(Span<byte> buffer) => _inner.Read(buffer);
+    public override int Read(Span<byte> buffer) => RecordRead(_inner.Read(buffer));
 
-    public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default) =>
-        _inner.ReadAsync(buffer, cancellationToken);
+    public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default) =>
+        RecordRead(await _inner.ReadAsync(buffer, cancellationToken));
 
-    public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) =>
-        _inner.ReadAsync(buffer, offset, count, cancellationToken);
+    public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) =>
+        RecordRead(await _inner.ReadAsync(buffer, offset, count, cancellationToken));
 
     public override long Seek(long offset, SeekOrigin origin) => _inner.Seek(offset, origin);
     public override void SetLength(long value) => _inner.SetLength(value);
@@ -56,6 +59,7 @@ public sealed class HttpResponseStream : Stream
             finally
             {
                 _response.Dispose();
+                _metrics?.DownloadConcurrency.Add(-1);
             }
         }
 
@@ -76,8 +80,19 @@ public sealed class HttpResponseStream : Stream
         finally
         {
             _response.Dispose();
+            _metrics?.DownloadConcurrency.Add(-1);
         }
 
         GC.SuppressFinalize(this);
+    }
+
+    private int RecordRead(int bytes)
+    {
+        if (bytes > 0)
+        {
+            _metrics?.DownloadBytes.Add(bytes);
+        }
+
+        return bytes;
     }
 }

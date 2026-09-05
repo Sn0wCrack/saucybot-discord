@@ -47,26 +47,23 @@ public sealed class ValkeyWorkQueueTest
         await queue.AcknowledgeAsync(queued, CancellationToken.None);
 
         Assert.Equal(["42-0"], client.Acknowledged);
+        Assert.Equal(["42-0"], client.Deleted);
     }
 
     [Fact]
-    public async Task ReadReclaimsPendingEntryBeforeReadingNewEntries()
+    public async Task ReadDoesNotReclaimPendingEntriesDuringRuntime()
     {
         var client = new FakeValkeyStreamClient();
         var item = CreateItem();
-        client.PendingEntries.Enqueue(new ValkeyStreamEntry("7-0", item.Serialize()));
-        client.PendingEntries.Enqueue(new ValkeyStreamEntry("8-0", item.Serialize()));
+        client.Entries.Enqueue(new ValkeyStreamEntry("8-0", item.Serialize()));
         var queue = new ValkeyWorkQueue(client, new WorkQueueOptions { RetryDelay = TimeSpan.Zero });
 
         await using var messages = queue.ReadAsync("worker-1", TestContext.Current.CancellationToken)
             .GetAsyncEnumerator(TestContext.Current.CancellationToken);
 
         Assert.True(await messages.MoveNextAsync());
-        Assert.Equal("7-0", messages.Current.EntryId);
-        Assert.True(await messages.MoveNextAsync());
         Assert.Equal("8-0", messages.Current.EntryId);
-        Assert.Equal(2, client.PendingClaims);
-        Assert.Equal(0, client.NewReads);
+        Assert.Equal(1, client.NewReads);
     }
 
     [Fact]
@@ -90,6 +87,37 @@ public sealed class ValkeyWorkQueueTest
         var queued = new QueuedMessageWorkItem("7-0", CreateItem());
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => queue.AcknowledgeAsync(queued, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task DeleteFailureAfterAcknowledgementIsPropagated()
+    {
+        var client = new FakeValkeyStreamClient { DeleteException = new InvalidOperationException("delete failed") };
+        var queue = new ValkeyWorkQueue(client, new WorkQueueOptions());
+        var queued = new QueuedMessageWorkItem("7-0", CreateItem());
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => queue.AcknowledgeAsync(queued, CancellationToken.None));
+
+        Assert.Equal(["7-0"], client.Acknowledged);
+        Assert.Equal(["7-0"], client.DeleteAttempts);
+    }
+
+    [Fact]
+    public async Task MalformedEntryIsAcknowledgedDeletedAndDoesNotStopReading()
+    {
+        var client = new FakeValkeyStreamClient();
+        client.Entries.Enqueue(new ValkeyStreamEntry("bad-0", "{\"version\":999,\"item\":null}"));
+        var valid = CreateItem();
+        client.Entries.Enqueue(new ValkeyStreamEntry("good-0", valid.Serialize()));
+        var queue = new ValkeyWorkQueue(client, new WorkQueueOptions { RetryDelay = TimeSpan.Zero });
+
+        await using var messages = queue.ReadAsync("worker-1", TestContext.Current.CancellationToken)
+            .GetAsyncEnumerator(TestContext.Current.CancellationToken);
+
+        Assert.True(await messages.MoveNextAsync());
+        Assert.Equal("good-0", messages.Current.EntryId);
+        Assert.Equal(["bad-0"], client.Acknowledged);
+        Assert.Equal(["bad-0"], client.Deleted);
     }
 
     [Fact]
@@ -126,13 +154,14 @@ public sealed class ValkeyWorkQueueTest
         public int AddFailures { get; set; }
         public int AddCalls { get; private set; }
         public int ClearCalls { get; private set; }
-        public int PendingClaims { get; private set; }
         public int NewReads { get; private set; }
         public Queue<ValkeyStreamEntry> Entries { get; } = new();
-        public Queue<ValkeyStreamEntry> PendingEntries { get; } = new();
         public List<string> Payloads { get; } = [];
         public List<string> Acknowledged { get; } = [];
+        public List<string> Deleted { get; } = [];
         public Exception? AcknowledgeException { get; set; }
+        public Exception? DeleteException { get; set; }
+        public List<string> DeleteAttempts { get; } = [];
 
         public Task EnsureGroupAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
@@ -146,12 +175,6 @@ public sealed class ValkeyWorkQueueTest
 
             Payloads.Add(payload);
             return Task.FromResult("1-0");
-        }
-
-        public Task<ValkeyStreamEntry?> ClaimPendingAsync(string consumer, CancellationToken cancellationToken)
-        {
-            PendingClaims++;
-            return Task.FromResult(PendingEntries.Count == 0 ? null : PendingEntries.Dequeue());
         }
 
         public async Task<ValkeyStreamEntry?> ReadNewAsync(string consumer, CancellationToken cancellationToken)
@@ -173,6 +196,18 @@ public sealed class ValkeyWorkQueueTest
             }
 
             Acknowledged.Add(entryId);
+            return Task.CompletedTask;
+        }
+
+        public Task DeleteAsync(string entryId, CancellationToken cancellationToken)
+        {
+            DeleteAttempts.Add(entryId);
+            if (DeleteException is not null)
+            {
+                return Task.FromException(DeleteException);
+            }
+
+            Deleted.Add(entryId);
             return Task.CompletedTask;
         }
 

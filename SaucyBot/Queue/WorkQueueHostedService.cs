@@ -48,9 +48,7 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        using var linkedCancellation = CancellationTokenSource.CreateLinkedTokenSource(
-            stoppingToken,
-            _workerCancellation.Token);
+        using var linkedCancellation = CancellationTokenSource.CreateLinkedTokenSource(_workerCancellation.Token);
 
         var count = Math.Max(1, _options.MessageWorkerCount);
         for (var i = 0; i < count; i++)
@@ -76,11 +74,17 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
         await _completion;
     }
 
+    public override async Task StartAsync(CancellationToken cancellationToken)
+    {
+        await _queue.ClearPendingAsync(cancellationToken);
+        await base.StartAsync(cancellationToken);
+    }
+
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
         StopIntake();
 
-        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        using var timeout = new CancellationTokenSource();
         timeout.CancelAfter(_options.ShutdownDrainTimeout);
 
         try
@@ -193,13 +197,13 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
                 {
                     _logger.LogDebug("Interaction worker cancelled");
                     _metrics?.Cancelled.Add(1);
-                    await SendInteractionFailureAsync(interaction);
+                    await SendInteractionFailureAsync(interaction, cancellationToken);
                 }
                 catch (Exception exception)
                 {
                     _logger.LogError(exception, "Interaction worker failed for {InteractionId}", interaction?.Id);
                     _metrics?.Failed.Add(1);
-                    await SendInteractionFailureAsync(interaction);
+                    await SendInteractionFailureAsync(interaction, cancellationToken);
                 }
                 finally
                 {
@@ -214,7 +218,7 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
         }
     }
 
-    private async Task SendInteractionFailureAsync(IInteractionWorkItem? interaction)
+    private async Task SendInteractionFailureAsync(IInteractionWorkItem? interaction, CancellationToken cancellationToken)
     {
         if (interaction is null)
         {
@@ -224,7 +228,7 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
 
         try
         {
-            await interaction.FollowupAsync("Failed to process this interaction.", ephemeral: true);
+            await interaction.FollowupAsync("Failed to process this interaction.", ephemeral: true, cancellationToken);
         }
         catch (Exception followupException)
         {

@@ -11,9 +11,9 @@ public interface IValkeyStreamClient
 {
     Task EnsureGroupAsync(CancellationToken cancellationToken);
     Task<string> AddAsync(string payload, CancellationToken cancellationToken);
-    Task<ValkeyStreamEntry?> ClaimPendingAsync(string consumer, CancellationToken cancellationToken);
     Task<ValkeyStreamEntry?> ReadNewAsync(string consumer, CancellationToken cancellationToken);
     Task AcknowledgeAsync(string entryId, CancellationToken cancellationToken);
+    Task DeleteAsync(string entryId, CancellationToken cancellationToken);
     Task ClearPendingAsync(CancellationToken cancellationToken);
 }
 
@@ -23,12 +23,18 @@ public sealed class ValkeyWorkQueue : IMessageWorkQueue
     private readonly IValkeyStreamClient _client;
     private readonly WorkQueueOptions _options;
     private readonly SaucyBotMetrics? _metrics;
+    private readonly ILogger<ValkeyWorkQueue> _logger;
 
-    public ValkeyWorkQueue(IValkeyStreamClient client, WorkQueueOptions options, SaucyBotMetrics? metrics = null)
+    public ValkeyWorkQueue(
+        IValkeyStreamClient client,
+        WorkQueueOptions options,
+        SaucyBotMetrics? metrics = null,
+        ILogger<ValkeyWorkQueue>? logger = null)
     {
         _client = client;
         _options = options;
         _metrics = metrics;
+        _logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<ValkeyWorkQueue>.Instance;
     }
 
     public async Task EnqueueAsync(MessageWorkItem item, CancellationToken cancellationToken)
@@ -67,26 +73,60 @@ public sealed class ValkeyWorkQueue : IMessageWorkQueue
 
         while (!cancellationToken.IsCancellationRequested)
         {
-            var pending = await _client.ClaimPendingAsync(consumer, cancellationToken);
-            if (pending is not null)
-            {
-                yield return new QueuedMessageWorkItem(pending.EntryId, MessageWorkItem.Deserialize(pending.Payload));
-                continue;
-            }
-
             var entry = await _client.ReadNewAsync(consumer, cancellationToken);
             if (entry is not null)
             {
-                yield return new QueuedMessageWorkItem(entry.EntryId, MessageWorkItem.Deserialize(entry.Payload));
+                MessageWorkItem? item = null;
+                try
+                {
+                    item = MessageWorkItem.Deserialize(entry.Payload);
+                }
+                catch (Exception exception) when (exception is not OperationCanceledException)
+                {
+                    _logger.LogError(exception, "Discarding malformed work item {EntryId}", entry.EntryId);
+                    _metrics?.Malformed.Add(1);
+                    await AcknowledgeAndDeleteMalformedAsync(entry.EntryId, cancellationToken);
+                }
+
+                if (item is not null)
+                {
+                    yield return new QueuedMessageWorkItem(entry.EntryId, item);
+                }
             }
         }
     }
 
-    public Task AcknowledgeAsync(QueuedMessageWorkItem item, CancellationToken cancellationToken) =>
-        _client.AcknowledgeAsync(item.EntryId, cancellationToken);
+    public async Task AcknowledgeAsync(QueuedMessageWorkItem item, CancellationToken cancellationToken)
+    {
+        await _client.AcknowledgeAsync(item.EntryId, cancellationToken);
+        try
+        {
+            await _client.DeleteAsync(item.EntryId, cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            _metrics?.CleanupFailed.Add(1);
+            _logger.LogError(exception, "Acknowledged work item {EntryId} but failed to delete it", item.EntryId);
+            throw;
+        }
+    }
 
     public Task ClearPendingAsync(CancellationToken cancellationToken) =>
         _options.ClearPendingOnStartup ? _client.ClearPendingAsync(cancellationToken) : Task.CompletedTask;
+
+    private async Task AcknowledgeAndDeleteMalformedAsync(string entryId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _client.AcknowledgeAsync(entryId, cancellationToken);
+            await _client.DeleteAsync(entryId, cancellationToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            _metrics?.CleanupFailed.Add(1);
+            _logger.LogError(exception, "Failed to discard malformed work item {EntryId}", entryId);
+        }
+    }
 }
 
 public sealed class StackExchangeValkeyStreamClient : IValkeyStreamClient
@@ -131,20 +171,6 @@ public sealed class StackExchangeValkeyStreamClient : IValkeyStreamClient
         }
     }
 
-    public async Task<ValkeyStreamEntry?> ClaimPendingAsync(string consumer, CancellationToken cancellationToken)
-    {
-        var claimed = await _database.StreamAutoClaimAsync(
-                _options.StreamName,
-                _options.ConsumerGroup,
-                consumer,
-                (long)_options.PendingClaimIdleTime.TotalMilliseconds,
-                "0-0",
-                count: 1)
-            .WaitAsync(cancellationToken);
-
-        return claimed.ClaimedEntries.Length == 0 ? null : ToEntry(claimed.ClaimedEntries[0]);
-    }
-
     public async Task<ValkeyStreamEntry?> ReadNewAsync(string consumer, CancellationToken cancellationToken)
     {
         var entries = await _database.StreamReadGroupAsync(_options.StreamName, _options.ConsumerGroup, consumer, ">", count: 1)
@@ -161,6 +187,9 @@ public sealed class StackExchangeValkeyStreamClient : IValkeyStreamClient
     public Task AcknowledgeAsync(string entryId, CancellationToken cancellationToken) =>
         _database.StreamAcknowledgeAsync(_options.StreamName, _options.ConsumerGroup, entryId)
             .WaitAsync(cancellationToken);
+
+    public Task DeleteAsync(string entryId, CancellationToken cancellationToken) =>
+        _database.StreamDeleteAsync(_options.StreamName, [entryId]).WaitAsync(cancellationToken);
 
     public Task ClearPendingAsync(CancellationToken cancellationToken) =>
         _database.KeyDeleteAsync(_options.StreamName).WaitAsync(cancellationToken);

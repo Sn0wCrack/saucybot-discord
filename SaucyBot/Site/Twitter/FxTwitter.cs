@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using System.Web;
 using Discord;
 using SaucyBot.Common;
+using SaucyBot.Diagnostics;
 using SaucyBot.Extensions;
 using SaucyBot.Library;
 using SaucyBot.Library.Sites.Twitter;
@@ -30,8 +31,14 @@ public sealed partial class FxTwitterSite : BaseSite, ITwitterSite
     private readonly IConfiguration _configuration;
     private readonly HttpClient _httpClient;
     private readonly IFxTwitterClient _client;
+    private readonly SaucyBotMetrics? _metrics;
 
-    public FxTwitterSite(ILogger<FxTwitterSite> logger, IConfiguration configuration, IFxTwitterClient client, IHttpClientFactory httpClientFactory)
+    public FxTwitterSite(
+        ILogger<FxTwitterSite> logger,
+        IConfiguration configuration,
+        IFxTwitterClient client,
+        IHttpClientFactory httpClientFactory,
+        SaucyBotMetrics? metrics = null)
     {
         _logger = logger;
         _configuration = configuration;
@@ -39,6 +46,7 @@ public sealed partial class FxTwitterSite : BaseSite, ITwitterSite
         _httpClient = httpClientFactory.CreateClient("FileDownload");
 
         _client = client;
+        _metrics = metrics;
     }
 
     private static readonly HashSet<string> SupportedLanguages = new(StringComparer.OrdinalIgnoreCase)
@@ -389,7 +397,7 @@ public sealed partial class FxTwitterSite : BaseSite, ITwitterSite
             var parsed = new Uri(url);
 
             return new FileAttachment(
-                new KnownLengthStream(new HttpResponseStream(response, stream), contentLength),
+                new KnownLengthStream(new HttpResponseStream(response, stream, _metrics), contentLength),
                 Path.GetFileName(parsed.AbsolutePath)
             );
         }

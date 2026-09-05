@@ -43,7 +43,6 @@
     "StreamName": "saucybot:messages",
     "ConsumerGroup": "saucybot-workers",
     "RetryDelay": "00:00:01",
-    "PendingClaimIdleTime": "00:01:00",
     "ClearPendingOnStartup": false
   },
   "Sites": {

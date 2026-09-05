@@ -32,6 +32,15 @@ public sealed class MessageContextTest
     }
 
     [Fact]
+    public void QueuedContextIncludesForwardedContentInMatchingText()
+    {
+        var item = CreateItem([]) with { Content = "primary", ForwardedContent = "forwarded link" };
+        var context = new QueuedMessageContext(item, Substitute.For<IMessageResolver>());
+
+        Assert.Equal("primary\nforwarded link", context.AllMessageContent);
+    }
+
+    [Fact]
     public async Task QueuedContextUsesCachedMessageBeforeRestWhenSerializedEmbedsAreEmpty()
     {
         var resolver = Substitute.For<IMessageResolver>();

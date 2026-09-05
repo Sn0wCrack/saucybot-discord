@@ -193,6 +193,49 @@ public sealed class WorkerTest
     }
 
     [Fact]
+    public async Task StartupClearsPendingWorkBeforeWorkersRead()
+    {
+        var queue = new FakeWorkQueue();
+        var processor = new RecordingProcessor();
+        queue.ClearPendingCallback = () => Assert.Empty(processor.Items);
+
+        await using var service = new WorkQueueHostedService(
+            queue,
+            processor,
+            new WorkQueueOptions { ClearPendingOnStartup = true },
+            SubstituteLogger<WorkQueueHostedService>());
+
+        await service.StartAsync(TestContext.Current.CancellationToken);
+        service.StopIntake();
+        await service.StopAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(1, queue.ClearCalls);
+    }
+
+    [Fact]
+    public async Task ShutdownDrainsAdmittedMessageBeforeReturning()
+    {
+        var queue = new FakeWorkQueue();
+        var processor = new RecordingProcessor { Block = true };
+        var item = CreateQueuedItem("1-0");
+        queue.Add(item);
+
+        await using var service = new WorkQueueHostedService(
+            queue,
+            processor,
+            new WorkQueueOptions { ShutdownDrainTimeout = TimeSpan.FromSeconds(1) },
+            SubstituteLogger<WorkQueueHostedService>());
+
+        await service.StartAsync(TestContext.Current.CancellationToken);
+        await processor.Started.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        processor.Release();
+        service.StopIntake();
+        await service.StopAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal([item], queue.Acknowledged);
+    }
+
+    [Fact]
     public async Task ShutdownReturnsAfterTimeoutWhenProcessorIgnoresCancellation()
     {
         var queue = new FakeWorkQueue();
@@ -276,6 +319,19 @@ public sealed class WorkerTest
         Assert.Equal("Failed to process this interaction.", interaction.FollowupContent);
     }
 
+    [Fact]
+    public async Task SocketInteractionFollowupHonorsCancellationBeforeSending()
+    {
+        var interaction = (Discord.WebSocket.SocketInteraction)RuntimeHelpers.GetUninitializedObject(
+            typeof(Discord.WebSocket.SocketSlashCommand));
+        var item = new SocketInteractionWorkItem(interaction);
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            item.FollowupAsync("failure", ephemeral: true, cancellation.Token));
+    }
+
     private static QueuedMessageWorkItem CreateQueuedItem(string entryId) => new(entryId,
         new MessageWorkItem(1, 2, 3, 4, [], "content", null, [], true, true, Guid.NewGuid()));
 
@@ -291,6 +347,7 @@ public sealed class WorkerTest
         public bool ThrowOnFirstItem { get; init; }
         public bool Block { get; init; }
         public bool NonCooperative { get; init; }
+        private readonly TaskCompletionSource _release = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public bool CancellationObserved { get; private set; }
         public TaskCompletionSource CancellationObservedSource { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public int MaximumConcurrency { get; private set; }
@@ -311,7 +368,7 @@ public sealed class WorkerTest
             {
                 try
                 {
-                    await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+                    await _release.Task.WaitAsync(cancellationToken);
                 }
                 catch (OperationCanceledException)
                 {
@@ -334,6 +391,8 @@ public sealed class WorkerTest
             Processed.TrySetResult();
             Interlocked.Decrement(ref _concurrency);
         }
+
+        public void Release() => _release.TrySetResult();
     }
 
     private static WorkQueueHostedService CreateQueueService(FakeWorkQueue queue) => new(
@@ -386,6 +445,8 @@ public sealed class WorkerTest
         public List<QueuedMessageWorkItem> AcknowledgedAttempts { get; } = [];
         public Exception? AcknowledgeFailure { get; init; }
         public bool ReadCancellationObserved { get; private set; }
+        public int ClearCalls { get; private set; }
+        public Action? ClearPendingCallback { get; set; }
 
         public void Add(QueuedMessageWorkItem item) => _items.Writer.TryWrite(item);
 
@@ -429,6 +490,13 @@ public sealed class WorkerTest
             return Task.CompletedTask;
         }
 
-        public Task ClearPendingAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task DeleteAsync(string entryId, CancellationToken cancellationToken) => Task.CompletedTask;
+
+        public Task ClearPendingAsync(CancellationToken cancellationToken)
+        {
+            ClearCalls++;
+            ClearPendingCallback?.Invoke();
+            return Task.CompletedTask;
+        }
     }
 }

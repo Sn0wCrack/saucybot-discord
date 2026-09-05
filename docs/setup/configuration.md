@@ -99,7 +99,6 @@ queue restarts.
 | `StreamName` | String | Valkey stream containing queued message work. | `saucybot:messages` |
 | `ConsumerGroup` | String | Consumer group used by workers. | `saucybot-workers` |
 | `RetryDelay` | TimeSpan | Delay before retrying an unavailable queue operation. | `00:00:01` |
-| `PendingClaimIdleTime` | TimeSpan | Minimum age before reclaiming pending work. | `00:01:00` |
 | `ClearPendingOnStartup` | Boolean | Delete the queue stream on startup. Use only when intentionally discarding pending work. | `false` |
 | `MessageWorkerCount` | Integer | Number of message workers. | `5` |
 | `InteractionWorkerCount` | Integer | Number of interaction workers. | `5` |

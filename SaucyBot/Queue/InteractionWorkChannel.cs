@@ -16,7 +16,13 @@ public sealed class SocketInteractionWorkItem(SocketInteraction interaction) : I
     public SocketInteraction SocketInteraction => interaction;
 
     public Task FollowupAsync(string content, bool ephemeral, CancellationToken cancellationToken = default) =>
-        interaction.FollowupAsync(content, ephemeral: ephemeral);
+        FollowupAsyncCore(content, ephemeral, cancellationToken);
+
+    private async Task FollowupAsyncCore(string content, bool ephemeral, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        await interaction.FollowupAsync(content, ephemeral: ephemeral);
+    }
 }
 
 public sealed class InteractionWorkChannel
