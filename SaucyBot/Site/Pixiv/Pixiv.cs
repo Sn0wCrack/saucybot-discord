@@ -81,7 +81,7 @@ public sealed partial class PixivSite : BaseSite, IPixivSite
 
         using var file = await GetFile(metadata.UgoiraMetadata.OriginalSource);
 
-        var zip = new ZipArchive(file.Stream);
+        using var zip = new ZipArchive(file.Stream);
 
         var basePath = Path.Join(
             Path.GetTempPath(),
@@ -116,9 +116,7 @@ public sealed partial class PixivSite : BaseSite, IPixivSite
             return null;
         }
 
-        var fileStream = new MemoryStream(
-            await File.ReadAllBytesAsync(videoFile)
-        );
+        var fileStream = new FileStream(videoFile, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete);
 
         var title = details.Title
             .ToLowerInvariant()

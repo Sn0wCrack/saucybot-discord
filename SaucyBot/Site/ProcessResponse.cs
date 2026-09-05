@@ -2,8 +2,10 @@ using Discord;
 
 namespace SaucyBot.Site;
 
-public sealed record ProcessResponse
+public sealed record ProcessResponse : IAsyncDisposable
 {
+    private int _disposed;
+
     public List<Embed> Embeds;
     public List<FileAttachment> Files;
     public string? Text;
@@ -23,5 +25,20 @@ public sealed record ProcessResponse
         Text = text;
         Components = components;
         IsNsfw = nsfw;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (Interlocked.Exchange(ref _disposed, 1) != 0)
+        {
+            return;
+        }
+
+        foreach (var file in Files)
+        {
+            await file.Stream.DisposeAsync();
+        }
+
+        GC.SuppressFinalize(this);
     }
 }

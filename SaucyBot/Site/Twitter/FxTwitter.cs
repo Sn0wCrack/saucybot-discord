@@ -387,7 +387,7 @@ public sealed partial class FxTwitterSite : BaseSite, ITwitterSite
         var parsed = new Uri(url);
 
         return new FileAttachment(
-            new KnownLengthStream(stream, contentLength),
+            new KnownLengthStream(new HttpResponseStream(response, stream), contentLength),
             Path.GetFileName(parsed.AbsolutePath)
         );
     }

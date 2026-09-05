@@ -128,9 +128,11 @@ public sealed class SiteManager
             {
                 _logger.LogDebug("Matched link \"{Match}\" to site {Site}", match, site);
 
+                ProcessResponse? response = null;
+
                 try
                 {
-                    var response = await _siteRegistry[site].Process(new ProcessRequest(match, guildConfiguration, message));
+                    response = await _siteRegistry[site].Process(new ProcessRequest(match, guildConfiguration, message));
 
                     if (response is null)
                     {
@@ -148,6 +150,13 @@ public sealed class SiteManager
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Exception occured processing or sending messages");
+                }
+                finally
+                {
+                    if (response is not null)
+                    {
+                        await response.DisposeAsync();
+                    }
                 }
             }
         }
@@ -181,9 +190,11 @@ public sealed class SiteManager
         {
             _logger.LogDebug("Matched link \"{Match}\" to site {Site}", match, site);
 
+            ProcessResponse? response = null;
+
             try
             {
-                var response = await _siteRegistry[site].Process(new ProcessRequest(match, guildConfiguration, Command: command));
+                response = await _siteRegistry[site].Process(new ProcessRequest(match, guildConfiguration, Command: command));
 
                 if (response is null)
                 {
@@ -198,6 +209,13 @@ public sealed class SiteManager
             {
                 _logger.LogError(ex, "Exception occured processing or sending messages");
                 await command.FollowupAsync("Failed to create embed information for provided URL", ephemeral: true);
+            }
+            finally
+            {
+                if (response is not null)
+                {
+                    await response.DisposeAsync();
+                }
             }
         }
     }

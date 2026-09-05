@@ -48,4 +48,16 @@ public sealed class KnownLengthStream : Stream
 
         base.Dispose(disposing);
     }
+
+    public override async ValueTask DisposeAsync()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+        await _inner.DisposeAsync();
+        GC.SuppressFinalize(this);
+    }
 }
