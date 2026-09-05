@@ -85,6 +85,7 @@ public sealed class RedisWorkQueue : IMessageWorkQueue
             if (entry is not null)
             {
                 MessageWorkItem? item = null;
+
                 try
                 {
                     item = MessageWorkItem.Deserialize(entry.Payload);
