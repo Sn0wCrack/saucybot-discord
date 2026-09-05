@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,6 +19,60 @@ namespace SaucyBot.Tests.Unit.Services;
 
 public sealed class SiteManagerTest
 {
+    [Fact]
+    public async Task HandleAsyncPropagatesPolicyAndCancellationToSiteRequest()
+    {
+        using var cancellation = new CancellationTokenSource();
+        ProcessRequest? request = null;
+        var site = Substitute.For<IBlueskySite>();
+        site.Identifier.Returns("Context");
+        site.Pattern.Returns(new Regex("https://example.test"));
+        site.Process(Arg.Any<ProcessRequest>())
+            .Returns(callInfo =>
+            {
+                request = callInfo.Arg<ProcessRequest>();
+                return Task.FromResult<ProcessResponse?>(null);
+            });
+
+        var services = new ServiceCollection();
+        services.AddSingleton(site);
+        using var provider = services.BuildServiceProvider();
+        var registry = new SiteRegistry(
+            Substitute.For<ILogger<SiteRegistry>>(),
+            new ConfigurationBuilder().Build(),
+            provider);
+
+        var resolver = Substitute.For<IMessageResolver>();
+        resolver.IsNsfw(Arg.Any<ulong>()).Returns(false);
+        var manager = new SiteManager(
+            Substitute.For<ILogger<SiteManager>>(),
+            new ConfigurationBuilder().AddInMemoryCollection(
+                [new KeyValuePair<string, string?>("Bot:RestrictNSFW", "true")]).Build(),
+            new MessageManager(Substitute.For<ILogger<MessageManager>>(), new ConfigurationBuilder().Build()),
+            Substitute.For<IGuildConfigurationManager>(),
+            registry,
+            resolver);
+
+        var item = new MessageWorkItem(
+            7,
+            0,
+            42,
+            12,
+            [],
+            "https://example.test",
+            null,
+            [],
+            true,
+            true,
+            Guid.NewGuid());
+
+        await manager.HandleAsync(item, cancellation.Token);
+
+        Assert.NotNull(request);
+        Assert.False(request.Context!.NsfwAllowed);
+        Assert.Equal(cancellation.Token, request.Context.CancellationToken);
+    }
+
     [Fact]
     public async Task HandleAsyncPropagatesCancellationFromSiteProcessing()
     {

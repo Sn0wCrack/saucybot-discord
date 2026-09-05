@@ -23,8 +23,10 @@ public sealed record ProcessRequest
         Match match,
         GuildConfiguration? guildConfiguration,
         SocketUserMessage? message = null,
-        SocketSlashCommand? Command = null)
-        : this(match, guildConfiguration, CreateContext(message, Command))
+        SocketSlashCommand? Command = null,
+        bool nsfwAllowed = true,
+        CancellationToken cancellationToken = default)
+        : this(match, guildConfiguration, CreateContext(message, Command, nsfwAllowed, cancellationToken))
     {
     }
 
@@ -51,13 +53,17 @@ public sealed record ProcessRequest
             ? command.Guild
             : null;
 
-    private static ProcessingContext? CreateContext(SocketUserMessage? message, SocketSlashCommand? command)
+    private static ProcessingContext? CreateContext(
+        SocketUserMessage? message,
+        SocketSlashCommand? command,
+        bool nsfwAllowed,
+        CancellationToken cancellationToken)
     {
         return message is null && command is null
             ? null
             : new ProcessingContext(
-                CancellationToken.None,
-                NsfwAllowed: true,
+                cancellationToken,
+                NsfwAllowed: nsfwAllowed,
                 Message: message is null ? null : new DiscordMessageContext(message),
                 Command: command is null ? null : new LiveCommandContext(command));
     }

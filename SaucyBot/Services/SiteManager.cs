@@ -187,7 +187,10 @@ public sealed class SiteManager : IMessageWorkHandler
                     response = await _siteRegistry[site].Process(new ProcessRequest(
                         match,
                         guildConfiguration,
-                        Context: new ProcessingContext(cancellationToken, true, Message: message)));
+                        Context: new ProcessingContext(
+                            cancellationToken,
+                            NsfwAllowed(message),
+                            Message: message)));
 
                     if (response is null)
                     {
@@ -265,7 +268,11 @@ public sealed class SiteManager : IMessageWorkHandler
 
             try
             {
-                response = await _siteRegistry[site].Process(new ProcessRequest(match, guildConfiguration, Command: command));
+                response = await _siteRegistry[site].Process(new ProcessRequest(
+                    match,
+                    guildConfiguration,
+                    Command: command,
+                    nsfwAllowed: NsfwAllowed()));
 
                 if (response is null)
                 {
@@ -289,6 +296,16 @@ public sealed class SiteManager : IMessageWorkHandler
                 }
             }
         }
+    }
+
+    private bool NsfwAllowed(IMessageContext message)
+    {
+        return NsfwAllowed() || message.IsNsfw;
+    }
+
+    private bool NsfwAllowed()
+    {
+        return !(_configuration.GetValue<bool?>("Bot:RestrictNSFW") ?? false);
     }
 }
 
