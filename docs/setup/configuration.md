@@ -87,6 +87,50 @@ server=localhost;user=bot;password=secret;database=bot
 | `Redis.DefaultLifetime` | Integer | Cache entry lifetime in seconds. | `3600` |
 | `Memory.DefaultLifetime` | Integer | Cache entry lifetime in seconds when using the memory driver. | `3600` |
 
+### Queue
+
+The production Compose stack connects the bot to the dedicated, internal `queue`
+service at `queue:6379`. Queue data is a Valkey stream and is not persisted across
+queue restarts.
+
+| Key | Value Type | Description | Default |
+|---|---|---|---|
+| `ConnectionString` | String | Valkey endpoint, including credentials when required. | `queue:6379` |
+| `StreamName` | String | Valkey stream containing queued message work. | `saucybot:messages` |
+| `ConsumerGroup` | String | Consumer group used by workers. | `saucybot-workers` |
+| `RetryDelay` | TimeSpan | Delay before retrying an unavailable queue operation. | `00:00:01` |
+| `PendingClaimIdleTime` | TimeSpan | Minimum age before reclaiming pending work. | `00:01:00` |
+| `ClearPendingOnStartup` | Boolean | Delete the queue stream on startup. Use only when intentionally discarding pending work. | `false` |
+| `MessageWorkerCount` | Integer | Number of message workers. | `5` |
+| `InteractionWorkerCount` | Integer | Number of interaction workers. | `5` |
+| `InteractionChannelCapacity` | Integer | Capacity of the interaction work channel. | `100` |
+| `ShutdownDrainTimeout` | TimeSpan | Maximum time allowed to drain work during shutdown. | `00:00:30` |
+
+Queue settings can be overridden without editing the ignored runtime appsettings file.
+Use .NET environment variable names such as `Queue__ConnectionString`,
+`Queue__StreamName`, and `Queue__ClearPendingOnStartup` in `.env`. This is also the
+recommended place for connection-string credentials.
+
+### OpenTelemetry
+
+Use the tracked `SaucyBot/telemetry.example.json` file as the safe starting point for
+telemetry values. The application binds the following environment variable overrides:
+
+| Configuration key | Environment variable | Description |
+|---|---|---|
+| `OpenTelemetry:Enabled` | `OpenTelemetry__Enabled` | Enables metrics and exporters. |
+| `OpenTelemetry:ServiceName` | `OpenTelemetry__ServiceName` | Resource service name. |
+| `OpenTelemetry:OtlpEndpoint` | `OpenTelemetry__OtlpEndpoint` | OTLP exporter endpoint. |
+| `OpenTelemetry:OtlpProtocol` | `OpenTelemetry__OtlpProtocol` | `Grpc` or `HttpProtobuf`. |
+| `OpenTelemetry:OtlpHeaders` | `OpenTelemetry__OtlpHeaders` | Comma-separated OTLP headers. Keep credentials out of tracked files. |
+| `OpenTelemetry:ExportIntervalMilliseconds` | `OpenTelemetry__ExportIntervalMilliseconds` | Periodic metrics export interval. |
+| `OpenTelemetry:Tracing:Enabled` | `OpenTelemetry__Tracing__Enabled` | Enables sampled tracing. |
+| `OpenTelemetry:Tracing:SamplingRatio` | `OpenTelemetry__Tracing__SamplingRatio` | Trace sampling ratio from `0` to `1`. |
+
+When enabled, verify that the configured collector receives `saucybot.queue.depth`,
+`saucybot.queue.age`, and worker activity metrics. See the [telemetry guide](telemetry.md)
+for the complete safe configuration example.
+
 ### Sites
 
 Each site has its own configuration block. Only configure the sites you intend to use.
