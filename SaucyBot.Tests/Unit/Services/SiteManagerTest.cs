@@ -20,6 +20,35 @@ namespace SaucyBot.Tests.Unit.Services;
 public sealed class SiteManagerTest
 {
     [Fact]
+    public void HandleCommandPropagatesPolicyAndCommandContextToSiteRequest()
+    {
+        var services = new ServiceCollection();
+        using var provider = services.BuildServiceProvider();
+        var registry = new SiteRegistry(
+            Substitute.For<ILogger<SiteRegistry>>(),
+            new ConfigurationBuilder().Build(),
+            provider);
+        var manager = new SiteManager(
+            Substitute.For<ILogger<SiteManager>>(),
+            new ConfigurationBuilder().AddInMemoryCollection(
+                [new KeyValuePair<string, string?>("Bot:RestrictNSFW", "true")]).Build(),
+            new MessageManager(Substitute.For<ILogger<MessageManager>>(), new ConfigurationBuilder().Build()),
+            Substitute.For<IGuildConfigurationManager>(),
+            registry);
+        var command = Substitute.For<ICommandContext>();
+        command.OptionContent.Returns("https://example.test");
+        command.UserLocale.Returns("en-GB");
+        var match = new Regex("https://example.test").Match("https://example.test");
+
+        var request = manager.CreateCommandRequest(match, null, command);
+
+        Assert.False(request.Context!.NsfwAllowed);
+        Assert.True(request.IsSlashCommand);
+        Assert.Equal("en-GB", request.UserLocale);
+        Assert.Equal("https://example.test", request.Context.Command!.OptionContent);
+    }
+
+    [Fact]
     public async Task HandleAsyncPropagatesPolicyAndCancellationToSiteRequest()
     {
         using var cancellation = new CancellationTokenSource();
