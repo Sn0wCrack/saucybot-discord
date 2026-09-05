@@ -7,12 +7,6 @@ services:
         CONFIGURATION: '${CONFIGURATION}'
     env_file:
       - .env
-    environment:
-      OpenTelemetry__Enabled: 'true'
-      OpenTelemetry__OtlpEndpoint: 'http://otel-collector:4317'
-      OpenTelemetry__OtlpProtocol: 'Grpc'
-      OpenTelemetry__Tracing__Enabled: 'true'
-      OpenTelemetry__Tracing__SamplingRatio: '1'
     volumes:
       - ./appsettings.Development.json:/app/appsettings.Development.json
     depends_on:
