@@ -1,14 +1,14 @@
 namespace SaucyBot.Queue;
 
-public sealed class WorkQueueOptions
+public sealed record WorkQueueOptions
 {
-    public string ConnectionString { get; set; } = "queue:6379";
-    public string StreamName { get; set; } = "saucybot:messages";
-    public string ConsumerGroup { get; set; } = "saucybot-workers";
-    public TimeSpan RetryDelay { get; set; } = TimeSpan.FromSeconds(1);
-    public bool ClearPendingOnStartup { get; set; }
-    public int MessageWorkerCount { get; set; } = 5;
-    public int InteractionWorkerCount { get; set; } = 5;
-    public int InteractionChannelCapacity { get; set; } = 100;
-    public TimeSpan ShutdownDrainTimeout { get; set; } = TimeSpan.FromSeconds(30);
+    public string ConnectionString { get; init; } = "queue:6379";
+    public string StreamName { get; init; } = "saucybot:messages";
+    public string ConsumerGroup { get; init; } = "saucybot-workers";
+    public TimeSpan RetryDelay { get; init; } = TimeSpan.FromSeconds(1);
+    public bool ClearPendingOnStartup { get; init; }
+    public int MessageWorkerCount { get; init; } = 5;
+    public int InteractionWorkerCount { get; init; } = 5;
+    public int InteractionChannelCapacity { get; init; } = 100;
+    public TimeSpan ShutdownDrainTimeout { get; init; } = TimeSpan.FromSeconds(30);
 }
