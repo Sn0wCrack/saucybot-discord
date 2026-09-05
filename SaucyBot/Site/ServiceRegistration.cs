@@ -18,6 +18,7 @@ public static class SiteServiceRegistration
 {
     public static IServiceCollection AddSaucyBotSites(this IServiceCollection services)
     {
+        services.AddSingleton(TimeProvider.System);
         services.AddSingleton<IArtStationSite, ArtStationSite>();
         services.AddSingleton<IBlueskySite, BlueskySite>();
         services.AddSingleton<IDeviantArtSite, DeviantArtSite>();

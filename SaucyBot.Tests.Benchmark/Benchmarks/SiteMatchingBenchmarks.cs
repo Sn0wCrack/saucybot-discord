@@ -193,7 +193,7 @@ public class SiteMatchingBenchmarks
     {
         var logger = Substitute.For<ILogger<BlueskySite>>();
         var client = Substitute.For<IVixBlueskyClient>();
-        return new BlueskySite(logger, config, client);
+        return new BlueskySite(logger, config, client, TimeProvider.System);
     }
 
     private static DeviantArtSite CreateDeviantArt(IConfiguration config)
@@ -242,7 +242,7 @@ public class SiteMatchingBenchmarks
     {
         var logger = Substitute.For<ILogger<MisskeySite>>();
         var client = Substitute.For<IMisskeyClient>();
-        return new MisskeySite(logger, config, client);
+        return new MisskeySite(logger, config, client, TimeProvider.System);
     }
 
     private static NewgroundsSite CreateNewgrounds(IConfiguration config)

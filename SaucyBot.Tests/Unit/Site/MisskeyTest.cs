@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Time.Testing;
 using NSubstitute;
 using SaucyBot.Library.Sites.Misskey;
 using SaucyBot.Site;
@@ -47,7 +48,7 @@ public class MisskeyTest
             .ShowNote(Arg.Any<string>(), Arg.Any<string>())
             .Returns(note);
 
-        var site = new MisskeySite(logger, config, client);
+        var site = new MisskeySite(logger, config, client, TimeProvider.System);
 
         var match = site.Pattern.Matches("https://misskey.io/notes/note123").First();
 
@@ -76,7 +77,7 @@ public class MisskeyTest
             .ShowNote(Arg.Any<string>(), Arg.Any<string>())
             .Returns((ShowNoteResponse?)null);
 
-        var site = new MisskeySite(logger, config, client);
+        var site = new MisskeySite(logger, config, client, TimeProvider.System);
 
         var match = site.Pattern.Matches("https://misskey.io/notes/note123").First();
 
@@ -117,7 +118,7 @@ public class MisskeyTest
             .ShowNote(Arg.Any<string>(), Arg.Any<string>())
             .Returns(note);
 
-        var site = new MisskeySite(logger, config, client);
+        var site = new MisskeySite(logger, config, client, TimeProvider.System);
 
         var match = site.Pattern.Matches("https://misskey.io/notes/note123").First();
 
@@ -203,8 +204,8 @@ public class MisskeyTest
         var client = Substitute.For<IMisskeyClient>();
         var apiResult = new TaskCompletionSource<ShowNoteResponse?>(TaskCreationOptions.RunContinuationsAsynchronously);
         client.ShowNote(Arg.Any<string>(), Arg.Any<string>()).Returns(apiResult.Task);
-        var delay = new ControlledMessageDelay();
-        var site = new MisskeySite(Substitute.For<ILogger<MisskeySite>>(), config, client, delay);
+        var timeProvider = new FakeTimeProvider();
+        var site = new MisskeySite(Substitute.For<ILogger<MisskeySite>>(), config, client, timeProvider);
         using var cancellation = new CancellationTokenSource();
         var message = Substitute.For<IMessageContext>();
         var match = site.Pattern.Matches("https://misskey.io/notes/note123").First();
@@ -219,7 +220,7 @@ public class MisskeyTest
             "public",
             [new MisskeyFile("file1", "2024-01-01T00:00:00Z", "image1.jpg", "image/jpeg", 1024, false, "https://example.com/image1.jpg", "https://example.com/thumb1.jpg")],
             new MisskeyUser("user123", "Test User", "testuser", "https://example.com/avatar.jpg")));
-        await delay.Started.Task;
+        await Task.Yield();
         cancellation.Cancel();
 
         await Assert.ThrowsAsync<TaskCanceledException>(() => processing);

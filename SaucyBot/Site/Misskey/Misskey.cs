@@ -15,19 +15,19 @@ public sealed class MisskeySite : BaseSite, IMisskeySite
     private readonly ILogger<MisskeySite> _logger;
     private readonly IConfiguration _configuration;
     private readonly IMisskeyClient _client;
-    private readonly IMessageDelay _delay;
+    private readonly TimeProvider _timeProvider;
 
     public MisskeySite(
         ILogger<MisskeySite> logger,
         IConfiguration configuration,
         IMisskeyClient client,
-        IMessageDelay? delay = null
+        TimeProvider timeProvider
     )
     {
         _logger = logger;
         _configuration = configuration;
         _client = client;
-        _delay = delay ?? new MessageDelay();
+        _timeProvider = timeProvider;
 
         var domains = new List<string> { "misskey.io", "misskey.design", "oekakiskey.com" }
             .Select(Regex.Escape);
@@ -56,8 +56,9 @@ public sealed class MisskeySite : BaseSite, IMisskeySite
         // we when need to refresh the request.Message and see if an embed has been added in that time.
         if (request.Context?.Message is { } message)
         {
-            await _delay.DelayAsync(
+            await Task.Delay(
                 TimeSpan.FromSeconds(_configuration.GetSection("Sites:Misskey:Delay").Get<double>()),
+                _timeProvider,
                 request.Context.CancellationToken);
 
             // NOTE: Discord.NET works a little interestingly, basically when a request.Message updates the Bot learns of this change

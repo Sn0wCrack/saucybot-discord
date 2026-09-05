@@ -21,18 +21,18 @@ public sealed partial class BlueskySite : BaseSite, IBlueskySite
     private readonly ILogger<BlueskySite> _logger;
     private readonly IConfiguration _configuration;
     private readonly IVixBlueskyClient _client;
-    private readonly IMessageDelay _delay;
+    private readonly TimeProvider _timeProvider;
 
     public BlueskySite(
         ILogger<BlueskySite> logger,
         IConfiguration configuration,
         IVixBlueskyClient client,
-        IMessageDelay? delay = null)
+        TimeProvider timeProvider)
     {
         _logger = logger;
         _configuration = configuration;
         _client = client;
-        _delay = delay ?? new MessageDelay();
+        _timeProvider = timeProvider;
     }
 
     public override async Task<ProcessResponse?> Process(ProcessRequest request)
@@ -57,8 +57,9 @@ public sealed partial class BlueskySite : BaseSite, IBlueskySite
         // we when need to refresh the message and see if an embed has been added in that time.
         if (request.Context?.Message is { } message)
         {
-            await _delay.DelayAsync(
+            await Task.Delay(
                 TimeSpan.FromSeconds(_configuration.GetSection("Sites:Bluesky:Delay").Get<double>()),
+                _timeProvider,
                 request.Context.CancellationToken);
 
             // NOTE: Discord.NET works a little interestingly, basically when a message updates the Bot learns of this change
