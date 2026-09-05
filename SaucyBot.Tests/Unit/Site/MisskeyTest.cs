@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -187,5 +189,34 @@ public class MisskeyTest
 
         // Verify that ShouldEmbed would return false
         Assert.False(note.Files.Count > 1 || note.Files.Any(file => file.IsSensitive));
+    }
+
+    [Fact]
+    public async Task CancelledContextStopsTheConfiguredEmbedDelay()
+    {
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                {"Sites:Misskey:Delay", "60"}
+            })
+            .Build();
+        var client = Substitute.For<IMisskeyClient>();
+        client.ShowNote(Arg.Any<string>(), Arg.Any<string>()).Returns(new ShowNoteResponse(
+            "note123",
+            "2024-01-01T00:00:00Z",
+            "testuser",
+            "Test post content",
+            "public",
+            [new MisskeyFile("file1", "2024-01-01T00:00:00Z", "image1.jpg", "image/jpeg", 1024, false, "https://example.com/image1.jpg", "https://example.com/thumb1.jpg")],
+            new MisskeyUser("user123", "Test User", "testuser", "https://example.com/avatar.jpg")));
+        var site = new MisskeySite(Substitute.For<ILogger<MisskeySite>>(), config, client);
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+        var message = Substitute.For<IMessageContext>();
+        var match = site.Pattern.Matches("https://misskey.io/notes/note123").First();
+
+        await Assert.ThrowsAsync<TaskCanceledException>(() => site.Process(new ProcessRequest(
+            match,
+            Context: new ProcessingContext(cancellation.Token, true, Message: message))));
     }
 }

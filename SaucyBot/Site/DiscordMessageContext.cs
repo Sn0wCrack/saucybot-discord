@@ -44,18 +44,23 @@ public sealed class DiscordMessageContext : IMessageContext
 {
     private readonly SocketUserMessage _message;
     private readonly IMessageResolver? _resolver;
+    private readonly IReadOnlyList<Embed>? _initialEmbeds;
     private IUserMessage? _resolvedMessage;
     private bool _attemptedResolution;
 
-    public DiscordMessageContext(SocketUserMessage message, IMessageResolver? resolver = null)
+    public DiscordMessageContext(
+        SocketUserMessage message,
+        IMessageResolver? resolver = null,
+        IReadOnlyList<Embed>? initialEmbeds = null)
     {
         _message = message;
         _resolver = resolver;
+        _initialEmbeds = initialEmbeds;
     }
 
     public SocketUserMessage SocketMessage => _message;
     public ulong Id => _message.Id;
-    public ulong ChannelId => _message.Channel.Id;
+    public ulong ChannelId => _message.Channel?.Id ?? 0;
     public ulong? GuildId => (_message.Channel as SocketGuildChannel)?.Guild.Id;
     public string Content => _message.Content ?? "";
     public string AllMessageContent => _message.AllMessageContent();
@@ -80,7 +85,7 @@ public sealed class DiscordMessageContext : IMessageContext
         ITextChannel channel => channel.IsNsfw,
         _ => false,
     };
-    public IReadOnlyList<Embed> CurrentEmbeds => _message.Embeds.ToArray();
+    public IReadOnlyList<Embed> CurrentEmbeds => _message.Embeds?.ToArray() ?? _initialEmbeds ?? [];
 
     public Task<IReadOnlyList<Embed>> GetLatestEmbedsAsync(CancellationToken cancellationToken)
     {
@@ -90,12 +95,22 @@ public sealed class DiscordMessageContext : IMessageContext
 
     private async Task<IReadOnlyList<Embed>> GetLatestEmbedsCoreAsync(CancellationToken cancellationToken)
     {
-        if (CurrentEmbeds.Count == 0 && _resolver is not null)
+        if (_resolver is not null)
         {
-            var message = await ResolveWithResolverAsync(cancellationToken);
-            if (message is not null)
+            var cached = _resolver.GetCachedMessage(ChannelId, Id);
+            if (cached is not null)
             {
-                return message.Embeds.OfType<Embed>().ToArray();
+                _resolvedMessage = cached;
+                return cached.Embeds.OfType<Embed>().ToArray();
+            }
+
+            if (CurrentEmbeds.Count == 0)
+            {
+                var message = await ResolveWithResolverAsync(cancellationToken);
+                if (message is not null)
+                {
+                    return message.Embeds.OfType<Embed>().ToArray();
+                }
             }
         }
 

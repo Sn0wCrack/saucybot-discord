@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
+using Discord.WebSocket;
 using NSubstitute;
 using SaucyBot.Queue;
 using SaucyBot.Site;
@@ -64,6 +66,27 @@ public sealed class MessageContextTest
         Assert.Equal("fetched", first.Single().Title);
         Assert.Equal("fetched", second.Single().Title);
         await resolver.Received(1).FetchMessageAsync(42, 7, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task LiveContextRereadsTheCurrentCacheWhenInitialEmbedsExist()
+    {
+        var message = (SocketUserMessage)RuntimeHelpers.GetUninitializedObject(typeof(SocketUserMessage));
+
+        var resolver = Substitute.For<IMessageResolver>();
+        var cached = Substitute.For<IUserMessage>();
+        cached.Embeds.Returns([new EmbedBuilder { Title = "updated" }.Build()]);
+        resolver.GetCachedMessage(0, 0).Returns(cached);
+
+        var context = new DiscordMessageContext(
+            message,
+            resolver,
+            [new EmbedBuilder { Title = "initial" }.Build()]);
+
+        var embeds = await context.GetLatestEmbedsAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal("updated", embeds.Single().Title);
+        await resolver.DidNotReceiveWithAnyArgs().FetchMessageAsync(default, default, TestContext.Current.CancellationToken);
     }
 
     private static MessageWorkItem CreateItem(IReadOnlyList<MessageEmbed> embeds) => new(

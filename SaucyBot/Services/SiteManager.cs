@@ -203,6 +203,10 @@ public sealed class SiteManager : IMessageWorkHandler
                         await target.ModifyAsync(x => x.Flags = MessageFlags.SuppressEmbeds);
                     }
                 }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
+                }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Exception occured processing or sending messages");

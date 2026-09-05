@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -126,6 +128,38 @@ public class BlueskyTest
         Assert.NotNull(result);
         Assert.NotEmpty(result.Embeds);
         Assert.Single(result.Embeds);
+    }
+
+    [Fact]
+    public async Task CancelledContextStopsTheConfiguredEmbedDelay()
+    {
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                {"Sites:Bluesky:Delay", "60"}
+            })
+            .Build();
+        var client = Substitute.For<IVixBlueskyClient>();
+        var post = new VixBlueskyPost(
+            new VixBlueskyUser("testuser", "Test User", "https://example.com/avatar.jpg"),
+            new VixBlueskyRecord("app.bsky.feed.post", "2024-01-01T00:00:00Z", "Test post content", null, null),
+            null,
+            null,
+            5,
+            10,
+            20,
+            3);
+        client.GetPost(Arg.Any<string>(), Arg.Any<string>())
+            .Returns(new VixBlueskyResponse(new List<VixBlueskyPost> { post }));
+        var site = new BlueskySite(Substitute.For<ILogger<BlueskySite>>(), config, client);
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+        var message = Substitute.For<IMessageContext>();
+        var match = site.Pattern.Matches("https://bsky.app/profile/testuser/post/3kabc123").First();
+
+        await Assert.ThrowsAsync<TaskCanceledException>(() => site.Process(new ProcessRequest(
+            match,
+            Context: new ProcessingContext(cancellation.Token, true, Message: message))));
     }
 
     [Fact]
