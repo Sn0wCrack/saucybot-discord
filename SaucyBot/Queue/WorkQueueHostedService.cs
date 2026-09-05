@@ -84,7 +84,7 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
         }
         catch (OperationCanceledException) when (timeout.IsCancellationRequested)
         {
-            _workerCancellation.Cancel();
+            await _workerCancellation.CancelAsync();
         }
 
     }
@@ -155,6 +155,9 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested || _readCancellation.IsCancellationRequested)
         {
+            _logger.LogDebug(
+                "Message worker {Consumer} stopped because queue consumption was cancelled",
+                consumer);
         }
     }
 
@@ -195,6 +198,7 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
+            _logger.LogDebug("Interaction worker stopped because interaction consumption was cancelled");
         }
     }
 
