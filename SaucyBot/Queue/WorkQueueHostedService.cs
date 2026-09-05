@@ -15,7 +15,7 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
     private readonly InteractionHandler? _interactionHandler;
     private readonly IServiceProvider? _services;
     private readonly SaucyBotMetrics? _metrics;
-    private readonly Func<SocketInteraction, CancellationToken, Task>? _interactionProcessor;
+    private readonly Func<IInteractionWorkItem, CancellationToken, Task>? _interactionProcessor;
     private readonly List<Task> _workers = [];
     private readonly CancellationTokenSource _admissionCancellation = new();
     private readonly CancellationTokenSource _workerCancellation = new();
@@ -33,7 +33,7 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
         InteractionHandler? interactionHandler = null,
         IServiceProvider? services = null,
         SaucyBotMetrics? metrics = null,
-        Func<SocketInteraction, CancellationToken, Task>? interactionProcessor = null)
+        Func<IInteractionWorkItem, CancellationToken, Task>? interactionProcessor = null)
     {
         _queue = queue;
         _processor = processor;
@@ -68,6 +68,11 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
         }
 
         _completion = Task.WhenAll(_workers);
+        _ = _completion.ContinueWith(
+            completed => _ = completed.Exception,
+            CancellationToken.None,
+            TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+            TaskScheduler.Default);
         await _completion;
     }
 
@@ -90,7 +95,6 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
             _workerCancellation.Cancel();
         }
 
-        await base.StopAsync(cancellationToken);
     }
 
     public void StopIntake()
@@ -180,7 +184,8 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
                     }
                     else
                     {
-                        await _interactionHandler!.ExecuteAsync(interaction, _services!);
+                        await _interactionHandler!.ExecuteAsync(interaction.SocketInteraction
+                            ?? throw new InvalidOperationException("Interaction work item has no socket interaction."), _services!);
                     }
                     _metrics?.Succeeded.Add(1);
                 }
@@ -192,7 +197,7 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
                 }
                 catch (Exception exception)
                 {
-                    _logger.LogError(exception, "Interaction worker failed for {InteractionId}", interaction.Id);
+                    _logger.LogError(exception, "Interaction worker failed for {InteractionId}", interaction?.Id);
                     _metrics?.Failed.Add(1);
                     await SendInteractionFailureAsync(interaction);
                 }
@@ -209,7 +214,7 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
         }
     }
 
-    private async Task SendInteractionFailureAsync(SocketInteraction interaction)
+    private async Task SendInteractionFailureAsync(IInteractionWorkItem? interaction)
     {
         if (interaction is null)
         {

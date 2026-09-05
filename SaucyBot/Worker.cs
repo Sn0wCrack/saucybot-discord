@@ -152,10 +152,7 @@ public sealed class Worker : BackgroundService
 
     private async Task HandleInteractionAsync(SocketInteraction socketInteraction)
     {
-        await socketInteraction.DeferAsync();
-        await _interactionWorkChannel.WriteAsync(socketInteraction, _workQueueHostedService.AdmissionToken);
-        _metrics?.Enqueued.Add(1);
-        _metrics?.QueueDepth.Add(1);
+        await AdmitInteractionAsync(new SocketInteractionWorkItem(socketInteraction), () => socketInteraction.DeferAsync());
     }
 
     private async Task HandleMessageAsync(SocketMessage socketMessage)
@@ -187,7 +184,28 @@ public sealed class Worker : BackgroundService
             Guid.NewGuid(),
             DateTimeOffset.UtcNow);
 
+        await AdmitMessageAsync(item);
+    }
+
+    internal async Task AdmitMessageAsync(MessageWorkItem item)
+    {
         await _messageWorkQueue.EnqueueAsync(item, _workQueueHostedService.AdmissionToken);
+    }
+
+    internal async Task AdmitInteractionAsync(IInteractionWorkItem item, Func<Task> defer)
+    {
+        await defer();
+        try
+        {
+            await _interactionWorkChannel.WriteAsync(item, _workQueueHostedService.AdmissionToken);
+            _metrics?.Enqueued.Add(1);
+            _metrics?.QueueDepth.Add(1);
+        }
+        catch (OperationCanceledException) when (_workQueueHostedService.AdmissionToken.IsCancellationRequested)
+        {
+            _metrics?.Cancelled.Add(1);
+            throw;
+        }
     }
 
     private async Task HandleSocketClientReadyAsync()

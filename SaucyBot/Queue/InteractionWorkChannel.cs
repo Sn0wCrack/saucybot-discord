@@ -3,13 +3,29 @@ using Discord.WebSocket;
 
 namespace SaucyBot.Queue;
 
+public interface IInteractionWorkItem
+{
+    ulong Id { get; }
+    SocketInteraction? SocketInteraction { get; }
+    Task FollowupAsync(string content, bool ephemeral, CancellationToken cancellationToken = default);
+}
+
+public sealed class SocketInteractionWorkItem(SocketInteraction interaction) : IInteractionWorkItem
+{
+    public ulong Id => interaction.Id;
+    public SocketInteraction SocketInteraction => interaction;
+
+    public Task FollowupAsync(string content, bool ephemeral, CancellationToken cancellationToken = default) =>
+        interaction.FollowupAsync(content, ephemeral: ephemeral);
+}
+
 public sealed class InteractionWorkChannel
 {
-    private readonly Channel<SocketInteraction> _channel;
+    private readonly Channel<IInteractionWorkItem> _channel;
 
     public InteractionWorkChannel(WorkQueueOptions options)
     {
-        _channel = Channel.CreateBounded<SocketInteraction>(new BoundedChannelOptions(options.InteractionChannelCapacity)
+        _channel = Channel.CreateBounded<IInteractionWorkItem>(new BoundedChannelOptions(options.InteractionChannelCapacity)
         {
             FullMode = BoundedChannelFullMode.Wait,
             SingleReader = false,
@@ -18,10 +34,10 @@ public sealed class InteractionWorkChannel
         });
     }
 
-    public ValueTask WriteAsync(SocketInteraction interaction, CancellationToken cancellationToken) =>
+    public ValueTask WriteAsync(IInteractionWorkItem interaction, CancellationToken cancellationToken) =>
         _channel.Writer.WriteAsync(interaction, cancellationToken);
 
-    public IAsyncEnumerable<SocketInteraction> ReadAllAsync(CancellationToken cancellationToken) =>
+    public IAsyncEnumerable<IInteractionWorkItem> ReadAllAsync(CancellationToken cancellationToken) =>
         _channel.Reader.ReadAllAsync(cancellationToken);
 
     public void Complete() => _channel.Writer.TryComplete();
