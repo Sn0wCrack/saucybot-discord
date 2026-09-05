@@ -1,5 +1,6 @@
 using SaucyBot;
 using SaucyBot.Database;
+using SaucyBot.Diagnostics;
 using SaucyBot.Library.Sites;
 using SaucyBot.Library.Sites.ArtStation;
 using SaucyBot.Library.Sites.BlueSky;
@@ -28,6 +29,8 @@ await Host.CreateDefaultBuilder(args)
     .ConfigureServices((context, services) =>
     {
         var configuration = context.Configuration;
+
+        services.AddSaucyBotTelemetry(configuration);
 
         var databaseDisabled = configuration.GetSection("Database:Disabled").Get<bool?>() ?? false;
 
