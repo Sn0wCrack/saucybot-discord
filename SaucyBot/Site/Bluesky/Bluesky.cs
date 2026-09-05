@@ -21,12 +21,18 @@ public sealed partial class BlueskySite : BaseSite, IBlueskySite
     private readonly ILogger<BlueskySite> _logger;
     private readonly IConfiguration _configuration;
     private readonly IVixBlueskyClient _client;
+    private readonly IMessageDelay _delay;
 
-    public BlueskySite(ILogger<BlueskySite> logger, IConfiguration configuration, IVixBlueskyClient client)
+    public BlueskySite(
+        ILogger<BlueskySite> logger,
+        IConfiguration configuration,
+        IVixBlueskyClient client,
+        IMessageDelay? delay = null)
     {
         _logger = logger;
         _configuration = configuration;
         _client = client;
+        _delay = delay ?? new MessageDelay();
     }
 
     public override async Task<ProcessResponse?> Process(ProcessRequest request)
@@ -51,7 +57,7 @@ public sealed partial class BlueskySite : BaseSite, IBlueskySite
         // we when need to refresh the message and see if an embed has been added in that time.
         if (request.Context?.Message is { } message)
         {
-            await Task.Delay(
+            await _delay.DelayAsync(
                 TimeSpan.FromSeconds(_configuration.GetSection("Sites:Bluesky:Delay").Get<double>()),
                 request.Context.CancellationToken);
 

@@ -15,16 +15,19 @@ public sealed class MisskeySite : BaseSite, IMisskeySite
     private readonly ILogger<MisskeySite> _logger;
     private readonly IConfiguration _configuration;
     private readonly IMisskeyClient _client;
+    private readonly IMessageDelay _delay;
 
     public MisskeySite(
         ILogger<MisskeySite> logger,
         IConfiguration configuration,
-        IMisskeyClient client
+        IMisskeyClient client,
+        IMessageDelay? delay = null
     )
     {
         _logger = logger;
         _configuration = configuration;
         _client = client;
+        _delay = delay ?? new MessageDelay();
 
         var domains = new List<string> { "misskey.io", "misskey.design", "oekakiskey.com" }
             .Select(Regex.Escape);
@@ -53,7 +56,7 @@ public sealed class MisskeySite : BaseSite, IMisskeySite
         // we when need to refresh the request.Message and see if an embed has been added in that time.
         if (request.Context?.Message is { } message)
         {
-            await Task.Delay(
+            await _delay.DelayAsync(
                 TimeSpan.FromSeconds(_configuration.GetSection("Sites:Misskey:Delay").Get<double>()),
                 request.Context.CancellationToken);
 

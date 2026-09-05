@@ -201,27 +201,25 @@ public class MisskeyTest
             })
             .Build();
         var client = Substitute.For<IMisskeyClient>();
-        var apiCompleted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        client.ShowNote(Arg.Any<string>(), Arg.Any<string>()).Returns(_ =>
-        {
-            apiCompleted.SetResult(true);
-            return new ShowNoteResponse(
-                "note123",
-                "2024-01-01T00:00:00Z",
-                "testuser",
-                "Test post content",
-                "public",
-                [new MisskeyFile("file1", "2024-01-01T00:00:00Z", "image1.jpg", "image/jpeg", 1024, false, "https://example.com/image1.jpg", "https://example.com/thumb1.jpg")],
-                new MisskeyUser("user123", "Test User", "testuser", "https://example.com/avatar.jpg"));
-        });
-        var site = new MisskeySite(Substitute.For<ILogger<MisskeySite>>(), config, client);
+        var apiResult = new TaskCompletionSource<ShowNoteResponse?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        client.ShowNote(Arg.Any<string>(), Arg.Any<string>()).Returns(apiResult.Task);
+        var delay = new ControlledMessageDelay();
+        var site = new MisskeySite(Substitute.For<ILogger<MisskeySite>>(), config, client, delay);
         using var cancellation = new CancellationTokenSource();
         var message = Substitute.For<IMessageContext>();
         var match = site.Pattern.Matches("https://misskey.io/notes/note123").First();
         var processing = site.Process(new ProcessRequest(
             match,
             Context: new ProcessingContext(cancellation.Token, true, Message: message)));
-        await apiCompleted.Task;
+        apiResult.SetResult(new ShowNoteResponse(
+            "note123",
+            "2024-01-01T00:00:00Z",
+            "testuser",
+            "Test post content",
+            "public",
+            [new MisskeyFile("file1", "2024-01-01T00:00:00Z", "image1.jpg", "image/jpeg", 1024, false, "https://example.com/image1.jpg", "https://example.com/thumb1.jpg")],
+            new MisskeyUser("user123", "Test User", "testuser", "https://example.com/avatar.jpg")));
+        await delay.Started.Task;
         cancellation.Cancel();
 
         await Assert.ThrowsAsync<TaskCanceledException>(() => processing);
