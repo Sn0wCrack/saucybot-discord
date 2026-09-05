@@ -214,10 +214,17 @@ public sealed class SiteManager : IMessageWorkHandler
                 }
                 catch (HttpException exception) when (exception.DiscordCode == DiscordErrorCode.UnknownMessage)
                 {
+                    TimeSpan? messageAge = null;
+                    if (message.EnqueuedAt is { } enqueuedAt)
+                    {
+                        messageAge = DateTimeOffset.UtcNow - enqueuedAt;
+                    }
+
                     _logger.LogDebug(
-                        "Original message {MessageId} was deleted before the {Site} response could be sent",
+                        "Original message {MessageId} was deleted before the {Site} response could be sent; queued age: {MessageAge}",
                         message.Id,
-                        site);
+                        site,
+                        messageAge);
                 }
                 catch (Exception ex)
                 {

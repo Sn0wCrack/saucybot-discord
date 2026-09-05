@@ -5,6 +5,7 @@ namespace SaucyBot.Site;
 public interface IMessageContext
 {
     ulong Id { get; }
+    DateTimeOffset? EnqueuedAt { get; }
     ulong ChannelId { get; }
     ulong? GuildId { get; }
     string Content { get; }

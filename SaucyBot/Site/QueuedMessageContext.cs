@@ -25,6 +25,18 @@ public sealed class QueuedMessageContext : IMessageContext
     }
 
     public ulong Id => _item.MessageId;
+    public DateTimeOffset? EnqueuedAt
+    {
+        get
+        {
+            if (_item.EnqueuedAt == default)
+            {
+                return null;
+            }
+
+            return _item.EnqueuedAt;
+        }
+    }
     public ulong ChannelId => _item.ChannelId;
     public ulong? GuildId
     {

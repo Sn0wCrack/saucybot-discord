@@ -25,6 +25,7 @@ public sealed class DiscordMessageContext : IMessageContext
 
     public SocketUserMessage SocketMessage => _message;
     public ulong Id => _message.Id;
+    public DateTimeOffset? EnqueuedAt => null;
     public ulong ChannelId => _message.Channel?.Id ?? 0;
     public ulong? GuildId => (_message.Channel as SocketGuildChannel)?.Guild.Id;
     public string Content => _message.Content ?? "";
