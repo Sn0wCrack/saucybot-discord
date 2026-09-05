@@ -124,7 +124,7 @@ public sealed class Worker : BackgroundService
             GatewayIntents = Constants.RequiredGatewayIntents,
             AuditLogCacheSize = 0,
             MessageCacheSize = _configuration.GetSection("Bot:MessageCacheSize").Get<int?>() ?? 100,
-            ConnectionTimeout = _configuration.GetSection("Bot:ConnectionTimeout").Get<int?>() ?? 30000,
+            ConnectionTimeout = int.MaxValue,
             AlwaysDownloadUsers = false,
             AlwaysResolveStickers = false,
             AlwaysDownloadDefaultStickers = false,
