@@ -34,6 +34,8 @@ public sealed record ProcessRequest
 
     public SocketUserMessage? Message => (Context?.Message as LiveMessageContext)?.SocketMessage;
 
+    public SocketSlashCommand? Command => (Context?.Command as LiveCommandContext)?.SocketCommand;
+
     public bool IsSlashCommand => Context?.Command is not null;
 
     public bool IsMessage => Context?.Message is not null;
@@ -51,20 +53,13 @@ public sealed record ProcessRequest
 
     private static ProcessingContext? CreateContext(SocketUserMessage? message, SocketSlashCommand? command)
     {
-        if (message is not null)
-        {
-            return new ProcessingContext(
-                CancellationToken.None,
-                NsfwAllowed: true,
-                Message: new LiveMessageContext(message));
-        }
-
-        return command is null
+        return message is null && command is null
             ? null
             : new ProcessingContext(
                 CancellationToken.None,
                 NsfwAllowed: true,
-                Command: new LiveCommandContext(command));
+                Message: message is null ? null : new LiveMessageContext(message),
+                Command: command is null ? null : new LiveCommandContext(command));
     }
 
     private class LiveProcessingContext
@@ -124,6 +119,7 @@ public sealed record ProcessRequest
         }
 
         public ulong Id => _command.Id;
+        public SocketSlashCommand SocketCommand => _command;
         public ulong ChannelId => _command.Channel.Id;
         public ulong? GuildId => Guild?.Id;
         public ulong UserId => _command.User.Id;

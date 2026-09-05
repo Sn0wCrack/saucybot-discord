@@ -1,5 +1,7 @@
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using System.Threading;
+using Discord.WebSocket;
 using NSubstitute;
 using SaucyBot.Site;
 using Xunit;
@@ -44,5 +46,22 @@ public sealed class ProcessRequestTest
         Assert.False(request.IsMessage);
         Assert.True(request.IsSlashCommand);
         Assert.Equal("en-GB", request.UserLocale);
+    }
+
+    [Fact]
+    public void CompatibilityConstructorPreservesMessageAndCommandWhenBothAreProvided()
+    {
+        var message = (SocketUserMessage)RuntimeHelpers.GetUninitializedObject(typeof(SocketUserMessage));
+        var command = (SocketSlashCommand)RuntimeHelpers.GetUninitializedObject(typeof(SocketSlashCommand));
+
+        var request = new ProcessRequest(
+            new Regex("https://example.test").Match("https://example.test"),
+            guildConfiguration: null,
+            message,
+            command);
+
+        Assert.True(request.IsMessage);
+        Assert.True(request.IsSlashCommand);
+        Assert.Same(message, request.Message);
     }
 }
