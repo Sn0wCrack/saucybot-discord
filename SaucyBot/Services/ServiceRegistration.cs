@@ -1,3 +1,5 @@
+using SaucyBot.Queue;
+
 namespace SaucyBot.Services;
 
 public static class CoreServiceRegistration
@@ -7,6 +9,7 @@ public static class CoreServiceRegistration
         services.AddSingleton<SiteRegistry>();
         services.AddSingleton<InteractionHandler>();
         services.AddScoped<SiteManager>();
+        services.AddScoped<IMessageWorkHandler>(services => services.GetRequiredService<SiteManager>());
         services.AddScoped<MessageManager>();
 
         if (databaseDisabled)

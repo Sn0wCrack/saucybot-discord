@@ -2,6 +2,7 @@ using Discord;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using SaucyBot.Library;
+using SaucyBot.Queue;
 using SaucyBot.Services;
 
 namespace SaucyBot;
@@ -10,12 +11,12 @@ public sealed class Worker : BackgroundService
 {
     private readonly ILogger<Worker> _logger;
     private readonly IConfiguration _configuration;
-    private readonly IServiceScopeFactory _scopeFactory;
-    private readonly IServiceProvider _services;
+    private readonly IMessageWorkQueue _messageWorkQueue;
+    private readonly InteractionWorkChannel _interactionWorkChannel;
+    private readonly IHostApplicationLifetime _applicationLifetime;
 
     private readonly IDatabaseMigrator _databaseMigrator;
 
-    private readonly SemaphoreSlim _throttle;
     private readonly InteractionHandler _interactionHandler;
 
     private BaseSocketClient? _client;
@@ -23,22 +24,20 @@ public sealed class Worker : BackgroundService
     public Worker(
         ILogger<Worker> logger,
         IConfiguration configuration,
-        IServiceScopeFactory scopeFactory,
-        IServiceProvider services,
         IDatabaseMigrator databaseMigrator,
-        InteractionHandler interactionHandler
+        InteractionHandler interactionHandler,
+        IMessageWorkQueue messageWorkQueue,
+        InteractionWorkChannel interactionWorkChannel,
+        IHostApplicationLifetime applicationLifetime
     )
     {
         _logger = logger;
         _configuration = configuration;
-        _scopeFactory = scopeFactory;
-        _services = services;
         _databaseMigrator = databaseMigrator;
         _interactionHandler = interactionHandler;
-
-        var limit = _configuration.GetSection("Bot:ConcurrencyLimit").Get<int?>() ?? 5;
-
-        _throttle = new SemaphoreSlim(limit);
+        _messageWorkQueue = messageWorkQueue;
+        _interactionWorkChannel = interactionWorkChannel;
+        _applicationLifetime = applicationLifetime;
     }
 
     public override async Task StartAsync(CancellationToken cancellationToken)
@@ -62,6 +61,8 @@ public sealed class Worker : BackgroundService
 
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
+        _interactionWorkChannel.Complete();
+
         if (_client is not null)
         {
             await _client.StopAsync();
@@ -146,65 +147,41 @@ public sealed class Worker : BackgroundService
         return client;
     }
 
-    private Task HandleInteractionAsync(SocketInteraction socketInteraction)
+    private async Task HandleInteractionAsync(SocketInteraction socketInteraction)
     {
-        Task.Run(async () =>
-        {
-            if (_throttle.CurrentCount == 0)
-            {
-                _logger.LogDebug("Concurrency limit reached, waiting for available slot before handling interaction...");
-            }
-
-            await _throttle.WaitAsync();
-
-            try
-            {
-                await _interactionHandler.ExecuteAsync(socketInteraction, _services);
-            }
-            finally
-            {
-                _throttle.Release();
-            }
-        });
-
-        return Task.CompletedTask;
+        await socketInteraction.DeferAsync();
+        await _interactionWorkChannel.WriteAsync(socketInteraction, _applicationLifetime.ApplicationStopping);
     }
 
-    private Task HandleMessageAsync(SocketMessage socketMessage)
+    private async Task HandleMessageAsync(SocketMessage socketMessage)
     {
         if (socketMessage is not SocketUserMessage message)
         {
-            return Task.CompletedTask;
+            return;
         }
 
         // Ignore Messages created by the Bot itself
         if (socketMessage.Author.Id == _client?.CurrentUser.Id)
         {
-            return Task.CompletedTask;
+            return;
         }
 
-        Task.Run(async () =>
-        {
-            if (_throttle.CurrentCount == 0)
-            {
-                _logger.LogDebug("Concurrency limit reached, waiting for available slot before handling message...");
-            }
+        var guildChannel = message.Channel as SocketGuildChannel;
+        var permissions = guildChannel?.Guild.CurrentUser.GetPermissions(guildChannel);
+        var item = new MessageWorkItem(
+            message.Id,
+            guildChannel?.Guild.Id ?? 0,
+            message.Channel.Id,
+            message.Author.Id,
+            (message.Author as SocketGuildUser)?.Roles.Select(role => role.Id).ToArray() ?? [],
+            message.Content ?? "",
+            null,
+            message.Embeds.Select(embed => new MessageEmbed(embed.Title, embed.Description, embed.Url)).ToArray(),
+            permissions?.Has(ChannelPermission.EmbedLinks) ?? false,
+            permissions?.Has(ChannelPermission.ManageMessages) ?? false,
+            Guid.NewGuid());
 
-            await _throttle.WaitAsync();
-
-            try
-            {
-                using var scope = _scopeFactory.CreateScope();
-                var siteManager = scope.ServiceProvider.GetRequiredService<SiteManager>();
-                await siteManager.HandleMessage(message);
-            }
-            finally
-            {
-                _throttle.Release();
-            }
-        });
-
-        return Task.CompletedTask;
+        await _messageWorkQueue.EnqueueAsync(item, CancellationToken.None);
     }
 
     private async Task HandleSocketClientReadyAsync()

@@ -4,11 +4,12 @@ using Discord.WebSocket;
 using SaucyBot.Database.Models;
 using SaucyBot.Extensions;
 using SaucyBot.Extensions.Discord;
+using SaucyBot.Queue;
 using SaucyBot.Site;
 
 namespace SaucyBot.Services;
 
-public sealed class SiteManager
+public sealed class SiteManager : IMessageWorkHandler
 {
     private readonly ILogger<SiteManager> _logger;
     private readonly IConfiguration _configuration;
@@ -174,10 +175,15 @@ public sealed class SiteManager
         }
     }
 
+    public async Task HandleAsync(MessageWorkItem item, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        _ = await _guildConfigurationManager.GetByGuildId(item.GuildId);
+        _logger.LogDebug("Queued message {MessageId} is ready for processing", item.MessageId);
+    }
+
     public async Task HandleCommand(SocketSlashCommand command)
     {
-        await command.DeferAsync();
-
         var guildConfiguration = await _guildConfigurationManager.GetByChannel(command.Channel);
 
         var validation = MessageValidator.ValidateCommand(command, guildConfiguration);

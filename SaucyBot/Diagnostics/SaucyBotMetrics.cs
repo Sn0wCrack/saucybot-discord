@@ -17,6 +17,9 @@ public sealed class SaucyBotMetrics : IDisposable
         Enqueued = _meter.CreateCounter<long>("saucybot.queue.enqueued", "items");
         Dequeued = _meter.CreateCounter<long>("saucybot.queue.dequeued", "items");
         Failed = _meter.CreateCounter<long>("saucybot.queue.failed", "items");
+        Succeeded = _meter.CreateCounter<long>("saucybot.queue.succeeded", "items");
+        Retried = _meter.CreateCounter<long>("saucybot.queue.retried", "items");
+        Cancelled = _meter.CreateCounter<long>("saucybot.queue.cancelled", "items");
         DownloadBytes = _meter.CreateCounter<long>("saucybot.download.bytes", "By");
         DownloadConcurrency = _meter.CreateUpDownCounter<long>("saucybot.download.concurrency", "downloads");
     }
@@ -34,6 +37,12 @@ public sealed class SaucyBotMetrics : IDisposable
     public Counter<long> Dequeued { get; }
 
     public Counter<long> Failed { get; }
+
+    public Counter<long> Succeeded { get; }
+
+    public Counter<long> Retried { get; }
+
+    public Counter<long> Cancelled { get; }
 
     public Counter<long> DownloadBytes { get; }
 

@@ -44,9 +44,11 @@ await Host.CreateDefaultBuilder(args)
         services.AddSaucyBotCache(configuration);
         var queueOptions = configuration.GetSection("Queue").Get<WorkQueueOptions>() ?? new();
         services.AddSingleton(queueOptions);
+        services.AddSingleton<InteractionWorkChannel>();
         services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(queueOptions.ConnectionString));
         services.AddSingleton<IValkeyStreamClient, StackExchangeValkeyStreamClient>();
         services.AddSingleton<IMessageWorkQueue, ValkeyWorkQueue>();
+        services.AddSingleton<IWorkItemProcessor, WorkItemProcessor>();
         services.AddSaucyBotServices(databaseDisabled);
         services.AddSaucyBotSites();
 
@@ -66,6 +68,7 @@ await Host.CreateDefaultBuilder(args)
         services.AddFileDownloadClient();
 
         services.AddHostedService<Worker>();
+        services.AddHostedService<WorkQueueHostedService>();
     })
     .UseConsoleLifetime()
     .Build()
