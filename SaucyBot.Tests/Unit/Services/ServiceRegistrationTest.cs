@@ -1,7 +1,4 @@
-using System.Collections.Generic;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using NSubstitute;
 using SaucyBot.Commands;
 using SaucyBot.Database;
 using SaucyBot.Services;
@@ -31,17 +28,11 @@ public sealed class ServiceRegistrationTest
     }
 
     [Fact]
-    public void SettingsModuleRegistersWhenDatabaseDisabledConfigurationIsPresent()
+    public void SettingsModuleRegistersWithDatabaseBackedServices()
     {
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["Database:Disabled"] = "true",
-            })
-            .Build();
         var services = new ServiceCollection()
-            .AddSingleton<IConfiguration>(configuration)
-            .AddSingleton(Substitute.For<IGuildConfigurationManager>())
+            .AddSaucyBotDatabase()
+            .AddSaucyBotServices()
             .BuildServiceProvider();
 
         Assert.True(InteractionHandler.ShouldRegister(typeof(SettingsModule), services));
