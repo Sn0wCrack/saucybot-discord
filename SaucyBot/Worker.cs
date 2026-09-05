@@ -17,9 +17,6 @@ public sealed class Worker : BackgroundService
     private readonly InteractionWorkChannel _interactionWorkChannel;
     private readonly WorkQueueHostedService _workQueueHostedService;
     private readonly ISaucyBotMetrics _metrics;
-    private readonly IMessageWorkItemFactory _messageWorkItemFactory;
-    private readonly IInteractionWorkItemFactory _interactionWorkItemFactory;
-    private readonly IInteractionDeferrer _interactionDeferrer;
 
     private readonly IDatabaseMigrator _databaseMigrator;
 
@@ -37,9 +34,6 @@ public sealed class Worker : BackgroundService
         InteractionWorkChannel interactionWorkChannel,
         WorkQueueHostedService workQueueHostedService,
         ISaucyBotMetrics metrics,
-        IMessageWorkItemFactory messageWorkItemFactory,
-        IInteractionWorkItemFactory interactionWorkItemFactory,
-        IInteractionDeferrer interactionDeferrer,
         IMessageResolver messageResolver
     )
     {
@@ -52,9 +46,6 @@ public sealed class Worker : BackgroundService
         _interactionWorkChannel = interactionWorkChannel;
         _workQueueHostedService = workQueueHostedService;
         _metrics = metrics;
-        _messageWorkItemFactory = messageWorkItemFactory;
-        _interactionWorkItemFactory = interactionWorkItemFactory;
-        _interactionDeferrer = interactionDeferrer;
     }
 
     public override async Task StartAsync(CancellationToken cancellationToken)
@@ -167,7 +158,7 @@ public sealed class Worker : BackgroundService
     }
 
     internal Task HandleInteractionAsync(SocketInteraction socketInteraction) =>
-        AdmitInteractionAsync(_interactionWorkItemFactory.Create(socketInteraction), () => _interactionDeferrer.DeferAsync(socketInteraction));
+        AdmitInteractionAsync(new SocketInteractionWorkItem(socketInteraction), () => socketInteraction.DeferAsync());
 
     internal async Task HandleMessageAsync(SocketMessage socketMessage)
     {
@@ -182,7 +173,7 @@ public sealed class Worker : BackgroundService
             return;
         }
 
-        var item = _messageWorkItemFactory.Create(socketMessage);
+        var item = MessageWorkItem.Create(socketMessage);
         if (item is null)
         {
             return;

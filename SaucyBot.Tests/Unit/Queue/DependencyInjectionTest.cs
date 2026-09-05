@@ -10,7 +10,7 @@ namespace SaucyBot.Tests.Unit.Queue;
 public sealed class DependencyInjectionTest
 {
     [Fact]
-    public void QueueFactoriesAndResolverAreRegisteredAsSingletonInterfaces()
+    public void ResolverAndInteractionProcessorRemainRegistered()
     {
         var services = new ServiceCollection();
 
@@ -18,9 +18,7 @@ public sealed class DependencyInjectionTest
 
         using var provider = services.BuildServiceProvider();
 
-        Assert.Same(provider.GetRequiredService<IMessageWorkItemFactory>(), provider.GetRequiredService<IMessageWorkItemFactory>());
-        Assert.Same(provider.GetRequiredService<IInteractionWorkItemFactory>(), provider.GetRequiredService<IInteractionWorkItemFactory>());
-        Assert.Same(provider.GetRequiredService<IInteractionDeferrer>(), provider.GetRequiredService<IInteractionDeferrer>());
+        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(IInteractionProcessor));
         Assert.Same(provider.GetRequiredService<IMessageResolver>(), provider.GetRequiredService<IMessageResolver>());
     }
 

@@ -286,13 +286,11 @@ public sealed class WorkerTest
     {
         var queue = new FakeWorkQueue();
         await using var queueService = CreateQueueService(queue);
-        var factory = Substitute.For<IMessageWorkItemFactory>();
-        factory.Create(Arg.Any<Discord.WebSocket.SocketMessage>()).Returns(CreateQueuedItem("1-0").Item);
-        var worker = CreateWorker(queue, queueService, messageWorkItemFactory: factory);
+        var worker = CreateWorker(queue, queueService);
         queueService.StopIntake();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-            worker.HandleMessageAsync((Discord.WebSocket.SocketMessage)RuntimeHelpers.GetUninitializedObject(typeof(Discord.WebSocket.SocketUserMessage))));
+            worker.AdmitMessageAsync(CreateQueuedItem("1-0").Item));
     }
 
     [Fact]
@@ -301,17 +299,16 @@ public sealed class WorkerTest
         var queue = new FakeWorkQueue();
         await using var queueService = CreateQueueService(queue);
         var deferred = false;
-        var deferrer = Substitute.For<IInteractionDeferrer>();
-        deferrer.DeferAsync(Arg.Any<Discord.WebSocket.SocketInteraction>()).Returns(_ =>
-        {
-            deferred = true;
-            return Task.CompletedTask;
-        });
-        var worker = CreateWorker(queue, queueService, interactionDeferrer: deferrer);
+        var worker = CreateWorker(queue, queueService);
         queueService.StopIntake();
 
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => worker.HandleInteractionAsync(
-            (Discord.WebSocket.SocketInteraction)RuntimeHelpers.GetUninitializedObject(typeof(Discord.WebSocket.SocketSlashCommand))));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => worker.AdmitInteractionAsync(
+            new RecordingInteraction(),
+            () =>
+            {
+                deferred = true;
+                return Task.CompletedTask;
+            }));
 
         Assert.True(deferred);
     }
@@ -322,10 +319,6 @@ public sealed class WorkerTest
         var queue = new FakeWorkQueue();
         var channel = new InteractionWorkChannel(new WorkQueueOptions { InteractionChannelCapacity = 1 });
         var interaction = new RecordingInteraction();
-        var interactionFactory = Substitute.For<IInteractionWorkItemFactory>();
-        interactionFactory.Create(Arg.Any<Discord.WebSocket.SocketInteraction>()).Returns(interaction);
-        var deferrer = Substitute.For<IInteractionDeferrer>();
-        deferrer.DeferAsync(Arg.Any<Discord.WebSocket.SocketInteraction>()).Returns(Task.CompletedTask);
 
         await using var service = new WorkQueueHostedService(
             queue,
@@ -339,13 +332,10 @@ public sealed class WorkerTest
         var worker = CreateWorker(
             queue,
             service,
-            channel,
-            interactionWorkItemFactory: interactionFactory,
-            interactionDeferrer: deferrer);
+            channel);
 
         await service.StartAsync(TestContext.Current.CancellationToken);
-        await worker.HandleInteractionAsync(
-            (Discord.WebSocket.SocketInteraction)RuntimeHelpers.GetUninitializedObject(typeof(Discord.WebSocket.SocketSlashCommand)));
+        await worker.AdmitInteractionAsync(interaction, () => Task.CompletedTask);
         await interaction.FollowupSent.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         await service.StopAsync(TestContext.Current.CancellationToken);
 
@@ -363,6 +353,15 @@ public sealed class WorkerTest
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
             item.FollowupAsync("failure", ephemeral: true, cancellation.Token));
+    }
+
+    [Fact]
+    public void MessageWorkItemCreateReturnsNullForNonUserMessages()
+    {
+        var message = (Discord.WebSocket.SocketMessage)RuntimeHelpers.GetUninitializedObject(
+            typeof(Discord.WebSocket.SocketSystemMessage));
+
+        Assert.Null(MessageWorkItem.Create(message));
     }
 
     private static QueuedMessageWorkItem CreateQueuedItem(string entryId) => new(entryId,
@@ -449,10 +448,7 @@ public sealed class WorkerTest
     private static Worker CreateWorker(
         FakeWorkQueue queue,
         WorkQueueHostedService queueService,
-        InteractionWorkChannel? interactionChannel = null,
-        IMessageWorkItemFactory? messageWorkItemFactory = null,
-        IInteractionWorkItemFactory? interactionWorkItemFactory = null,
-        IInteractionDeferrer? interactionDeferrer = null) => new(
+        InteractionWorkChannel? interactionChannel = null) => new(
         Microsoft.Extensions.Logging.Abstractions.NullLogger<Worker>.Instance,
         new ConfigurationBuilder().Build(),
         Substitute.For<IDatabaseMigrator>(),
@@ -463,9 +459,6 @@ public sealed class WorkerTest
         interactionChannel ?? new InteractionWorkChannel(new WorkQueueOptions()),
         queueService,
         new SaucyBotMetrics(),
-        messageWorkItemFactory ?? Substitute.For<IMessageWorkItemFactory>(),
-        interactionWorkItemFactory ?? Substitute.For<IInteractionWorkItemFactory>(),
-        interactionDeferrer ?? Substitute.For<IInteractionDeferrer>(),
         Substitute.For<IMessageResolver>());
 
     private sealed class RecordingInteraction : IInteractionWorkItem
