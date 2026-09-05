@@ -43,21 +43,24 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
     {
         using var linkedCancellation = CancellationTokenSource.CreateLinkedTokenSource(_workerCancellation.Token);
 
-        var count = Math.Max(1, _options.MessageWorkerCount);
-        for (var i = 0; i < count; i++)
+        var messageWorkers = Math.Max(1, _options.MessageWorkerCount);
+        var interactionWorkers = Math.Max(1, _options.InteractionWorkerCount);
+
+        for (var i = 0; i < messageWorkers; i++)
         {
             _workers.Add(RunWorkerAsync($"{Environment.MachineName}-{i}", linkedCancellation.Token));
         }
 
-        for (var i = 0; i < Math.Max(1, _options.InteractionWorkerCount); i++)
+        for (var i = 0; i < interactionWorkers; i++)
         {
             _workers.Add(RunInteractionWorkerAsync(linkedCancellation.Token));
         }
 
         _logger.LogInformation(
             "Queue workers started with {MessageWorkerCount} message workers and {InteractionWorkerCount} interaction workers",
-            count,
-            Math.Max(1, _options.InteractionWorkerCount));
+            messageWorkers,
+            interactionWorkers
+        );
 
         _completion = Task.WhenAll(_workers);
         _workersReady.TrySetResult();
