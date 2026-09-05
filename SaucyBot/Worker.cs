@@ -174,6 +174,7 @@ public sealed class Worker : BackgroundService
         }
 
         var item = MessageWorkItem.Create(socketMessage);
+
         if (item is null)
         {
             return;

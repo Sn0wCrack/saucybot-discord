@@ -216,6 +216,7 @@ public sealed class StackExchangeRedisStreamClient : IRedisStreamClient
     {
         var entries = await _database.StreamReadGroupAsync(_options.StreamName, _options.ConsumerGroup, consumer, ">", count: 1)
             .WaitAsync(cancellationToken);
+
         if (entries.Length == 0)
         {
             await Task.Delay(_options.RetryDelay, cancellationToken);
