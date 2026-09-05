@@ -21,6 +21,25 @@ namespace SaucyBot.Tests.Unit.Services;
 public sealed class SiteManagerTest
 {
     [Fact]
+    public void SiteRegistryMatchesOnlyEnabledSitePatterns()
+    {
+        var site = Substitute.For<IBlueskySite>();
+        site.Identifier.Returns("Context");
+        site.Pattern.Returns(new Regex("https://example.test"));
+
+        var services = new ServiceCollection();
+        services.AddSingleton(site);
+        using var provider = services.BuildServiceProvider();
+        var registry = new SiteRegistry(
+            Substitute.For<ILogger<SiteRegistry>>(),
+            new ConfigurationBuilder().Build(),
+            provider);
+
+        Assert.True(registry.HasMatch("try https://example.test now"));
+        Assert.False(registry.HasMatch("no supported link here"));
+    }
+
+    [Fact]
     public void HandleCommandPropagatesPolicyAndCommandContextToSiteRequest()
     {
         var services = new ServiceCollection();

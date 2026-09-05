@@ -51,4 +51,6 @@ public sealed class SiteRegistry
     public IEnumerable<KeyValuePair<string, IBaseSite>> Sites => _sites;
 
     public IBaseSite this[string identifier] => _sites[identifier];
+
+    public bool HasMatch(string content) => _sites.Values.Any(site => site.Pattern.IsMatch(content));
 }

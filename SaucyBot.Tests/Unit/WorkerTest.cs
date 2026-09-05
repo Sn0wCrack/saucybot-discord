@@ -441,18 +441,28 @@ public sealed class WorkerTest
     private static Worker CreateWorker(
         FakeWorkQueue queue,
         WorkQueueHostedService queueService,
-        InteractionWorkChannel? interactionChannel = null) => new(
-        Microsoft.Extensions.Logging.Abstractions.NullLogger<Worker>.Instance,
-        new ConfigurationBuilder().Build(),
-        Substitute.For<IDatabaseMigrator>(),
-        new InteractionHandler(
-            Microsoft.Extensions.Logging.Abstractions.NullLogger<InteractionHandler>.Instance,
-            new ServiceCollection().BuildServiceProvider()),
-        queue,
-        interactionChannel ?? new InteractionWorkChannel(new WorkQueueOptions()),
-        queueService,
-        new SaucyBotMetrics(),
-        Substitute.For<IMessageResolver>());
+        InteractionWorkChannel? interactionChannel = null)
+    {
+        var services = new ServiceCollection().BuildServiceProvider();
+        var siteRegistry = new SiteRegistry(
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<SiteRegistry>.Instance,
+            new ConfigurationBuilder().Build(),
+            services);
+
+        return new Worker(
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<Worker>.Instance,
+            new ConfigurationBuilder().Build(),
+            Substitute.For<IDatabaseMigrator>(),
+            new InteractionHandler(
+                Microsoft.Extensions.Logging.Abstractions.NullLogger<InteractionHandler>.Instance,
+                services),
+            queue,
+            siteRegistry,
+            interactionChannel ?? new InteractionWorkChannel(new WorkQueueOptions()),
+            queueService,
+            new SaucyBotMetrics(),
+            Substitute.For<IMessageResolver>());
+    }
 
     private sealed class RecordingInteraction : IInteractionWorkItem
     {

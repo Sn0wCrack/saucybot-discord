@@ -1,6 +1,7 @@
 using Discord;
 using Discord.WebSocket;
 using SaucyBot.Diagnostics;
+using SaucyBot.Extensions.Discord;
 using SaucyBot.Library;
 using SaucyBot.Library.Discord;
 using SaucyBot.Queue;
@@ -14,6 +15,7 @@ public sealed class Worker : BackgroundService
     private readonly ILogger<Worker> _logger;
     private readonly IConfiguration _configuration;
     private readonly IMessageWorkQueue _messageWorkQueue;
+    private readonly SiteRegistry _siteRegistry;
     private readonly InteractionWorkChannel _interactionWorkChannel;
     private readonly WorkQueueHostedService _workQueueHostedService;
     private readonly ISaucyBotMetrics _metrics;
@@ -31,6 +33,7 @@ public sealed class Worker : BackgroundService
         IDatabaseMigrator databaseMigrator,
         InteractionHandler interactionHandler,
         IMessageWorkQueue messageWorkQueue,
+        SiteRegistry siteRegistry,
         InteractionWorkChannel interactionWorkChannel,
         WorkQueueHostedService workQueueHostedService,
         ISaucyBotMetrics metrics,
@@ -43,6 +46,7 @@ public sealed class Worker : BackgroundService
         _interactionHandler = interactionHandler;
         _messageResolver = messageResolver;
         _messageWorkQueue = messageWorkQueue;
+        _siteRegistry = siteRegistry;
         _interactionWorkChannel = interactionWorkChannel;
         _workQueueHostedService = workQueueHostedService;
         _metrics = metrics;
@@ -162,18 +166,23 @@ public sealed class Worker : BackgroundService
 
     internal async Task HandleMessageAsync(SocketMessage socketMessage)
     {
-        if (socketMessage is not SocketUserMessage)
+        if (socketMessage is not SocketUserMessage message)
         {
             return;
         }
 
         // Ignore Messages created by the Bot itself
-        if (_client is not null && socketMessage.Author.Id == _client.CurrentUser.Id)
+        if (_client is not null && message.Author.Id == _client.CurrentUser.Id)
         {
             return;
         }
 
-        var item = MessageWorkItem.Create(socketMessage);
+        if (!_siteRegistry.HasMatch(message.AllMessageCleanContent()))
+        {
+            return;
+        }
+
+        var item = MessageWorkItem.Create(message);
 
         if (item is null)
         {
