@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using SaucyBot.Diagnostics;
 using SaucyBot.Queue;
 using Xunit;
 
@@ -48,6 +50,7 @@ public sealed class ValkeyWorkQueueTest
 
         Assert.Equal(["42-0"], client.Acknowledged);
         Assert.Equal(["42-0"], client.Deleted);
+        Assert.Equal(["ack:42-0", "delete:42-0"], client.Operations);
     }
 
     [Fact]
@@ -121,6 +124,60 @@ public sealed class ValkeyWorkQueueTest
     }
 
     [Fact]
+    public async Task MalformedCleanupRetriesAcknowledgementAndDeletionInOrder()
+    {
+        var client = new FakeValkeyStreamClient
+        {
+            AcknowledgeFailures = 1,
+            DeleteFailures = 1
+        };
+        client.Entries.Enqueue(new ValkeyStreamEntry("bad-0", "invalid"));
+        client.Entries.Enqueue(new ValkeyStreamEntry("good-0", CreateItem().Serialize()));
+        var queue = new ValkeyWorkQueue(client, new WorkQueueOptions { RetryDelay = TimeSpan.Zero });
+
+        await using var messages = queue.ReadAsync("worker-1", TestContext.Current.CancellationToken)
+            .GetAsyncEnumerator(TestContext.Current.CancellationToken);
+
+        Assert.True(await messages.MoveNextAsync());
+        Assert.Equal("good-0", messages.Current.EntryId);
+        Assert.Equal(["ack:bad-0", "ack:bad-0", "delete:bad-0", "delete:bad-0"], client.Operations);
+    }
+
+    [Fact]
+    public async Task MalformedEntryDecrementsQueueDepthExactlyOnce()
+    {
+        var client = new FakeValkeyStreamClient();
+        client.Entries.Enqueue(new ValkeyStreamEntry("bad-0", "invalid"));
+        client.Entries.Enqueue(new ValkeyStreamEntry("good-0", CreateItem().Serialize()));
+        using var metrics = new SaucyBotMetrics();
+        long queueDepthDelta = 0;
+        using var listener = new MeterListener();
+        listener.InstrumentPublished = (instrument, meterListener) =>
+        {
+            if (instrument.Name == "saucybot.queue.depth")
+            {
+                meterListener.EnableMeasurementEvents(instrument);
+            }
+        };
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, _, _) =>
+        {
+            if (instrument.Name == "saucybot.queue.depth")
+            {
+                queueDepthDelta += measurement;
+            }
+        });
+        listener.Start();
+        var queue = new ValkeyWorkQueue(client, new WorkQueueOptions { RetryDelay = TimeSpan.Zero }, metrics);
+
+        await using var messages = queue.ReadAsync("worker-1", TestContext.Current.CancellationToken)
+            .GetAsyncEnumerator(TestContext.Current.CancellationToken);
+        Assert.True(await messages.MoveNextAsync());
+        Assert.Equal("good-0", messages.Current.EntryId);
+
+        Assert.Equal(-1, queueDepthDelta);
+    }
+
+    [Fact]
     public async Task ReadCancellationStopsWaitingForNewEntries()
     {
         var client = new FakeValkeyStreamClient();
@@ -161,7 +218,10 @@ public sealed class ValkeyWorkQueueTest
         public List<string> Deleted { get; } = [];
         public Exception? AcknowledgeException { get; set; }
         public Exception? DeleteException { get; set; }
+        public int AcknowledgeFailures { get; set; }
+        public int DeleteFailures { get; set; }
         public List<string> DeleteAttempts { get; } = [];
+        public List<string> Operations { get; } = [];
 
         public Task EnsureGroupAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
@@ -190,6 +250,12 @@ public sealed class ValkeyWorkQueueTest
 
         public Task AcknowledgeAsync(string entryId, CancellationToken cancellationToken)
         {
+            Operations.Add($"ack:{entryId}");
+            if (AcknowledgeFailures-- > 0)
+            {
+                return Task.FromException(new InvalidOperationException("transient ack failure"));
+            }
+
             if (AcknowledgeException is not null)
             {
                 return Task.FromException(AcknowledgeException);
@@ -201,7 +267,13 @@ public sealed class ValkeyWorkQueueTest
 
         public Task DeleteAsync(string entryId, CancellationToken cancellationToken)
         {
+            Operations.Add($"delete:{entryId}");
             DeleteAttempts.Add(entryId);
+            if (DeleteFailures-- > 0)
+            {
+                return Task.FromException(new InvalidOperationException("transient delete failure"));
+            }
+
             if (DeleteException is not null)
             {
                 return Task.FromException(DeleteException);

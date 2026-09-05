@@ -85,7 +85,8 @@ public sealed class ValkeyWorkQueue : IMessageWorkQueue
                 {
                     _logger.LogError(exception, "Discarding malformed work item {EntryId}", entry.EntryId);
                     _metrics?.Malformed.Add(1);
-                    await AcknowledgeAndDeleteMalformedAsync(entry.EntryId, cancellationToken);
+                    _metrics?.QueueDepth.Add(-1);
+                    await DiscardMalformedAsync(entry.EntryId, cancellationToken);
                 }
 
                 if (item is not null)
@@ -114,17 +115,48 @@ public sealed class ValkeyWorkQueue : IMessageWorkQueue
     public Task ClearPendingAsync(CancellationToken cancellationToken) =>
         _options.ClearPendingOnStartup ? _client.ClearPendingAsync(cancellationToken) : Task.CompletedTask;
 
-    private async Task AcknowledgeAndDeleteMalformedAsync(string entryId, CancellationToken cancellationToken)
+    private async Task DiscardMalformedAsync(string entryId, CancellationToken cancellationToken)
     {
-        try
+        if (!await RetryMalformedCleanupAsync(
+                entryId,
+                "acknowledge",
+                () => _client.AcknowledgeAsync(entryId, cancellationToken),
+                cancellationToken))
         {
-            await _client.AcknowledgeAsync(entryId, cancellationToken);
-            await _client.DeleteAsync(entryId, cancellationToken);
+            return;
         }
-        catch (Exception exception) when (exception is not OperationCanceledException)
+
+        await RetryMalformedCleanupAsync(
+            entryId,
+            "delete",
+            () => _client.DeleteAsync(entryId, cancellationToken),
+            cancellationToken);
+    }
+
+    private async Task<bool> RetryMalformedCleanupAsync(
+        string entryId,
+        string operation,
+        Func<Task> cleanup,
+        CancellationToken cancellationToken)
+    {
+        while (true)
         {
-            _metrics?.CleanupFailed.Add(1);
-            _logger.LogError(exception, "Failed to discard malformed work item {EntryId}", entryId);
+            try
+            {
+                await cleanup();
+                return true;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogDebug("Cancelled malformed work item cleanup {Operation} for {EntryId}", operation, entryId);
+                return false;
+            }
+            catch (Exception exception)
+            {
+                _metrics?.CleanupFailed.Add(1);
+                _logger.LogWarning(exception, "Retrying malformed work item cleanup {Operation} for {EntryId}", operation, entryId);
+                await Task.Delay(_options.RetryDelay, cancellationToken);
+            }
         }
     }
 }
