@@ -31,14 +31,14 @@ public sealed partial class FxTwitterSite : BaseSite, ITwitterSite
     private readonly IConfiguration _configuration;
     private readonly HttpClient _httpClient;
     private readonly IFxTwitterClient _client;
-    private readonly SaucyBotMetrics? _metrics;
+    private readonly ISaucyBotMetrics? _metrics;
 
     public FxTwitterSite(
         ILogger<FxTwitterSite> logger,
         IConfiguration configuration,
         IFxTwitterClient client,
         IHttpClientFactory httpClientFactory,
-        SaucyBotMetrics? metrics = null)
+        ISaucyBotMetrics? metrics = null)
     {
         _logger = logger;
         _configuration = configuration;

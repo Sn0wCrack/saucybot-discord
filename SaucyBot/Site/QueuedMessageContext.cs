@@ -1,5 +1,6 @@
 using Discord;
 using SaucyBot.Common;
+using SaucyBot.Library.Discord;
 using SaucyBot.Queue;
 
 namespace SaucyBot.Site;
@@ -59,18 +60,23 @@ public sealed class QueuedMessageContext : IMessageContext
 
     public async Task<IUserMessage?> ResolveMessageAsync(CancellationToken cancellationToken)
     {
-        if (_resolvedMessage is not null || _attemptedResolution)
+        if (_resolvedMessage is not null)
         {
             return _resolvedMessage;
         }
 
-        _resolvedMessage = _resolver.GetCachedMessage(ChannelId, Id);
-        if (_resolvedMessage is null)
+        if (_attemptedResolution)
         {
-            _attemptedResolution = true;
-            _resolvedMessage = await _resolver.FetchMessageAsync(ChannelId, Id, cancellationToken);
+            return null;
         }
 
-        return _resolvedMessage;
+        _resolvedMessage = _resolver.GetCachedMessage(ChannelId, Id);
+        if (_resolvedMessage is not null)
+        {
+            return _resolvedMessage;
+        }
+
+        _attemptedResolution = true;
+        return _resolvedMessage = await _resolver.FetchMessageAsync(ChannelId, Id, cancellationToken);
     }
 }

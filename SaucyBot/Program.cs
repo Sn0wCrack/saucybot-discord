@@ -41,8 +41,8 @@ await Host.CreateDefaultBuilder(args)
         services.AddSingleton(queueOptions);
         services.AddSingleton<InteractionWorkChannel>();
         services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(queueOptions.ConnectionString));
-        services.AddSingleton<IValkeyStreamClient, StackExchangeValkeyStreamClient>();
-        services.AddSingleton<IMessageWorkQueue, ValkeyWorkQueue>();
+        services.AddSingleton<IRedisStreamClient, StackExchangeRedisStreamClient>();
+        services.AddSingleton<IMessageWorkQueue, RedisWorkQueue>();
         services.AddSingleton<IWorkItemProcessor, WorkItemProcessor>();
         services.AddSaucyBotServices();
         services.AddSaucyBotSites();

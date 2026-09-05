@@ -1,7 +1,5 @@
 using System.Diagnostics;
-using Discord.WebSocket;
 using SaucyBot.Diagnostics;
-using SaucyBot.Services;
 
 namespace SaucyBot.Queue;
 
@@ -11,11 +9,9 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
     private readonly IWorkItemProcessor _processor;
     private readonly WorkQueueOptions _options;
     private readonly ILogger<WorkQueueHostedService> _logger;
-    private readonly InteractionWorkChannel? _interactionChannel;
-    private readonly InteractionHandler? _interactionHandler;
-    private readonly IServiceProvider? _services;
-    private readonly SaucyBotMetrics? _metrics;
-    private readonly Func<IInteractionWorkItem, CancellationToken, Task>? _interactionProcessor;
+    private readonly InteractionWorkChannel _interactionChannel;
+    private readonly IInteractionProcessor _interactionProcessor;
+    private readonly ISaucyBotMetrics _metrics;
     private readonly List<Task> _workers = [];
     private readonly CancellationTokenSource _admissionCancellation = new();
     private readonly CancellationTokenSource _workerCancellation = new();
@@ -29,21 +25,17 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
         IWorkItemProcessor processor,
         WorkQueueOptions options,
         ILogger<WorkQueueHostedService> logger,
-        InteractionWorkChannel? interactionChannel = null,
-        InteractionHandler? interactionHandler = null,
-        IServiceProvider? services = null,
-        SaucyBotMetrics? metrics = null,
-        Func<IInteractionWorkItem, CancellationToken, Task>? interactionProcessor = null)
+        InteractionWorkChannel interactionChannel,
+        IInteractionProcessor interactionProcessor,
+        ISaucyBotMetrics metrics)
     {
         _queue = queue;
         _processor = processor;
         _options = options;
         _logger = logger;
         _interactionChannel = interactionChannel;
-        _interactionHandler = interactionHandler;
-        _services = services;
-        _metrics = metrics;
         _interactionProcessor = interactionProcessor;
+        _metrics = metrics;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -56,13 +48,9 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
             _workers.Add(RunWorkerAsync($"{Environment.MachineName}-{i}", linkedCancellation.Token));
         }
 
-        if (_interactionChannel is not null && (_interactionProcessor is not null
-            || (_interactionHandler is not null && _services is not null)))
+        for (var i = 0; i < Math.Max(1, _options.InteractionWorkerCount); i++)
         {
-            for (var i = 0; i < Math.Max(1, _options.InteractionWorkerCount); i++)
-            {
-                _workers.Add(RunInteractionWorkerAsync(linkedCancellation.Token));
-            }
+            _workers.Add(RunInteractionWorkerAsync(linkedCancellation.Token));
         }
 
         _completion = Task.WhenAll(_workers);
@@ -132,36 +120,36 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
 
             await foreach (var item in _queue.ReadAsync(consumer, readCancellation.Token))
             {
-                _metrics?.Dequeued.Add(1);
-                _metrics?.QueueDepth.Add(-1);
+                _metrics.Dequeued.Add(1);
+                _metrics.QueueDepth.Add(-1);
                 if (item.Item.EnqueuedAt != default)
                 {
-                    _metrics?.QueueAge.Record((DateTimeOffset.UtcNow - item.Item.EnqueuedAt).TotalMilliseconds);
+                    _metrics.QueueAge.Record((DateTimeOffset.UtcNow - item.Item.EnqueuedAt).TotalMilliseconds);
                 }
 
-                _metrics?.ActiveWorkers.Add(1);
+                _metrics.ActiveWorkers.Add(1);
                 var stopwatch = Stopwatch.StartNew();
                 try
                 {
                     await _processor.ProcessAsync(item, cancellationToken);
                     await _queue.AcknowledgeAsync(item, cancellationToken);
-                    _metrics?.Succeeded.Add(1);
+                    _metrics.Succeeded.Add(1);
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {
                     _logger.LogDebug("Message worker {Consumer} cancelled while processing {EntryId}", consumer, item.EntryId);
-                    _metrics?.Cancelled.Add(1);
+                    _metrics.Cancelled.Add(1);
                 }
                 catch (Exception exception)
                 {
                     _logger.LogError(exception, "Message worker {Consumer} failed for {EntryId}", consumer, item.EntryId);
-                    _metrics?.Failed.Add(1);
+                    _metrics.Failed.Add(1);
                 }
                 finally
                 {
                     stopwatch.Stop();
-                    _metrics?.ProcessingDuration.Record(stopwatch.Elapsed.TotalMilliseconds);
-                    _metrics?.ActiveWorkers.Add(-1);
+                    _metrics.ProcessingDuration.Record(stopwatch.Elapsed.TotalMilliseconds);
+                    _metrics.ActiveWorkers.Add(-1);
                 }
             }
         }
@@ -176,40 +164,32 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
         {
             await foreach (var interaction in _interactionChannel!.ReadAllAsync(cancellationToken))
             {
-                _metrics?.Dequeued.Add(1);
-                _metrics?.QueueDepth.Add(-1);
-                _metrics?.ActiveWorkers.Add(1);
+                _metrics.Dequeued.Add(1);
+                _metrics.QueueDepth.Add(-1);
+                _metrics.ActiveWorkers.Add(1);
                 var stopwatch = Stopwatch.StartNew();
                 try
                 {
-                    if (_interactionProcessor is not null)
-                    {
-                        await _interactionProcessor(interaction, cancellationToken);
-                    }
-                    else
-                    {
-                        await _interactionHandler!.ExecuteAsync(interaction.SocketInteraction
-                            ?? throw new InvalidOperationException("Interaction work item has no socket interaction."), _services!);
-                    }
-                    _metrics?.Succeeded.Add(1);
+                    await _interactionProcessor.ProcessAsync(interaction, cancellationToken);
+                    _metrics.Succeeded.Add(1);
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {
                     _logger.LogDebug("Interaction worker cancelled");
-                    _metrics?.Cancelled.Add(1);
+                    _metrics.Cancelled.Add(1);
                     await SendInteractionFailureAsync(interaction, cancellationToken);
                 }
                 catch (Exception exception)
                 {
                     _logger.LogError(exception, "Interaction worker failed for {InteractionId}", interaction?.Id);
-                    _metrics?.Failed.Add(1);
+                    _metrics.Failed.Add(1);
                     await SendInteractionFailureAsync(interaction, cancellationToken);
                 }
                 finally
                 {
                     stopwatch.Stop();
-                    _metrics?.ProcessingDuration.Record(stopwatch.Elapsed.TotalMilliseconds);
-                    _metrics?.ActiveWorkers.Add(-1);
+                    _metrics.ProcessingDuration.Record(stopwatch.Elapsed.TotalMilliseconds);
+                    _metrics.ActiveWorkers.Add(-1);
                 }
             }
         }

@@ -2,7 +2,7 @@ using System.Diagnostics.Metrics;
 
 namespace SaucyBot.Diagnostics;
 
-public sealed class SaucyBotMetrics : IDisposable
+public sealed class SaucyBotMetrics : ISaucyBotMetrics
 {
     public const string MeterName = "SaucyBot";
 

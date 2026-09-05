@@ -3,38 +3,38 @@ using StackExchange.Redis;
 
 namespace SaucyBot.Queue;
 
-public sealed class ValkeyBackpressureException(string message) : Exception(message);
+public sealed class RedisBackpressureException(string message) : Exception(message);
 
-public sealed record ValkeyStreamEntry(string EntryId, string Payload);
+public sealed record RedisStreamEntry(string EntryId, string Payload);
 
-public interface IValkeyStreamClient
+public interface IRedisStreamClient
 {
     Task EnsureGroupAsync(CancellationToken cancellationToken);
     Task<string> AddAsync(string payload, CancellationToken cancellationToken);
-    Task<ValkeyStreamEntry?> ReadNewAsync(string consumer, CancellationToken cancellationToken);
+    Task<RedisStreamEntry?> ReadNewAsync(string consumer, CancellationToken cancellationToken);
     Task AcknowledgeAsync(string entryId, CancellationToken cancellationToken);
     Task DeleteAsync(string entryId, CancellationToken cancellationToken);
     Task ClearPendingAsync(CancellationToken cancellationToken);
 }
 
-public sealed class ValkeyWorkQueue : IMessageWorkQueue
+public sealed class RedisWorkQueue : IMessageWorkQueue
 {
     internal const string PayloadField = "payload";
-    private readonly IValkeyStreamClient _client;
+    private readonly IRedisStreamClient _client;
     private readonly WorkQueueOptions _options;
-    private readonly SaucyBotMetrics? _metrics;
-    private readonly ILogger<ValkeyWorkQueue> _logger;
+    private readonly ISaucyBotMetrics? _metrics;
+    private readonly ILogger<RedisWorkQueue> _logger;
 
-    public ValkeyWorkQueue(
-        IValkeyStreamClient client,
+    public RedisWorkQueue(
+        IRedisStreamClient client,
         WorkQueueOptions options,
-        SaucyBotMetrics? metrics = null,
-        ILogger<ValkeyWorkQueue>? logger = null)
+        ISaucyBotMetrics? metrics = null,
+        ILogger<RedisWorkQueue>? logger = null)
     {
         _client = client;
         _options = options;
         _metrics = metrics;
-        _logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<ValkeyWorkQueue>.Instance;
+        _logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<RedisWorkQueue>.Instance;
     }
 
     public async Task EnqueueAsync(MessageWorkItem item, CancellationToken cancellationToken)
@@ -51,7 +51,7 @@ public sealed class ValkeyWorkQueue : IMessageWorkQueue
                     _metrics?.QueueDepth.Add(1);
                     return;
                 }
-                catch (ValkeyBackpressureException)
+                catch (RedisBackpressureException)
                 {
                     _metrics?.Retried.Add(1);
                     await Task.Delay(_options.RetryDelay, cancellationToken);
@@ -112,8 +112,15 @@ public sealed class ValkeyWorkQueue : IMessageWorkQueue
         }
     }
 
-    public Task ClearPendingAsync(CancellationToken cancellationToken) =>
-        _options.ClearPendingOnStartup ? _client.ClearPendingAsync(cancellationToken) : Task.CompletedTask;
+    public Task ClearPendingAsync(CancellationToken cancellationToken)
+    {
+        if (!_options.ClearPendingOnStartup)
+        {
+            return Task.CompletedTask;
+        }
+
+        return _client.ClearPendingAsync(cancellationToken);
+    }
 
     private async Task DiscardMalformedAsync(string entryId, CancellationToken cancellationToken)
     {
@@ -161,12 +168,12 @@ public sealed class ValkeyWorkQueue : IMessageWorkQueue
     }
 }
 
-public sealed class StackExchangeValkeyStreamClient : IValkeyStreamClient
+public sealed class StackExchangeRedisStreamClient : IRedisStreamClient
 {
     private readonly IDatabase _database;
     private readonly WorkQueueOptions _options;
 
-    public StackExchangeValkeyStreamClient(IConnectionMultiplexer connection, WorkQueueOptions options)
+    public StackExchangeRedisStreamClient(IConnectionMultiplexer connection, WorkQueueOptions options)
     {
         _database = connection.GetDatabase();
         _options = options;
@@ -188,22 +195,22 @@ public sealed class StackExchangeValkeyStreamClient : IValkeyStreamClient
     {
         try
         {
-            var id = await _database.StreamAddAsync(_options.StreamName, ValkeyWorkQueue.PayloadField, payload)
+            var id = await _database.StreamAddAsync(_options.StreamName, RedisWorkQueue.PayloadField, payload)
                 .WaitAsync(cancellationToken);
             return id.ToString();
         }
         catch (RedisServerException exception) when (exception.Message.Contains("MISCONF", StringComparison.OrdinalIgnoreCase)
             || exception.Message.Contains("OOM", StringComparison.OrdinalIgnoreCase))
         {
-            throw new ValkeyBackpressureException(exception.Message);
+            throw new RedisBackpressureException(exception.Message);
         }
         catch (RedisConnectionException exception)
         {
-            throw new ValkeyBackpressureException(exception.Message);
+            throw new RedisBackpressureException(exception.Message);
         }
     }
 
-    public async Task<ValkeyStreamEntry?> ReadNewAsync(string consumer, CancellationToken cancellationToken)
+    public async Task<RedisStreamEntry?> ReadNewAsync(string consumer, CancellationToken cancellationToken)
     {
         var entries = await _database.StreamReadGroupAsync(_options.StreamName, _options.ConsumerGroup, consumer, ">", count: 1)
             .WaitAsync(cancellationToken);
@@ -226,9 +233,9 @@ public sealed class StackExchangeValkeyStreamClient : IValkeyStreamClient
     public Task ClearPendingAsync(CancellationToken cancellationToken) =>
         _database.KeyDeleteAsync(_options.StreamName).WaitAsync(cancellationToken);
 
-    private static ValkeyStreamEntry ToEntry(StreamEntry entry)
+    private static RedisStreamEntry ToEntry(StreamEntry entry)
     {
-        var payload = entry.Values.FirstOrDefault(x => x.Name == ValkeyWorkQueue.PayloadField).Value;
-        return new ValkeyStreamEntry(entry.Id.ToString(), payload.ToString());
+        var payload = entry.Values.FirstOrDefault(x => x.Name == RedisWorkQueue.PayloadField).Value;
+        return new RedisStreamEntry(entry.Id.ToString(), payload.ToString());
     }
 }

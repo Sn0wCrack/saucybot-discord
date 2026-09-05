@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using NSubstitute;
 using SaucyBot;
 using SaucyBot.Diagnostics;
+using SaucyBot.Library.Discord;
 using SaucyBot.Queue;
 using SaucyBot.Services;
 using Xunit;
@@ -30,7 +31,10 @@ public sealed class WorkerTest
             queue,
             processor,
             new WorkQueueOptions { MessageWorkerCount = 1 },
-            SubstituteLogger<WorkQueueHostedService>());
+            SubstituteLogger<WorkQueueHostedService>(),
+            new InteractionWorkChannel(new WorkQueueOptions()),
+            Substitute.For<IInteractionProcessor>(),
+            new SaucyBotMetrics());
 
         await service.StartAsync(TestContext.Current.CancellationToken);
         await processor.Processed.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
@@ -54,7 +58,10 @@ public sealed class WorkerTest
             queue,
             processor,
             new WorkQueueOptions { MessageWorkerCount = 1 },
-            SubstituteLogger<WorkQueueHostedService>());
+            SubstituteLogger<WorkQueueHostedService>(),
+            new InteractionWorkChannel(new WorkQueueOptions()),
+            Substitute.For<IInteractionProcessor>(),
+            new SaucyBotMetrics());
 
         await service.StartAsync(TestContext.Current.CancellationToken);
         await processor.Processed.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
@@ -80,7 +87,10 @@ public sealed class WorkerTest
                 MessageWorkerCount = 1,
                 ShutdownDrainTimeout = TimeSpan.FromMilliseconds(100)
             },
-            SubstituteLogger<WorkQueueHostedService>());
+            SubstituteLogger<WorkQueueHostedService>(),
+            new InteractionWorkChannel(new WorkQueueOptions()),
+            Substitute.For<IInteractionProcessor>(),
+            new SaucyBotMetrics());
 
         await service.StartAsync(TestContext.Current.CancellationToken);
         await processor.Started.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
@@ -105,7 +115,9 @@ public sealed class WorkerTest
             processor,
             new WorkQueueOptions { MessageWorkerCount = 1, ShutdownDrainTimeout = TimeSpan.FromMilliseconds(100) },
             SubstituteLogger<WorkQueueHostedService>(),
-            interactionChannel);
+            interactionChannel,
+            Substitute.For<IInteractionProcessor>(),
+            new SaucyBotMetrics());
 
         service.StopIntake();
 
@@ -125,7 +137,10 @@ public sealed class WorkerTest
             queue,
             processor,
             new WorkQueueOptions { MessageWorkerCount = 2, ShutdownDrainTimeout = TimeSpan.FromMilliseconds(100) },
-            SubstituteLogger<WorkQueueHostedService>());
+            SubstituteLogger<WorkQueueHostedService>(),
+            new InteractionWorkChannel(new WorkQueueOptions()),
+            Substitute.For<IInteractionProcessor>(),
+            new SaucyBotMetrics());
 
         await service.StartAsync(TestContext.Current.CancellationToken);
         await processor.StartedCount.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
@@ -145,7 +160,10 @@ public sealed class WorkerTest
             queue,
             processor,
             new WorkQueueOptions { MessageWorkerCount = 1 },
-            SubstituteLogger<WorkQueueHostedService>());
+            SubstituteLogger<WorkQueueHostedService>(),
+            new InteractionWorkChannel(new WorkQueueOptions()),
+            Substitute.For<IInteractionProcessor>(),
+            new SaucyBotMetrics());
 
         await service.StartAsync(TestContext.Current.CancellationToken);
         await processor.Processed.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
@@ -171,7 +189,7 @@ public sealed class WorkerTest
             new WorkQueueOptions { InteractionWorkerCount = 1, ShutdownDrainTimeout = TimeSpan.FromSeconds(1) },
             SubstituteLogger<WorkQueueHostedService>(),
             interactionChannel: channel,
-            interactionProcessor: (_, _) =>
+            interactionProcessor: new RecordingInteractionProcessor(() =>
             {
                 var count = Interlocked.Increment(ref processed);
                 started.TrySetResult();
@@ -179,9 +197,8 @@ public sealed class WorkerTest
                 {
                     drained.TrySetResult();
                 }
-
-                return Task.CompletedTask;
-            });
+            }),
+            metrics: new SaucyBotMetrics());
 
         await service.StartAsync(TestContext.Current.CancellationToken);
         await started.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
@@ -203,7 +220,10 @@ public sealed class WorkerTest
             queue,
             processor,
             new WorkQueueOptions { ClearPendingOnStartup = true },
-            SubstituteLogger<WorkQueueHostedService>());
+            SubstituteLogger<WorkQueueHostedService>(),
+            new InteractionWorkChannel(new WorkQueueOptions()),
+            Substitute.For<IInteractionProcessor>(),
+            new SaucyBotMetrics());
 
         await service.StartAsync(TestContext.Current.CancellationToken);
         service.StopIntake();
@@ -224,7 +244,10 @@ public sealed class WorkerTest
             queue,
             processor,
             new WorkQueueOptions { ShutdownDrainTimeout = TimeSpan.FromSeconds(1) },
-            SubstituteLogger<WorkQueueHostedService>());
+            SubstituteLogger<WorkQueueHostedService>(),
+            new InteractionWorkChannel(new WorkQueueOptions()),
+            Substitute.For<IInteractionProcessor>(),
+            new SaucyBotMetrics());
 
         await service.StartAsync(TestContext.Current.CancellationToken);
         await processor.Started.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
@@ -246,7 +269,10 @@ public sealed class WorkerTest
             queue,
             processor,
             new WorkQueueOptions { ShutdownDrainTimeout = TimeSpan.FromMilliseconds(50) },
-            SubstituteLogger<WorkQueueHostedService>());
+            SubstituteLogger<WorkQueueHostedService>(),
+            new InteractionWorkChannel(new WorkQueueOptions()),
+            Substitute.For<IInteractionProcessor>(),
+            new SaucyBotMetrics());
 
         await service.StartAsync(TestContext.Current.CancellationToken);
         await processor.Started.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
@@ -260,7 +286,9 @@ public sealed class WorkerTest
     {
         var queue = new FakeWorkQueue();
         await using var queueService = CreateQueueService(queue);
-        var worker = CreateWorker(queue, queueService, messageWorkItemFactory: _ => CreateQueuedItem("1-0").Item);
+        var factory = Substitute.For<IMessageWorkItemFactory>();
+        factory.Create(Arg.Any<Discord.WebSocket.SocketMessage>()).Returns(CreateQueuedItem("1-0").Item);
+        var worker = CreateWorker(queue, queueService, messageWorkItemFactory: factory);
         queueService.StopIntake();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
@@ -272,18 +300,18 @@ public sealed class WorkerTest
     {
         var queue = new FakeWorkQueue();
         await using var queueService = CreateQueueService(queue);
-        var worker = CreateWorker(queue, queueService);
         var deferred = false;
+        var deferrer = Substitute.For<IInteractionDeferrer>();
+        deferrer.DeferAsync(Arg.Any<Discord.WebSocket.SocketInteraction>()).Returns(_ =>
+        {
+            deferred = true;
+            return Task.CompletedTask;
+        });
+        var worker = CreateWorker(queue, queueService, interactionDeferrer: deferrer);
         queueService.StopIntake();
 
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-            worker.HandleInteractionAsync(
-                (Discord.WebSocket.SocketInteraction)RuntimeHelpers.GetUninitializedObject(typeof(Discord.WebSocket.SocketSlashCommand)),
-                _ =>
-                {
-                    deferred = true;
-                    return Task.CompletedTask;
-                }));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => worker.HandleInteractionAsync(
+            (Discord.WebSocket.SocketInteraction)RuntimeHelpers.GetUninitializedObject(typeof(Discord.WebSocket.SocketSlashCommand))));
 
         Assert.True(deferred);
     }
@@ -294,21 +322,26 @@ public sealed class WorkerTest
         var queue = new FakeWorkQueue();
         var channel = new InteractionWorkChannel(new WorkQueueOptions { InteractionChannelCapacity = 1 });
         var interaction = new RecordingInteraction();
+        var interactionFactory = Substitute.For<IInteractionWorkItemFactory>();
+        interactionFactory.Create(Arg.Any<Discord.WebSocket.SocketInteraction>()).Returns(interaction);
+        var deferrer = Substitute.For<IInteractionDeferrer>();
+        deferrer.DeferAsync(Arg.Any<Discord.WebSocket.SocketInteraction>()).Returns(Task.CompletedTask);
 
         await using var service = new WorkQueueHostedService(
             queue,
             new RecordingProcessor(),
             new WorkQueueOptions { ShutdownDrainTimeout = TimeSpan.FromMilliseconds(100) },
             SubstituteLogger<WorkQueueHostedService>(),
-            interactionChannel: channel,
-            interactionProcessor: (_, _) => Task.FromException(new InvalidOperationException("failed")));
+                interactionChannel: channel,
+                interactionProcessor: new RecordingInteractionProcessor(() => throw new InvalidOperationException("failed")),
+                metrics: new SaucyBotMetrics());
 
         var worker = CreateWorker(
             queue,
             service,
             channel,
-            interactionWorkItemFactory: _ => interaction,
-            interactionDeferrer: _ => Task.CompletedTask);
+            interactionWorkItemFactory: interactionFactory,
+            interactionDeferrer: deferrer);
 
         await service.StartAsync(TestContext.Current.CancellationToken);
         await worker.HandleInteractionAsync(
@@ -395,19 +428,31 @@ public sealed class WorkerTest
         public void Release() => _release.TrySetResult();
     }
 
+    private sealed class RecordingInteractionProcessor(Action callback) : IInteractionProcessor
+    {
+        public Task ProcessAsync(IInteractionWorkItem interaction, CancellationToken cancellationToken)
+        {
+            callback();
+            return Task.CompletedTask;
+        }
+    }
+
     private static WorkQueueHostedService CreateQueueService(FakeWorkQueue queue) => new(
         queue,
         new RecordingProcessor(),
         new WorkQueueOptions { ShutdownDrainTimeout = TimeSpan.FromMilliseconds(100) },
-        SubstituteLogger<WorkQueueHostedService>());
+        SubstituteLogger<WorkQueueHostedService>(),
+        new InteractionWorkChannel(new WorkQueueOptions()),
+        Substitute.For<IInteractionProcessor>(),
+        new SaucyBotMetrics());
 
     private static Worker CreateWorker(
         FakeWorkQueue queue,
         WorkQueueHostedService queueService,
         InteractionWorkChannel? interactionChannel = null,
-        Func<Discord.WebSocket.SocketMessage, MessageWorkItem?>? messageWorkItemFactory = null,
-        Func<Discord.WebSocket.SocketInteraction, IInteractionWorkItem>? interactionWorkItemFactory = null,
-        Func<Discord.WebSocket.SocketInteraction, Task>? interactionDeferrer = null) => new(
+        IMessageWorkItemFactory? messageWorkItemFactory = null,
+        IInteractionWorkItemFactory? interactionWorkItemFactory = null,
+        IInteractionDeferrer? interactionDeferrer = null) => new(
         Microsoft.Extensions.Logging.Abstractions.NullLogger<Worker>.Instance,
         new ConfigurationBuilder().Build(),
         Substitute.For<IDatabaseMigrator>(),
@@ -418,9 +463,10 @@ public sealed class WorkerTest
         interactionChannel ?? new InteractionWorkChannel(new WorkQueueOptions()),
         queueService,
         new SaucyBotMetrics(),
-        messageWorkItemFactory,
-        interactionWorkItemFactory,
-        interactionDeferrer);
+        messageWorkItemFactory ?? Substitute.For<IMessageWorkItemFactory>(),
+        interactionWorkItemFactory ?? Substitute.For<IInteractionWorkItemFactory>(),
+        interactionDeferrer ?? Substitute.For<IInteractionDeferrer>(),
+        Substitute.For<IMessageResolver>());
 
     private sealed class RecordingInteraction : IInteractionWorkItem
     {

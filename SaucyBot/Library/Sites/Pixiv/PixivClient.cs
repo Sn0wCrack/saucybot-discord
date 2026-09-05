@@ -20,7 +20,7 @@ public sealed class PixivClient : IPixivClient
     private readonly ILogger<PixivClient> _logger;
     private readonly IConfiguration _configuration;
     private readonly ICacheManager _cache;
-    private readonly SaucyBotMetrics? _metrics;
+    private readonly ISaucyBotMetrics? _metrics;
 
     private readonly HttpClient _client;
 
@@ -33,7 +33,7 @@ public sealed class PixivClient : IPixivClient
         IConfiguration configuration,
         ICacheManager cacheManager,
         HttpClient client,
-        SaucyBotMetrics? metrics = null
+        ISaucyBotMetrics? metrics = null
     )
     {
         _logger = logger;

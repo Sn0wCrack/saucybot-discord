@@ -41,6 +41,7 @@ public sealed class TelemetryServiceRegistrationTest
         Assert.Equal(2500, options.ExportIntervalMilliseconds);
         Assert.False(options.Tracing.Enabled);
         Assert.NotNull(provider.GetService<MeterProvider>());
+        Assert.IsType<SaucyBotMetrics>(provider.GetRequiredService<ISaucyBotMetrics>());
         Assert.Null(provider.GetService<TracerProvider>());
     }
 
@@ -60,6 +61,7 @@ public sealed class TelemetryServiceRegistrationTest
 
         Assert.Null(provider.GetService<MeterProvider>());
         Assert.Null(provider.GetService<TracerProvider>());
+        Assert.IsType<SaucyBotMetrics>(provider.GetRequiredService<ISaucyBotMetrics>());
     }
 
     [Fact]

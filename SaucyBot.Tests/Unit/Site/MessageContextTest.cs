@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 using NSubstitute;
+using SaucyBot.Library.Discord;
 using SaucyBot.Queue;
 using SaucyBot.Site;
 using Xunit;

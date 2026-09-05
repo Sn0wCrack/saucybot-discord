@@ -4,22 +4,23 @@ using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging.Abstractions;
 using SaucyBot.Diagnostics;
 using SaucyBot.Queue;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Queue;
 
-public sealed class ValkeyWorkQueueTest
+public sealed class RedisWorkQueueTest
 {
     [Fact]
     public async Task EnqueueRetriesTransientBackpressureAndEventuallySucceeds()
     {
-        var client = new FakeValkeyStreamClient
+        var client = new FakeRedisStreamClient
         {
             AddFailures = 2
         };
-        var queue = new ValkeyWorkQueue(client, new WorkQueueOptions { RetryDelay = TimeSpan.Zero });
+        var queue = new RedisWorkQueue(client, new WorkQueueOptions { RetryDelay = TimeSpan.Zero });
         var item = CreateItem();
 
         await queue.EnqueueAsync(item, CancellationToken.None);
@@ -31,10 +32,10 @@ public sealed class ValkeyWorkQueueTest
     [Fact]
     public async Task ReadReturnsStreamEntryAndAcknowledgementIsExplicit()
     {
-        var client = new FakeValkeyStreamClient();
+        var client = new FakeRedisStreamClient();
         var item = CreateItem();
-        client.Entries.Enqueue(new ValkeyStreamEntry("42-0", item.Serialize()));
-        var queue = new ValkeyWorkQueue(client, new WorkQueueOptions { RetryDelay = TimeSpan.Zero });
+        client.Entries.Enqueue(new RedisStreamEntry("42-0", item.Serialize()));
+        var queue = new RedisWorkQueue(client, new WorkQueueOptions { RetryDelay = TimeSpan.Zero });
 
         await using var messages = queue.ReadAsync("worker-1", TestContext.Current.CancellationToken)
             .GetAsyncEnumerator(TestContext.Current.CancellationToken);
@@ -56,10 +57,10 @@ public sealed class ValkeyWorkQueueTest
     [Fact]
     public async Task ReadDoesNotReclaimPendingEntriesDuringRuntime()
     {
-        var client = new FakeValkeyStreamClient();
+        var client = new FakeRedisStreamClient();
         var item = CreateItem();
-        client.Entries.Enqueue(new ValkeyStreamEntry("8-0", item.Serialize()));
-        var queue = new ValkeyWorkQueue(client, new WorkQueueOptions { RetryDelay = TimeSpan.Zero });
+        client.Entries.Enqueue(new RedisStreamEntry("8-0", item.Serialize()));
+        var queue = new RedisWorkQueue(client, new WorkQueueOptions { RetryDelay = TimeSpan.Zero });
 
         await using var messages = queue.ReadAsync("worker-1", TestContext.Current.CancellationToken)
             .GetAsyncEnumerator(TestContext.Current.CancellationToken);
@@ -72,8 +73,8 @@ public sealed class ValkeyWorkQueueTest
     [Fact]
     public async Task EnqueueCancellationStopsBackpressureRetry()
     {
-        var client = new FakeValkeyStreamClient { AddFailures = int.MaxValue };
-        var queue = new ValkeyWorkQueue(client, new WorkQueueOptions { RetryDelay = TimeSpan.FromSeconds(10) });
+        var client = new FakeRedisStreamClient { AddFailures = int.MaxValue };
+        var queue = new RedisWorkQueue(client, new WorkQueueOptions { RetryDelay = TimeSpan.FromSeconds(10) });
         using var cancellation = new CancellationTokenSource();
 
         var enqueue = queue.EnqueueAsync(CreateItem(), cancellation.Token);
@@ -85,8 +86,8 @@ public sealed class ValkeyWorkQueueTest
     [Fact]
     public async Task AcknowledgementFailureIsPropagated()
     {
-        var client = new FakeValkeyStreamClient { AcknowledgeException = new InvalidOperationException("ack failed") };
-        var queue = new ValkeyWorkQueue(client, new WorkQueueOptions());
+        var client = new FakeRedisStreamClient { AcknowledgeException = new InvalidOperationException("ack failed") };
+        var queue = new RedisWorkQueue(client, new WorkQueueOptions());
         var queued = new QueuedMessageWorkItem("7-0", CreateItem());
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => queue.AcknowledgeAsync(queued, CancellationToken.None));
@@ -95,8 +96,8 @@ public sealed class ValkeyWorkQueueTest
     [Fact]
     public async Task DeleteFailureAfterAcknowledgementIsPropagated()
     {
-        var client = new FakeValkeyStreamClient { DeleteException = new InvalidOperationException("delete failed") };
-        var queue = new ValkeyWorkQueue(client, new WorkQueueOptions());
+        var client = new FakeRedisStreamClient { DeleteException = new InvalidOperationException("delete failed") };
+        var queue = new RedisWorkQueue(client, new WorkQueueOptions());
         var queued = new QueuedMessageWorkItem("7-0", CreateItem());
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => queue.AcknowledgeAsync(queued, CancellationToken.None));
@@ -108,11 +109,11 @@ public sealed class ValkeyWorkQueueTest
     [Fact]
     public async Task MalformedEntryIsAcknowledgedDeletedAndDoesNotStopReading()
     {
-        var client = new FakeValkeyStreamClient();
-        client.Entries.Enqueue(new ValkeyStreamEntry("bad-0", "{\"version\":999,\"item\":null}"));
+        var client = new FakeRedisStreamClient();
+        client.Entries.Enqueue(new RedisStreamEntry("bad-0", "{\"version\":999,\"item\":null}"));
         var valid = CreateItem();
-        client.Entries.Enqueue(new ValkeyStreamEntry("good-0", valid.Serialize()));
-        var queue = new ValkeyWorkQueue(client, new WorkQueueOptions { RetryDelay = TimeSpan.Zero });
+        client.Entries.Enqueue(new RedisStreamEntry("good-0", valid.Serialize()));
+        var queue = new RedisWorkQueue(client, new WorkQueueOptions { RetryDelay = TimeSpan.Zero });
 
         await using var messages = queue.ReadAsync("worker-1", TestContext.Current.CancellationToken)
             .GetAsyncEnumerator(TestContext.Current.CancellationToken);
@@ -126,14 +127,14 @@ public sealed class ValkeyWorkQueueTest
     [Fact]
     public async Task MalformedCleanupRetriesAcknowledgementAndDeletionInOrder()
     {
-        var client = new FakeValkeyStreamClient
+        var client = new FakeRedisStreamClient
         {
             AcknowledgeFailures = 1,
             DeleteFailures = 1
         };
-        client.Entries.Enqueue(new ValkeyStreamEntry("bad-0", "invalid"));
-        client.Entries.Enqueue(new ValkeyStreamEntry("good-0", CreateItem().Serialize()));
-        var queue = new ValkeyWorkQueue(client, new WorkQueueOptions { RetryDelay = TimeSpan.Zero });
+        client.Entries.Enqueue(new RedisStreamEntry("bad-0", "invalid"));
+        client.Entries.Enqueue(new RedisStreamEntry("good-0", CreateItem().Serialize()));
+        var queue = new RedisWorkQueue(client, new WorkQueueOptions { RetryDelay = TimeSpan.Zero });
 
         await using var messages = queue.ReadAsync("worker-1", TestContext.Current.CancellationToken)
             .GetAsyncEnumerator(TestContext.Current.CancellationToken);
@@ -146,28 +147,28 @@ public sealed class ValkeyWorkQueueTest
     [Fact]
     public async Task MalformedEntryDecrementsQueueDepthExactlyOnce()
     {
-        var client = new FakeValkeyStreamClient();
-        client.Entries.Enqueue(new ValkeyStreamEntry("bad-0", "invalid"));
-        client.Entries.Enqueue(new ValkeyStreamEntry("good-0", CreateItem().Serialize()));
+        var client = new FakeRedisStreamClient();
+        client.Entries.Enqueue(new RedisStreamEntry("bad-0", "invalid"));
+        client.Entries.Enqueue(new RedisStreamEntry("good-0", CreateItem().Serialize()));
         using var metrics = new SaucyBotMetrics();
         long queueDepthDelta = 0;
         using var listener = new MeterListener();
         listener.InstrumentPublished = (instrument, meterListener) =>
         {
-            if (instrument.Name == "saucybot.queue.depth")
+            if (ReferenceEquals(instrument, metrics.QueueDepth))
             {
                 meterListener.EnableMeasurementEvents(instrument);
             }
         };
         listener.SetMeasurementEventCallback<long>((instrument, measurement, _, _) =>
         {
-            if (instrument.Name == "saucybot.queue.depth")
+            if (ReferenceEquals(instrument, metrics.QueueDepth))
             {
                 queueDepthDelta += measurement;
             }
         });
         listener.Start();
-        var queue = new ValkeyWorkQueue(client, new WorkQueueOptions { RetryDelay = TimeSpan.Zero }, metrics);
+        var queue = new RedisWorkQueue(client, new WorkQueueOptions { RetryDelay = TimeSpan.Zero }, metrics, NullLogger<RedisWorkQueue>.Instance);
 
         await using var messages = queue.ReadAsync("worker-1", TestContext.Current.CancellationToken)
             .GetAsyncEnumerator(TestContext.Current.CancellationToken);
@@ -180,8 +181,8 @@ public sealed class ValkeyWorkQueueTest
     [Fact]
     public async Task ReadCancellationStopsWaitingForNewEntries()
     {
-        var client = new FakeValkeyStreamClient();
-        var queue = new ValkeyWorkQueue(client, new WorkQueueOptions());
+        var client = new FakeRedisStreamClient();
+        var queue = new RedisWorkQueue(client, new WorkQueueOptions());
         using var cancellation = new CancellationTokenSource();
         await using var messages = queue.ReadAsync("worker-1", cancellation.Token)
             .GetAsyncEnumerator(cancellation.Token);
@@ -195,8 +196,8 @@ public sealed class ValkeyWorkQueueTest
     [Fact]
     public async Task StartupClearDelegatesOnlyWhenConfigured()
     {
-        var client = new FakeValkeyStreamClient();
-        var queue = new ValkeyWorkQueue(client, new WorkQueueOptions { ClearPendingOnStartup = true });
+        var client = new FakeRedisStreamClient();
+        var queue = new RedisWorkQueue(client, new WorkQueueOptions { ClearPendingOnStartup = true });
 
         await queue.ClearPendingAsync(CancellationToken.None);
 
@@ -206,13 +207,13 @@ public sealed class ValkeyWorkQueueTest
     private static MessageWorkItem CreateItem() => new(
         1, 2, 3, 4, [5], "message", null, [], true, true, Guid.NewGuid());
 
-    private sealed class FakeValkeyStreamClient : IValkeyStreamClient
+    private sealed class FakeRedisStreamClient : IRedisStreamClient
     {
         public int AddFailures { get; set; }
         public int AddCalls { get; private set; }
         public int ClearCalls { get; private set; }
         public int NewReads { get; private set; }
-        public Queue<ValkeyStreamEntry> Entries { get; } = new();
+        public Queue<RedisStreamEntry> Entries { get; } = new();
         public List<string> Payloads { get; } = [];
         public List<string> Acknowledged { get; } = [];
         public List<string> Deleted { get; } = [];
@@ -230,14 +231,14 @@ public sealed class ValkeyWorkQueueTest
             AddCalls++;
             if (AddFailures-- > 0)
             {
-                throw new ValkeyBackpressureException("queue full");
+                throw new RedisBackpressureException("queue full");
             }
 
             Payloads.Add(payload);
             return Task.FromResult("1-0");
         }
 
-        public async Task<ValkeyStreamEntry?> ReadNewAsync(string consumer, CancellationToken cancellationToken)
+        public async Task<RedisStreamEntry?> ReadNewAsync(string consumer, CancellationToken cancellationToken)
         {
             NewReads++;
             while (Entries.Count == 0)

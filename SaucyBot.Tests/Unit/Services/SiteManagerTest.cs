@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using SaucyBot.Database.Models;
+using SaucyBot.Library.Discord;
 using SaucyBot.Queue;
 using SaucyBot.Services;
 using SaucyBot.Site;

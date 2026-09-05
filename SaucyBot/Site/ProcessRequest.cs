@@ -59,13 +59,28 @@ public sealed record ProcessRequest
         bool nsfwAllowed,
         CancellationToken cancellationToken)
     {
-        return message is null && command is null
-            ? null
-            : new ProcessingContext(
-                cancellationToken,
-                NsfwAllowed: nsfwAllowed,
-                Message: message is null ? null : new DiscordMessageContext(message),
-                Command: command is null ? null : new LiveCommandContext(command));
+        if (message is null && command is null)
+        {
+            return null;
+        }
+
+        DiscordMessageContext? messageContext = null;
+        if (message is not null)
+        {
+            messageContext = new DiscordMessageContext(message);
+        }
+
+        LiveCommandContext? commandContext = null;
+        if (command is not null)
+        {
+            commandContext = new LiveCommandContext(command);
+        }
+
+        return new ProcessingContext(
+            cancellationToken,
+            NsfwAllowed: nsfwAllowed,
+            Message: messageContext,
+            Command: commandContext);
     }
 
     private class LiveProcessingContext

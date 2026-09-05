@@ -1,44 +1,9 @@
 using Discord;
 using Discord.WebSocket;
 using SaucyBot.Extensions.Discord;
+using SaucyBot.Library.Discord;
 
 namespace SaucyBot.Site;
-
-public interface IMessageResolver
-{
-    IUserMessage? GetCachedMessage(ulong channelId, ulong messageId);
-    Task<IUserMessage?> FetchMessageAsync(ulong channelId, ulong messageId, CancellationToken cancellationToken);
-    bool IsNsfw(ulong channelId);
-}
-
-public sealed class DiscordMessageResolver : IMessageResolver
-{
-    private BaseSocketClient? _client;
-
-    public void Initialize(BaseSocketClient client) => _client = client;
-
-    public IUserMessage? GetCachedMessage(ulong channelId, ulong messageId)
-    {
-        return (_client?.GetChannel(channelId) as ISocketMessageChannel)?.GetCachedMessage(messageId) as IUserMessage;
-    }
-
-    public async Task<IUserMessage?> FetchMessageAsync(ulong channelId, ulong messageId, CancellationToken cancellationToken)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        var channel = _client?.GetChannel(channelId) as IMessageChannel;
-        return channel is null ? null : await channel.GetMessageAsync(messageId) as IUserMessage;
-    }
-
-    public bool IsNsfw(ulong channelId)
-    {
-        return _client?.GetChannel(channelId) switch
-        {
-            SocketThreadChannel { ParentChannel: ITextChannel parent } => parent.IsNsfw,
-            ITextChannel channel => channel.IsNsfw,
-            _ => false,
-        };
-    }
-}
 
 public sealed class DiscordMessageContext : IMessageContext
 {
@@ -129,18 +94,23 @@ public sealed class DiscordMessageContext : IMessageContext
 
     private async Task<IUserMessage?> ResolveWithResolverAsync(CancellationToken cancellationToken)
     {
-        if (_resolvedMessage is not null || _attemptedResolution)
+        if (_resolvedMessage is not null)
         {
             return _resolvedMessage;
         }
 
-        _resolvedMessage = _resolver!.GetCachedMessage(ChannelId, Id);
-        if (_resolvedMessage is null)
+        if (_attemptedResolution)
         {
-            _attemptedResolution = true;
-            _resolvedMessage = await _resolver.FetchMessageAsync(ChannelId, Id, cancellationToken);
+            return null;
         }
 
-        return _resolvedMessage;
+        _resolvedMessage = _resolver!.GetCachedMessage(ChannelId, Id);
+        if (_resolvedMessage is not null)
+        {
+            return _resolvedMessage;
+        }
+
+        _attemptedResolution = true;
+        return _resolvedMessage = await _resolver.FetchMessageAsync(ChannelId, Id, cancellationToken);
     }
 }

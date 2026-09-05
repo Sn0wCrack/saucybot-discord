@@ -11,13 +11,12 @@ public static class TelemetryServiceRegistration
     public static IServiceCollection AddSaucyBotTelemetry(this IServiceCollection services, IConfiguration configuration)
     {
         var options = configuration.GetSection("OpenTelemetry").Get<TelemetryOptions>() ?? new();
+        services.AddSingleton<ISaucyBotMetrics, SaucyBotMetrics>();
 
         if (!options.Enabled)
         {
             return services;
         }
-
-        services.AddSingleton<SaucyBotMetrics>();
 
         var builder = services
             .AddOpenTelemetry()

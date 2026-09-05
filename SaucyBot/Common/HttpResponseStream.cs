@@ -7,10 +7,10 @@ public sealed class HttpResponseStream : Stream
 {
     private readonly HttpResponseMessage _response;
     private readonly Stream _inner;
-    private readonly SaucyBotMetrics? _metrics;
+    private readonly ISaucyBotMetrics? _metrics;
     private int _disposed;
 
-    public HttpResponseStream(HttpResponseMessage response, Stream inner, SaucyBotMetrics? metrics = null)
+    public HttpResponseStream(HttpResponseMessage response, Stream inner, ISaucyBotMetrics? metrics = null)
     {
         _response = response;
         _inner = inner;

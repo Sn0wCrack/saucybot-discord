@@ -4,6 +4,7 @@ using Discord.WebSocket;
 using SaucyBot.Database.Models;
 using SaucyBot.Extensions;
 using SaucyBot.Extensions.Discord;
+using SaucyBot.Library.Discord;
 using SaucyBot.Queue;
 using SaucyBot.Site;
 

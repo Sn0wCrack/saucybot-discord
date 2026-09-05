@@ -2,6 +2,7 @@ using Discord;
 using Discord.WebSocket;
 using SaucyBot.Diagnostics;
 using SaucyBot.Library;
+using SaucyBot.Library.Discord;
 using SaucyBot.Queue;
 using SaucyBot.Services;
 using SaucyBot.Site;
@@ -15,15 +16,15 @@ public sealed class Worker : BackgroundService
     private readonly IMessageWorkQueue _messageWorkQueue;
     private readonly InteractionWorkChannel _interactionWorkChannel;
     private readonly WorkQueueHostedService _workQueueHostedService;
-    private readonly SaucyBotMetrics? _metrics;
-    private readonly Func<SocketMessage, MessageWorkItem?> _messageWorkItemFactory;
-    private readonly Func<SocketInteraction, IInteractionWorkItem> _interactionWorkItemFactory;
-    private readonly Func<SocketInteraction, Task> _interactionDeferrer;
+    private readonly ISaucyBotMetrics _metrics;
+    private readonly IMessageWorkItemFactory _messageWorkItemFactory;
+    private readonly IInteractionWorkItemFactory _interactionWorkItemFactory;
+    private readonly IInteractionDeferrer _interactionDeferrer;
 
     private readonly IDatabaseMigrator _databaseMigrator;
 
     private readonly InteractionHandler _interactionHandler;
-    private readonly DiscordMessageResolver? _messageResolver;
+    private readonly IMessageResolver _messageResolver;
 
     private BaseSocketClient? _client;
 
@@ -35,11 +36,11 @@ public sealed class Worker : BackgroundService
         IMessageWorkQueue messageWorkQueue,
         InteractionWorkChannel interactionWorkChannel,
         WorkQueueHostedService workQueueHostedService,
-        SaucyBotMetrics? metrics = null,
-        Func<SocketMessage, MessageWorkItem?>? messageWorkItemFactory = null,
-        Func<SocketInteraction, IInteractionWorkItem>? interactionWorkItemFactory = null,
-        Func<SocketInteraction, Task>? interactionDeferrer = null,
-        DiscordMessageResolver? messageResolver = null
+        ISaucyBotMetrics metrics,
+        IMessageWorkItemFactory messageWorkItemFactory,
+        IInteractionWorkItemFactory interactionWorkItemFactory,
+        IInteractionDeferrer interactionDeferrer,
+        IMessageResolver messageResolver
     )
     {
         _logger = logger;
@@ -51,10 +52,9 @@ public sealed class Worker : BackgroundService
         _interactionWorkChannel = interactionWorkChannel;
         _workQueueHostedService = workQueueHostedService;
         _metrics = metrics;
-        _messageWorkItemFactory = messageWorkItemFactory ?? (message =>
-            message is SocketUserMessage userMessage ? CreateMessageWorkItem(userMessage) : null);
-        _interactionWorkItemFactory = interactionWorkItemFactory ?? (interaction => new SocketInteractionWorkItem(interaction));
-        _interactionDeferrer = interactionDeferrer ?? (interaction => interaction.DeferAsync());
+        _messageWorkItemFactory = messageWorkItemFactory;
+        _interactionWorkItemFactory = interactionWorkItemFactory;
+        _interactionDeferrer = interactionDeferrer;
     }
 
     public override async Task StartAsync(CancellationToken cancellationToken)
@@ -70,7 +70,7 @@ public sealed class Worker : BackgroundService
             _ => this.SetupShardedSocketClient(),
         };
 
-        _messageResolver?.Initialize(_client);
+        _messageResolver.Initialize(_client);
 
         await _client.LoginAsync(TokenType.Bot, _configuration.GetSection("Bot:DiscordToken").Get<string>());
         await _client.StartAsync();
@@ -167,16 +167,7 @@ public sealed class Worker : BackgroundService
     }
 
     internal Task HandleInteractionAsync(SocketInteraction socketInteraction) =>
-        HandleInteractionAsync(socketInteraction, _interactionDeferrer);
-
-    internal async Task HandleInteractionAsync(
-        SocketInteraction socketInteraction,
-        Func<SocketInteraction, Task> defer)
-    {
-        await AdmitInteractionAsync(
-            _interactionWorkItemFactory(socketInteraction),
-            () => defer(socketInteraction));
-    }
+        AdmitInteractionAsync(_interactionWorkItemFactory.Create(socketInteraction), () => _interactionDeferrer.DeferAsync(socketInteraction));
 
     internal async Task HandleMessageAsync(SocketMessage socketMessage)
     {
@@ -191,7 +182,7 @@ public sealed class Worker : BackgroundService
             return;
         }
 
-        var item = _messageWorkItemFactory(socketMessage);
+        var item = _messageWorkItemFactory.Create(socketMessage);
         if (item is null)
         {
             return;
@@ -211,35 +202,14 @@ public sealed class Worker : BackgroundService
         try
         {
             await _interactionWorkChannel.WriteAsync(item, _workQueueHostedService.AdmissionToken);
-            _metrics?.Enqueued.Add(1);
-            _metrics?.QueueDepth.Add(1);
+            _metrics.Enqueued.Add(1);
+            _metrics.QueueDepth.Add(1);
         }
         catch (OperationCanceledException) when (_workQueueHostedService.AdmissionToken.IsCancellationRequested)
         {
-            _metrics?.Cancelled.Add(1);
+            _metrics.Cancelled.Add(1);
             throw;
         }
-    }
-
-    internal static MessageWorkItem CreateMessageWorkItem(SocketUserMessage message)
-    {
-        var guildChannel = message.Channel as SocketGuildChannel;
-        var permissions = guildChannel?.Guild.CurrentUser.GetPermissions(guildChannel);
-        return new MessageWorkItem(
-            message.Id,
-            guildChannel?.Guild.Id ?? 0,
-            message.Channel.Id,
-            message.Author.Id,
-            (message.Author as SocketGuildUser)?.Roles.Select(role => role.Id).ToArray() ?? [],
-            message.Content ?? "",
-            message.ForwardedMessages.Count == 0
-                ? null
-                : string.Join('\n', message.ForwardedMessages.Select(forwarded => forwarded.Message.Content ?? "")),
-            message.Embeds.Select(embed => new MessageEmbed(embed.Title, embed.Description, embed.Url)).ToArray(),
-            permissions?.Has(ChannelPermission.EmbedLinks) ?? false,
-            permissions?.Has(ChannelPermission.ManageMessages) ?? false,
-            Guid.NewGuid(),
-            DateTimeOffset.UtcNow);
     }
 
     private async Task HandleSocketClientReadyAsync()
