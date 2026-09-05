@@ -7,6 +7,12 @@ services:
         CONFIGURATION: '${CONFIGURATION}'
     env_file:
       - .env
+    environment:
+      OpenTelemetry__Enabled: 'true'
+      OpenTelemetry__OtlpEndpoint: 'http://otel-collector:4317'
+      OpenTelemetry__OtlpProtocol: 'Grpc'
+      OpenTelemetry__Tracing__Enabled: 'true'
+      OpenTelemetry__Tracing__SamplingRatio: '1'
     volumes:
       - ./appsettings.Development.json:/app/appsettings.Development.json
     depends_on:
@@ -70,7 +76,7 @@ services:
     volumes:
       - ./otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml:ro
     ports:
-      - '8888:8888'
+      - '8889:8889'
     restart: unless-stopped
 
 volumes:

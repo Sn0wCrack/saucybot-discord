@@ -16,7 +16,7 @@ exporters:
   debug:
     verbosity: detailed
   prometheus:
-    endpoint: 0.0.0.0:8888
+    endpoint: 0.0.0.0:8889
 
 service:
   extensions:
