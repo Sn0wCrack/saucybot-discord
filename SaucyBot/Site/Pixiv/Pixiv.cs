@@ -116,29 +116,43 @@ public sealed partial class PixivSite : BaseSite, IPixivSite
             return null;
         }
 
-        var fileStream = new FileStream(videoFile, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete);
+        FileStream? fileStream = null;
 
-        var title = details.Title
-            .ToLowerInvariant()
-            .Replace("-", "")
-            .Replace(" ", "_")
-            .Trim();
+        try
+        {
+            fileStream = new FileStream(videoFile, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete);
 
-        var fileName = $"{title}_ugoira.{fileExtension}";
+            var title = details.Title
+                .ToLowerInvariant()
+                .Replace("-", "")
+                .Replace(" ", "_")
+                .Trim();
 
-        response.Files.Add(
-            new FileAttachment(fileStream, fileName)
-        );
+            var fileName = $"{title}_ugoira.{fileExtension}";
 
-        var componentBuilder = new ComponentBuilderV2()
-            .WithContainer(
-                BuildContainerComponent(details, response.Files)
+            response.Files.Add(
+                new FileAttachment(fileStream, fileName)
             );
-        response.Components = componentBuilder.Build();
 
-        Directory.Delete(basePath, true);
+            var componentBuilder = new ComponentBuilderV2()
+                .WithContainer(
+                    BuildContainerComponent(details, response.Files)
+                );
+            response.Components = componentBuilder.Build();
 
-        return response;
+            Directory.Delete(basePath, true);
+
+            return response;
+        }
+        catch
+        {
+            if (fileStream is not null)
+            {
+                await fileStream.DisposeAsync();
+            }
+
+            throw;
+        }
     }
 
     private static string BuildConcatFile(List<UgoiraFrame> frames)

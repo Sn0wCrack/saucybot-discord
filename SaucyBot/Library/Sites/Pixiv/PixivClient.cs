@@ -147,10 +147,18 @@ public sealed class PixivClient : IPixivClient
 
         var response = await _client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
 
-        var contentLength = response.Content.Headers.ContentLength ?? -1;
-        var stream = await response.Content.ReadAsStreamAsync();
+        try
+        {
+            var contentLength = response.Content.Headers.ContentLength ?? -1;
+            var stream = await response.Content.ReadAsStreamAsync();
 
-        return new KnownLengthStream(new HttpResponseStream(response, stream), contentLength);
+            return new KnownLengthStream(new HttpResponseStream(response, stream), contentLength);
+        }
+        catch
+        {
+            response.Dispose();
+            throw;
+        }
     }
 }
 

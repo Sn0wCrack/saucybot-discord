@@ -31,6 +31,18 @@ public sealed class SiteManager
         _siteRegistry = siteRegistry;
     }
 
+    internal static async Task SendAndDispose(ProcessResponse response, Func<Task> send)
+    {
+        try
+        {
+            await send();
+        }
+        finally
+        {
+            await response.DisposeAsync();
+        }
+    }
+
     public async Task<List<SiteManagerProcessResult>> Match(SocketUserMessage message, GuildConfiguration? guildConfiguration = null)
     {
         var results = new List<SiteManagerProcessResult>();
@@ -140,7 +152,7 @@ public sealed class SiteManager
                         continue;
                     }
 
-                    await _messageManager.Send(message, response);
+                    await SendAndDispose(response, () => _messageManager.Send(message, response));
 
                     if (MessageValidator.HasPermissionToHideEmbed(message))
                     {
@@ -203,7 +215,7 @@ public sealed class SiteManager
                     continue;
                 }
 
-                await _messageManager.Send(command, response);
+                await SendAndDispose(response, () => _messageManager.Send(command, response));
             }
             catch (Exception ex)
             {

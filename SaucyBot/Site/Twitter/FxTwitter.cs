@@ -381,15 +381,23 @@ public sealed partial class FxTwitterSite : BaseSite, ITwitterSite
 
         var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
 
-        var contentLength = response.Content.Headers.ContentLength ?? -1;
-        var stream = await response.Content.ReadAsStreamAsync();
+        try
+        {
+            var contentLength = response.Content.Headers.ContentLength ?? -1;
+            var stream = await response.Content.ReadAsStreamAsync();
 
-        var parsed = new Uri(url);
+            var parsed = new Uri(url);
 
-        return new FileAttachment(
-            new KnownLengthStream(new HttpResponseStream(response, stream), contentLength),
-            Path.GetFileName(parsed.AbsolutePath)
-        );
+            return new FileAttachment(
+                new KnownLengthStream(new HttpResponseStream(response, stream), contentLength),
+                Path.GetFileName(parsed.AbsolutePath)
+            );
+        }
+        catch
+        {
+            response.Dispose();
+            throw;
+        }
     }
 
     private static string GetOriginalResolutionPhotoUrl(string url)

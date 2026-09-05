@@ -34,9 +34,23 @@ public sealed record ProcessResponse : IAsyncDisposable
             return;
         }
 
+        var exceptions = new List<Exception>();
+
         foreach (var file in Files)
         {
-            await file.Stream.DisposeAsync();
+            try
+            {
+                await file.Stream.DisposeAsync();
+            }
+            catch (Exception exception)
+            {
+                exceptions.Add(exception);
+            }
+        }
+
+        if (exceptions.Count > 0)
+        {
+            throw new AggregateException(exceptions);
         }
 
         GC.SuppressFinalize(this);

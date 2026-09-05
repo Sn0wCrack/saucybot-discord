@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using Discord;
+using SaucyBot.Services;
 using SaucyBot.Site;
 using Xunit;
 
@@ -27,6 +28,24 @@ public sealed class ProcessResponseTest
     }
 
     [Fact]
+    public async Task DisposeAsyncDisposesRemainingStreamsAndAggregatesExceptions()
+    {
+        var first = new ThrowingStream();
+        var second = new TrackingStream();
+        var response = new ProcessResponse(files:
+        [
+            new FileAttachment(first, "first"),
+            new FileAttachment(second, "second"),
+        ]);
+
+        var exception = await Assert.ThrowsAsync<AggregateException>(() => response.DisposeAsync().AsTask());
+
+        Assert.Single(exception.InnerExceptions);
+        Assert.Equal(1, first.DisposeCount);
+        Assert.Equal(1, second.DisposeCount);
+    }
+
+    [Fact]
     public async Task DisposeAsyncIsIdempotent()
     {
         var stream = new TrackingStream();
@@ -47,27 +66,19 @@ public sealed class ProcessResponseTest
     }
 
     [Fact]
-    public async Task DisposeAsyncRunsAfterAFailedSend()
+    public async Task SiteManagerSendSeamDisposesAfterAFailedSend()
     {
         var stream = new TrackingStream();
         var response = new ProcessResponse(files: [new FileAttachment(stream, "file")]);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(async () =>
-        {
-            try
-            {
-                throw new InvalidOperationException("send failed");
-            }
-            finally
-            {
-                await response.DisposeAsync();
-            }
-        });
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            SiteManager.SendAndDispose(response, () =>
+                Task.FromException(new InvalidOperationException("send failed"))));
 
         Assert.Equal(1, stream.DisposeCount);
     }
 
-    private sealed class TrackingStream : MemoryStream
+    private class TrackingStream : MemoryStream
     {
         public int DisposeCount { get; private set; }
 
@@ -79,6 +90,15 @@ public sealed class ProcessResponseTest
             }
 
             base.Dispose(disposing);
+        }
+    }
+
+    private sealed class ThrowingStream : TrackingStream
+    {
+        public override ValueTask DisposeAsync()
+        {
+            Dispose();
+            return ValueTask.FromException(new InvalidOperationException("dispose failed"));
         }
     }
 }
