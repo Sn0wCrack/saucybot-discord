@@ -47,11 +47,23 @@ public sealed record ProcessRequest
     public ulong? GuildId => Context?.Message?.GuildId ?? Context?.Command?.GuildId;
 
     // A live socket guild is retained only for existing in-process callers.
-    public SocketGuild? Guild => Context?.Message is DiscordMessageContext message
-        ? (message.SocketMessage.Channel as SocketGuildChannel)?.Guild
-        : Context?.Command is LiveCommandContext command
-            ? command.Guild
-            : null;
+    public SocketGuild? Guild
+    {
+        get
+        {
+            if (Context?.Message is DiscordMessageContext message)
+            {
+                return (message.SocketMessage.Channel as SocketGuildChannel)?.Guild;
+            }
+
+            if (Context?.Command is LiveCommandContext command)
+            {
+                return command.Guild;
+            }
+
+            return null;
+        }
+    }
 
     private static ProcessingContext? CreateContext(
         SocketUserMessage? message,

@@ -27,7 +27,18 @@ public sealed class QueuedMessageContext : IMessageContext
 
     public ulong Id => _item.MessageId;
     public ulong ChannelId => _item.ChannelId;
-    public ulong? GuildId => _item.GuildId == 0 ? null : _item.GuildId;
+    public ulong? GuildId
+    {
+        get
+        {
+            if (_item.GuildId == 0)
+            {
+                return null;
+            }
+
+            return _item.GuildId;
+        }
+    }
     public string Content => _item.Content;
     public string AllMessageContent => string.IsNullOrEmpty(_item.ForwardedContent)
         ? _item.Content
