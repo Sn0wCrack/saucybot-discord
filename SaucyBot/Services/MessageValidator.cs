@@ -4,6 +4,7 @@ using Discord.WebSocket;
 using SaucyBot.Database.Models;
 using SaucyBot.Extensions.Discord;
 using SaucyBot.Library;
+using SaucyBot.Site;
 
 namespace SaucyBot.Services;
 
@@ -11,6 +12,45 @@ public static partial class MessageValidator
 {
     [GeneratedRegex(@"(<|\|\|)(?!@|#|:|a:).*(>|\|\|)", RegexOptions.IgnoreCase)]
     private static partial Regex IgnoreContentRegex();
+
+    public static ValidationResult ValidateMessage(
+        IMessageContext message,
+        GuildConfiguration? guildConfiguration)
+    {
+        if (IgnoreContentRegex().IsMatch(message.AllMessageContent))
+        {
+            return ValidationResult.Fail("Message contains ignore tags");
+        }
+
+        if (!message.CanCreateEmbed)
+        {
+            return ValidationResult.Fail("Missing channel permissions to create embed");
+        }
+
+        if (!UserHasPermissionToEmbed(guildConfiguration, message.AuthorRoleIds))
+        {
+            return ValidationResult.Fail("User lacks role permission to embed");
+        }
+
+        return ValidationResult.Pass();
+    }
+
+    public static ValidationResult ValidateCommand(
+        ICommandContext command,
+        GuildConfiguration? guildConfiguration)
+    {
+        if (!command.CanCreateEmbed)
+        {
+            return ValidationResult.Fail("Missing channel permissions to create embed");
+        }
+
+        if (!UserHasPermissionToEmbed(guildConfiguration, command.UserRoleIds))
+        {
+            return ValidationResult.Fail("User lacks role permission to embed");
+        }
+
+        return ValidationResult.Pass();
+    }
 
     public static ValidationResult ValidateMessage(SocketUserMessage message, GuildConfiguration? guildConfiguration)
     {
@@ -83,6 +123,18 @@ public static partial class MessageValidator
         var userRoleIds = guildUser.Roles.Select(x => x.Id);
 
         return guildConfiguration.RestrictedRoles.Select(x => x.RoleId).Intersect(userRoleIds).Any();
+    }
+
+    private static bool UserHasPermissionToEmbed(
+        GuildConfiguration? guildConfiguration,
+        IReadOnlyCollection<ulong> roleIds)
+    {
+        if (guildConfiguration is null || !guildConfiguration.RestrictToRoles)
+        {
+            return true;
+        }
+
+        return guildConfiguration.RestrictedRoles.Select(x => x.RoleId).Intersect(roleIds).Any();
     }
 
     private static bool HasPermissionsToCreateEmbed(SocketMessage message)
