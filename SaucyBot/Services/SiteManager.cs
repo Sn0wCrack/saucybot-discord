@@ -256,6 +256,8 @@ public sealed class SiteManager : IMessageWorkHandler
 
     public async Task HandleCommand(SocketSlashCommand command)
     {
+        await command.DeferAsync();
+
         var guildConfiguration = await _guildConfigurationManager.GetByChannel(command.Channel);
 
         var validation = MessageValidator.ValidateCommand(command, guildConfiguration);
