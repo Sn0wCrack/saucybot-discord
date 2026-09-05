@@ -82,27 +82,26 @@ public sealed class RedisWorkQueue : IMessageWorkQueue
         while (!cancellationToken.IsCancellationRequested)
         {
             var entry = await _client.ReadNewAsync(consumer, cancellationToken);
-            if (entry is not null)
+            if (entry is null)
             {
-                MessageWorkItem? item = null;
-
-                try
-                {
-                    item = MessageWorkItem.Deserialize(entry.Payload);
-                }
-                catch (Exception exception) when (exception is not OperationCanceledException)
-                {
-                    _logger.LogError(exception, "Discarding malformed work item {EntryId}", entry.EntryId);
-                    _metrics?.Malformed.Add(1);
-                    _metrics?.QueueDepth.Add(-1);
-                    await DiscardMalformedAsync(entry.EntryId, cancellationToken);
-                }
-
-                if (item is not null)
-                {
-                    yield return new QueuedMessageWorkItem(entry.EntryId, item);
-                }
+                continue;
             }
+
+            MessageWorkItem item;
+            try
+            {
+                item = MessageWorkItem.Deserialize(entry.Payload);
+            }
+            catch (Exception exception) when (exception is not OperationCanceledException)
+            {
+                _logger.LogError(exception, "Discarding malformed work item {EntryId}", entry.EntryId);
+                _metrics?.Malformed.Add(1);
+                _metrics?.QueueDepth.Add(-1);
+                await DiscardMalformedAsync(entry.EntryId, cancellationToken);
+                continue;
+            }
+
+            yield return new QueuedMessageWorkItem(entry.EntryId, item);
         }
     }
 
@@ -133,11 +132,13 @@ public sealed class RedisWorkQueue : IMessageWorkQueue
 
     private async Task DiscardMalformedAsync(string entryId, CancellationToken cancellationToken)
     {
-        if (!await RetryMalformedCleanupAsync(
-                entryId,
-                MalformedCleanupOperation.Acknowledge,
-                () => _client.AcknowledgeAsync(entryId, cancellationToken),
-                cancellationToken))
+        var acknowledged = await RetryMalformedCleanupAsync(
+            entryId,
+            MalformedCleanupOperation.Acknowledge,
+            () => _client.AcknowledgeAsync(entryId, cancellationToken),
+            cancellationToken);
+
+        if (!acknowledged)
         {
             return;
         }
