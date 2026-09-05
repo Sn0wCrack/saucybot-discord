@@ -85,6 +85,133 @@ public sealed class WorkerTest
         Assert.Empty(queue.Acknowledged);
     }
 
+    [Fact]
+    public async Task ShutdownStopsAdmissionBeforeDrainingWorkers()
+    {
+        var queue = new FakeWorkQueue();
+        var processor = new RecordingProcessor { Block = true };
+        var interactionChannel = new InteractionWorkChannel(new WorkQueueOptions { InteractionChannelCapacity = 1 });
+        await interactionChannel.WriteAsync(null!, CancellationToken.None);
+
+        await using var service = new WorkQueueHostedService(
+            queue,
+            processor,
+            new WorkQueueOptions { MessageWorkerCount = 1, ShutdownDrainTimeout = TimeSpan.FromMilliseconds(100) },
+            SubstituteLogger<WorkQueueHostedService>(),
+            interactionChannel);
+
+        service.StopIntake();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            interactionChannel.WriteAsync(null!, service.AdmissionToken).AsTask());
+    }
+
+    [Fact]
+    public async Task WorkersRespectConfiguredConcurrencyLimit()
+    {
+        var queue = new FakeWorkQueue();
+        var processor = new RecordingProcessor { Block = true };
+        queue.Add(CreateQueuedItem("1-0"));
+        queue.Add(CreateQueuedItem("2-0"));
+
+        await using var service = new WorkQueueHostedService(
+            queue,
+            processor,
+            new WorkQueueOptions { MessageWorkerCount = 2, ShutdownDrainTimeout = TimeSpan.FromMilliseconds(100) },
+            SubstituteLogger<WorkQueueHostedService>());
+
+        await service.StartAsync(TestContext.Current.CancellationToken);
+        await processor.StartedCount.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await service.StopAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(2, processor.MaximumConcurrency);
+    }
+
+    [Fact]
+    public async Task AcknowledgementFailureIsObservedWithoutReportingSuccess()
+    {
+        var queue = new FakeWorkQueue { AcknowledgeFailure = new InvalidOperationException("ack failed") };
+        var processor = new RecordingProcessor();
+        queue.Add(CreateQueuedItem("1-0"));
+
+        await using var service = new WorkQueueHostedService(
+            queue,
+            processor,
+            new WorkQueueOptions { MessageWorkerCount = 1 },
+            SubstituteLogger<WorkQueueHostedService>());
+
+        await service.StartAsync(TestContext.Current.CancellationToken);
+        await processor.Processed.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await service.StopAsync(TestContext.Current.CancellationToken);
+
+        Assert.Single(queue.AcknowledgedAttempts);
+    }
+
+    [Fact]
+    public async Task InteractionFailureProducesAnObservedTerminalFailure()
+    {
+        var queue = new FakeWorkQueue();
+        var channel = new InteractionWorkChannel(new WorkQueueOptions { InteractionChannelCapacity = 1 });
+        var processed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        await channel.WriteAsync(null!, CancellationToken.None);
+
+        await using var service = new WorkQueueHostedService(
+            queue,
+            new RecordingProcessor(),
+            new WorkQueueOptions { InteractionWorkerCount = 1, ShutdownDrainTimeout = TimeSpan.FromMilliseconds(100) },
+            SubstituteLogger<WorkQueueHostedService>(),
+            interactionChannel: channel,
+            interactionProcessor: (_, _) =>
+            {
+                processed.TrySetResult();
+                throw new InvalidOperationException("interaction failed");
+            });
+
+        await service.StartAsync(TestContext.Current.CancellationToken);
+        await processed.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await service.StopAsync(TestContext.Current.CancellationToken);
+
+        Assert.True(processed.Task.IsCompletedSuccessfully);
+    }
+
+    [Fact]
+    public async Task ShutdownDrainsBufferedInteractionsBeforeReturning()
+    {
+        var queue = new FakeWorkQueue();
+        var channel = new InteractionWorkChannel(new WorkQueueOptions { InteractionChannelCapacity = 2 });
+        await channel.WriteAsync(null!, CancellationToken.None);
+        await channel.WriteAsync(null!, CancellationToken.None);
+        var processed = 0;
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var drained = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        await using var service = new WorkQueueHostedService(
+            queue,
+            new RecordingProcessor(),
+            new WorkQueueOptions { InteractionWorkerCount = 1, ShutdownDrainTimeout = TimeSpan.FromSeconds(1) },
+            SubstituteLogger<WorkQueueHostedService>(),
+            interactionChannel: channel,
+            interactionProcessor: (_, _) =>
+            {
+                var count = Interlocked.Increment(ref processed);
+                started.TrySetResult();
+                if (count == 2)
+                {
+                    drained.TrySetResult();
+                }
+
+                return Task.CompletedTask;
+            });
+
+        await service.StartAsync(TestContext.Current.CancellationToken);
+        await started.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        service.StopIntake();
+        await service.StopAsync(TestContext.Current.CancellationToken);
+
+        Assert.True(drained.Task.IsCompletedSuccessfully);
+        Assert.Equal(2, processed);
+    }
+
     private static QueuedMessageWorkItem CreateQueuedItem(string entryId) => new(entryId,
         new MessageWorkItem(1, 2, 3, 4, [], "content", null, [], true, true, Guid.NewGuid()));
 
@@ -96,14 +223,23 @@ public sealed class WorkerTest
         public List<QueuedMessageWorkItem> Items { get; } = [];
         public TaskCompletionSource Processed { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public TaskCompletionSource Started { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource StartedCount { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public bool ThrowOnFirstItem { get; init; }
         public bool Block { get; init; }
         public bool CancellationObserved { get; private set; }
+        public int MaximumConcurrency { get; private set; }
+        private int _concurrency;
 
         public async Task ProcessAsync(QueuedMessageWorkItem item, CancellationToken cancellationToken)
         {
             Items.Add(item);
             Started.TrySetResult();
+            var concurrency = Interlocked.Increment(ref _concurrency);
+            MaximumConcurrency = Math.Max(MaximumConcurrency, concurrency);
+            if (Items.Count >= 2)
+            {
+                StartedCount.TrySetResult();
+            }
 
             if (Block)
             {
@@ -124,6 +260,7 @@ public sealed class WorkerTest
             }
 
             Processed.TrySetResult();
+            Interlocked.Decrement(ref _concurrency);
         }
     }
 
@@ -132,6 +269,8 @@ public sealed class WorkerTest
         private readonly Channel<QueuedMessageWorkItem> _items = Channel.CreateUnbounded<QueuedMessageWorkItem>();
 
         public List<QueuedMessageWorkItem> Acknowledged { get; } = [];
+        public List<QueuedMessageWorkItem> AcknowledgedAttempts { get; } = [];
+        public Exception? AcknowledgeFailure { get; init; }
         public bool ReadCancellationObserved { get; private set; }
 
         public void Add(QueuedMessageWorkItem item) => _items.Writer.TryWrite(item);
@@ -161,6 +300,12 @@ public sealed class WorkerTest
 
         public Task AcknowledgeAsync(QueuedMessageWorkItem item, CancellationToken cancellationToken)
         {
+            AcknowledgedAttempts.Add(item);
+            if (AcknowledgeFailure is not null)
+            {
+                return Task.FromException(AcknowledgeFailure);
+            }
+
             Acknowledged.Add(item);
             return Task.CompletedTask;
         }

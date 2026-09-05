@@ -1,6 +1,6 @@
 using Discord;
 using Discord.WebSocket;
-using Microsoft.Extensions.DependencyInjection;
+using SaucyBot.Diagnostics;
 using SaucyBot.Library;
 using SaucyBot.Queue;
 using SaucyBot.Services;
@@ -13,7 +13,8 @@ public sealed class Worker : BackgroundService
     private readonly IConfiguration _configuration;
     private readonly IMessageWorkQueue _messageWorkQueue;
     private readonly InteractionWorkChannel _interactionWorkChannel;
-    private readonly IHostApplicationLifetime _applicationLifetime;
+    private readonly WorkQueueHostedService _workQueueHostedService;
+    private readonly SaucyBotMetrics? _metrics;
 
     private readonly IDatabaseMigrator _databaseMigrator;
 
@@ -28,7 +29,8 @@ public sealed class Worker : BackgroundService
         InteractionHandler interactionHandler,
         IMessageWorkQueue messageWorkQueue,
         InteractionWorkChannel interactionWorkChannel,
-        IHostApplicationLifetime applicationLifetime
+        WorkQueueHostedService workQueueHostedService,
+        SaucyBotMetrics? metrics = null
     )
     {
         _logger = logger;
@@ -37,7 +39,8 @@ public sealed class Worker : BackgroundService
         _interactionHandler = interactionHandler;
         _messageWorkQueue = messageWorkQueue;
         _interactionWorkChannel = interactionWorkChannel;
-        _applicationLifetime = applicationLifetime;
+        _workQueueHostedService = workQueueHostedService;
+        _metrics = metrics;
     }
 
     public override async Task StartAsync(CancellationToken cancellationToken)
@@ -61,7 +64,7 @@ public sealed class Worker : BackgroundService
 
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
-        _interactionWorkChannel.Complete();
+        _workQueueHostedService.StopIntake();
 
         if (_client is not null)
         {
@@ -150,7 +153,9 @@ public sealed class Worker : BackgroundService
     private async Task HandleInteractionAsync(SocketInteraction socketInteraction)
     {
         await socketInteraction.DeferAsync();
-        await _interactionWorkChannel.WriteAsync(socketInteraction, _applicationLifetime.ApplicationStopping);
+        await _interactionWorkChannel.WriteAsync(socketInteraction, _workQueueHostedService.AdmissionToken);
+        _metrics?.Enqueued.Add(1);
+        _metrics?.QueueDepth.Add(1);
     }
 
     private async Task HandleMessageAsync(SocketMessage socketMessage)
@@ -179,9 +184,10 @@ public sealed class Worker : BackgroundService
             message.Embeds.Select(embed => new MessageEmbed(embed.Title, embed.Description, embed.Url)).ToArray(),
             permissions?.Has(ChannelPermission.EmbedLinks) ?? false,
             permissions?.Has(ChannelPermission.ManageMessages) ?? false,
-            Guid.NewGuid());
+            Guid.NewGuid(),
+            DateTimeOffset.UtcNow);
 
-        await _messageWorkQueue.EnqueueAsync(item, CancellationToken.None);
+        await _messageWorkQueue.EnqueueAsync(item, _workQueueHostedService.AdmissionToken);
     }
 
     private async Task HandleSocketClientReadyAsync()

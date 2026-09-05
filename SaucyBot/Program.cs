@@ -67,8 +67,9 @@ await Host.CreateDefaultBuilder(args)
         services.AddDeviantArtClient();
         services.AddFileDownloadClient();
 
+        services.AddSingleton<WorkQueueHostedService>();
+        services.AddHostedService(services => services.GetRequiredService<WorkQueueHostedService>());
         services.AddHostedService<Worker>();
-        services.AddHostedService<WorkQueueHostedService>();
     })
     .UseConsoleLifetime()
     .Build()

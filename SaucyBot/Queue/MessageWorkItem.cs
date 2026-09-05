@@ -16,7 +16,8 @@ public sealed record MessageWorkItem(
     IReadOnlyList<MessageEmbed> Embeds,
     bool CanCreateEmbed,
     bool CanManageMessages,
-    Guid CorrelationId)
+    Guid CorrelationId,
+    DateTimeOffset EnqueuedAt = default)
 {
     private const int CurrentVersion = 1;
 

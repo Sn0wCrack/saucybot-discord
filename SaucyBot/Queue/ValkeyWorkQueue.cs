@@ -1,3 +1,4 @@
+using SaucyBot.Diagnostics;
 using StackExchange.Redis;
 
 namespace SaucyBot.Queue;
@@ -21,27 +22,40 @@ public sealed class ValkeyWorkQueue : IMessageWorkQueue
     internal const string PayloadField = "payload";
     private readonly IValkeyStreamClient _client;
     private readonly WorkQueueOptions _options;
+    private readonly SaucyBotMetrics? _metrics;
 
-    public ValkeyWorkQueue(IValkeyStreamClient client, WorkQueueOptions options)
+    public ValkeyWorkQueue(IValkeyStreamClient client, WorkQueueOptions options, SaucyBotMetrics? metrics = null)
     {
         _client = client;
         _options = options;
+        _metrics = metrics;
     }
 
     public async Task EnqueueAsync(MessageWorkItem item, CancellationToken cancellationToken)
     {
-        while (true)
+        try
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            try
+            while (true)
             {
-                await _client.AddAsync(item.Serialize(), cancellationToken);
-                return;
+                cancellationToken.ThrowIfCancellationRequested();
+                try
+                {
+                    await _client.AddAsync(item.Serialize(), cancellationToken);
+                    _metrics?.Enqueued.Add(1);
+                    _metrics?.QueueDepth.Add(1);
+                    return;
+                }
+                catch (ValkeyBackpressureException)
+                {
+                    _metrics?.Retried.Add(1);
+                    await Task.Delay(_options.RetryDelay, cancellationToken);
+                }
             }
-            catch (ValkeyBackpressureException)
-            {
-                await Task.Delay(_options.RetryDelay, cancellationToken);
-            }
+        }
+        catch (OperationCanceledException)
+        {
+            _metrics?.Cancelled.Add(1);
+            throw;
         }
     }
 
