@@ -29,7 +29,7 @@ From the `SaucyBot` directory, copy the production template files into place:
 
 ```shell
 cd SaucyBot
-cp docker-compose.prod.yml docker-compose.yml
+cp compose.prod.yml compose.yml
 cp .env.example .env
 cp appsettings.json.example appsettings.json
 ```
