@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging.Abstractions;
 using SaucyBot.Diagnostics;
 using StackExchange.Redis;
@@ -68,7 +69,7 @@ public sealed class RedisWorkQueue : IMessageWorkQueue
 
     public async IAsyncEnumerable<QueuedMessageWorkItem> ReadAsync(
         string consumer,
-        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+        [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         await _client.EnsureGroupAsync(cancellationToken);
 

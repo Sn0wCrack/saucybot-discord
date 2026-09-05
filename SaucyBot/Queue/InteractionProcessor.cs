@@ -1,4 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
 using SaucyBot.Services;
 
 namespace SaucyBot.Queue;
