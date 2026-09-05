@@ -30,6 +30,7 @@ public static class TelemetryServiceRegistration
         if (options.Tracing.Enabled)
         {
             builder.WithTracing(tracing => tracing
+                .AddSource(QueueTelemetry.ActivitySourceName)
                 .AddHttpClientInstrumentation()
                 .SetSampler(new TraceIdRatioBasedSampler(Math.Clamp(options.Tracing.SamplingRatio, 0, 1)))
                 .AddOtlpExporter(exporter => ConfigureExporter(exporter, options)));

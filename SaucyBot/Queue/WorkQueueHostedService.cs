@@ -128,27 +128,34 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
                 }
 
                 _metrics.ActiveWorkers.Add(1);
-                var stopwatch = Stopwatch.StartNew();
+                using var activity = QueueTelemetry.ActivitySource.StartActivity(
+                    "saucybot.process.message",
+                    ActivityKind.Consumer);
+                activity?.SetTag("saucybot.work.type", "message");
+                activity?.SetTag("saucybot.queue.consumer", consumer);
+                activity?.SetTag("saucybot.queue.entry_id", item.EntryId);
                 try
                 {
                     await _processor.ProcessAsync(item, cancellationToken);
                     await _queue.AcknowledgeAsync(item, cancellationToken);
                     _metrics.Succeeded.Add(1);
+                    activity?.SetStatus(ActivityStatusCode.Ok);
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {
                     _logger.LogDebug("Message worker {Consumer} cancelled while processing {EntryId}", consumer, item.EntryId);
                     _metrics.Cancelled.Add(1);
+                    activity?.SetTag("saucybot.cancelled", true);
                 }
                 catch (Exception exception)
                 {
                     _logger.LogError(exception, "Message worker {Consumer} failed for {EntryId}", consumer, item.EntryId);
                     _metrics.Failed.Add(1);
+                    activity?.SetStatus(ActivityStatusCode.Error, exception.Message);
+                    activity?.SetTag("error.type", exception.GetType().FullName);
                 }
                 finally
                 {
-                    stopwatch.Stop();
-                    _metrics.ProcessingDuration.Record(stopwatch.Elapsed.TotalMilliseconds);
                     _metrics.ActiveWorkers.Add(-1);
                 }
             }
@@ -170,28 +177,34 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
                 _metrics.Dequeued.Add(1);
                 _metrics.QueueDepth.Add(-1);
                 _metrics.ActiveWorkers.Add(1);
-                var stopwatch = Stopwatch.StartNew();
+                using var activity = QueueTelemetry.ActivitySource.StartActivity(
+                    "saucybot.process.interaction",
+                    ActivityKind.Consumer);
+                activity?.SetTag("saucybot.work.type", "interaction");
+                activity?.SetTag("saucybot.interaction.id", interaction.Id);
                 try
                 {
                     await _interactionProcessor.ProcessAsync(interaction, cancellationToken);
                     _metrics.Succeeded.Add(1);
+                    activity?.SetStatus(ActivityStatusCode.Ok);
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {
                     _logger.LogDebug("Interaction worker cancelled");
                     _metrics.Cancelled.Add(1);
+                    activity?.SetTag("saucybot.cancelled", true);
                     await SendInteractionFailureAsync(interaction, cancellationToken);
                 }
                 catch (Exception exception)
                 {
                     _logger.LogError(exception, "Interaction worker failed for {InteractionId}", interaction?.Id);
                     _metrics.Failed.Add(1);
+                    activity?.SetStatus(ActivityStatusCode.Error, exception.Message);
+                    activity?.SetTag("error.type", exception.GetType().FullName);
                     await SendInteractionFailureAsync(interaction, cancellationToken);
                 }
                 finally
                 {
-                    stopwatch.Stop();
-                    _metrics.ProcessingDuration.Record(stopwatch.Elapsed.TotalMilliseconds);
                     _metrics.ActiveWorkers.Add(-1);
                 }
             }

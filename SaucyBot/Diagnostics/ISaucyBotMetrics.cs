@@ -7,7 +7,6 @@ public interface ISaucyBotMetrics : IDisposable
     UpDownCounter<long> QueueDepth { get; }
     Histogram<double> QueueAge { get; }
     UpDownCounter<long> ActiveWorkers { get; }
-    Histogram<double> ProcessingDuration { get; }
     Counter<long> Enqueued { get; }
     Counter<long> Dequeued { get; }
     Counter<long> Failed { get; }
