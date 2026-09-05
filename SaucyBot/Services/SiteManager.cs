@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using Discord;
+using Discord.Net;
 using Discord.WebSocket;
 using SaucyBot.Database.Models;
 using SaucyBot.Extensions;
@@ -210,6 +211,13 @@ public sealed class SiteManager : IMessageWorkHandler
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {
                     throw;
+                }
+                catch (HttpException exception) when (exception.DiscordCode == DiscordErrorCode.UnknownMessage)
+                {
+                    _logger.LogDebug(
+                        "Original message {MessageId} was deleted before the {Site} response could be sent",
+                        message.Id,
+                        site);
                 }
                 catch (Exception ex)
                 {
