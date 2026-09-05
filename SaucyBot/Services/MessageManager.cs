@@ -19,9 +19,19 @@ public sealed class MessageManager
     }
 
     public async Task Send(SocketUserMessage received, ProcessResponse response)
+        => await Send(new DiscordMessageContext(received), response, CancellationToken.None);
+
+    public async Task Send(IMessageContext received, ProcessResponse response, CancellationToken cancellationToken = default)
     {
         if (!ShouldSend(received, response))
         {
+            return;
+        }
+
+        var target = await received.ResolveMessageAsync(cancellationToken);
+        if (target is null)
+        {
+            _logger.LogWarning("Unable to resolve original message {MessageId} for a response", received.Id);
             return;
         }
 
@@ -38,7 +48,7 @@ public sealed class MessageManager
             switch (message)
             {
                 case ComponentsV2Message c:
-                    await received.ReplyAsync(
+                    await target.ReplyAsync(
                         c.Files,
                         c.Content,
                         allowedMentions: AllowedMentions.None,
@@ -47,7 +57,7 @@ public sealed class MessageManager
                     );
                     break;
                 case EmbedMessage e:
-                    await received.ReplyAsync(
+                    await target.ReplyAsync(
                         e.Files,
                         e.Content,
                         allowedMentions: AllowedMentions.None,
@@ -55,7 +65,7 @@ public sealed class MessageManager
                     );
                     break;
                 default:
-                    await received.ReplyAsync(
+                    await target.ReplyAsync(
                         message.Content,
                         allowedMentions: AllowedMentions.None
                     );
@@ -127,6 +137,12 @@ public sealed class MessageManager
             ITextChannel { IsNsfw: true } => true,
             _ => false,
         };
+    }
+
+    private bool ShouldSend(IMessageContext received, ProcessResponse response)
+    {
+        var restrictNsfw = _configuration.GetValue<bool?>("Bot:RestrictNSFW") ?? false;
+        return !restrictNsfw || !response.IsNsfw || received.IsNsfw;
     }
 
     private bool ShouldSend(SocketSlashCommand received, ProcessResponse response)

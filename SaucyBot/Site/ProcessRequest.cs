@@ -32,7 +32,7 @@ public sealed record ProcessRequest
     public GuildConfiguration? GuildConfiguration { get; }
     public ProcessingContext? Context { get; }
 
-    public SocketUserMessage? Message => (Context?.Message as LiveMessageContext)?.SocketMessage;
+    public SocketUserMessage? Message => (Context?.Message as DiscordMessageContext)?.SocketMessage;
 
     public SocketSlashCommand? Command => (Context?.Command as LiveCommandContext)?.SocketCommand;
 
@@ -45,8 +45,8 @@ public sealed record ProcessRequest
     public ulong? GuildId => Context?.Message?.GuildId ?? Context?.Command?.GuildId;
 
     // A live socket guild is retained only for existing in-process callers.
-    public SocketGuild? Guild => Context?.Message is LiveMessageContext message
-        ? message.Guild
+    public SocketGuild? Guild => Context?.Message is DiscordMessageContext message
+        ? (message.SocketMessage.Channel as SocketGuildChannel)?.Guild
         : Context?.Command is LiveCommandContext command
             ? command.Guild
             : null;
@@ -58,7 +58,7 @@ public sealed record ProcessRequest
             : new ProcessingContext(
                 CancellationToken.None,
                 NsfwAllowed: true,
-                Message: message is null ? null : new LiveMessageContext(message),
+                Message: message is null ? null : new DiscordMessageContext(message),
                 Command: command is null ? null : new LiveCommandContext(command));
     }
 
@@ -67,45 +67,6 @@ public sealed record ProcessRequest
         protected LiveProcessingContext(SocketGuild? guild) => Guild = guild;
 
         public SocketGuild? Guild { get; }
-    }
-
-    private sealed class LiveMessageContext : LiveProcessingContext, IMessageContext
-    {
-        private readonly SocketUserMessage _message;
-
-        public LiveMessageContext(SocketUserMessage message)
-            : base((message.Channel as SocketGuildChannel)?.Guild)
-        {
-            _message = message;
-        }
-
-        public ulong Id => _message.Id;
-        public SocketUserMessage SocketMessage => _message;
-        public ulong ChannelId => _message.Channel.Id;
-        public ulong? GuildId => Guild?.Id;
-        public string Content => _message.Content ?? "";
-        public string AllMessageContent => _message.AllMessageContent();
-        public ulong AuthorId => _message.Author.Id;
-        public IReadOnlyCollection<ulong> AuthorRoleIds => (_message.Author as SocketGuildUser)?.Roles.Select(x => x.Id).ToArray() ?? [];
-        public bool CanCreateEmbed => _message.Channel switch
-        {
-            SocketThreadChannel threadChannel => threadChannel.Guild.CurrentUser.GetPermissions(threadChannel).Has(Library.Constants.RequiredThreadPermissions),
-            SocketGuildChannel guildChannel => guildChannel.Guild.CurrentUser.GetPermissions(guildChannel).Has(Library.Constants.RequiredChannelPermissions),
-            _ => false,
-        };
-        public bool CanManageMessages => _message.Channel switch
-        {
-            SocketThreadChannel threadChannel => threadChannel.Guild.CurrentUser.GetPermissions(threadChannel).Has(ChannelPermission.ManageMessages),
-            SocketGuildChannel guildChannel => guildChannel.Guild.CurrentUser.GetPermissions(guildChannel).Has(ChannelPermission.ManageMessages),
-            _ => false,
-        };
-        public IReadOnlyList<Embed> CurrentEmbeds => _message.Embeds.ToArray();
-
-        public Task<IReadOnlyList<Embed>> GetLatestEmbedsAsync(CancellationToken cancellationToken)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            return Task.FromResult<IReadOnlyList<Embed>>(CurrentEmbeds);
-        }
     }
 
     private sealed class LiveCommandContext : LiveProcessingContext, ICommandContext

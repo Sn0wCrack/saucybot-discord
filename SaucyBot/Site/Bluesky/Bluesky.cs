@@ -49,15 +49,17 @@ public sealed partial class BlueskySite : BaseSite, IBlueskySite
 
         // If we have a message attached, we need to wait a bit for Discord to process the embed,
         // we when need to refresh the message and see if an embed has been added in that time.
-        if (request.Message is not null)
+        if (request.Context?.Message is { } message)
         {
-            await Task.Delay(TimeSpan.FromSeconds(_configuration.GetSection("Sites:Bluesky:Delay").Get<double>()));
+            await Task.Delay(
+                TimeSpan.FromSeconds(_configuration.GetSection("Sites:Bluesky:Delay").Get<double>()),
+                request.Context.CancellationToken);
 
             // NOTE: Discord.NET works a little interestingly, basically when a message updates the Bot learns of this change
             // and then proceeds to update its internal cache, so while we're waiting around it should update the message cache
             // automatically, so there's no need to refresh the message object.
 
-            hasEmbed = request.Message.Embeds.Count != 0;
+            hasEmbed = (await message.GetLatestEmbedsAsync(request.Context.CancellationToken)).Count != 0;
         }
 
         if (hasEmbed)

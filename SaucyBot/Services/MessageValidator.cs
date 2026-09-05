@@ -106,6 +106,8 @@ public static partial class MessageValidator
         return false;
     }
 
+    public static bool HasPermissionToHideEmbed(IMessageContext message) => message.CanManageMessages;
+
     private static bool UserHasPermissionToEmbed(
         GuildConfiguration? guildConfiguration,
         SocketGuildUser? guildUser)

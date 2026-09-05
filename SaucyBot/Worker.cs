@@ -4,6 +4,7 @@ using SaucyBot.Diagnostics;
 using SaucyBot.Library;
 using SaucyBot.Queue;
 using SaucyBot.Services;
+using SaucyBot.Site;
 
 namespace SaucyBot;
 
@@ -22,6 +23,7 @@ public sealed class Worker : BackgroundService
     private readonly IDatabaseMigrator _databaseMigrator;
 
     private readonly InteractionHandler _interactionHandler;
+    private readonly DiscordMessageResolver? _messageResolver;
 
     private BaseSocketClient? _client;
 
@@ -36,13 +38,15 @@ public sealed class Worker : BackgroundService
         SaucyBotMetrics? metrics = null,
         Func<SocketMessage, MessageWorkItem?>? messageWorkItemFactory = null,
         Func<SocketInteraction, IInteractionWorkItem>? interactionWorkItemFactory = null,
-        Func<SocketInteraction, Task>? interactionDeferrer = null
+        Func<SocketInteraction, Task>? interactionDeferrer = null,
+        DiscordMessageResolver? messageResolver = null
     )
     {
         _logger = logger;
         _configuration = configuration;
         _databaseMigrator = databaseMigrator;
         _interactionHandler = interactionHandler;
+        _messageResolver = messageResolver;
         _messageWorkQueue = messageWorkQueue;
         _interactionWorkChannel = interactionWorkChannel;
         _workQueueHostedService = workQueueHostedService;
@@ -65,6 +69,8 @@ public sealed class Worker : BackgroundService
             "manual" => this.SetupSocketClient(),
             _ => this.SetupShardedSocketClient(),
         };
+
+        _messageResolver?.Initialize(_client);
 
         await _client.LoginAsync(TokenType.Bot, _configuration.GetSection("Bot:DiscordToken").Get<string>());
         await _client.StartAsync();

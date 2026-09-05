@@ -16,13 +16,15 @@ public sealed class SiteManager : IMessageWorkHandler
     private readonly MessageManager _messageManager;
     private readonly IGuildConfigurationManager _guildConfigurationManager;
     private readonly SiteRegistry _siteRegistry;
+    private readonly IMessageResolver? _messageResolver;
 
     public SiteManager(
         ILogger<SiteManager> logger,
         IConfiguration configuration,
         MessageManager messageManager,
         IGuildConfigurationManager guildConfigurationManager,
-        SiteRegistry siteRegistry
+        SiteRegistry siteRegistry,
+        IMessageResolver? messageResolver = null
     )
     {
         _logger = logger;
@@ -30,6 +32,7 @@ public sealed class SiteManager : IMessageWorkHandler
         _messageManager = messageManager;
         _guildConfigurationManager = guildConfigurationManager;
         _siteRegistry = siteRegistry;
+        _messageResolver = messageResolver;
     }
 
     internal static async Task SendAndDispose(ProcessResponse response, Func<Task> send)
@@ -79,6 +82,31 @@ public sealed class SiteManager : IMessageWorkHandler
         return results;
     }
 
+    public Task<List<SiteManagerProcessResult>> Match(IMessageContext message, GuildConfiguration? guildConfiguration = null)
+    {
+        var results = new List<SiteManagerProcessResult>();
+        var content = message.CleanContent;
+        if (content is null or "")
+        {
+            return Task.FromResult(results);
+        }
+
+        var maximumEmbeds = guildConfiguration?.MaximumEmbeds ?? _configuration.GetSection("Bot:MaximumEmbeds").Get<uint>();
+        foreach (var (identifier, site) in _siteRegistry.Sites)
+        {
+            foreach (Match match in site.Pattern.Matches(content))
+            {
+                results.Add(new SiteManagerProcessResult(identifier, match));
+                if (results.Count >= maximumEmbeds)
+                {
+                    return Task.FromResult(results);
+                }
+            }
+        }
+
+        return Task.FromResult(results);
+    }
+
     public async Task<List<SiteManagerProcessResult>> Match(SocketSlashCommand command, GuildConfiguration? guildConfiguration = null)
     {
         var results = new List<SiteManagerProcessResult>();
@@ -117,13 +145,24 @@ public sealed class SiteManager : IMessageWorkHandler
     public async Task HandleMessage(SocketUserMessage message)
     {
         var guildConfiguration = await _guildConfigurationManager.GetByChannel(message.Channel);
+        var context = new DiscordMessageContext(message, _messageResolver);
+        await HandleMessage(context, guildConfiguration, CancellationToken.None, () => message.Channel.EnterTypingState());
+    }
+
+    private async Task HandleMessage(
+        IMessageContext message,
+        GuildConfiguration? guildConfiguration,
+        CancellationToken cancellationToken,
+        Func<IDisposable?>? typingState = null)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
 
         var validation = MessageValidator.ValidateMessage(message, guildConfiguration);
 
         if (!validation.Passed)
         {
             _logger.LogDebug("Message was ignored: {Reason} (content: \"{Message}\")",
-                validation.Reason, message.AllMessageContent());
+                validation.Reason, message.AllMessageContent);
             return;
         }
 
@@ -134,8 +173,8 @@ public sealed class SiteManager : IMessageWorkHandler
             return;
         }
 
-        // Show a "typing..." indicator in the channel for as long as we are processing matches. It is broadcast until the returned object is disposed of, and Discord clears it once we send our reply.
-        using (message.Channel.EnterTypingState())
+        // Show a typing indicator for live gateway messages only.
+        using (typingState?.Invoke())
         {
             foreach (var (site, match) in results)
             {
@@ -145,7 +184,10 @@ public sealed class SiteManager : IMessageWorkHandler
 
                 try
                 {
-                    response = await _siteRegistry[site].Process(new ProcessRequest(match, guildConfiguration, message));
+                    response = await _siteRegistry[site].Process(new ProcessRequest(
+                        match,
+                        guildConfiguration,
+                        Context: new ProcessingContext(cancellationToken, true, Message: message)));
 
                     if (response is null)
                     {
@@ -153,11 +195,12 @@ public sealed class SiteManager : IMessageWorkHandler
                         continue;
                     }
 
-                    await SendAndDispose(response, () => _messageManager.Send(message, response));
+                    await SendAndDispose(response, () => _messageManager.Send(message, response, cancellationToken));
 
-                    if (MessageValidator.HasPermissionToHideEmbed(message))
+                    var target = await message.ResolveMessageAsync(cancellationToken);
+                    if (target is not null && MessageValidator.HasPermissionToHideEmbed(message))
                     {
-                        await message.ModifyAsync(x => x.Flags = MessageFlags.SuppressEmbeds);
+                        await target.ModifyAsync(x => x.Flags = MessageFlags.SuppressEmbeds);
                     }
                 }
                 catch (Exception ex)
@@ -178,8 +221,14 @@ public sealed class SiteManager : IMessageWorkHandler
     public async Task HandleAsync(MessageWorkItem item, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        _ = await _guildConfigurationManager.GetByGuildId(item.GuildId);
-        _logger.LogDebug("Queued message {MessageId} is ready for processing", item.MessageId);
+        if (_messageResolver is null)
+        {
+            throw new InvalidOperationException("A message resolver is required to process queued messages.");
+        }
+
+        var message = new QueuedMessageContext(item, _messageResolver);
+        var guildConfiguration = await _guildConfigurationManager.GetByGuildId(item.GuildId);
+        await HandleMessage(message, guildConfiguration, cancellationToken);
     }
 
     public async Task HandleCommand(SocketSlashCommand command)

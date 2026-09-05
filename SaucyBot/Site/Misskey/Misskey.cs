@@ -51,15 +51,17 @@ public sealed class MisskeySite : BaseSite, IMisskeySite
 
         // If we have a request.Message attached, we need to wait a bit for Discord to process the embed,
         // we when need to refresh the request.Message and see if an embed has been added in that time.
-        if (request.Message is not null)
+        if (request.Context?.Message is { } message)
         {
-            await Task.Delay(TimeSpan.FromSeconds(_configuration.GetSection("Sites:Misskey:Delay").Get<double>()));
+            await Task.Delay(
+                TimeSpan.FromSeconds(_configuration.GetSection("Sites:Misskey:Delay").Get<double>()),
+                request.Context.CancellationToken);
 
             // NOTE: Discord.NET works a little interestingly, basically when a request.Message updates the Bot learns of this change
             // and then proceeds to update its internal cache, so while we're waiting around it should update the request.Message cache
             // automatically, so there's no need to refresh the request.Message object.
 
-            hasEmbed = request.Message.Embeds.Count != 0;
+            hasEmbed = (await message.GetLatestEmbedsAsync(request.Context.CancellationToken)).Count != 0;
         }
 
         if (hasEmbed && !ShouldEmbed(note))
