@@ -6,10 +6,9 @@ using SaucyBot.Library.Sites.Newgrounds;
 namespace SaucyBot.Site.Newgrounds;
 
 
-public sealed partial class NewgroundsSite : BaseSite, INewgroundsSite
+[SiteIdentifier("Newgrounds")]
+public sealed partial class NewgroundsSite : BaseSite
 {
-    public override string Identifier => "Newgrounds";
-
     [GeneratedRegex(@"https?://(www\.)?newgrounds\.com/art/view/(?<user>\S*)/(?<slug>\S+)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex NewgroundsPattern();
 

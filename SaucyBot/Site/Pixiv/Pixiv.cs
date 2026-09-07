@@ -9,15 +9,13 @@ using SaucyBot.Extensions;
 using SaucyBot.Extensions.Discord;
 using SaucyBot.Library;
 using SaucyBot.Library.Sites.Pixiv;
-using Xabe.FFmpeg;
 
 namespace SaucyBot.Site.Pixiv;
 
 
-public sealed partial class PixivSite : BaseSite, IPixivSite
+[SiteIdentifier("Pixiv")]
+public sealed partial class PixivSite : BaseSite
 {
-    public override string Identifier => "Pixiv";
-
     [GeneratedRegex(@"https?://(www\.)?pixiv\.net/\S*artworks/(?<id>\d+)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex PixivPattern();
 
@@ -31,16 +29,22 @@ public sealed partial class PixivSite : BaseSite, IPixivSite
     private readonly IPixivClient _client;
     private readonly ILogger<PixivSite> _logger;
     private readonly IConfiguration _configuration;
+    private readonly IUgoiraVideoRenderer _ugoiraVideoRenderer;
+    private readonly IFileSystem _fileSystem;
 
     public PixivSite(
         ILogger<PixivSite> logger,
         IConfiguration configuration,
-        IPixivClient client
+        IPixivClient client,
+        IUgoiraVideoRenderer ugoiraVideoRenderer,
+        IFileSystem fileSystem
     )
     {
         _logger = logger;
         _configuration = configuration;
         _client = client;
+        _ugoiraVideoRenderer = ugoiraVideoRenderer;
+        _fileSystem = fileSystem;
     }
 
     public override async Task<ProcessResponse?> Process(ProcessRequest request)
@@ -60,12 +64,14 @@ public sealed partial class PixivSite : BaseSite, IPixivSite
             return null;
         }
 
+        var cancellationToken = request.Context?.CancellationToken ?? default;
+
         return response.IllustrationDetails.Type == IllustrationType.Ugoira
-            ? await ProcessUgoira(response.IllustrationDetails)
-            : await ProcessImage(response.IllustrationDetails, request.GuildConfiguration);
+            ? await ProcessUgoira(response.IllustrationDetails, cancellationToken)
+            : await ProcessImage(response.IllustrationDetails, request.GuildConfiguration, cancellationToken);
     }
 
-    private async Task<ProcessResponse?> ProcessUgoira(IllustrationDetails details)
+    private async Task<ProcessResponse?> ProcessUgoira(IllustrationDetails details, CancellationToken cancellationToken)
     {
         var response = new ProcessResponse
         {
@@ -79,9 +85,9 @@ public sealed partial class PixivSite : BaseSite, IPixivSite
             return null;
         }
 
-        using var file = await GetFile(metadata.UgoiraMetadata.OriginalSource);
+        using var file = await GetFile(metadata.UgoiraMetadata.OriginalSource, cancellationToken);
 
-        var zip = new ZipArchive(file.Stream);
+        using var zip = new ZipArchive(file.Stream);
 
         var basePath = Path.Join(
             Path.GetTempPath(),
@@ -102,45 +108,91 @@ public sealed partial class PixivSite : BaseSite, IPixivSite
 
         var videoFile = Path.Join(basePath, $"ugoira.{fileExtension}");
 
-        await zip.ExtractToDirectoryAsync(basePath, true);
-
-        await File.WriteAllTextAsync(concatFile, BuildConcatFile(metadata.UgoiraMetadata.Frames));
+        FileStream? fileStream = null;
+        var cleanupAttempted = false;
 
         try
         {
-            await RenderUgoiraVideo(concatFile, videoFile);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError("{Message}", ex.Message);
-            return null;
-        }
+            await zip.ExtractToDirectoryAsync(basePath, true, cancellationToken);
+            await _fileSystem.WriteAllTextAsync(concatFile, BuildConcatFile(metadata.UgoiraMetadata.Frames), cancellationToken);
 
-        var fileStream = new MemoryStream(
-            await File.ReadAllBytesAsync(videoFile)
-        );
+            try
+            {
+                await _ugoiraVideoRenderer.RenderAsync(concatFile, videoFile, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("{Message}", ex.Message);
+                cleanupAttempted = true;
+                try
+                {
+                    _fileSystem.DeleteDirectory(basePath, true);
+                }
+                catch (Exception cleanupException)
+                {
+                    _logger.LogError(cleanupException, "Failed to clean up rendered Pixiv media at {Path}", basePath);
+                }
+                throw;
+            }
 
-        var title = details.Title
-            .ToLowerInvariant()
-            .Replace("-", "")
-            .Replace(" ", "_")
-            .Trim();
+            fileStream = _fileSystem.OpenRead(videoFile);
 
-        var fileName = $"{title}_ugoira.{fileExtension}";
+            var title = details.Title
+                .ToLowerInvariant()
+                .Replace("-", "")
+                .Replace(" ", "_")
+                .Trim();
 
-        response.Files.Add(
-            new FileAttachment(fileStream, fileName)
-        );
+            var fileName = $"{title}_ugoira.{fileExtension}";
 
-        var componentBuilder = new ComponentBuilderV2()
-            .WithContainer(
-                BuildContainerComponent(details, response.Files)
+            response.Files.Add(
+                new FileAttachment(fileStream, fileName)
             );
-        response.Components = componentBuilder.Build();
 
-        Directory.Delete(basePath, true);
+            var componentBuilder = new ComponentBuilderV2()
+                .WithContainer(
+                    BuildContainerComponent(details, response.Files)
+                );
+            var result = new ProcessResponse(
+                files: response.Files,
+                components: componentBuilder.Build(),
+                nsfw: response.IsNsfw
+            );
 
-        return response;
+            cleanupAttempted = true;
+            _fileSystem.DeleteDirectory(basePath, true);
+            fileStream = null;
+            return result;
+        }
+        catch
+        {
+            if (fileStream is not null)
+            {
+                try
+                {
+                    await fileStream.DisposeAsync();
+                }
+                catch
+                {
+                    // Preserve the failure that caused attachment construction or cleanup to fail.
+                }
+            }
+
+            if (!cleanupAttempted && _fileSystem.DirectoryExists(basePath))
+            {
+                try
+                {
+                    cleanupAttempted = true;
+                    _fileSystem.DeleteDirectory(basePath, true);
+                }
+                catch
+                {
+                    // Preserve the original processing failure.
+                }
+            }
+
+            throw;
+        }
     }
 
     private static string BuildConcatFile(List<UgoiraFrame> frames)
@@ -164,104 +216,94 @@ public sealed partial class PixivSite : BaseSite, IPixivSite
     }
 
 
-    private async Task RenderUgoiraVideo(string concatFilePath, string videoFilePath)
-    {
-        var conversion = FFmpeg.Conversions.New()
-            .SetOverwriteOutput(true)
-            .AddParameter("-f concat", ParameterPosition.PreInput)
-            .AddParameter($"-i \"{concatFilePath}\"", ParameterPosition.PreInput)
-            .AddParameter("-pix_fmt yuv420p")
-            .AddParameter("-filter:v \"pad=ceil(iw/2)*2:ceil(ih/2)*2\"")
-            .SetOutput(videoFilePath);
-
-        var codec = _configuration.GetSection("Sites:Pixiv:Ugoira:Codec").Get<UgoiraCodec?>() ?? UgoiraCodec.H264;
-        var bitrate = _configuration.GetSection("Sites:Pixiv:Ugoira:Bitrate").Get<int?>() ?? 2_000;
-
-        switch (codec)
-        {
-            default:
-            case UgoiraCodec.H264:
-                conversion
-                    .AddParameter("-c:v libx264")
-                    .AddParameter($"-b:v {bitrate}k");
-                break;
-            case UgoiraCodec.AV1:
-                var preset = _configuration.GetSection("Sites:Pixiv:Ugoira:Preset").Get<int?>() ?? 6;
-                var crf = _configuration.GetSection("Sites:Pixiv:Ugoira:CRF").Get<int?>() ?? 40;
-
-                conversion
-                    .AddParameter("-c:v libsvtav1")
-                    .AddParameter($"-preset {preset}")
-                    .AddParameter($"-crf {crf}")
-                    .AddParameter($"-maxrate {bitrate}k")
-                    .AddParameter($"-bufsize {bitrate * 2}k");
-                break;
-            case UgoiraCodec.VP9:
-                conversion
-                    .AddParameter("-c:v libvp9")
-                    .AddParameter($"-b:v {bitrate}k");
-
-                break;
-        }
-
-        await conversion.Start();
-    }
-
-    private async Task<ProcessResponse?> ProcessImage(IllustrationDetails details, GuildConfiguration? guildConfiguration)
+    private async Task<ProcessResponse?> ProcessImage(
+        IllustrationDetails details,
+        GuildConfiguration? guildConfiguration,
+        CancellationToken cancellationToken)
     {
         var response = new ProcessResponse
         {
             IsNsfw = details.IsNsfw,
         };
 
-        var pageCount = details.PageCount;
-
-        var postLimit = (int?)guildConfiguration?.MaximumPixivImages ?? _configuration.GetSection("Sites:Pixiv:PostLimit").Get<int>();
-
-        if (pageCount == 1)
+        try
         {
-            var file = await DetermineHighestUsableQualityFile(
-                details.IllustrationDetailsUrls.AllWithoutThumbnails
-            );
+            var pageCount = details.PageCount;
 
-            if (file is not null)
+            var postLimit = (int?)guildConfiguration?.MaximumPixivImages ?? _configuration.GetSection("Sites:Pixiv:PostLimit").Get<int>();
+
+            if (pageCount == 1)
             {
-                response.Files.Add(file.Value);
-            }
-        }
-        else
-        {
-            var illustrationPagesResponse = await _client.IllustrationPages(details.Id);
+                var file = await DetermineHighestUsableQualityFile(
+                    details.IllustrationDetailsUrls.AllWithoutThumbnails,
+                    cancellationToken
+                );
 
-            if (illustrationPagesResponse is null)
-            {
-                return response;
-            }
-
-            var pages = illustrationPagesResponse.IllustrationPages.SafeSlice(0, postLimit);
-
-            var fileTasks = pages.Select(page => DetermineHighestUsableQualityFile(page.IllustrationPagesUrls.AllWithoutOriginalAndThumbnails));
-
-            var files = await Task.WhenAll(fileTasks);
-
-            foreach (var file in files)
-            {
                 if (file is not null)
                 {
                     response.Files.Add(file.Value);
                 }
             }
+            else
+            {
+                var illustrationPagesResponse = await _client.IllustrationPages(details.Id);
+
+                if (illustrationPagesResponse is null)
+                {
+                    return response;
+                }
+
+                var pages = illustrationPagesResponse.IllustrationPages.SafeSlice(0, postLimit);
+
+                var fileTasks = pages
+                    .Select(page => DetermineHighestUsableQualityFile(page.IllustrationPagesUrls.AllWithoutOriginalAndThumbnails, cancellationToken))
+                    .ToArray();
+
+                FileAttachment?[] files;
+                try
+                {
+                    files = await Task.WhenAll(fileTasks);
+                }
+                catch
+                {
+                    foreach (var task in fileTasks.Where(task => task.IsCompletedSuccessfully))
+                    {
+                        var file = task.Result;
+                        if (file is not null)
+                        {
+                            await file.Value.Stream.DisposeAsync();
+                        }
+                    }
+
+                    throw;
+                }
+
+                foreach (var file in files)
+                {
+                    if (file is not null)
+                    {
+                        response.Files.Add(file.Value);
+                    }
+                }
+            }
+
+            var componentBuilder = new ComponentBuilderV2()
+                .WithContainer(
+                    BuildContainerComponent(details, response.Files)
+                        .When(pageCount > postLimit, (builder => builder.WithTextDisplay($"-## This is part of a {pageCount} image set.")))
+                 );
+
+            return new ProcessResponse(
+                files: response.Files,
+                components: componentBuilder.Build(),
+                nsfw: response.IsNsfw
+            );
         }
-
-        var componentBuilder = new ComponentBuilderV2()
-            .WithContainer(
-                BuildContainerComponent(details, response.Files)
-                    .When(pageCount > postLimit, (builder => builder.WithTextDisplay($"-## This is part of a {pageCount} image set.")))
-             );
-
-        response.Components = componentBuilder.Build();
-
-        return response;
+        catch
+        {
+            await response.DisposeAsync();
+            throw;
+        }
     }
 
     private ContainerBuilder BuildContainerComponent(IllustrationDetails details, IEnumerable<FileAttachment> files)
@@ -291,19 +333,27 @@ public sealed partial class PixivSite : BaseSite, IPixivSite
             .WithTextDisplay($"-# Posted: <t:{details.CreateDate.ToUnixTimeSeconds()}:F>");
     }
 
-    private async Task<FileAttachment?> DetermineHighestUsableQualityFile(IEnumerable<string> urls)
+    private async Task<FileAttachment?> DetermineHighestUsableQualityFile(IEnumerable<string> urls, CancellationToken cancellationToken)
     {
         foreach (var url in urls)
         {
             _logger.LogDebug("Attempting to download {Url}...", url);
 
-            var stream = await _client.GetFile(url);
+            var stream = await _client.GetFile(url, cancellationToken);
 
-            if (stream.Length < Constants.MaximumFileSize)
+            try
             {
-                var parsed = new Uri(url);
+                if (stream.Length < Constants.MaximumFileSize)
+                {
+                    var parsed = new Uri(url);
 
-                return new FileAttachment(stream, Path.GetFileName(parsed.AbsolutePath));
+                    return new FileAttachment(stream, Path.GetFileName(parsed.AbsolutePath));
+                }
+            }
+            catch
+            {
+                await stream.DisposeAsync();
+                throw;
             }
 
             await stream.DisposeAsync();
@@ -312,18 +362,26 @@ public sealed partial class PixivSite : BaseSite, IPixivSite
         return null;
     }
 
-    private async Task<FileAttachment> GetFile(string url)
+    private async Task<FileAttachment> GetFile(string url, CancellationToken cancellationToken)
     {
         _logger.LogDebug("Attempting to download {Url}...", url);
 
-        var response = await _client.GetFile(url);
+        var response = await _client.GetFile(url, cancellationToken);
 
-        var parsed = new Uri(url);
+        try
+        {
+            var parsed = new Uri(url);
 
-        return new FileAttachment(
-            response,
-            Path.GetFileName(parsed.AbsolutePath)
-        );
+            return new FileAttachment(
+                response,
+                Path.GetFileName(parsed.AbsolutePath)
+            );
+        }
+        catch
+        {
+            await response.DisposeAsync();
+            throw;
+        }
     }
 
     private static string CleanPixivHtml(string html)

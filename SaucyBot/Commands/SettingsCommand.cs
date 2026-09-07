@@ -1,14 +1,12 @@
+using Discord;
+using Discord.Interactions;
+using Discord.WebSocket;
 using SaucyBot.Database.Models;
 using SaucyBot.Services;
 
 namespace SaucyBot.Commands;
 
-using System.Threading.Tasks;
-using Discord;
-using Discord.Interactions;
-using Discord.WebSocket;
-
-public class SettingsModule : InteractionModuleBase<SocketInteractionContext<SocketInteraction>>, IConditionallyRegisteredModule
+public class SettingsModule : InteractionModuleBase<SocketInteractionContext<SocketInteraction>>
 {
     private readonly IGuildConfigurationManager _configurationManager;
 
@@ -16,9 +14,6 @@ public class SettingsModule : InteractionModuleBase<SocketInteractionContext<Soc
     {
         _configurationManager = configurationManager;
     }
-
-    public bool ShouldRegister(IServiceProvider services) =>
-        !(services.GetRequiredService<IConfiguration>().GetValue<bool?>("Database:Disabled") ?? false);
 
     [SlashCommand("settings", "Open the server configuration modal.")]
     [IntegrationType(ApplicationIntegrationType.GuildInstall)]
@@ -32,19 +27,19 @@ public class SettingsModule : InteractionModuleBase<SocketInteractionContext<Soc
             return;
         }
 
-        var configuration = await _configurationManager.GetByGuildId(Context.Guild.Id);
+        var guildConfiguration = await _configurationManager.GetByGuildId(Context.Guild.Id);
 
-        if (configuration is null)
+        if (guildConfiguration is null)
         {
             await RespondAsync("❌ Failed to fetch existing server configuration.", ephemeral: true);
             return;
         }
 
         var restrictedRoles = SettingsModal.ResolveRestrictedRoles(
-            configuration.RestrictedRoles,
+            guildConfiguration.RestrictedRoles,
             Context.Guild.GetRole);
 
-        var modal = new SettingsModal(configuration, restrictedRoles);
+        var modal = new SettingsModal(guildConfiguration, restrictedRoles);
 
         await RespondWithModalAsync("settings_modal", modal);
     }
@@ -59,31 +54,31 @@ public class SettingsModule : InteractionModuleBase<SocketInteractionContext<Soc
             return;
         }
 
-        var configuration = await _configurationManager.GetByGuildId(Context.Guild.Id);
+        var guildConfiguration = await _configurationManager.GetByGuildId(Context.Guild.Id);
 
-        if (configuration is null)
+        if (guildConfiguration is null)
         {
             await RespondAsync("❌ Failed to fetch existing server configuration.", ephemeral: true);
             return;
         }
 
-        configuration.RestrictToRoles = form.ShouldRestrictToRoles;
+        guildConfiguration.RestrictToRoles = form.ShouldRestrictToRoles;
 
         var allowedRoles = form.RestrictedRoles.Select(role => new GuildConfigurationRestrictedRole
         {
-            GuildConfigurationId = configuration.Id,
+            GuildConfigurationId = guildConfiguration.Id,
             RoleId = role.Id,
         });
 
-        configuration.RestrictedRoles = allowedRoles.ToList();
+        guildConfiguration.RestrictedRoles = allowedRoles.ToList();
 
-        await _configurationManager.UpdateGuildConfiguration(configuration);
+        await _configurationManager.UpdateGuildConfiguration(guildConfiguration);
 
         await RespondAsync("✅ Settings updated successfully!", ephemeral: true);
     }
 }
 
-// Defining the Modal Form Schema
+// Defines the modal form schema used by SettingsModule.
 public class SettingsModal : IModal
 {
     public string Title => "Server Settings";
@@ -99,16 +94,16 @@ public class SettingsModal : IModal
 
     public SettingsModal() { }
 
-    public SettingsModal(GuildConfiguration configuration, IRole[] restrictedRoles)
+    public SettingsModal(GuildConfiguration guildConfiguration, IRole[] restrictedRoles)
     {
-        ShouldRestrictToRoles = configuration.RestrictToRoles;
-
+        ShouldRestrictToRoles = guildConfiguration.RestrictToRoles;
         RestrictedRoles = restrictedRoles;
     }
 
     public static IRole[] ResolveRestrictedRoles(
         IEnumerable<GuildConfigurationRestrictedRole> roles,
-        Func<ulong, IRole?> resolver)
+        Func<ulong, IRole?> resolver
+    )
     {
         return roles
             .Select(x => resolver(x.RoleId))
@@ -118,4 +113,3 @@ public class SettingsModal : IModal
             .ToArray();
     }
 }
-

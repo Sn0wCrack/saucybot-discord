@@ -15,9 +15,9 @@ public static class CacheServiceRegistration
         });
         services.AddHybridCache();
 
-        services.AddSingleton<MemoryCacheDriver>();
-        services.AddSingleton<RedisCacheDriver>();
-        services.AddSingleton<HybridCacheDriver>();
+        services.AddKeyedSingleton<ICacheDriver, MemoryCacheDriver>(CacheDriverType.Memory);
+        services.AddKeyedSingleton<ICacheDriver, RedisCacheDriver>(CacheDriverType.Redis);
+        services.AddKeyedSingleton<ICacheDriver, HybridCacheDriver>(CacheDriverType.Hybrid);
         services.AddSingleton<ICacheManager, CacheManager>();
 
         return services;

@@ -21,18 +21,11 @@ public sealed class CacheManager : ICacheManager
 
     private ICacheDriver CreateDriver()
     {
-        var driver = _configuration.GetSection("Cache:Driver").Get<string?>() ?? "memory";
+        var driver = _configuration.GetSection("Cache:Driver").Get<CacheDriverType?>() ?? CacheDriverType.Memory;
 
-        var driverType = driver.ToLowerInvariant().Trim() switch
-        {
-            "redis" => typeof(RedisCacheDriver),
-            "memory" => typeof(MemoryCacheDriver),
-            "hybrid" => typeof(HybridCacheDriver),
-            _ => typeof(MemoryCacheDriver),
-        };
-
-        return _serviceProvider.GetService(driverType) as ICacheDriver
-               ?? throw new Exception($"Unable to create Cache Driver of type {driver}");
+        return _serviceProvider.GetKeyedService<ICacheDriver>(driver)
+               ?? throw new InvalidOperationException(
+                    $"Cache driver '{driver}' is not registered.");
     }
 
     public async Task<T?> Get<T>(object key)

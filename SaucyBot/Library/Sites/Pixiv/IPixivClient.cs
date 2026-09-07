@@ -12,7 +12,7 @@ public interface IPixivClient
 
     public Task<UserDetailsResponse?> UserDetails(string id);
 
-    public Task<HttpResponseMessage> PokeFile(string url);
+    public Task<HttpResponseMessage> PokeFile(string url, CancellationToken cancellationToken = default);
 
-    public Task<Stream> GetFile(string url);
+    public Task<Stream> GetFile(string url, CancellationToken cancellationToken = default);
 }

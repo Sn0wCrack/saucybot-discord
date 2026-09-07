@@ -1,0 +1,383 @@
+using System;
+using System.Collections.Generic;
+using System.Diagnostics.Metrics;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging.Abstractions;
+using SaucyBot.Diagnostics;
+using SaucyBot.Queue;
+using SaucyBot.Tests.Unit.Common;
+using Xunit;
+
+namespace SaucyBot.Tests.Unit.Queue;
+
+public sealed class RedisWorkQueueTest
+{
+    [Fact]
+    public async Task EnqueueRetriesTransientBackpressureAndEventuallySucceeds()
+    {
+        var client = new FakeRedisStreamClient
+        {
+            AddFailures = 2
+        };
+        var queue = new RedisWorkQueue(client, new WorkQueueOptions { RetryDelay = TimeSpan.Zero });
+        var item = CreateItem();
+
+        await queue.EnqueueAsync(item, CancellationToken.None);
+
+        Assert.Equal(3, client.AddCalls);
+        Assert.Equal(item.Serialize(), client.Payloads.Single());
+    }
+
+    [Fact]
+    public async Task ReadReturnsStreamEntryAndAcknowledgementIsExplicit()
+    {
+        var client = new FakeRedisStreamClient();
+        var item = CreateItem();
+        client.Entries.Enqueue(new RedisStreamEntry("42-0", item.Serialize()));
+        var queue = new RedisWorkQueue(client, new WorkQueueOptions { RetryDelay = TimeSpan.Zero });
+
+        await using var messages = queue.ReadAsync("worker-1", TestContext.Current.CancellationToken)
+            .GetAsyncEnumerator(TestContext.Current.CancellationToken);
+        Assert.True(await messages.MoveNextAsync());
+        var queued = messages.Current;
+
+        Assert.Equal("42-0", queued.EntryId);
+        Assert.Equal(item.MessageId, queued.Item.MessageId);
+        Assert.Equal(item.CorrelationId, queued.Item.CorrelationId);
+        Assert.Empty(client.Acknowledged);
+
+        await queue.AcknowledgeAsync(queued, CancellationToken.None);
+
+        Assert.Equal(["42-0"], client.Acknowledged);
+        Assert.Equal(["42-0"], client.Deleted);
+        Assert.Equal(["ack:42-0", "delete:42-0"], client.Operations);
+    }
+
+    [Fact]
+    public async Task ReadDoesNotReclaimPendingEntriesDuringRuntime()
+    {
+        var client = new FakeRedisStreamClient();
+        var item = CreateItem();
+        client.Entries.Enqueue(new RedisStreamEntry("8-0", item.Serialize()));
+        var queue = new RedisWorkQueue(client, new WorkQueueOptions { RetryDelay = TimeSpan.Zero });
+
+        await using var messages = queue.ReadAsync("worker-1", TestContext.Current.CancellationToken)
+            .GetAsyncEnumerator(TestContext.Current.CancellationToken);
+
+        Assert.True(await messages.MoveNextAsync());
+        Assert.Equal("8-0", messages.Current.EntryId);
+        Assert.Equal(1, client.NewReads);
+    }
+
+    [Fact]
+    public async Task EnqueueCancellationStopsBackpressureRetry()
+    {
+        var client = new FakeRedisStreamClient { AddFailures = int.MaxValue };
+        var queue = new RedisWorkQueue(client, new WorkQueueOptions { RetryDelay = TimeSpan.FromSeconds(10) });
+        using var cancellation = new CancellationTokenSource();
+
+        var enqueue = queue.EnqueueAsync(CreateItem(), cancellation.Token);
+        cancellation.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => enqueue);
+    }
+
+    [Fact]
+    public async Task AcknowledgementFailureIsPropagated()
+    {
+        var client = new FakeRedisStreamClient { AcknowledgeException = new InvalidOperationException("ack failed") };
+        var queue = new RedisWorkQueue(client, new WorkQueueOptions());
+        var queued = new QueuedMessageWorkItem("7-0", CreateItem());
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => queue.AcknowledgeAsync(queued, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task DeleteFailureAfterAcknowledgementIsPropagated()
+    {
+        var client = new FakeRedisStreamClient { DeleteException = new InvalidOperationException("delete failed") };
+        var queue = new RedisWorkQueue(client, new WorkQueueOptions());
+        var queued = new QueuedMessageWorkItem("7-0", CreateItem());
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => queue.AcknowledgeAsync(queued, CancellationToken.None));
+
+        Assert.Equal(["7-0"], client.Acknowledged);
+        Assert.Equal(["7-0"], client.DeleteAttempts);
+    }
+
+    [Fact]
+    public async Task MalformedEntryIsAcknowledgedDeletedAndDoesNotStopReading()
+    {
+        var client = new FakeRedisStreamClient();
+        client.Entries.Enqueue(new RedisStreamEntry("bad-0", "{\"version\":999,\"item\":null}"));
+        var valid = CreateItem();
+        client.Entries.Enqueue(new RedisStreamEntry("good-0", valid.Serialize()));
+        var queue = new RedisWorkQueue(client, new WorkQueueOptions { RetryDelay = TimeSpan.Zero });
+
+        await using var messages = queue.ReadAsync("worker-1", TestContext.Current.CancellationToken)
+            .GetAsyncEnumerator(TestContext.Current.CancellationToken);
+
+        Assert.True(await messages.MoveNextAsync());
+        Assert.Equal("good-0", messages.Current.EntryId);
+        Assert.Equal(["bad-0"], client.Acknowledged);
+        Assert.Equal(["bad-0"], client.Deleted);
+    }
+
+    [Fact]
+    public async Task MalformedCleanupRetriesAcknowledgementAndDeletionInOrder()
+    {
+        var client = new FakeRedisStreamClient
+        {
+            AcknowledgeFailures = 1,
+            DeleteFailures = 1
+        };
+        client.Entries.Enqueue(new RedisStreamEntry("bad-0", "invalid"));
+        client.Entries.Enqueue(new RedisStreamEntry("good-0", CreateItem().Serialize()));
+        var queue = new RedisWorkQueue(client, new WorkQueueOptions { RetryDelay = TimeSpan.Zero });
+
+        await using var messages = queue.ReadAsync("worker-1", TestContext.Current.CancellationToken)
+            .GetAsyncEnumerator(TestContext.Current.CancellationToken);
+
+        Assert.True(await messages.MoveNextAsync());
+        Assert.Equal("good-0", messages.Current.EntryId);
+        Assert.Equal(["ack:bad-0", "ack:bad-0", "delete:bad-0", "delete:bad-0"], client.Operations);
+    }
+
+    [Fact]
+    public async Task MalformedEntryDecrementsQueueDepthExactlyOnce()
+    {
+        var client = new FakeRedisStreamClient();
+        client.Entries.Enqueue(new RedisStreamEntry("bad-0", "invalid"));
+        client.Entries.Enqueue(new RedisStreamEntry("good-0", CreateItem().Serialize()));
+        using var metrics = new SaucyBotMetrics();
+        long queueDepthDelta = 0;
+        using var listener = new MeterListener();
+        listener.InstrumentPublished = (instrument, meterListener) =>
+        {
+            if (ReferenceEquals(instrument, metrics.QueueDepth))
+            {
+                meterListener.EnableMeasurementEvents(instrument);
+            }
+        };
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, _, _) =>
+        {
+            if (ReferenceEquals(instrument, metrics.QueueDepth))
+            {
+                queueDepthDelta += measurement;
+            }
+        });
+        listener.Start();
+        var queue = new RedisWorkQueue(client, new WorkQueueOptions { RetryDelay = TimeSpan.Zero }, metrics, NullLogger<RedisWorkQueue>.Instance);
+
+        await using var messages = queue.ReadAsync("worker-1", TestContext.Current.CancellationToken)
+            .GetAsyncEnumerator(TestContext.Current.CancellationToken);
+        Assert.True(await messages.MoveNextAsync());
+        Assert.Equal("good-0", messages.Current.EntryId);
+
+        Assert.Equal(-1, queueDepthDelta);
+    }
+
+    [Fact]
+    public async Task ReadCancellationStopsWaitingForNewEntries()
+    {
+        var client = new FakeRedisStreamClient();
+        var queue = new RedisWorkQueue(client, new WorkQueueOptions());
+        using var cancellation = new CancellationTokenSource();
+        await using var messages = queue.ReadAsync("worker-1", cancellation.Token)
+            .GetAsyncEnumerator(cancellation.Token);
+
+        var read = messages.MoveNextAsync().AsTask();
+        cancellation.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => read);
+    }
+
+    [Fact]
+    public async Task ReadCancellationReconcilesEntryClaimedByRemoteRead()
+    {
+        var client = new FakeRedisStreamClient { ReturnEntryAfterCancellation = true };
+        var queue = new RedisWorkQueue(client, new WorkQueueOptions());
+        using var cancellation = new CancellationTokenSource();
+        await using var messages = queue.ReadAsync("worker-1", cancellation.Token)
+            .GetAsyncEnumerator(cancellation.Token);
+
+        var read = messages.MoveNextAsync().AsTask();
+        await client.RemoteReadStarted.Task.WaitAsync(TestContext.Current.CancellationToken);
+        cancellation.Cancel();
+        client.RemoteReadCompletion.TrySetResult();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => read);
+
+        Assert.Equal(["ack:claimed-0"], client.Operations);
+    }
+
+    [Fact]
+    public async Task AcknowledgementCancellationDoesNotIssueRedisCommand()
+    {
+        var client = new FakeRedisStreamClient();
+        var queue = new RedisWorkQueue(client, new WorkQueueOptions());
+        var queued = new QueuedMessageWorkItem("7-0", CreateItem());
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => queue.AcknowledgeAsync(queued, cancellation.Token));
+
+        Assert.Empty(client.Operations);
+    }
+
+    [Fact]
+    public async Task CancellationDuringAcknowledgementStillCompletesAcknowledgementAndDeletion()
+    {
+        var client = new FakeRedisStreamClient
+        {
+            AcknowledgeCompletion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously)
+        };
+        var queue = new RedisWorkQueue(client, new WorkQueueOptions());
+        var queued = new QueuedMessageWorkItem("7-0", CreateItem());
+        using var cancellation = new CancellationTokenSource();
+
+        var acknowledgement = queue.AcknowledgeAsync(queued, cancellation.Token);
+        await client.AcknowledgeStarted.Task.WaitAsync(TestContext.Current.CancellationToken);
+        cancellation.Cancel();
+        client.AcknowledgeCompletion.TrySetResult();
+
+        await acknowledgement;
+
+        Assert.Equal(["ack:7-0", "delete:7-0"], client.Operations);
+    }
+
+    [Fact]
+    public async Task MalformedCleanupStopsAfterConfiguredAttemptLimit()
+    {
+        var client = new FakeRedisStreamClient { AcknowledgeFailures = int.MaxValue };
+        client.Entries.Enqueue(new RedisStreamEntry("bad-0", "invalid"));
+        client.Entries.Enqueue(new RedisStreamEntry("good-0", CreateItem().Serialize()));
+        var queue = new RedisWorkQueue(
+            client,
+            new WorkQueueOptions { RetryDelay = TimeSpan.Zero, MalformedCleanupMaxAttempts = 2 });
+
+        await using var messages = queue.ReadAsync("worker-1", TestContext.Current.CancellationToken)
+            .GetAsyncEnumerator(TestContext.Current.CancellationToken);
+
+        Assert.True(await messages.MoveNextAsync());
+        Assert.Equal("good-0", messages.Current.EntryId);
+        Assert.Equal(2, client.Operations.Count(operation => operation == "ack:bad-0"));
+        Assert.DoesNotContain("delete:bad-0", client.Operations);
+    }
+
+    [Fact]
+    public async Task StartupClearDelegatesOnlyWhenConfigured()
+    {
+        var client = new FakeRedisStreamClient();
+        var queue = new RedisWorkQueue(client, new WorkQueueOptions { ClearPendingOnStartup = true });
+
+        await queue.ClearPendingAsync(CancellationToken.None);
+
+        Assert.Equal(1, client.ClearCalls);
+    }
+
+    private static MessageWorkItem CreateItem() => TestData.Message();
+
+    private sealed class FakeRedisStreamClient : IRedisStreamClient
+    {
+        public int AddFailures { get; set; }
+        public int AddCalls { get; private set; }
+        public int ClearCalls { get; private set; }
+        public int NewReads { get; private set; }
+        public Queue<RedisStreamEntry> Entries { get; } = new();
+        public List<string> Payloads { get; } = [];
+        public List<string> Acknowledged { get; } = [];
+        public List<string> Deleted { get; } = [];
+        public Exception? AcknowledgeException { get; set; }
+        public Exception? DeleteException { get; set; }
+        public int AcknowledgeFailures { get; set; }
+        public int DeleteFailures { get; set; }
+        public List<string> DeleteAttempts { get; } = [];
+        public List<string> Operations { get; } = [];
+        public TaskCompletionSource AcknowledgeStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource? AcknowledgeCompletion { get; init; }
+        public bool ReturnEntryAfterCancellation { get; init; }
+        public TaskCompletionSource RemoteReadStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource RemoteReadCompletion { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public Task EnsureGroupAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+        public Task<string> AddAsync(string payload, CancellationToken cancellationToken)
+        {
+            AddCalls++;
+            if (AddFailures-- > 0)
+            {
+                throw new RedisBackpressureException("queue full");
+            }
+
+            Payloads.Add(payload);
+            return Task.FromResult("1-0");
+        }
+
+        public async Task<RedisStreamEntry?> ReadNewAsync(string consumer, CancellationToken cancellationToken)
+        {
+            NewReads++;
+            if (ReturnEntryAfterCancellation)
+            {
+                RemoteReadStarted.TrySetResult();
+                await RemoteReadCompletion.Task;
+                return new RedisStreamEntry("claimed-0", CreateItem().Serialize());
+            }
+
+            while (Entries.Count == 0)
+            {
+                await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+            }
+
+            return Entries.Dequeue();
+        }
+
+        public async Task AcknowledgeAsync(string entryId, CancellationToken cancellationToken)
+        {
+            Operations.Add($"ack:{entryId}");
+            AcknowledgeStarted.TrySetResult();
+            if (AcknowledgeCompletion is not null)
+            {
+                await AcknowledgeCompletion.Task;
+            }
+
+            if (AcknowledgeFailures-- > 0)
+            {
+                throw new InvalidOperationException("transient ack failure");
+            }
+
+            if (AcknowledgeException is not null)
+            {
+                throw AcknowledgeException;
+            }
+
+            Acknowledged.Add(entryId);
+        }
+
+        public Task DeleteAsync(string entryId, CancellationToken cancellationToken)
+        {
+            Operations.Add($"delete:{entryId}");
+            DeleteAttempts.Add(entryId);
+            if (DeleteFailures-- > 0)
+            {
+                return Task.FromException(new InvalidOperationException("transient delete failure"));
+            }
+
+            if (DeleteException is not null)
+            {
+                return Task.FromException(DeleteException);
+            }
+
+            Deleted.Add(entryId);
+            return Task.CompletedTask;
+        }
+
+        public Task ClearPendingAsync(CancellationToken cancellationToken)
+        {
+            ClearCalls++;
+            return Task.CompletedTask;
+        }
+    }
+}

@@ -1,6 +1,7 @@
 using BenchmarkDotNet.Attributes;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using SaucyBot.Services;
@@ -125,8 +126,8 @@ public class MemoryCacheBenchmarks
 
     private static IServiceProvider CreateServiceProvider(MemoryCacheDriver driver)
     {
-        var provider = Substitute.For<IServiceProvider>();
-        provider.GetService(typeof(MemoryCacheDriver)).Returns(driver);
+        var provider = Substitute.For<IKeyedServiceProvider>();
+        provider.GetKeyedService(typeof(ICacheDriver), CacheDriverType.Memory).Returns(driver);
         return provider;
     }
 

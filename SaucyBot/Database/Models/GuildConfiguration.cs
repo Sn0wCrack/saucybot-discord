@@ -21,7 +21,7 @@ public sealed class GuildConfiguration
     public DateTime? UpdatedAt { get; set; } = DateTime.UtcNow;
 
 
-    public ICollection<GuildConfigurationRestrictedRole> RestrictedRoles { get; set; } = new List<GuildConfigurationRestrictedRole>();
+    public ICollection<GuildConfigurationRestrictedRole> RestrictedRoles { get; set; } = [];
 }
 
 public class GuildConfigurationModelConfiguration : IEntityTypeConfiguration<GuildConfiguration>

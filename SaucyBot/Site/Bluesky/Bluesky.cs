@@ -7,10 +7,9 @@ using SaucyBot.Library.Sites.BlueSky;
 namespace SaucyBot.Site.Bluesky;
 
 
-public sealed partial class BlueskySite : BaseSite, IBlueskySite
+[SiteIdentifier("Bluesky")]
+public sealed partial class BlueskySite : BaseSite
 {
-    public override string Identifier => "Bluesky";
-
     [GeneratedRegex(@"https?://(www\.)?bsky\.app/profile/(?<user>\S*)/post/(?<id>\S*)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex BlueskyPattern();
 
@@ -21,12 +20,18 @@ public sealed partial class BlueskySite : BaseSite, IBlueskySite
     private readonly ILogger<BlueskySite> _logger;
     private readonly IConfiguration _configuration;
     private readonly IVixBlueskyClient _client;
+    private readonly TimeProvider _timeProvider;
 
-    public BlueskySite(ILogger<BlueskySite> logger, IConfiguration configuration, IVixBlueskyClient client)
+    public BlueskySite(
+        ILogger<BlueskySite> logger,
+        IConfiguration configuration,
+        IVixBlueskyClient client,
+        TimeProvider timeProvider)
     {
         _logger = logger;
         _configuration = configuration;
         _client = client;
+        _timeProvider = timeProvider;
     }
 
     public override async Task<ProcessResponse?> Process(ProcessRequest request)
@@ -49,15 +54,20 @@ public sealed partial class BlueskySite : BaseSite, IBlueskySite
 
         // If we have a message attached, we need to wait a bit for Discord to process the embed,
         // we when need to refresh the message and see if an embed has been added in that time.
-        if (request.Message is not null)
+        var context = request.Context;
+        var message = context?.Message;
+        if (context is not null && message is not null)
         {
-            await Task.Delay(TimeSpan.FromSeconds(_configuration.GetSection("Sites:Bluesky:Delay").Get<double>()));
+            await Task.Delay(
+                TimeSpan.FromSeconds(_configuration.GetSection("Sites:Bluesky:Delay").Get<double>()),
+                _timeProvider,
+                context.CancellationToken);
 
             // NOTE: Discord.NET works a little interestingly, basically when a message updates the Bot learns of this change
             // and then proceeds to update its internal cache, so while we're waiting around it should update the message cache
             // automatically, so there's no need to refresh the message object.
 
-            hasEmbed = request.Message.Embeds.Count != 0;
+            hasEmbed = (await message.GetLatestEmbedsAsync(context.CancellationToken)).Count != 0;
         }
 
         if (hasEmbed)
@@ -172,6 +182,7 @@ public sealed partial class BlueskySite : BaseSite, IBlueskySite
 
         var response = new ProcessResponse
         {
+            Text = videoUrl,
             IsNsfw = post.Record.IsNsfw,
         };
 
@@ -217,8 +228,6 @@ public sealed partial class BlueskySite : BaseSite, IBlueskySite
         };
 
         response.Embeds.Add(embed.Build());
-
-        response.Text = videoUrl;
 
         return response;
     }

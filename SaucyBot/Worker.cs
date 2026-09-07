@@ -1,8 +1,12 @@
 using Discord;
 using Discord.WebSocket;
-using Microsoft.Extensions.DependencyInjection;
+using SaucyBot.Diagnostics;
+using SaucyBot.Extensions.Discord;
 using SaucyBot.Library;
+using SaucyBot.Library.Discord;
+using SaucyBot.Queue;
 using SaucyBot.Services;
+using SaucyBot.Site;
 
 namespace SaucyBot;
 
@@ -10,35 +14,45 @@ public sealed class Worker : BackgroundService
 {
     private readonly ILogger<Worker> _logger;
     private readonly IConfiguration _configuration;
-    private readonly IServiceScopeFactory _scopeFactory;
-    private readonly IServiceProvider _services;
+    private readonly IMessageWorkQueue _messageWorkQueue;
+    private readonly SiteRegistry _siteRegistry;
+    private readonly InteractionWorkChannel _interactionWorkChannel;
+    private readonly IInteractionProcessor _interactionProcessor;
+    private readonly WorkQueueHostedService _workQueueHostedService;
+    private readonly ISaucyBotMetrics _metrics;
 
     private readonly IDatabaseMigrator _databaseMigrator;
 
-    private readonly SemaphoreSlim _throttle;
     private readonly InteractionHandler _interactionHandler;
+    private readonly IMessageResolver _messageResolver;
 
     private BaseSocketClient? _client;
 
     public Worker(
         ILogger<Worker> logger,
         IConfiguration configuration,
-        IServiceScopeFactory scopeFactory,
-        IServiceProvider services,
         IDatabaseMigrator databaseMigrator,
-        InteractionHandler interactionHandler
+        InteractionHandler interactionHandler,
+        IMessageWorkQueue messageWorkQueue,
+        SiteRegistry siteRegistry,
+        InteractionWorkChannel interactionWorkChannel,
+        IInteractionProcessor interactionProcessor,
+        WorkQueueHostedService workQueueHostedService,
+        ISaucyBotMetrics metrics,
+        IMessageResolver messageResolver
     )
     {
         _logger = logger;
         _configuration = configuration;
-        _scopeFactory = scopeFactory;
-        _services = services;
         _databaseMigrator = databaseMigrator;
         _interactionHandler = interactionHandler;
-
-        var limit = _configuration.GetSection("Bot:ConcurrencyLimit").Get<int?>() ?? 5;
-
-        _throttle = new SemaphoreSlim(limit);
+        _messageResolver = messageResolver;
+        _messageWorkQueue = messageWorkQueue;
+        _siteRegistry = siteRegistry;
+        _interactionWorkChannel = interactionWorkChannel;
+        _interactionProcessor = interactionProcessor;
+        _workQueueHostedService = workQueueHostedService;
+        _metrics = metrics;
     }
 
     public override async Task StartAsync(CancellationToken cancellationToken)
@@ -54,6 +68,8 @@ public sealed class Worker : BackgroundService
             _ => this.SetupShardedSocketClient(),
         };
 
+        _messageResolver.Initialize(_client);
+
         await _client.LoginAsync(TokenType.Bot, _configuration.GetSection("Bot:DiscordToken").Get<string>());
         await _client.StartAsync();
     }
@@ -62,10 +78,12 @@ public sealed class Worker : BackgroundService
 
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
+        _workQueueHostedService.StopIntake();
+
         if (_client is not null)
         {
-            await _client.StopAsync();
-            await _client.DisposeAsync();
+            await _client.StopAsync().WaitAsync(cancellationToken);
+            await _client.DisposeAsync().AsTask().WaitAsync(cancellationToken);
         }
     }
 
@@ -79,8 +97,8 @@ public sealed class Worker : BackgroundService
             TotalShards = totalShards,
             GatewayIntents = Constants.RequiredGatewayIntents,
             AuditLogCacheSize = 0,
-            MessageCacheSize = _configuration.GetSection("Bot:MessageCacheSize").Get<int?>() ?? 100,
-            ConnectionTimeout = _configuration.GetSection("Bot:ConnectionTimeout").Get<int?>() ?? 30000,
+            MessageCacheSize = _configuration.GetSection("Bot:MessageCacheSize").Get<int?>() ?? 10,
+            ConnectionTimeout = int.MaxValue,
             AlwaysDownloadUsers = false,
             AlwaysResolveStickers = false,
             AlwaysDownloadDefaultStickers = false,
@@ -146,65 +164,85 @@ public sealed class Worker : BackgroundService
         return client;
     }
 
-    private Task HandleInteractionAsync(SocketInteraction socketInteraction)
-    {
-        Task.Run(async () =>
-        {
-            if (_throttle.CurrentCount == 0)
-            {
-                _logger.LogDebug("Concurrency limit reached, waiting for available slot before handling interaction...");
-            }
+    private Task HandleInteractionAsync(SocketInteraction socketInteraction) =>
+        AdmitInteractionAsync(new SocketInteractionWorkItem(socketInteraction));
 
-            await _throttle.WaitAsync();
-
-            try
-            {
-                await _interactionHandler.ExecuteAsync(socketInteraction, _services);
-            }
-            finally
-            {
-                _throttle.Release();
-            }
-        });
-
-        return Task.CompletedTask;
-    }
-
-    private Task HandleMessageAsync(SocketMessage socketMessage)
+    private async Task HandleMessageAsync(SocketMessage socketMessage)
     {
         if (socketMessage is not SocketUserMessage message)
         {
-            return Task.CompletedTask;
+            return;
         }
 
         // Ignore Messages created by the Bot itself
-        if (socketMessage.Author.Id == _client?.CurrentUser.Id)
+        if (_client is not null && message.Author.Id == _client.CurrentUser.Id)
         {
-            return Task.CompletedTask;
+            return;
         }
 
-        Task.Run(async () =>
+        // Don't put the message on the queue if it has no match.
+        // This massively improves queue processing times and sizes by discarding all
+        // the junk other messages we don't care about.
+        if (!_siteRegistry.HasMatch(message.AllMessageCleanContent()))
         {
-            if (_throttle.CurrentCount == 0)
-            {
-                _logger.LogDebug("Concurrency limit reached, waiting for available slot before handling message...");
-            }
+            return;
+        }
 
-            await _throttle.WaitAsync();
+        var item = MessageWorkItem.Create(message);
 
+        if (item is null)
+        {
+            return;
+        }
+
+        await AdmitMessageAsync(item);
+    }
+
+    internal async Task AdmitMessageAsync(MessageWorkItem item)
+    {
+        await _messageWorkQueue.EnqueueAsync(item, _workQueueHostedService.AdmissionToken);
+    }
+
+    internal async Task AdmitInteractionAsync(IInteractionWorkItem item)
+    {
+        if (InteractionAcknowledgementPolicy.ShouldExecuteImmediately(item))
+        {
             try
             {
-                using var scope = _scopeFactory.CreateScope();
-                var siteManager = scope.ServiceProvider.GetRequiredService<SiteManager>();
-                await siteManager.HandleMessage(message);
+                await _interactionProcessor.ProcessAsync(item, _workQueueHostedService.AdmissionToken);
+                _metrics.Succeeded.Add(1);
             }
-            finally
+            catch (OperationCanceledException) when (_workQueueHostedService.AdmissionToken.IsCancellationRequested)
             {
-                _throttle.Release();
+                _metrics.Cancelled.Add(1);
+                await InteractionFailureResponder.SendAsync(item, _logger, TimeSpan.FromSeconds(1));
             }
-        });
+            catch (Exception exception)
+            {
+                _logger.LogError(exception, "Immediate interaction processing failed for {InteractionId}", item.Id);
+                _metrics.Failed.Add(1);
+                await InteractionFailureResponder.SendAsync(item, _logger, TimeSpan.FromSeconds(1));
+            }
 
-        return Task.CompletedTask;
+            return;
+        }
+
+        try
+        {
+            if (InteractionAcknowledgementPolicy.ShouldDefer(item))
+            {
+                await item.DeferAsync(_workQueueHostedService.AdmissionToken);
+            }
+
+            await _interactionWorkChannel.WriteAsync(item, _workQueueHostedService.AdmissionToken);
+            _metrics.Enqueued.Add(1);
+            _metrics.QueueDepth.Add(1);
+        }
+        catch (OperationCanceledException) when (_workQueueHostedService.AdmissionToken.IsCancellationRequested)
+        {
+            _metrics.Cancelled.Add(1);
+            throw;
+        }
     }
 
     private async Task HandleSocketClientReadyAsync()
@@ -223,22 +261,7 @@ public sealed class Worker : BackgroundService
             _logger.LogDebug("Created or Updated Interaction Commands");
         }
 
-        var status = _configuration.GetSection("Bot:DiscordStatus:Enabled").Get<bool?>() ?? false;
-
-        var parsed = Enum.TryParse(
-            _configuration.GetSection("Bot:DiscordStatus:Type").Get<string?>() ?? "",
-            out ActivityType activityType
-        );
-
-        if (status && parsed)
-        {
-            await _client.SetActivityAsync(
-                new Game(
-                    _configuration.GetSection("Bot:DiscordStatus:Text").Get<string?>() ?? "",
-                    activityType
-                )
-            );
-        }
+        await SetClientActivityStatusAsync(client);
     }
 
     private async Task HandleShardReadyAsync(DiscordSocketClient client)
@@ -252,22 +275,28 @@ public sealed class Worker : BackgroundService
             _logger.LogDebug("Created or Updated Interaction Commands");
         }
 
+        await SetClientActivityStatusAsync(client);
+    }
+
+    private async Task SetClientActivityStatusAsync(DiscordSocketClient client)
+    {
         var status = _configuration.GetSection("Bot:DiscordStatus:Enabled").Get<bool?>() ?? false;
 
-        var parsed = Enum.TryParse(
-            _configuration.GetSection("Bot:DiscordStatus:Type").Get<string?>() ?? "",
-            out ActivityType activityType
-        );
-
-        if (status && parsed)
+        if (!status)
         {
-            await client.SetActivityAsync(
-                new Game(
-                    _configuration.GetSection("Bot:DiscordStatus:Text").Get<string?>() ?? "",
-                    activityType
-                )
-            );
+            return;
         }
+
+        var type = _configuration.GetSection("Bot:DiscordStatus:Type").Get<ActivityType?>();
+
+        if (type is null)
+        {
+            return;
+        }
+
+        await client.SetActivityAsync(
+            new Game(_configuration.GetSection("Bot:DiscordStatus:Text").Get<string?>() ?? "", type.Value)
+        );
     }
 
     private async Task HandleShardConnectedAsync(DiscordSocketClient client)

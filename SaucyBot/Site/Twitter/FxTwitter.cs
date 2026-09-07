@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using System.Web;
 using Discord;
 using SaucyBot.Common;
+using SaucyBot.Diagnostics;
 using SaucyBot.Extensions;
 using SaucyBot.Library;
 using SaucyBot.Library.Sites.Twitter;
@@ -9,10 +10,9 @@ using SaucyBot.Library.Sites.Twitter;
 namespace SaucyBot.Site.Twitter;
 
 
-public sealed partial class FxTwitterSite : BaseSite, ITwitterSite
+[SiteIdentifier("FxTwitter")]
+public sealed partial class FxTwitterSite : BaseSite
 {
-    public override string Identifier => "FxTwitter";
-
     [GeneratedRegex(@"https?://(www\.|mobile\.)?(?<domain>twitter|x|nitter)\.(com|net)/(?<user>\S*)/status/(?<id>\d+)(/(video|photo)/\d{1})?(/(?<translate>\w{2}|\w{5}|original))?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex FxTwitterPattern();
 
@@ -30,8 +30,14 @@ public sealed partial class FxTwitterSite : BaseSite, ITwitterSite
     private readonly IConfiguration _configuration;
     private readonly HttpClient _httpClient;
     private readonly IFxTwitterClient _client;
+    private readonly ISaucyBotMetrics? _metrics;
 
-    public FxTwitterSite(ILogger<FxTwitterSite> logger, IConfiguration configuration, IFxTwitterClient client, IHttpClientFactory httpClientFactory)
+    public FxTwitterSite(
+        ILogger<FxTwitterSite> logger,
+        IConfiguration configuration,
+        IFxTwitterClient client,
+        IHttpClientFactory httpClientFactory,
+        ISaucyBotMetrics? metrics = null)
     {
         _logger = logger;
         _configuration = configuration;
@@ -39,6 +45,7 @@ public sealed partial class FxTwitterSite : BaseSite, ITwitterSite
         _httpClient = httpClientFactory.CreateClient("FileDownload");
 
         _client = client;
+        _metrics = metrics;
     }
 
     private static readonly HashSet<string> SupportedLanguages = new(StringComparer.OrdinalIgnoreCase)
@@ -368,28 +375,47 @@ public sealed partial class FxTwitterSite : BaseSite, ITwitterSite
         return text;
     }
 
-    private async Task<HttpResponseMessage> PokeFile(string url)
+    internal async Task<HttpResponseMessage> PokeFile(string url, CancellationToken cancellationToken = default)
     {
         using var request = new HttpRequestMessage(HttpMethod.Head, url);
+        var response = await _httpClient.SendAsync(request, cancellationToken);
 
-        return await _httpClient.SendAsync(request);
+        try
+        {
+            response.EnsureSuccessStatusCode();
+            return response;
+        }
+        catch
+        {
+            response.Dispose();
+            throw;
+        }
     }
 
-    private async Task<FileAttachment> GetFile(string url)
+    internal async Task<FileAttachment> GetFile(string url, CancellationToken cancellationToken = default)
     {
-        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
 
-        var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+        var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
 
-        var contentLength = response.Content.Headers.ContentLength ?? -1;
-        var stream = await response.Content.ReadAsStreamAsync();
+        try
+        {
+            response.EnsureSuccessStatusCode();
+            var contentLength = response.Content.Headers.ContentLength ?? -1;
+            var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
 
-        var parsed = new Uri(url);
+            var parsed = new Uri(url);
 
-        return new FileAttachment(
-            new KnownLengthStream(stream, contentLength),
-            Path.GetFileName(parsed.AbsolutePath)
-        );
+            return new FileAttachment(
+                new KnownLengthStream(new HttpResponseStream(response, stream, _metrics), contentLength),
+                Path.GetFileName(parsed.AbsolutePath)
+            );
+        }
+        catch
+        {
+            response.Dispose();
+            throw;
+        }
     }
 
     private static string GetOriginalResolutionPhotoUrl(string url)
@@ -437,11 +463,11 @@ public sealed partial class FxTwitterSite : BaseSite, ITwitterSite
         }
 
         // 2. Guild locale (only reliable for community servers)
-        var guild = request.Guild;
+        var command = request.Context?.Command;
 
-        if (guild is not null && guild.Features.HasFeature(GuildFeature.Community))
+        if (command?.IsGuildCommunity == true)
         {
-            var guildCode = DiscordLocaleToLanguageCode(guild.PreferredLocale);
+            var guildCode = DiscordLocaleToLanguageCode(command.GuildPreferredLocale);
 
             if (guildCode is not null)
             {
@@ -450,7 +476,7 @@ public sealed partial class FxTwitterSite : BaseSite, ITwitterSite
         }
 
         // 3. User locale (only available on slash commands)
-        var userCode = DiscordLocaleToLanguageCode(request.UserLocale);
+        var userCode = DiscordLocaleToLanguageCode(command?.UserLocale);
 
         return userCode;
     }

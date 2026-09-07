@@ -6,10 +6,9 @@ using SaucyBot.Library.Sites.E621;
 namespace SaucyBot.Site.E621;
 
 
-public sealed partial class E621Site : BaseSite, IE621Site
+[SiteIdentifier("E621")]
+public sealed partial class E621Site : BaseSite
 {
-    public override string Identifier => "E621";
-
     [GeneratedRegex(@"https?://(www\.)?e621\.net/posts/(?<id>\d+)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex E621Pattern();
 

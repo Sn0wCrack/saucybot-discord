@@ -5,10 +5,9 @@ using SaucyBot.Library.Sites.FurAffinity;
 
 namespace SaucyBot.Site.FurAffinity;
 
-public sealed partial class FurAffinitySite : BaseSite, IFurAffinitySite
+[SiteIdentifier("FurAffinity")]
+public sealed partial class FurAffinitySite : BaseSite
 {
-    public override string Identifier => "FurAffinity";
-
     [GeneratedRegex(@"https?://(www\.)?furaffinity\.net/(?:view|full)/(?<id>\d+)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex FurAffinityPattern();
 

@@ -7,10 +7,9 @@ using SaucyBot.Library.Sites.HentaiFoundry;
 namespace SaucyBot.Site.HentaiFoundry;
 
 
-public sealed partial class HentaiFoundrySite : BaseSite, IHentaiFoundrySite
+[SiteIdentifier("HentaiFoundry")]
+public sealed partial class HentaiFoundrySite : BaseSite
 {
-    public override string Identifier => "HentaiFoundry";
-
     [GeneratedRegex(@"https?://(www\.)?hentai-foundry\.com/pictures/user/(?<user>\S*)/(?<id>\d+)/(?<slug>\S+)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex HentaiFoundryPattern();
 

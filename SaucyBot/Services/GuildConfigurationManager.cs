@@ -39,25 +39,25 @@ public sealed class GuildConfigurationManager : IGuildConfigurationManager
         );
     }
 
-    public async Task<bool> UpdateGuildConfiguration(GuildConfiguration configuration)
+    public async Task<bool> UpdateGuildConfiguration(GuildConfiguration guildConfiguration)
     {
         var existing = await _context.GuildConfigurations
             .Include(gc => gc.RestrictedRoles)
-            .FirstOrDefaultAsync(gc => gc.Id == configuration.Id);
+            .FirstOrDefaultAsync(gc => gc.Id == guildConfiguration.Id);
 
         if (existing is null)
         {
             return false;
         }
 
-        existing.MaximumEmbeds = configuration.MaximumEmbeds;
-        existing.MaximumPixivImages = configuration.MaximumPixivImages;
-        existing.MaximumArtStationImages = configuration.MaximumArtStationImages;
-        existing.SendMatchedMessage = configuration.SendMatchedMessage;
-        existing.RestrictToRoles = configuration.RestrictToRoles;
+        existing.MaximumEmbeds = guildConfiguration.MaximumEmbeds;
+        existing.MaximumPixivImages = guildConfiguration.MaximumPixivImages;
+        existing.MaximumArtStationImages = guildConfiguration.MaximumArtStationImages;
+        existing.SendMatchedMessage = guildConfiguration.SendMatchedMessage;
+        existing.RestrictToRoles = guildConfiguration.RestrictToRoles;
         existing.UpdatedAt = DateTime.UtcNow;
 
-        var allowedRoles = configuration.RestrictedRoles.Select(role => new GuildConfigurationRestrictedRole
+        var allowedRoles = guildConfiguration.RestrictedRoles.Select(role => new GuildConfigurationRestrictedRole
         {
             GuildConfigurationId = existing.Id,
             RoleId = role.RoleId,
@@ -90,6 +90,5 @@ public sealed class GuildConfigurationManager : IGuildConfigurationManager
 
     private static string CacheKey(ulong guildId) => $"database.guild_configuration_{guildId}";
 
-    private static string CacheKey(GuildConfiguration configuration) => CacheKey(configuration.GuildId);
-
+    private static string CacheKey(GuildConfiguration guildConfiguration) => CacheKey(guildConfiguration.GuildId);
 }

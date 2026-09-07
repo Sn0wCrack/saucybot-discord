@@ -12,8 +12,12 @@ services:
     depends_on:
       cache:
         condition: service_healthy
+      queue:
+        condition: service_healthy
       database:
         condition: service_healthy
+      otel-collector:
+        condition: service_started
     restart: unless-stopped
 
   database:
@@ -34,6 +38,7 @@ services:
 
   cache:
     image: docker.io/valkey/valkey:9-alpine@sha256:a174b894902bd3367e330d47cc2054367dc4917701776aaf336f41d83b65ec7a
+    command: [ 'valkey-server', '--bind', '0.0.0.0' ]
     ports:
       - '6379:6379'
     volumes:
@@ -45,6 +50,30 @@ services:
       retries: 10
       start_period: 10s
 
+  queue:
+    image: docker.io/valkey/valkey:9-alpine@sha256:a174b894902bd3367e330d47cc2054367dc4917701776aaf336f41d83b65ec7a
+    command: ['valkey-server', '--bind', '0.0.0.0']
+    ports:
+        - '6380:6379'
+    volumes:
+        - queue:/data
+    restart: unless-stopped
+    healthcheck:
+      test: '[ $(valkey-cli -h 127.0.0.1 ping) = "PONG" ]'
+      timeout: 30s
+      retries: 10
+      start_period: 10s
+
+  otel-collector:
+    image: docker.io/otel/opentelemetry-collector-contrib:0.160.0@sha256:799dc6cf12c96192af37b5bdba804da8c10b3bc563b43cb90c3f3c58d9572ad6
+    command: ['--config=/etc/otelcol-contrib/config.yaml']
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml:ro
+    ports:
+      - '8889:8889'
+    restart: unless-stopped
+
 volumes:
   database:
   cache:
+  queue:

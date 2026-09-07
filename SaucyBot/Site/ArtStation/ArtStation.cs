@@ -8,10 +8,9 @@ using SaucyBot.Library.Sites.ArtStation;
 namespace SaucyBot.Site.ArtStation;
 
 
-public sealed partial class ArtStationSite : BaseSite, IArtStationSite
+[SiteIdentifier("ArtStation")]
+public sealed partial class ArtStationSite : BaseSite
 {
-    public override string Identifier => "ArtStation";
-
     [GeneratedRegex(@"https?://(www\.)?artstation\.com/artwork/(?<hash>\S+)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex ArtStationPattern();
 
@@ -30,8 +29,6 @@ public sealed partial class ArtStationSite : BaseSite, IArtStationSite
 
     public override async Task<ProcessResponse?> Process(ProcessRequest request)
     {
-        var response = new ProcessResponse();
-
         var project = await _client.GetProject(request.Match.Groups["hash"].Value);
 
         if (project is null)
@@ -41,10 +38,12 @@ public sealed partial class ArtStationSite : BaseSite, IArtStationSite
 
         var limit = _configuration.GetSection("Sites:ArtStation:PostLimit").Get<int>();
 
-        if (project.Assets.Count > limit)
+        var response = new ProcessResponse
         {
-            response.Text = $"This is part of a {project.Assets.Count} image set.";
-        }
+            Text = project.Assets.Count > limit
+                ? $"This is part of a {project.Assets.Count} image set."
+                : null,
+        };
 
         var assets = project.Assets
             .Where(asset => asset.Type is "image" or "cover")

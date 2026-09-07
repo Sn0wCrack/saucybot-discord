@@ -6,12 +6,6 @@ public sealed class KnownLengthStream : Stream
     private readonly long _length;
     private bool _disposed;
 
-    public KnownLengthStream(Stream inner, long length)
-    {
-        _inner = inner;
-        _length = length;
-    }
-
     public override bool CanRead => true;
     public override bool CanSeek => false;
     public override bool CanWrite => false;
@@ -21,6 +15,12 @@ public sealed class KnownLengthStream : Stream
     {
         get => throw new NotSupportedException();
         set => throw new NotSupportedException();
+    }
+
+    public KnownLengthStream(Stream inner, long length)
+    {
+        _inner = inner;
+        _length = length;
     }
 
     public override void Flush() => _inner.Flush();
@@ -47,5 +47,17 @@ public sealed class KnownLengthStream : Stream
         }
 
         base.Dispose(disposing);
+    }
+
+    public override async ValueTask DisposeAsync()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+        await _inner.DisposeAsync();
+        GC.SuppressFinalize(this);
     }
 }

@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Text.RegularExpressions;
 using SaucyBot.Site;
 
 namespace SaucyBot.Services;
@@ -8,47 +9,92 @@ public sealed class SiteRegistry
     private readonly ILogger<SiteRegistry> _logger;
     private readonly IConfiguration _configuration;
 
-    private readonly Dictionary<string, IBaseSite> _sites = new();
+    private readonly Dictionary<string, SiteMetadata> _sites = new();
 
-    public SiteRegistry(ILogger<SiteRegistry> logger, IConfiguration configuration, IServiceProvider serviceProvider)
+    public IEnumerable<KeyValuePair<string, SiteMetadata>> Sites => _sites;
+
+    public SiteRegistry(
+        ILogger<SiteRegistry> logger,
+        IConfiguration configuration,
+        IServiceProvider serviceProvider,
+        IEnumerable<SiteRegistration> registrations
+    )
     {
         _logger = logger;
         _configuration = configuration;
 
         var disabled = _configuration.GetSection("Bot:DisabledSites").Get<string[]>() ?? [];
 
-        var siteInterfaces = Assembly
-            .GetExecutingAssembly()
-            .GetTypes()
-            .Where(t => t.Namespace != null
-                        && t.Namespace.StartsWith("SaucyBot.Site.")
-                        && t.IsInterface
-                        && typeof(IBaseSite).IsAssignableFrom(t))
+        var siteRegistrations = registrations
+            .Select(registration =>
+                (Registration: registration, Identifier: GetIdentifier(registration.ImplementationType)))
             .ToList();
 
-        foreach (var siteInterface in siteInterfaces)
+        var duplicate = siteRegistrations
+            .GroupBy(registration => registration.Identifier, StringComparer.OrdinalIgnoreCase)
+            .FirstOrDefault(group => group.Count() > 1);
+
+        if (duplicate is not null)
         {
-            _logger.LogDebug("Attempting to start site module: {Site}", siteInterface.ToString());
+            throw new InvalidOperationException($"Duplicate site identifier registration: {duplicate.Key}");
+        }
 
-            if (serviceProvider.GetService(siteInterface) is not IBaseSite instance)
+        using var scope = serviceProvider.CreateScope();
+
+        foreach (var (registration, identifier) in siteRegistrations)
+        {
+            if (disabled.Contains(identifier, StringComparer.OrdinalIgnoreCase))
             {
-                _logger.LogDebug("Failed to start site module: {Site}", siteInterface.ToString());
+                _logger.LogDebug("Did not start site module: {Site}, as it is disabled in configuration", identifier);
                 continue;
             }
 
-            if (disabled.Contains(instance.Identifier))
+            _logger.LogDebug("Attempting to start site module: {Site}", identifier);
+
+            if (scope.ServiceProvider.GetService(registration.ImplementationType) is not IBaseSite instance)
             {
-                _logger.LogDebug("Did not start site module: {Site}, as it is disabled in configuration", siteInterface.ToString());
-                continue;
+                throw new InvalidOperationException(
+                    $"Site '{identifier}' is registered with implementation "
+                    + $"'{registration.ImplementationType.Name}', but that implementation is not registered.");
             }
 
-            _logger.LogDebug("Successfully started site module: {Site}", siteInterface.ToString());
+            _logger.LogDebug("Successfully started site module: {Site}", identifier);
 
-            _sites.Add(instance.Identifier, instance);
+            _sites.Add(identifier, new SiteMetadata(registration.ImplementationType, instance.Pattern));
         }
     }
 
-    public IEnumerable<KeyValuePair<string, IBaseSite>> Sites => _sites;
+    private static string GetIdentifier(Type implementationType) =>
+        implementationType.GetCustomAttribute<SiteIdentifierAttribute>()?.Identifier
+        ?? throw new InvalidOperationException(
+            $"Site implementation '{implementationType.Name}' has no {nameof(SiteIdentifierAttribute)}.");
 
-    public IBaseSite this[string identifier] => _sites[identifier];
+    public bool HasMatch(string content) => _sites.Values.Any(site => site.Pattern.IsMatch(content));
+
+    public IBaseSite Resolve(string identifier, IServiceProvider provider)
+    {
+        if (!_sites.TryGetValue(identifier, out var metadata))
+        {
+            throw new KeyNotFoundException($"Unknown site identifier: {identifier}");
+        }
+
+        if (provider.GetService(metadata.ImplementationType) is not IBaseSite site)
+        {
+            throw new InvalidOperationException(
+                $"Site '{identifier}' is registered with implementation "
+                + $"'{metadata.ImplementationType.Name}', but that implementation is not registered.");
+        }
+
+        if (!string.Equals(site.Identifier, identifier, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                $"Site registration '{identifier}' does not match implementation identifier "
+                + $"'{site.Identifier}'.");
+        }
+
+        return site;
+    }
+
 }
+
+public sealed record SiteMetadata(Type ImplementationType, Regex Pattern);

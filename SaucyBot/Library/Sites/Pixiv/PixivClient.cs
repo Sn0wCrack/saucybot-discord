@@ -5,6 +5,7 @@ using Polly;
 using Polly.Fallback;
 using Polly.Retry;
 using SaucyBot.Common;
+using SaucyBot.Diagnostics;
 using SaucyBot.Services;
 
 namespace SaucyBot.Library.Sites.Pixiv;
@@ -19,6 +20,7 @@ public sealed class PixivClient : IPixivClient
     private readonly ILogger<PixivClient> _logger;
     private readonly IConfiguration _configuration;
     private readonly ICacheManager _cache;
+    private readonly ISaucyBotMetrics? _metrics;
 
     private readonly HttpClient _client;
 
@@ -30,12 +32,14 @@ public sealed class PixivClient : IPixivClient
         ILogger<PixivClient> logger,
         IConfiguration configuration,
         ICacheManager cacheManager,
-        HttpClient client
+        HttpClient client,
+        ISaucyBotMetrics? metrics = null
     )
     {
         _logger = logger;
         _configuration = configuration;
         _cache = cacheManager;
+        _metrics = metrics;
         _client = client;
 
         _pipeline = new ResiliencePipelineBuilder<string?>()
@@ -134,23 +138,42 @@ public sealed class PixivClient : IPixivClient
         return response is null ? null : JsonSerializer.Deserialize<UserDetailsResponse>(response);
     }
 
-    public async Task<HttpResponseMessage> PokeFile(string url)
+    public async Task<HttpResponseMessage> PokeFile(string url, CancellationToken cancellationToken = default)
     {
         using var request = new HttpRequestMessage(HttpMethod.Head, url);
+        var response = await _client.SendAsync(request, cancellationToken);
 
-        return await _client.SendAsync(request);
+        try
+        {
+            response.EnsureSuccessStatusCode();
+            return response;
+        }
+        catch
+        {
+            response.Dispose();
+            throw;
+        }
     }
 
-    public async Task<Stream> GetFile(string url)
+    public async Task<Stream> GetFile(string url, CancellationToken cancellationToken = default)
     {
-        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
 
-        var response = await _client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+        var response = await _client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
 
-        var contentLength = response.Content.Headers.ContentLength ?? -1;
-        var stream = await response.Content.ReadAsStreamAsync();
+        try
+        {
+            response.EnsureSuccessStatusCode();
+            var contentLength = response.Content.Headers.ContentLength ?? -1;
+            var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
 
-        return new KnownLengthStream(stream, contentLength);
+            return new KnownLengthStream(new HttpResponseStream(response, stream, _metrics), contentLength);
+        }
+        catch
+        {
+            response.Dispose();
+            throw;
+        }
     }
 }
 

@@ -4,10 +4,9 @@ using Discord;
 namespace SaucyBot.Site.Instagram;
 
 
-public sealed partial class VxInstagramSite : BaseSite, IInstagramSite
+[SiteIdentifier("Instagram")]
+public sealed partial class VxInstagramSite : BaseSite
 {
-    public override string Identifier => "Instagram";
-
     [GeneratedRegex(@"https?://(?<host>(?:www\.|m\.)?instagram\.com)/(?<path>(?:p|reel|reels)/[^/\s?#]+(?:/[^\s?#]*)?)(?<query>\?[^\s#]*)?(?<fragment>\#[^\s]*)?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex InstagramPattern();
 

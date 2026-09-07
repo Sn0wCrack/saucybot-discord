@@ -7,10 +7,9 @@ using SaucyBot.Library.Sites.ExHentai;
 namespace SaucyBot.Site.ExHentai;
 
 
-public sealed partial class ExHentaiSite : BaseSite, IExHentaiSite
+[SiteIdentifier("ExHentai")]
+public sealed partial class ExHentaiSite : BaseSite
 {
-    public override string Identifier => "ExHentai";
-
     [GeneratedRegex(@"https?://(www\.)?e[x-]hentai\.org/g/(?<id>\d+)/(?<hash>\S+)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex ExHentaiPattern();
 

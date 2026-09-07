@@ -1,0 +1,38 @@
+# Local Development OpenTelemetry Collector Configuration
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+exporters:
+  debug:
+    verbosity: detailed
+  prometheus:
+    endpoint: 0.0.0.0:8889
+
+service:
+  extensions:
+    - health_check
+  telemetry:
+    logs:
+      level: "debug"
+  pipelines:
+    metrics:
+      receivers:
+        - otlp
+      exporters:
+        - debug
+        - prometheus
+    traces:
+      receivers:
+        - otlp
+      exporters:
+        - debug
