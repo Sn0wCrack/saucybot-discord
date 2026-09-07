@@ -64,7 +64,10 @@ public static class FurAffinityBbCodeCleaner
     private static void UnwrapElement(IElement element)
     {
         var parent = element.ParentElement;
-        if (parent is null) return;
+        if (parent is null)
+        {
+            return;
+        }
 
         foreach (var child in element.ChildNodes.ToList())
         {
@@ -77,7 +80,10 @@ public static class FurAffinityBbCodeCleaner
     private static void ReplaceWith(IDocument document, IElement element, string tagName)
     {
         var parent = element.ParentElement;
-        if (parent is null) return;
+        if (parent is null)
+        {
+            return;
+        }
 
         var replacement = document.CreateElement(tagName);
 

@@ -1,0 +1,220 @@
+using System;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
+using Discord;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using NSubstitute;
+using SaucyBot.Database.Models;
+using SaucyBot.Library.Discord;
+using SaucyBot.Queue;
+using SaucyBot.Services;
+using SaucyBot.Site;
+using Xunit;
+
+namespace SaucyBot.Tests.Unit.Services;
+
+public sealed class SiteManagerTest
+{
+    [Fact]
+    public void SiteRegistryMatchesOnlyEnabledSitePatterns()
+    {
+        var site = Substitute.For<ContextSite>();
+        site.Identifier.Returns("Context");
+        site.Pattern.Returns(new Regex("https://example.test"));
+
+        var services = new ServiceCollection();
+        services.AddSingleton(site);
+        using var provider = services.BuildServiceProvider();
+        var registry = new SiteRegistry(
+            Substitute.For<ILogger<SiteRegistry>>(),
+            new ConfigurationBuilder().Build(),
+            provider,
+            [new SiteRegistration(typeof(ContextSite))]);
+
+        Assert.True(registry.HasMatch("try https://example.test now"));
+        Assert.False(registry.HasMatch("no supported link here"));
+    }
+
+    [Fact]
+    public void HandleCommandPropagatesPolicyAndCommandContextToSiteRequest()
+    {
+        var services = new ServiceCollection();
+        using var provider = services.BuildServiceProvider();
+        var registry = new SiteRegistry(
+            Substitute.For<ILogger<SiteRegistry>>(),
+            new ConfigurationBuilder().Build(),
+            provider,
+            []);
+        var manager = new SiteManager(
+            Substitute.For<ILogger<SiteManager>>(),
+            new ConfigurationBuilder().AddInMemoryCollection(
+                [new KeyValuePair<string, string?>("Bot:RestrictNSFW", "true")]).Build(),
+            new MessageManager(Substitute.For<ILogger<MessageManager>>(), new ConfigurationBuilder().Build()),
+            Substitute.For<IGuildConfigurationManager>(),
+            registry,
+            provider,
+            Substitute.For<IMessageResolver>());
+        var command = Substitute.For<ICommandContext>();
+        command.OptionContent.Returns("https://example.test");
+        command.UserLocale.Returns("en-GB");
+        var match = new Regex("https://example.test").Match("https://example.test");
+
+        var request = manager.CreateCommandRequest(match, null, command);
+
+        Assert.False(request.Context!.NsfwAllowed);
+        Assert.True(request.IsSlashCommand);
+        Assert.Equal("en-GB", request.UserLocale);
+        Assert.Equal("https://example.test", request.Context.Command!.OptionContent);
+    }
+
+    [Fact]
+    public void CreateCommandRequestUsesActiveInteractionCancellationContext()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var manager = CreateManager();
+        var command = Substitute.For<ICommandContext>();
+        var match = new Regex("https://example.test").Match("https://example.test");
+        using var scope = InteractionCancellationContext.Push(cancellation.Token);
+
+        var request = manager.CreateCommandRequest(match, null, command);
+
+        Assert.Equal(cancellation.Token, request.Context!.CancellationToken);
+    }
+
+    [Fact]
+    public async Task HandleAsyncPropagatesPolicyAndCancellationToSiteRequest()
+    {
+        using var cancellation = new CancellationTokenSource();
+        ProcessRequest? request = null;
+        var site = Substitute.For<ContextSite>();
+        site.Identifier.Returns("Context");
+        site.Pattern.Returns(new Regex("https://example.test"));
+        site.Process(Arg.Any<ProcessRequest>())
+            .Returns(callInfo =>
+            {
+                request = callInfo.Arg<ProcessRequest>();
+                return Task.FromResult<ProcessResponse?>(null);
+            });
+
+        var services = new ServiceCollection();
+        services.AddSingleton(site);
+        using var provider = services.BuildServiceProvider();
+        var registry = new SiteRegistry(
+            Substitute.For<ILogger<SiteRegistry>>(),
+            new ConfigurationBuilder().Build(),
+            provider,
+            [new SiteRegistration(typeof(ContextSite))]);
+
+        var resolver = Substitute.For<IMessageResolver>();
+        resolver.IsNsfw(Arg.Any<ulong>()).Returns(false);
+        var manager = new SiteManager(
+            Substitute.For<ILogger<SiteManager>>(),
+            new ConfigurationBuilder().AddInMemoryCollection(
+                [new KeyValuePair<string, string?>("Bot:RestrictNSFW", "true")]).Build(),
+            new MessageManager(Substitute.For<ILogger<MessageManager>>(), new ConfigurationBuilder().Build()),
+            Substitute.For<IGuildConfigurationManager>(),
+            registry,
+            provider,
+            resolver);
+
+        var item = new MessageWorkItem(
+            7,
+            0,
+            42,
+            12,
+            [],
+            "https://example.test",
+            null,
+            [],
+            true,
+            true,
+            Guid.Parse("44444444-4444-4444-4444-444444444444"));
+
+        await manager.HandleAsync(item, cancellation.Token);
+
+        Assert.NotNull(request);
+        Assert.False(request.Context!.NsfwAllowed);
+        Assert.Equal(cancellation.Token, request.Context.CancellationToken);
+    }
+
+    [Fact]
+    public async Task HandleAsyncPropagatesCancellationFromSiteProcessing()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var site = Substitute.For<CancellationSite>();
+        site.Identifier.Returns("Cancellation");
+        site.Pattern.Returns(new Regex("https://example.test"));
+        site.Process(Arg.Any<ProcessRequest>())
+            .Returns(_ =>
+            {
+                cancellation.Cancel();
+                return Task.FromException<ProcessResponse?>(new OperationCanceledException(cancellation.Token));
+            });
+
+        var services = new ServiceCollection();
+        services.AddSingleton(site);
+        using var provider = services.BuildServiceProvider();
+        var registry = new SiteRegistry(
+            Substitute.For<ILogger<SiteRegistry>>(),
+            new ConfigurationBuilder().Build(),
+            provider,
+            [new SiteRegistration(typeof(CancellationSite))]);
+
+        var resolver = Substitute.For<IMessageResolver>();
+        resolver.IsNsfw(Arg.Any<ulong>()).Returns(false);
+        var manager = new SiteManager(
+            Substitute.For<ILogger<SiteManager>>(),
+            new ConfigurationBuilder().Build(),
+            new MessageManager(Substitute.For<ILogger<MessageManager>>(), new ConfigurationBuilder().Build()),
+            Substitute.For<IGuildConfigurationManager>(),
+            registry,
+            provider,
+            resolver);
+        var item = new MessageWorkItem(
+            7,
+            0,
+            42,
+            12,
+            [],
+            "https://example.test",
+            null,
+            [],
+            true,
+            true,
+            Guid.Parse("55555555-5555-5555-5555-555555555555"));
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => manager.HandleAsync(item, cancellation.Token));
+    }
+
+    [SiteIdentifier("Context")]
+    public class ContextSite : IBaseSite
+    {
+        public virtual string Identifier => "Context";
+        public virtual Color Color => Color.Default;
+        public virtual Regex Pattern { get; } = new("https://example.test");
+        public virtual Task<ProcessResponse?> Process(ProcessRequest request) => Task.FromResult<ProcessResponse?>(null);
+    }
+
+    [SiteIdentifier("Cancellation")]
+    public class CancellationSite : ContextSite
+    {
+        public override string Identifier => "Cancellation";
+    }
+
+    private static SiteManager CreateManager()
+    {
+        var services = new ServiceCollection().BuildServiceProvider();
+        return new SiteManager(
+            Substitute.For<ILogger<SiteManager>>(),
+            new ConfigurationBuilder().Build(),
+            new MessageManager(Substitute.For<ILogger<MessageManager>>(), new ConfigurationBuilder().Build()),
+            Substitute.For<IGuildConfigurationManager>(),
+            new SiteRegistry(Substitute.For<ILogger<SiteRegistry>>(), new ConfigurationBuilder().Build(), services, []),
+            services,
+            Substitute.For<IMessageResolver>());
+    }
+}

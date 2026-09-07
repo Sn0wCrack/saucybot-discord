@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.Extensions.Caching.Distributed;
 
 namespace SaucyBot.Services.Cache;
@@ -9,6 +10,12 @@ public sealed class RedisCacheDriver : ICacheDriver
     private readonly IConfiguration _configuration;
 
     private readonly TimeSpan _defaultExpiry;
+
+    private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.General)
+    {
+        NumberHandling = JsonNumberHandling.AllowReadingFromString,
+        WriteIndented = false
+    };
 
     public RedisCacheDriver(IDistributedCache cache, IConfiguration configuration)
     {
@@ -64,7 +71,7 @@ public sealed class RedisCacheDriver : ICacheDriver
 
         await _cache.SetStringAsync(
             keyAsString,
-            JsonSerializer.Serialize(value),
+            JsonSerializer.Serialize(value, SerializerOptions),
             new DistributedCacheEntryOptions
             {
                 AbsoluteExpirationRelativeToNow = expiry

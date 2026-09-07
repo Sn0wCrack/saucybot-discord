@@ -1,5 +1,9 @@
+using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Net;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -13,6 +17,47 @@ namespace SaucyBot.Tests.Unit.Site;
 
 public class FxTwitterTest
 {
+    [Fact]
+    public async Task GetFileRejectsUnsuccessfulResponses()
+    {
+        var content = new TrackingContent();
+        var site = CreateDownloadSite(new StubHttpMessageHandler((_, _) => new HttpResponseMessage(HttpStatusCode.NotFound)
+        {
+            Content = content,
+        }));
+
+        await Assert.ThrowsAsync<HttpRequestException>(() => site.GetFile("https://example.test/image.jpg", TestContext.Current.CancellationToken));
+
+        Assert.Equal(1, content.DisposeCount);
+    }
+
+    [Fact]
+    public async Task GetFilePassesCancellationToTheHttpRequest()
+    {
+        var cancellation = new CancellationTokenSource();
+        var handler = new CancellationHandler();
+        var site = CreateDownloadSite(handler);
+        cancellation.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => site.GetFile("https://example.test/image.jpg", cancellation.Token));
+
+        Assert.True(handler.CancellationToken.IsCancellationRequested);
+    }
+
+    [Fact]
+    public async Task PokeFileRejectsUnsuccessfulResponses()
+    {
+        var content = new TrackingContent();
+        var site = CreateDownloadSite(new StubHttpMessageHandler((_, _) => new HttpResponseMessage(HttpStatusCode.Forbidden)
+        {
+            Content = content,
+        }));
+
+        await Assert.ThrowsAsync<HttpRequestException>(() => site.PokeFile("https://example.test/image.jpg", TestContext.Current.CancellationToken));
+
+        Assert.Equal(1, content.DisposeCount);
+    }
+
     [Fact]
     public async Task AnEmbedIsCreatedForTweet()
     {
@@ -254,5 +299,56 @@ public class FxTwitterTest
 
         Assert.Equal("second", matches[1].Groups["user"].Value);
         Assert.Equal("2", matches[1].Groups["id"].Value);
+    }
+
+    private static FxTwitterSite CreateDownloadSite(HttpMessageHandler handler)
+    {
+        var factory = Substitute.For<IHttpClientFactory>();
+        factory.CreateClient(Arg.Any<string>()).Returns(new HttpClient(handler));
+        return new FxTwitterSite(
+            Substitute.For<ILogger<FxTwitterSite>>(),
+            new ConfigurationBuilder().Build(),
+            Substitute.For<IFxTwitterClient>(),
+            factory);
+    }
+
+    private sealed class StubHttpMessageHandler(Func<HttpRequestMessage, CancellationToken, HttpResponseMessage> responseFactory) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
+            Task.FromResult(responseFactory(request, cancellationToken));
+    }
+
+    private sealed class CancellationHandler : HttpMessageHandler
+    {
+        public CancellationToken CancellationToken { get; private set; }
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            CancellationToken = cancellationToken;
+            return Task.FromCanceled<HttpResponseMessage>(cancellationToken);
+        }
+    }
+
+    private sealed class TrackingContent : HttpContent
+    {
+        public int DisposeCount { get; private set; }
+
+        protected override Task SerializeToStreamAsync(Stream stream, System.Net.TransportContext? context) => Task.CompletedTask;
+
+        protected override bool TryComputeLength(out long length)
+        {
+            length = 0;
+            return true;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                DisposeCount++;
+            }
+
+            base.Dispose(disposing);
+        }
     }
 }

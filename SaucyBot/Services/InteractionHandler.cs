@@ -101,7 +101,11 @@ public sealed class InteractionHandler
         return command.ShouldRegister(services);
     }
 
-    public async Task ExecuteAsync(SocketInteraction interaction, IServiceProvider services)
+    public async Task ExecuteAsync(
+        SocketInteraction interaction,
+        IServiceProvider services,
+        CancellationToken cancellationToken = default
+    )
     {
         if (_interactionService is null || _client is null)
         {
@@ -115,6 +119,7 @@ public sealed class InteractionHandler
             _ => throw new InvalidOperationException($"Unsupported client type: {_client.GetType().Name}")
         };
 
+        using var cancellationScope = InteractionCancellationContext.Push(cancellationToken);
         await _interactionService.ExecuteCommandAsync(context, services);
     }
 }

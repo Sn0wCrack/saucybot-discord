@@ -6,10 +6,9 @@ using SaucyBot.Library.Sites.DeviantArt;
 namespace SaucyBot.Site.DeviantArt;
 
 
-public sealed partial class DeviantArtSite : BaseSite, IDeviantArtSite
+[SiteIdentifier("DeviantArt")]
+public sealed partial class DeviantArtSite : BaseSite
 {
-    public override string Identifier => "DeviantArt";
-
     [GeneratedRegex(@"https?://(www\.)?deviantart\.com/(?<author>\S+)/art/(?<slug>\S+)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex DeviantArtPattern();
 

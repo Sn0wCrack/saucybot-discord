@@ -113,14 +113,20 @@ public sealed class FurAffinitySubmissionPage
 
     private static string GetPageStat(IElement? statsContainer, string title)
     {
-        if (statsContainer is null) return "";
+        if (statsContainer is null)
+        {
+            return "";
+        }
         var statDiv = statsContainer.QuerySelector($"div[title=\"{title}\"]");
         return statDiv?.QuerySelector("div")?.TextContent?.Trim() ?? "";
     }
 
     private static string GetRating(IElement? statsContainer)
     {
-        if (statsContainer is null) return "";
+        if (statsContainer is null)
+        {
+            return "";
+        }
         var ratingChild = statsContainer.QuerySelector("[class*=\"c-contentRating\"]");
         return ratingChild?.TextContent?.Trim() ?? "";
     }
@@ -129,12 +135,18 @@ public sealed class FurAffinitySubmissionPage
     {
         var result = new Dictionary<string, string>();
         var statsContainer = document.QuerySelector(".submission-content-stats");
-        if (statsContainer is null) return result;
+        if (statsContainer is null)
+        {
+            return result;
+        }
 
         var highlightSpan = statsContainer.QuerySelector(":scope > span.highlight");
         var valueSpan = statsContainer.QuerySelectorAll(":scope > span:not(.highlight)").FirstOrDefault();
 
-        if (highlightSpan is null || valueSpan is null) return result;
+        if (highlightSpan is null || valueSpan is null)
+        {
+            return result;
+        }
 
         var labels = highlightSpan.QuerySelectorAll("span").Select(s => s.TextContent.Trim()).ToArray();
         var values = valueSpan.QuerySelectorAll("span").Select(s => s.TextContent.Trim()).ToArray();

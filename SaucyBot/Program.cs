@@ -1,5 +1,6 @@
 using SaucyBot;
 using SaucyBot.Database;
+using SaucyBot.Diagnostics;
 using SaucyBot.Library.Sites;
 using SaucyBot.Library.Sites.ArtStation;
 using SaucyBot.Library.Sites.BlueSky;
@@ -12,10 +13,12 @@ using SaucyBot.Library.Sites.Misskey;
 using SaucyBot.Library.Sites.Newgrounds;
 using SaucyBot.Library.Sites.Pixiv;
 using SaucyBot.Library.Sites.Twitter;
+using SaucyBot.Queue;
 using SaucyBot.Services;
 using SaucyBot.Services.Cache;
 using SaucyBot.Site;
 using Serilog;
+using StackExchange.Redis;
 
 await Host.CreateDefaultBuilder(args)
     .UseSerilog((context, configuration) =>
@@ -29,15 +32,19 @@ await Host.CreateDefaultBuilder(args)
     {
         var configuration = context.Configuration;
 
-        var databaseDisabled = configuration.GetSection("Database:Disabled").Get<bool?>() ?? false;
+        services.AddSaucyBotTelemetry(configuration);
 
-        if (!databaseDisabled)
-        {
-            services.AddSaucyBotDatabase();
-        }
+        services.AddSaucyBotDatabase();
 
         services.AddSaucyBotCache(configuration);
-        services.AddSaucyBotServices(databaseDisabled);
+        var queueOptions = configuration.GetSection("Queue").Get<WorkQueueOptions>() ?? new();
+        services.AddSingleton(queueOptions);
+        services.AddSingleton<InteractionWorkChannel>();
+        services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(queueOptions.ConnectionString));
+        services.AddSingleton<IRedisStreamClient, StackExchangeRedisStreamClient>();
+        services.AddSingleton<IMessageWorkQueue, RedisWorkQueue>();
+        services.AddSingleton<IWorkItemProcessor, WorkItemProcessor>();
+        services.AddSaucyBotServices();
         services.AddSaucyBotSites();
 
         services.AddFurAffinityClient(configuration);
@@ -55,6 +62,8 @@ await Host.CreateDefaultBuilder(args)
         services.AddDeviantArtClient();
         services.AddFileDownloadClient();
 
+        services.AddSingleton<WorkQueueHostedService>();
+        services.AddHostedService(provider => provider.GetRequiredService<WorkQueueHostedService>());
         services.AddHostedService<Worker>();
     })
     .UseConsoleLifetime()

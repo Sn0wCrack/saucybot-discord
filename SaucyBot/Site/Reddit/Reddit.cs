@@ -5,10 +5,9 @@ using Discord;
 namespace SaucyBot.Site.Reddit;
 
 
-public sealed partial class RedditSite : BaseSite, IRedditSite
+[SiteIdentifier("Reddit")]
+public sealed partial class RedditSite : BaseSite
 {
-    public override string Identifier => "Reddit";
-
     [GeneratedRegex(@"https?://(www\.)?reddit\.com/media\?url=(?<url>[A-Z0-9\%\.]+)", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex RedditPattern();
 
@@ -27,15 +26,12 @@ public sealed partial class RedditSite : BaseSite, IRedditSite
     {
         // TODO: Handle v.redd.it links using youtube-dl or similar
 
-        var response = new ProcessResponse
-        {
-            IsNsfw = true, // No way to determine this currently
-        };
-
         var originalUrl = WebUtility.UrlDecode(request.Match.Groups["url"].Value);
 
-        response.Text = originalUrl;
-
-        return response;
+        return new ProcessResponse
+        {
+            Text = originalUrl,
+            IsNsfw = true, // No way to determine this currently
+        };
     }
 }

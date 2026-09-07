@@ -3,10 +3,9 @@ using Discord;
 
 namespace SaucyBot.Site.FurAffinity;
 
-public sealed partial class XFurAffinitySite : BaseSite, IFurAffinitySite
+[SiteIdentifier("FurAffinity")]
+public sealed partial class XFurAffinitySite : BaseSite
 {
-    public override string Identifier => "FurAffinity";
-
     [GeneratedRegex(@"https?://(?:(?!xfuraffinity\.net)(?:www\.)?)?furaffinity\.net/(?<path>(?:view|full)/(?<id>\d+))/?(?<query>\?[^\s#]*)?(?<fragment>\#[^\s]*)?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex XFurAffinityPattern();
 

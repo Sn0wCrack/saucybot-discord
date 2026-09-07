@@ -1,4 +1,16 @@
 {
+  "OpenTelemetry": {
+    "Enabled": false,
+    "ServiceName": "SaucyBot",
+    "OtlpEndpoint": "http://localhost:4318",
+    "OtlpProtocol": "HttpProtobuf",
+    "OtlpHeaders": "",
+    "ExportIntervalMilliseconds": 10000,
+    "Tracing": {
+      "Enabled": false,
+      "SamplingRatio": 0.1
+    }
+  },
   "Serilog": {
     "MinimumLevel": {
       "Default": "Information",
@@ -37,6 +49,17 @@
     "Memory": {
       "DefaultLifetime": 3600
     }
+  },
+  "Queue": {
+    "ConnectionString": "queue:6379",
+    "StreamName": "saucybot:messages",
+    "ConsumerGroup": "saucybot-workers",
+    "RetryDelay": "00:00:01",
+    "ClearPendingOnStartup": false,
+    "MessageWorkerCount": 5,
+    "InteractionWorkerCount": 5,
+    "InteractionChannelCapacity": 100,
+    "ShutdownDrainTimeout": "00:00:30"
   },
   "Sites": {
     "ArtStation": {

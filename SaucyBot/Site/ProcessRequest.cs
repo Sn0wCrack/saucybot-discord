@@ -1,22 +1,31 @@
 using System.Text.RegularExpressions;
-using Discord.WebSocket;
 using SaucyBot.Database.Models;
 
 namespace SaucyBot.Site;
 
-public sealed record ProcessRequest(
-    Match Match,
-    GuildConfiguration? GuildConfiguration = null,
-    SocketUserMessage? Message = null,
-    SocketSlashCommand? Command = null
-)
+public sealed record ProcessRequest
 {
-    public bool IsSlashCommand => Command is not null;
+    public Match Match { get; }
+    public GuildConfiguration? GuildConfiguration { get; }
+    public ProcessingContext? Context { get; }
 
-    public bool IsMessage => Message is not null;
+    public bool IsSlashCommand => Context?.Command is not null;
 
-    public string? UserLocale => Command?.UserLocale;
+    public bool IsMessage => Context?.Message is not null;
 
-    public SocketGuild? Guild => (Message?.Channel as SocketGuildChannel)?.Guild
-        ?? (Command?.Channel as SocketGuildChannel)?.Guild;
+    public string? UserLocale => Context?.Command?.UserLocale;
+
+    public ulong? GuildId => Context?.Message?.GuildId ?? Context?.Command?.GuildId;
+
+    public ProcessRequest(
+        Match match,
+        GuildConfiguration? guildConfiguration = null,
+        ProcessingContext? Context = null
+    )
+    {
+        Match = match;
+        GuildConfiguration = guildConfiguration;
+        this.Context = Context;
+    }
+
 }

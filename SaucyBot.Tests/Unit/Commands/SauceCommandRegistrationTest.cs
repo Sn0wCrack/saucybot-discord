@@ -57,9 +57,9 @@ public class SauceCommandRegistrationTest
     {
         var configurationValues = new Dictionary<string, string?>();
 
-        if (restrictNsfw is { } restrictNsfwValue)
+        if (restrictNsfw is not null)
         {
-            configurationValues["Bot:RestrictNSFW"] = restrictNsfwValue.ToString();
+            configurationValues["Bot:RestrictNSFW"] = restrictNsfw.Value.ToString();
         }
 
         var configuration = new ConfigurationBuilder()

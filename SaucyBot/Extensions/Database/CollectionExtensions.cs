@@ -11,7 +11,8 @@ public static class CollectionExtensions
         Func<TDto, TKey> incomingKeySelector,
         Action<TEntity, TDto> updateAction,
         Func<TDto, TEntity> createAction,
-        DbContext context)
+        DbContext context
+    )
         where TEntity : class
         where TKey : notnull
     {

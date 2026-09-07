@@ -11,19 +11,19 @@ public static class GuildConfigurationExtensions
         ulong guildId
     )
     {
-        var config = await context.Set<GuildConfiguration>()
+        var guildConfiguration = await context.Set<GuildConfiguration>()
             .Include(gc => gc.RestrictedRoles)
             .FirstOrDefaultAsync(gc => gc.GuildId == guildId);
 
-        if (config is not null)
+        if (guildConfiguration is not null)
         {
-            return config;
+            return guildConfiguration;
         }
 
-        config = new GuildConfiguration { GuildId = guildId };
-        await context.AddAsync(config);
+        guildConfiguration = new GuildConfiguration { GuildId = guildId };
+        await context.AddAsync(guildConfiguration);
         await context.SaveChangesAsync();
 
-        return config;
+        return guildConfiguration;
     }
 }

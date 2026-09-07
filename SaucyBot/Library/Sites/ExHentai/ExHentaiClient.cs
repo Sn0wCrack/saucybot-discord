@@ -2,8 +2,8 @@ using System.Text.RegularExpressions;
 using AngleSharp.Dom;
 using AngleSharp.Html.Dom;
 using AngleSharp.Html.Parser;
+using Microsoft.Extensions.Configuration;
 using SaucyBot.Services;
-using IConfiguration = Microsoft.Extensions.Configuration.IConfiguration;
 
 namespace SaucyBot.Library.Sites.ExHentai;
 

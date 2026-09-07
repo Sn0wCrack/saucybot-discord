@@ -52,8 +52,7 @@ Open `appsettings.json` in a text editor and configure each section as needed.
 | `DiscordStatus.Enabled` | Boolean | Whether the bot displays a custom status.                                                                | `true` |
 | `DiscordStatus.Type` | String | Status activity type.                                                                                    | `Watching` |
 | `DiscordStatus.Text` | String | Status text displayed by the bot.                                                                        | `your links...` |
-| `MessageCacheSize` | Integer | Number of messages to keep in the cache.                                                                 | `10` |
-| `ConnectionTimeout` | Integer | Connection timeout in milliseconds.                                                                      | `120000` |
+| `MessageCacheSize` | Integer | Number of messages to keep in the cache.                                                                 | `10` | 
 | `RestrictNSFW` | Boolean | Restricts SaucyBot to only post NSFW content in a NSFW channel. Disables slash command for DMs.          | false
 
 ### Database
@@ -80,12 +79,45 @@ server=localhost;user=bot;password=secret;database=bot
 
 ### Cache
 
+| Key | Value Type | Description                                                   | Default |
+|---|---|---------------------------------------------------------------|---|
+| `Driver` | String | Cache driver to use: `redis`, `hybrid` or `memory`.           | `Redis` |
+| `Redis.ConnectionString` | String | Valkey/Redis server connection string.                        | `cache:6379` |
+| `Redis.DefaultLifetime` | Integer | Cache entry lifetime in seconds.                              | `3600` |
+| `Memory.DefaultLifetime` | Integer | Cache entry lifetime in seconds when using the memory driver. | `3600` |
+
+### Queue
+
+Queue uses a separate Redis-compatible database, such as Redis or Valkey, for storing incoming message work. 
+
 | Key | Value Type | Description | Default |
 |---|---|---|---|
-| `Driver` | String | Cache driver to use: `Redis` or `Memory`. | `Redis` |
-| `Redis.ConnectionString` | String | Valkey/Redis endpoint. | `cache:6379` |
-| `Redis.DefaultLifetime` | Integer | Cache entry lifetime in seconds. | `3600` |
-| `Memory.DefaultLifetime` | Integer | Cache entry lifetime in seconds when using the memory driver. | `3600` |
+| `ConnectionString` | String | Redis/Valkey endpoint, including credentials when required. | `queue:6379` |
+| `StreamName` | String | Redis/Valkey stream containing queued message work. | `saucybot:messages` |
+| `ConsumerGroup` | String | Consumer group used by message workers. | `saucybot-workers` |
+| `RetryDelay` | TimeSpan | Delay before retrying an unavailable queue operation. | `00:00:01` |
+| `ClearPendingOnStartup` | Boolean | Delete the entire queue stream on startup. Enable only when intentionally discarding pending work. | `false` |
+| `MessageWorkerCount` | Integer | Number of message workers. Increase only after checking queue age, CPU, memory, and upstream rate limits. | `5` |
+| `InteractionWorkerCount` | Integer | Number of interaction workers. | `5` |
+| `InteractionChannelCapacity` | Integer | Maximum number of admitted in-process interactions waiting for workers. | `100` |
+| `ShutdownDrainTimeout` | TimeSpan | Maximum time allowed to drain admitted work during shutdown. | `00:00:30` |
+| `MalformedCleanupMaxAttempts` | Integer | Maximum acknowledgement/deletion attempts for malformed queue entries before leaving them pending. | `3` |
+| `MalformedCleanupMaxDelay` | TimeSpan | Maximum delay between malformed-entry cleanup attempts. | `00:00:05` |
+
+### OpenTelemetry
+
+OpenTelemtry Configuraiton, allows for sending debugging metrics to an OTLP compatible server.
+
+| Configuration key | Environment variable | Description |
+|---|---|---|
+| `OpenTelemetry:Enabled` | `OpenTelemetry__Enabled` | Enables metrics and exporters. Defaults to `false`. |
+| `OpenTelemetry:ServiceName` | `OpenTelemetry__ServiceName` | Resource service name. |
+| `OpenTelemetry:OtlpEndpoint` | `OpenTelemetry__OtlpEndpoint` | OTLP exporter endpoint. |
+| `OpenTelemetry:OtlpProtocol` | `OpenTelemetry__OtlpProtocol` | `Grpc` or `HttpProtobuf`. |
+| `OpenTelemetry:OtlpHeaders` | `OpenTelemetry__OtlpHeaders` | Comma-separated OTLP headers, such as `api-key=secret`. |
+| `OpenTelemetry:ExportIntervalMilliseconds` | `OpenTelemetry__ExportIntervalMilliseconds` | Periodic metrics export interval. |
+| `OpenTelemetry:Tracing:Enabled` | `OpenTelemetry__Tracing__Enabled` | Enables sampled tracing. |
+| `OpenTelemetry:Tracing:SamplingRatio` | `OpenTelemetry__Tracing__SamplingRatio` | Trace sampling ratio from `0` to `1`. |
 
 ### Sites
 

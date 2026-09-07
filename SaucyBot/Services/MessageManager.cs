@@ -12,15 +12,75 @@ public sealed class MessageManager
     private readonly ILogger<MessageManager> _logger;
     private readonly IConfiguration _configuration;
 
-    public MessageManager(ILogger<MessageManager> logger, IConfiguration configuration)
+    public MessageManager(
+        ILogger<MessageManager> logger,
+        IConfiguration configuration
+    )
     {
         _logger = logger;
         _configuration = configuration;
     }
 
-    public async Task Send(SocketUserMessage received, ProcessResponse response)
+    public async Task Send(SocketUserMessage message, ProcessResponse response)
+        => await Send(new DiscordMessageContext(message), response, CancellationToken.None);
+
+    public async Task Send(IMessageContext context, ProcessResponse response, CancellationToken cancellationToken = default)
     {
-        if (!ShouldSend(received, response))
+        if (!ShouldSend(context, response))
+        {
+            return;
+        }
+
+        var target = await context.ResolveMessageAsync(cancellationToken);
+
+        if (target is null)
+        {
+            _logger.LogWarning("Unable to resolve original message {MessageId} for a response", context.Id);
+            return;
+        }
+
+        var messages = await PartitionMessages(response);
+
+        foreach (var message in messages)
+        {
+            if (message.IsEmpty())
+            {
+                _logger.LogDebug("Empty message was created from: \"{OriginalMessage}\"", context.Content);
+                continue;
+            }
+
+            switch (message)
+            {
+                case ComponentsV2Message c:
+                    await target.ReplyAsync(
+                        c.Files,
+                        c.Content,
+                        allowedMentions: AllowedMentions.None,
+                        components: c.Components,
+                        flags: MessageFlags.ComponentsV2
+                    );
+                    break;
+                case EmbedMessage e:
+                    await target.ReplyAsync(
+                        e.Files,
+                        e.Content,
+                        allowedMentions: AllowedMentions.None,
+                        embeds: e.Embeds.ToArray()
+                    );
+                    break;
+                default:
+                    await target.ReplyAsync(
+                        message.Content,
+                        allowedMentions: AllowedMentions.None
+                    );
+                    break;
+            }
+        }
+    }
+
+    public async Task Send(SocketSlashCommand command, ProcessResponse response)
+    {
+        if (!ShouldSend(command, response))
         {
             return;
         }
@@ -31,14 +91,14 @@ public sealed class MessageManager
         {
             if (message.IsEmpty())
             {
-                _logger.LogDebug("Empty message was created from: \"{OriginalMessage}\"", received.Content);
+                _logger.LogDebug("Empty message was created from: \"{OriginalMessage}\"", command.Data.ToString());
                 continue;
             }
 
             switch (message)
             {
                 case ComponentsV2Message c:
-                    await received.ReplyAsync(
+                    await command.FollowupWithFilesAsync(
                         c.Files,
                         c.Content,
                         allowedMentions: AllowedMentions.None,
@@ -47,7 +107,7 @@ public sealed class MessageManager
                     );
                     break;
                 case EmbedMessage e:
-                    await received.ReplyAsync(
+                    await command.FollowupWithFilesAsync(
                         e.Files,
                         e.Content,
                         allowedMentions: AllowedMentions.None,
@@ -55,7 +115,7 @@ public sealed class MessageManager
                     );
                     break;
                 default:
-                    await received.ReplyAsync(
+                    await command.FollowupAsync(
                         message.Content,
                         allowedMentions: AllowedMentions.None
                     );
@@ -64,53 +124,7 @@ public sealed class MessageManager
         }
     }
 
-    public async Task Send(SocketSlashCommand received, ProcessResponse response)
-    {
-        if (!ShouldSend(received, response))
-        {
-            return;
-        }
-
-        var messages = await PartitionMessages(response);
-
-        foreach (var message in messages)
-        {
-            if (message.IsEmpty())
-            {
-                _logger.LogDebug("Empty message was created from: \"{OriginalMessage}\"", received.Data.ToString());
-                continue;
-            }
-
-            switch (message)
-            {
-                case ComponentsV2Message c:
-                    await received.FollowupWithFilesAsync(
-                        c.Files,
-                        c.Content,
-                        allowedMentions: AllowedMentions.None,
-                        components: c.Components,
-                        flags: MessageFlags.ComponentsV2
-                    );
-                    break;
-                case EmbedMessage e:
-                    await received.FollowupWithFilesAsync(
-                        e.Files,
-                        e.Content,
-                        allowedMentions: AllowedMentions.None,
-                        embeds: e.Embeds.ToArray()
-                    );
-                    break;
-                default:
-                    await received.FollowupAsync(
-                        message.Content,
-                        allowedMentions: AllowedMentions.None
-                    );
-                    break;
-            }
-        }
-    }
-
-    private bool ShouldSend(SocketUserMessage received, ProcessResponse response)
+    private bool ShouldSend(SocketUserMessage message, ProcessResponse response)
     {
         // Determine if we are able to post this content freely in the channel we received the message in.
         var restrictNsfw = _configuration.GetValue<bool?>("Bot:RestrictNSFW") ?? false;
@@ -120,7 +134,7 @@ public sealed class MessageManager
             return true;
         }
 
-        return received.Channel switch
+        return message.Channel switch
         {
             // Threads need their parent channel checked instead
             SocketThreadChannel { ParentChannel: ITextChannel { IsNsfw: true } } => true,
@@ -129,7 +143,13 @@ public sealed class MessageManager
         };
     }
 
-    private bool ShouldSend(SocketSlashCommand received, ProcessResponse response)
+    private bool ShouldSend(IMessageContext context, ProcessResponse response)
+    {
+        var restrictNsfw = _configuration.GetValue<bool?>("Bot:RestrictNSFW") ?? false;
+        return !restrictNsfw || !response.IsNsfw || context.IsNsfw;
+    }
+
+    private bool ShouldSend(SocketSlashCommand command, ProcessResponse response)
     {
         // TODO: Determine if this is from a Guild or a DM and restrict based on that.
         // Only allow sending NSFW in slash commands if restrict mode is off.
@@ -270,6 +290,8 @@ public sealed class MessageManager
     }
 }
 
+#region Response Types
+
 public abstract record Message
 {
     public string? Content { get; init; }
@@ -291,3 +313,5 @@ public sealed record ComponentsV2Message : Message
 
     public override bool IsEmpty() => base.IsEmpty() && Components is null;
 }
+
+#endregion

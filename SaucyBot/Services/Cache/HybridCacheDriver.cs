@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Hybrid;
 
@@ -10,6 +11,12 @@ public sealed class HybridCacheDriver : ICacheDriver
     private readonly IConfiguration _configuration;
 
     private readonly TimeSpan _defaultExpiry;
+
+    private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.General)
+    {
+        NumberHandling = JsonNumberHandling.AllowReadingFromString,
+        WriteIndented = false
+    };
 
     public HybridCacheDriver(HybridCache cache, IConfiguration configuration)
     {
@@ -75,7 +82,7 @@ public sealed class HybridCacheDriver : ICacheDriver
 
         await _cache.SetAsync(
             keyAsString,
-            JsonSerializer.Serialize(value),
+            JsonSerializer.Serialize(value, SerializerOptions),
             new HybridCacheEntryOptions
             {
                 Expiration = expiry,
