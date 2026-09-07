@@ -25,8 +25,8 @@ public class PixivTest
     {
         var source = new TrackingStream(CreateUgoiraArchive());
         var client = CreateUgoiraClient(source);
-        var (renderer, fileSystem) = CreateUgoiraDependencies();
-        var site = CreateUgoiraSite(client, renderer, fileSystem);
+        var renderer = CreateUgoiraDependencies();
+        var site = CreateUgoiraSite(client, renderer);
 
         var response = await site.Process(CreateUgoiraRequest());
 
@@ -36,57 +36,28 @@ public class PixivTest
     }
 
     [Fact]
-    public async Task UgoiraDisposesRenderedStreamAndPreservesCleanupFailure()
+    public async Task UgoiraPreservesFailureAndCleansUpWhenTheRenderedFileCannotBeOpened()
     {
         var source = new TrackingStream(CreateUgoiraArchive());
         var client = CreateUgoiraClient(source);
         string? renderedPath = null;
-        TrackingFileStream? renderedStream = null;
         var renderer = Substitute.For<IUgoiraVideoRenderer>();
         renderer.RenderAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(callInfo =>
             {
                 renderedPath = callInfo.ArgAt<string>(1);
-                File.WriteAllBytes(renderedPath, [1]);
                 return Task.CompletedTask;
             });
-        var fileSystem = Substitute.For<IFileSystem>();
-        fileSystem.WriteAllTextAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(callInfo => File.WriteAllTextAsync(
-                callInfo.ArgAt<string>(0),
-                callInfo.ArgAt<string>(1),
-                callInfo.ArgAt<CancellationToken>(2)));
-        fileSystem.OpenRead(Arg.Any<string>())
-            .Returns(callInfo => renderedStream = new TrackingFileStream(callInfo.ArgAt<string>(0)));
-        fileSystem.When(x => x.DeleteDirectory(Arg.Any<string>(), true))
-            .Do(_ => throw new InvalidOperationException("cleanup failed"));
         var site = new PixivSite(
             Substitute.For<ILogger<PixivSite>>(),
             new ConfigurationBuilder().Build(),
             client,
-            renderer,
-            fileSystem);
+            renderer);
 
-        try
-        {
-            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => site.Process(CreateUgoiraRequest()));
+        await Assert.ThrowsAsync<FileNotFoundException>(() => site.Process(CreateUgoiraRequest()));
 
-            Assert.Equal("cleanup failed", exception.Message);
-            Assert.NotNull(renderedPath);
-            Assert.NotNull(renderedStream);
-            Assert.Equal(1, renderedStream.DisposeCount);
-        }
-        finally
-        {
-            if (renderedPath is not null)
-            {
-                var directory = Path.GetDirectoryName(renderedPath);
-                if (directory is not null && Directory.Exists(directory))
-                {
-                    Directory.Delete(directory, true);
-                }
-            }
-        }
+        Assert.NotNull(renderedPath);
+        Assert.False(Directory.Exists(Path.GetDirectoryName(renderedPath)));
     }
 
     [Fact]
@@ -95,26 +66,21 @@ public class PixivTest
         var logger = new RecordingLogger<PixivSite>();
         var renderer = Substitute.For<IUgoiraVideoRenderer>();
         renderer.RenderAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(_ => throw new InvalidOperationException("render failed"));
-        var fileSystem = Substitute.For<IFileSystem>();
-        fileSystem.WriteAllTextAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(callInfo => File.WriteAllTextAsync(
-                callInfo.ArgAt<string>(0),
-                callInfo.ArgAt<string>(1),
-                callInfo.ArgAt<CancellationToken>(2)));
-        fileSystem.When(x => x.DeleteDirectory(Arg.Any<string>(), true))
-            .Do(_ => throw new InvalidOperationException("cleanup failed"));
+            .Returns(callInfo =>
+            {
+                Directory.Delete(Path.GetDirectoryName(callInfo.ArgAt<string>(1))!, true);
+                throw new InvalidOperationException("render failed");
+            });
         var site = new PixivSite(
             logger,
             new ConfigurationBuilder().Build(),
             CreateUgoiraClient(new TrackingStream(CreateUgoiraArchive())),
-            renderer,
-            fileSystem);
+            renderer);
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => site.Process(CreateUgoiraRequest()));
 
         Assert.Equal("render failed", exception.Message);
-        Assert.Contains(logger.Exceptions, error => error.Message == "cleanup failed");
+        Assert.Single(logger.Exceptions);
     }
 
     [Fact]
@@ -307,8 +273,7 @@ public class PixivTest
             logger,
             config,
             client,
-            Substitute.For<IUgoiraVideoRenderer>(),
-            Substitute.For<IFileSystem>()
+            Substitute.For<IUgoiraVideoRenderer>()
         );
 
         var match = site.Pattern.Matches("https://www.pixiv.net/en/artworks/106848609").First();
@@ -347,8 +312,7 @@ public class PixivTest
             logger,
             config,
             client,
-            Substitute.For<IUgoiraVideoRenderer>(),
-            Substitute.For<IFileSystem>()
+            Substitute.For<IUgoiraVideoRenderer>()
         );
 
         var match = site.Pattern.Matches("https://www.pixiv.net/en/artworks/79124301").First();
@@ -369,8 +333,7 @@ public class PixivTest
             logger,
             config,
             client,
-            Substitute.For<IUgoiraVideoRenderer>(),
-            Substitute.For<IFileSystem>()
+            Substitute.For<IUgoiraVideoRenderer>()
         );
 
         var content =
@@ -399,8 +362,7 @@ public class PixivTest
             logger,
             config,
             client,
-            Substitute.For<IUgoiraVideoRenderer>(),
-            Substitute.For<IFileSystem>()
+            Substitute.For<IUgoiraVideoRenderer>()
         );
 
         var content = "wow https://www.pixiv.net/en/artworks/1 and https://www.pixiv.net/artworks/2 cool";
@@ -481,15 +443,13 @@ public class PixivTest
 
     private static PixivSite CreateUgoiraSite(
         IPixivClient client,
-        IUgoiraVideoRenderer renderer,
-        IFileSystem fileSystem) => new(
+        IUgoiraVideoRenderer renderer) => new(
         Substitute.For<ILogger<PixivSite>>(),
         new ConfigurationBuilder().Build(),
         client,
-        renderer,
-        fileSystem);
+        renderer);
 
-    private static (IUgoiraVideoRenderer Renderer, IFileSystem FileSystem) CreateUgoiraDependencies()
+    private static IUgoiraVideoRenderer CreateUgoiraDependencies()
     {
         var renderer = Substitute.For<IUgoiraVideoRenderer>();
         renderer.RenderAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
@@ -499,24 +459,7 @@ public class PixivTest
                 return Task.CompletedTask;
             });
 
-        var fileSystem = Substitute.For<IFileSystem>();
-        fileSystem.WriteAllTextAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(callInfo => File.WriteAllTextAsync(
-                callInfo.ArgAt<string>(0),
-                callInfo.ArgAt<string>(1),
-                callInfo.ArgAt<CancellationToken>(2)));
-        fileSystem.OpenRead(Arg.Any<string>())
-            .Returns(callInfo => new FileStream(
-                callInfo.ArgAt<string>(0),
-                FileMode.Open,
-                FileAccess.Read,
-                FileShare.Read | FileShare.Delete));
-        fileSystem.When(x => x.DeleteDirectory(Arg.Any<string>(), true))
-            .Do(callInfo => Directory.Delete(callInfo.ArgAt<string>(0), true));
-        fileSystem.DirectoryExists(Arg.Any<string>()).Returns(callInfo =>
-            Directory.Exists(callInfo.ArgAt<string>(0)));
-
-        return (renderer, fileSystem);
+        return renderer;
     }
 
     private static IPixivClient CreateUgoiraClient(Stream source)
@@ -541,8 +484,7 @@ public class PixivTest
             Substitute.For<ILogger<PixivSite>>(),
             new ConfigurationBuilder().Build(),
             Substitute.For<IPixivClient>(),
-            Substitute.For<IUgoiraVideoRenderer>(),
-            Substitute.For<IFileSystem>()).Pattern.Match("https://www.pixiv.net/en/artworks/123"));
+            Substitute.For<IUgoiraVideoRenderer>()).Pattern.Match("https://www.pixiv.net/en/artworks/123"));
 
     private static IllustrationDetailsResponse CreateUgoiraDetails() => new(
         false,
@@ -583,21 +525,6 @@ public class PixivTest
         {
         }
 
-        public int DisposeCount { get; private set; }
-
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                DisposeCount++;
-            }
-
-            base.Dispose(disposing);
-        }
-    }
-
-    private sealed class TrackingFileStream(string path) : FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete)
-    {
         public int DisposeCount { get; private set; }
 
         protected override void Dispose(bool disposing)

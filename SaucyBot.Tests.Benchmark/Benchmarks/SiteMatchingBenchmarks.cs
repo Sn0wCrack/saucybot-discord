@@ -260,8 +260,7 @@ public class SiteMatchingBenchmarks
             logger,
             config,
             client,
-            Substitute.For<IUgoiraVideoRenderer>(),
-            Substitute.For<IFileSystem>());
+            Substitute.For<IUgoiraVideoRenderer>());
     }
 
     private static RedditSite CreateReddit(IConfiguration config)

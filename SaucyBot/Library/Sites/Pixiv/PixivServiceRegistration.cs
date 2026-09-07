@@ -9,7 +9,6 @@ public static class PixivServiceRegistration
     public static IServiceCollection AddPixivClient(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddSingleton<IUgoiraVideoRenderer, UgoiraVideoRenderer>();
-        services.AddSingleton<IFileSystem, FileSystem>();
 
         var cookieContainer = new CookieContainer();
         cookieContainer.Add(new Cookie

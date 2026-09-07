@@ -30,21 +30,18 @@ public sealed partial class PixivSite : BaseSite
     private readonly ILogger<PixivSite> _logger;
     private readonly IConfiguration _configuration;
     private readonly IUgoiraVideoRenderer _ugoiraVideoRenderer;
-    private readonly IFileSystem _fileSystem;
 
     public PixivSite(
         ILogger<PixivSite> logger,
         IConfiguration configuration,
         IPixivClient client,
-        IUgoiraVideoRenderer ugoiraVideoRenderer,
-        IFileSystem fileSystem
+        IUgoiraVideoRenderer ugoiraVideoRenderer
     )
     {
         _logger = logger;
         _configuration = configuration;
         _client = client;
         _ugoiraVideoRenderer = ugoiraVideoRenderer;
-        _fileSystem = fileSystem;
     }
 
     public override async Task<ProcessResponse?> Process(ProcessRequest request)
@@ -114,7 +111,7 @@ public sealed partial class PixivSite : BaseSite
         try
         {
             await zip.ExtractToDirectoryAsync(basePath, true, cancellationToken);
-            await _fileSystem.WriteAllTextAsync(concatFile, BuildConcatFile(metadata.UgoiraMetadata.Frames), cancellationToken);
+            await File.WriteAllTextAsync(concatFile, BuildConcatFile(metadata.UgoiraMetadata.Frames), cancellationToken);
 
             try
             {
@@ -126,7 +123,7 @@ public sealed partial class PixivSite : BaseSite
                 cleanupAttempted = true;
                 try
                 {
-                    _fileSystem.DeleteDirectory(basePath, true);
+                    Directory.Delete(basePath, true);
                 }
                 catch (Exception cleanupException)
                 {
@@ -135,7 +132,7 @@ public sealed partial class PixivSite : BaseSite
                 throw;
             }
 
-            fileStream = _fileSystem.OpenRead(videoFile);
+            fileStream = new FileStream(videoFile, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete);
 
             var title = details.Title
                 .ToLowerInvariant()
@@ -160,7 +157,7 @@ public sealed partial class PixivSite : BaseSite
             );
 
             cleanupAttempted = true;
-            _fileSystem.DeleteDirectory(basePath, true);
+            Directory.Delete(basePath, true);
             fileStream = null;
             return result;
         }
@@ -178,12 +175,12 @@ public sealed partial class PixivSite : BaseSite
                 }
             }
 
-            if (!cleanupAttempted && _fileSystem.DirectoryExists(basePath))
+            if (!cleanupAttempted && Directory.Exists(basePath))
             {
                 try
                 {
                     cleanupAttempted = true;
-                    _fileSystem.DeleteDirectory(basePath, true);
+                    Directory.Delete(basePath, true);
                 }
                 catch
                 {
