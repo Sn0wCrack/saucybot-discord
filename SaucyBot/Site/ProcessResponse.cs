@@ -52,7 +52,5 @@ public sealed record ProcessResponse : IAsyncDisposable
         {
             throw new AggregateException(exceptions);
         }
-
-        GC.SuppressFinalize(this);
     }
 }

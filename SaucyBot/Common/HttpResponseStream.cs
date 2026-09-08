@@ -82,8 +82,6 @@ public sealed class HttpResponseStream : Stream
             _response.Dispose();
             _metrics?.DownloadConcurrency.Add(-1);
         }
-
-        GC.SuppressFinalize(this);
     }
 
     private int RecordRead(int bytes)

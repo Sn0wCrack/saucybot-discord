@@ -48,7 +48,7 @@ public class MisskeyTest
             .ShowNote(Arg.Any<string>(), Arg.Any<string>())
             .Returns(note);
 
-        var site = new MisskeySite(logger, config, client, TimeProvider.System);
+        var site = new MisskeySite(logger, config.MisskeyOptions(), client, TimeProvider.System);
 
         var match = site.Pattern.Matches("https://misskey.io/notes/note123").First();
 
@@ -77,7 +77,7 @@ public class MisskeyTest
             .ShowNote(Arg.Any<string>(), Arg.Any<string>())
             .Returns((ShowNoteResponse?)null);
 
-        var site = new MisskeySite(logger, config, client, TimeProvider.System);
+        var site = new MisskeySite(logger, config.MisskeyOptions(), client, TimeProvider.System);
 
         var match = site.Pattern.Matches("https://misskey.io/notes/note123").First();
 
@@ -118,7 +118,7 @@ public class MisskeyTest
             .ShowNote(Arg.Any<string>(), Arg.Any<string>())
             .Returns(note);
 
-        var site = new MisskeySite(logger, config, client, TimeProvider.System);
+        var site = new MisskeySite(logger, config.MisskeyOptions(), client, TimeProvider.System);
 
         var match = site.Pattern.Matches("https://misskey.io/notes/note123").First();
 
@@ -205,7 +205,7 @@ public class MisskeyTest
         var apiResult = new TaskCompletionSource<ShowNoteResponse?>(TaskCreationOptions.RunContinuationsAsynchronously);
         client.ShowNote(Arg.Any<string>(), Arg.Any<string>()).Returns(apiResult.Task);
         var timeProvider = new FakeTimeProvider();
-        var site = new MisskeySite(Substitute.For<ILogger<MisskeySite>>(), config, client, timeProvider);
+        var site = new MisskeySite(Substitute.For<ILogger<MisskeySite>>(), config.MisskeyOptions(), client, timeProvider);
         using var cancellation = new CancellationTokenSource();
         var message = Substitute.For<IMessageContext>();
         var match = site.Pattern.Matches("https://misskey.io/notes/note123").First();

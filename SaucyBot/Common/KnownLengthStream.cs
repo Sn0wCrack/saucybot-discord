@@ -58,6 +58,5 @@ public sealed class KnownLengthStream : Stream
 
         _disposed = true;
         await _inner.DisposeAsync();
-        GC.SuppressFinalize(this);
     }
 }

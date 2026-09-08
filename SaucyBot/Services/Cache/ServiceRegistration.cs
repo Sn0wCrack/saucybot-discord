@@ -1,3 +1,6 @@
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
+
 namespace SaucyBot.Services.Cache;
 
 public static class CacheServiceRegistration

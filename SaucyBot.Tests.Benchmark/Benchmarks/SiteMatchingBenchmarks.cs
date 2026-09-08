@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using BenchmarkDotNet.Attributes;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using NSubstitute;
 using SaucyBot.Library.Sites.ArtStation;
 using SaucyBot.Library.Sites.BlueSky;
@@ -14,6 +15,7 @@ using SaucyBot.Library.Sites.Misskey;
 using SaucyBot.Library.Sites.Newgrounds;
 using SaucyBot.Library.Sites.Pixiv;
 using SaucyBot.Library.Sites.Twitter;
+using SaucyBot.Options.Sites;
 using SaucyBot.Services;
 using SaucyBot.Site;
 using SaucyBot.Site.ArtStation;
@@ -76,18 +78,18 @@ public class SiteMatchingBenchmarks
     {
         var config = new ConfigurationBuilder().Build();
 
-        _fxTwitter = CreateFxTwitter(config);
-        _artStation = CreateArtStation(config);
-        _bluesky = CreateBluesky(config);
+        _fxTwitter = CreateFxTwitter(SiteOptions<FxTwitterOptions>(config, "FxTwitter"));
+        _artStation = CreateArtStation(SiteOptions<ArtStationOptions>(config, "ArtStation"));
+        _bluesky = CreateBluesky(SiteOptions<BlueskyOptions>(config, "Bluesky"));
         _deviantArt = CreateDeviantArt(config);
         _e621 = CreateE621(config);
-        _exHentai = CreateExHentai(config);
+        _exHentai = CreateExHentai(SiteOptions<ExHentaiOptions>(config, "ExHentai"));
         _furAffinity = CreateFurAffinity(config);
         _hentaiFoundry = CreateHentaiFoundry(config);
         _vxInstagram = CreateInstagram(config);
-        _misskey = CreateMisskey(config);
+        _misskey = CreateMisskey(SiteOptions<MisskeyOptions>(config, "Misskey"));
         _newgrounds = CreateNewgrounds(config);
-        _pixiv = CreatePixiv(config);
+        _pixiv = CreatePixiv(SiteOptions<PixivOptions>(config, "Pixiv"));
         _reddit = CreateReddit(config);
 
         _allSites =
@@ -173,27 +175,31 @@ public class SiteMatchingBenchmarks
         return total;
     }
 
-    private static FxTwitterSite CreateFxTwitter(IConfiguration config)
+    private static IOptions<T> SiteOptions<T>(IConfiguration config, string section)
+        where T : class, new() =>
+        Microsoft.Extensions.Options.Options.Create(config.GetSection($"Sites:{section}").Get<T>() ?? new T());
+
+    private static FxTwitterSite CreateFxTwitter(IOptions<FxTwitterOptions> options)
     {
         var logger = Substitute.For<ILogger<FxTwitterSite>>();
         var client = Substitute.For<IFxTwitterClient>();
         var httpClientFactory = Substitute.For<IHttpClientFactory>();
         httpClientFactory.CreateClient(Arg.Any<string>()).Returns(new HttpClient());
-        return new FxTwitterSite(logger, config, client, httpClientFactory);
+        return new FxTwitterSite(logger, options, client, httpClientFactory);
     }
 
-    private static ArtStationSite CreateArtStation(IConfiguration config)
+    private static ArtStationSite CreateArtStation(IOptions<ArtStationOptions> options)
     {
         var logger = Substitute.For<ILogger<ArtStationSite>>();
         var client = Substitute.For<IArtStationClient>();
-        return new ArtStationSite(logger, config, client);
+        return new ArtStationSite(logger, options, client);
     }
 
-    private static BlueskySite CreateBluesky(IConfiguration config)
+    private static BlueskySite CreateBluesky(IOptions<BlueskyOptions> options)
     {
         var logger = Substitute.For<ILogger<BlueskySite>>();
         var client = Substitute.For<IVixBlueskyClient>();
-        return new BlueskySite(logger, config, client, TimeProvider.System);
+        return new BlueskySite(logger, options, client, TimeProvider.System);
     }
 
     private static DeviantArtSite CreateDeviantArt(IConfiguration config)
@@ -211,11 +217,11 @@ public class SiteMatchingBenchmarks
         return new E621Site(logger, client);
     }
 
-    private static ExHentaiSite CreateExHentai(IConfiguration config)
+    private static ExHentaiSite CreateExHentai(IOptions<ExHentaiOptions> options)
     {
         var logger = Substitute.For<ILogger<ExHentaiSite>>();
         var client = Substitute.For<IExHentaiClient>();
-        return new ExHentaiSite(logger, config, client);
+        return new ExHentaiSite(logger, options, client);
     }
 
     private static FurAffinitySite CreateFurAffinity(IConfiguration config)
@@ -238,11 +244,11 @@ public class SiteMatchingBenchmarks
         return new VxInstagramSite(logger);
     }
 
-    private static MisskeySite CreateMisskey(IConfiguration config)
+    private static MisskeySite CreateMisskey(IOptions<MisskeyOptions> options)
     {
         var logger = Substitute.For<ILogger<MisskeySite>>();
         var client = Substitute.For<IMisskeyClient>();
-        return new MisskeySite(logger, config, client, TimeProvider.System);
+        return new MisskeySite(logger, options, client, TimeProvider.System);
     }
 
     private static NewgroundsSite CreateNewgrounds(IConfiguration config)
@@ -252,13 +258,13 @@ public class SiteMatchingBenchmarks
         return new NewgroundsSite(logger, client);
     }
 
-    private static PixivSite CreatePixiv(IConfiguration config)
+    private static PixivSite CreatePixiv(IOptions<PixivOptions> options)
     {
         var logger = Substitute.For<ILogger<PixivSite>>();
         var client = Substitute.For<IPixivClient>();
         return new PixivSite(
             logger,
-            config,
+            options,
             client,
             Substitute.For<IUgoiraVideoRenderer>());
     }

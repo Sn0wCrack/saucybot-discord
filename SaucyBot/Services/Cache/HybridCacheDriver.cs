@@ -2,13 +2,14 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Hybrid;
+using Microsoft.Extensions.Options;
+using SaucyBot.Options;
 
 namespace SaucyBot.Services.Cache;
 
 public sealed class HybridCacheDriver : ICacheDriver
 {
     private readonly HybridCache _cache;
-    private readonly IConfiguration _configuration;
 
     private readonly TimeSpan _defaultExpiry;
 
@@ -18,13 +19,12 @@ public sealed class HybridCacheDriver : ICacheDriver
         WriteIndented = false
     };
 
-    public HybridCacheDriver(HybridCache cache, IConfiguration configuration)
+    public HybridCacheDriver(HybridCache cache, IOptions<CacheOptions> cacheOptions)
     {
         _cache = cache;
-        _configuration = configuration;
 
         _defaultExpiry = TimeSpan.FromSeconds(
-            _configuration.GetSection("Cache:Hybrid:DefaultLifetime").Get<int>()
+            cacheOptions.Value.Hybrid.DefaultLifetime
         );
     }
 

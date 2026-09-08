@@ -1,4 +1,5 @@
 using System.Net;
+using SaucyBot.Options.Sites;
 
 namespace SaucyBot.Library.Sites.HentaiFoundry;
 
@@ -6,11 +7,13 @@ public static class HentaiFoundryServiceRegistration
 {
     public static IServiceCollection AddHentaiFoundryClient(this IServiceCollection services, IConfiguration configuration)
     {
+        var hentaiFoundryOptions = configuration.GetSection("Sites:HentaiFoundry").Get<HentaiFoundryOptions>() ?? new();
+
         var cookieContainer = new CookieContainer();
         cookieContainer.Add(new Cookie
         {
             Name = "PHPSESSID",
-            Value = WebUtility.UrlDecode(configuration.GetSection("Sites:HentaiFoundry:SessionCookie").Get<string>()),
+            Value = WebUtility.UrlDecode(hentaiFoundryOptions.SessionCookie),
             Domain = "www.hentai-foundry.com",
             Path = "/",
             HttpOnly = true,

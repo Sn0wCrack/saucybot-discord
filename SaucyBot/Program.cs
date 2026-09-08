@@ -13,6 +13,8 @@ using SaucyBot.Library.Sites.Misskey;
 using SaucyBot.Library.Sites.Newgrounds;
 using SaucyBot.Library.Sites.Pixiv;
 using SaucyBot.Library.Sites.Twitter;
+using SaucyBot.Options;
+using SaucyBot.Options.Sites;
 using SaucyBot.Queue;
 using SaucyBot.Services;
 using SaucyBot.Services.Cache;
@@ -31,6 +33,18 @@ await Host.CreateDefaultBuilder(args)
     .ConfigureServices((context, services) =>
     {
         var configuration = context.Configuration;
+
+        services.Configure<BotOptions>(configuration.GetSection("Bot"));
+        services.Configure<DatabaseOptions>(configuration.GetSection("Database"));
+        services.Configure<CacheOptions>(configuration.GetSection("Cache"));
+        services.Configure<PixivOptions>(configuration.GetSection("Sites:Pixiv"));
+        services.Configure<FxTwitterOptions>(configuration.GetSection("Sites:FxTwitter"));
+        services.Configure<MisskeyOptions>(configuration.GetSection("Sites:Misskey"));
+        services.Configure<BlueskyOptions>(configuration.GetSection("Sites:Bluesky"));
+        services.Configure<ArtStationOptions>(configuration.GetSection("Sites:ArtStation"));
+        services.Configure<ExHentaiOptions>(configuration.GetSection("Sites:ExHentai"));
+        services.Configure<HentaiFoundryOptions>(configuration.GetSection("Sites:HentaiFoundry"));
+        services.Configure<FurAffinityOptions>(configuration.GetSection("Sites:FurAffinity"));
 
         services.AddSaucyBotTelemetry(configuration);
 
@@ -64,6 +78,7 @@ await Host.CreateDefaultBuilder(args)
 
         services.AddSingleton<WorkQueueHostedService>();
         services.AddHostedService(provider => provider.GetRequiredService<WorkQueueHostedService>());
+        services.AddSingleton<DiscordClientHost>();
         services.AddHostedService<Worker>();
     })
     .UseConsoleLifetime()

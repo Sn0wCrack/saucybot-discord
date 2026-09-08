@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Options;
+using SaucyBot.Options;
 using SaucyBot.Services.Cache;
 
 namespace SaucyBot.Services;
@@ -5,23 +7,21 @@ namespace SaucyBot.Services;
 public sealed class CacheManager : ICacheManager
 {
     private readonly ILogger<CacheManager> _logger;
-    private readonly IConfiguration _configuration;
     private readonly IServiceProvider _serviceProvider;
 
     private readonly ICacheDriver _driver;
 
-    public CacheManager(ILogger<CacheManager> logger, IConfiguration configuration, IServiceProvider serviceProvider)
+    public CacheManager(ILogger<CacheManager> logger, IOptions<CacheOptions> cacheOptions, IServiceProvider serviceProvider)
     {
         _logger = logger;
-        _configuration = configuration;
         _serviceProvider = serviceProvider;
 
-        _driver = CreateDriver();
+        _driver = CreateDriver(cacheOptions.Value);
     }
 
-    private ICacheDriver CreateDriver()
+    private ICacheDriver CreateDriver(CacheOptions cacheOptions)
     {
-        var driver = _configuration.GetSection("Cache:Driver").Get<CacheDriverType?>() ?? CacheDriverType.Memory;
+        var driver = cacheOptions.Driver ?? CacheDriverType.Memory;
 
         return _serviceProvider.GetKeyedService<ICacheDriver>(driver)
                ?? throw new InvalidOperationException(

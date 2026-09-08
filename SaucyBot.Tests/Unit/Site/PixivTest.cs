@@ -50,7 +50,7 @@ public class PixivTest
             });
         var site = new PixivSite(
             Substitute.For<ILogger<PixivSite>>(),
-            new ConfigurationBuilder().Build(),
+            new ConfigurationBuilder().Build().PixivOptions(),
             client,
             renderer);
 
@@ -73,7 +73,7 @@ public class PixivTest
             });
         var site = new PixivSite(
             logger,
-            new ConfigurationBuilder().Build(),
+            new ConfigurationBuilder().Build().PixivOptions(),
             CreateUgoiraClient(new TrackingStream(CreateUgoiraArchive())),
             renderer);
 
@@ -271,7 +271,7 @@ public class PixivTest
 
         var site = new PixivSite(
             logger,
-            config,
+            config.PixivOptions(),
             client,
             Substitute.For<IUgoiraVideoRenderer>()
         );
@@ -310,7 +310,7 @@ public class PixivTest
 
         var site = new PixivSite(
             logger,
-            config,
+            config.PixivOptions(),
             client,
             Substitute.For<IUgoiraVideoRenderer>()
         );
@@ -331,7 +331,7 @@ public class PixivTest
 
         var site = new PixivSite(
             logger,
-            config,
+            config.PixivOptions(),
             client,
             Substitute.For<IUgoiraVideoRenderer>()
         );
@@ -360,7 +360,7 @@ public class PixivTest
 
         var site = new PixivSite(
             logger,
-            config,
+            config.PixivOptions(),
             client,
             Substitute.For<IUgoiraVideoRenderer>()
         );
@@ -445,7 +445,7 @@ public class PixivTest
         IPixivClient client,
         IUgoiraVideoRenderer renderer) => new(
         Substitute.For<ILogger<PixivSite>>(),
-        new ConfigurationBuilder().Build(),
+        new ConfigurationBuilder().Build().PixivOptions(),
         client,
         renderer);
 
@@ -480,9 +480,9 @@ public class PixivTest
     }
 
     private static ProcessRequest CreateUgoiraRequest() => new(
-        new PixivSite(
+new PixivSite(
             Substitute.For<ILogger<PixivSite>>(),
-            new ConfigurationBuilder().Build(),
+            new ConfigurationBuilder().Build().PixivOptions(),
             Substitute.For<IPixivClient>(),
             Substitute.For<IUgoiraVideoRenderer>()).Pattern.Match("https://www.pixiv.net/en/artworks/123"));
 

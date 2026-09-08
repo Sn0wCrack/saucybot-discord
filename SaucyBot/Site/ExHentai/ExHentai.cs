@@ -1,8 +1,10 @@
 using System.Text.RegularExpressions;
 using Discord;
+using Microsoft.Extensions.Options;
 using SaucyBot.Common;
 using SaucyBot.Library;
 using SaucyBot.Library.Sites.ExHentai;
+using SaucyBot.Options.Sites;
 
 namespace SaucyBot.Site.ExHentai;
 
@@ -18,17 +20,15 @@ public sealed partial class ExHentaiSite : BaseSite
     public override Color Color => new(0x660611);
 
     private readonly ILogger<ExHentaiSite> _logger;
-    private readonly IConfiguration _configuration;
     private readonly IExHentaiClient _client;
     private readonly bool _isConfiguredToEmbedExHentaiLinks;
 
-    public ExHentaiSite(ILogger<ExHentaiSite> logger, IConfiguration configuration, IExHentaiClient client)
+    public ExHentaiSite(ILogger<ExHentaiSite> logger, IOptions<ExHentaiOptions> exHentaiOptions, IExHentaiClient client)
     {
         _logger = logger;
-        _configuration = configuration;
         _client = client;
 
-        _isConfiguredToEmbedExHentaiLinks = IsConfiguredToEmbedExHentaiLinks();
+        _isConfiguredToEmbedExHentaiLinks = IsConfiguredToEmbedExHentaiLinks(exHentaiOptions.Value.Cookies);
     }
 
     public override async Task<ProcessResponse?> Process(ProcessRequest request)
@@ -109,10 +109,10 @@ public sealed partial class ExHentaiSite : BaseSite
         return response;
     }
 
-    private bool IsConfiguredToEmbedExHentaiLinks()
+    private static bool IsConfiguredToEmbedExHentaiLinks(ExHentaiCookiesOptions cookies)
     {
-        var memberId = _configuration.GetSection("Sites:ExHentai:Cookies:MemberId").Get<string?>();
-        var passwordHash = _configuration.GetSection("Sites:ExHentai:Cookies:PasswordHash").Get<string?>();
+        var memberId = cookies.MemberId;
+        var passwordHash = cookies.PasswordHash;
 
         return memberId is not (null or "") && passwordHash is not (null or "");
     }

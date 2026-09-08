@@ -1,8 +1,10 @@
 using Discord;
 using Discord.WebSocket;
+using Microsoft.Extensions.Options;
 using SaucyBot.Extensions;
 using SaucyBot.Extensions.Discord;
 using SaucyBot.Library;
+using SaucyBot.Options;
 using SaucyBot.Site;
 
 namespace SaucyBot.Services;
@@ -10,15 +12,15 @@ namespace SaucyBot.Services;
 public sealed class MessageManager
 {
     private readonly ILogger<MessageManager> _logger;
-    private readonly IConfiguration _configuration;
+    private readonly BotOptions _botOptions;
 
     public MessageManager(
         ILogger<MessageManager> logger,
-        IConfiguration configuration
+        IOptions<BotOptions> botOptions
     )
     {
         _logger = logger;
-        _configuration = configuration;
+        _botOptions = botOptions.Value;
     }
 
     public async Task Send(SocketUserMessage message, ProcessResponse response)
@@ -127,7 +129,7 @@ public sealed class MessageManager
     private bool ShouldSend(SocketUserMessage message, ProcessResponse response)
     {
         // Determine if we are able to post this content freely in the channel we received the message in.
-        var restrictNsfw = _configuration.GetValue<bool?>("Bot:RestrictNSFW") ?? false;
+        var restrictNsfw = _botOptions.RestrictNSFW;
 
         if (!restrictNsfw || !response.IsNsfw)
         {
@@ -145,7 +147,7 @@ public sealed class MessageManager
 
     private bool ShouldSend(IMessageContext context, ProcessResponse response)
     {
-        var restrictNsfw = _configuration.GetValue<bool?>("Bot:RestrictNSFW") ?? false;
+        var restrictNsfw = _botOptions.RestrictNSFW;
         return !restrictNsfw || !response.IsNsfw || context.IsNsfw;
     }
 
@@ -153,7 +155,7 @@ public sealed class MessageManager
     {
         // TODO: Determine if this is from a Guild or a DM and restrict based on that.
         // Only allow sending NSFW in slash commands if restrict mode is off.
-        var restrictNsfw = _configuration.GetValue<bool?>("Bot:RestrictNSFW") ?? false;
+        var restrictNsfw = _botOptions.RestrictNSFW;
 
         return !restrictNsfw || !response.IsNsfw;
     }

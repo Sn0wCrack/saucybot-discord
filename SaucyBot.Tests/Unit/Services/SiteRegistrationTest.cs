@@ -28,7 +28,7 @@ public sealed class SiteRegistrationTest
 
         _ = new SiteRegistry(
             SubstituteLogger(),
-            Configuration([new KeyValuePair<string, string?>("Bot:DisabledSites:0", "disabled")]),
+            Configuration([new KeyValuePair<string, string?>("Bot:DisabledSites:0", "disabled")]).BotOptions(),
             provider,
             [new SiteRegistration(typeof(ConstructedSite))]);
 
@@ -47,7 +47,7 @@ public sealed class SiteRegistrationTest
 
         var exception = Assert.Throws<InvalidOperationException>(() => new SiteRegistry(
             SubstituteLogger(),
-            new ConfigurationBuilder().Build(),
+            new ConfigurationBuilder().Build().BotOptions(),
             provider,
             [
                 new SiteRegistration(typeof(FirstSite)),
@@ -66,7 +66,7 @@ public sealed class SiteRegistrationTest
 
         var exception = Assert.Throws<InvalidOperationException>(() => new SiteRegistry(
             SubstituteLogger(),
-            new ConfigurationBuilder().Build(),
+            new ConfigurationBuilder().Build().BotOptions(),
             provider,
             [new SiteRegistration(typeof(MissingSite))]));
 
@@ -89,7 +89,7 @@ public sealed class SiteRegistrationTest
 
         var registry = new SiteRegistry(
             SubstituteLogger(),
-            Configuration(configurationValues),
+            Configuration(configurationValues).BotOptions(),
             provider,
             provider.GetServices<SiteRegistration>());
 
@@ -108,7 +108,7 @@ public sealed class SiteRegistrationTest
         using var provider = services.BuildServiceProvider();
         var registry = new SiteRegistry(
             SubstituteLogger(),
-            new ConfigurationBuilder().Build(),
+            new ConfigurationBuilder().Build().BotOptions(),
             provider,
             [new SiteRegistration(typeof(ConstructedSite))]);
 
@@ -125,7 +125,7 @@ public sealed class SiteRegistrationTest
         using var rootProvider = services.BuildServiceProvider();
         var registry = new SiteRegistry(
             SubstituteLogger(),
-            new ConfigurationBuilder().Build(),
+            new ConfigurationBuilder().Build().BotOptions(),
             rootProvider,
             [new SiteRegistration(typeof(ConstructedSite))]);
 
@@ -141,7 +141,7 @@ public sealed class SiteRegistrationTest
     {
         var registry = new SiteRegistry(
             SubstituteLogger(),
-            new ConfigurationBuilder().Build(),
+            new ConfigurationBuilder().Build().BotOptions(),
             new ServiceCollection().BuildServiceProvider(),
             []);
 

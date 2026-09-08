@@ -99,7 +99,7 @@ public class FxTwitterTest
             .GetTweet(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string?>())
             .Returns(response);
 
-        var site = new FxTwitterSite(logger, config, client, httpClientFactory);
+        var site = new FxTwitterSite(logger, config.FxTwitterOptions(), client, httpClientFactory);
 
         var matches = site.Pattern.Matches("https://twitter.com/testuser/status/123456789");
         var match = matches[0];
@@ -125,7 +125,7 @@ public class FxTwitterTest
             .GetTweet(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string?>())
             .Returns((FxTwitterResponse?)null);
 
-        var site = new FxTwitterSite(logger, config, client, httpClientFactory);
+        var site = new FxTwitterSite(logger, config.FxTwitterOptions(), client, httpClientFactory);
 
         var matches = site.Pattern.Matches("https://twitter.com/testuser/status/123456789");
         var match = matches[0];
@@ -183,7 +183,7 @@ public class FxTwitterTest
             .GetTweet(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string?>())
             .Returns(response);
 
-        var site = new FxTwitterSite(logger, config, client, httpClientFactory);
+        var site = new FxTwitterSite(logger, config.FxTwitterOptions(), client, httpClientFactory);
 
         var matches = site.Pattern.Matches("https://twitter.com/testuser/status/123456789");
         var match = matches[0];
@@ -205,7 +205,7 @@ public class FxTwitterTest
         var httpClientFactory = Substitute.For<IHttpClientFactory>();
         httpClientFactory.CreateClient(Arg.Any<string>()).Returns(new HttpClient());
 
-        var site = new FxTwitterSite(logger, config, client, httpClientFactory);
+        var site = new FxTwitterSite(logger, config.FxTwitterOptions(), client, httpClientFactory);
 
         var matches = site.Pattern.Matches("https://twitter.com/alice/status/111 https://twitter.com/bob/status/222");
 
@@ -229,7 +229,7 @@ public class FxTwitterTest
         var httpClientFactory = Substitute.For<IHttpClientFactory>();
         httpClientFactory.CreateClient(Arg.Any<string>()).Returns(new HttpClient());
 
-        var site = new FxTwitterSite(logger, config, client, httpClientFactory);
+        var site = new FxTwitterSite(logger, config.FxTwitterOptions(), client, httpClientFactory);
 
         var matches = site.Pattern.Matches(content);
 
@@ -252,7 +252,7 @@ public class FxTwitterTest
         var httpClientFactory = Substitute.For<IHttpClientFactory>();
         httpClientFactory.CreateClient(Arg.Any<string>()).Returns(new HttpClient());
 
-        var site = new FxTwitterSite(logger, config, client, httpClientFactory);
+        var site = new FxTwitterSite(logger, config.FxTwitterOptions(), client, httpClientFactory);
 
         var content =
             "https://x.com/first/status/1\n" +
@@ -286,7 +286,7 @@ public class FxTwitterTest
         var httpClientFactory = Substitute.For<IHttpClientFactory>();
         httpClientFactory.CreateClient(Arg.Any<string>()).Returns(new HttpClient());
 
-        var site = new FxTwitterSite(logger, config, client, httpClientFactory);
+        var site = new FxTwitterSite(logger, config.FxTwitterOptions(), client, httpClientFactory);
 
         var content = "check this https://x.com/first/status/1 out and also https://x.com/second/status/2 lol";
 
@@ -307,7 +307,7 @@ public class FxTwitterTest
         factory.CreateClient(Arg.Any<string>()).Returns(new HttpClient(handler));
         return new FxTwitterSite(
             Substitute.For<ILogger<FxTwitterSite>>(),
-            new ConfigurationBuilder().Build(),
+            new ConfigurationBuilder().Build().FxTwitterOptions(),
             Substitute.For<IFxTwitterClient>(),
             factory);
     }

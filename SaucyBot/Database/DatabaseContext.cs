@@ -1,7 +1,9 @@
 using System.Reflection;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using SaucyBot.Database.Models;
 using SaucyBot.Library;
+using SaucyBot.Options;
 
 namespace SaucyBot.Database;
 
@@ -13,9 +15,9 @@ public sealed class DatabaseContext : DbContext
 
     public DbSet<GuildConfigurationRestrictedRole> GuildConfigurationRestrictedRoles => Set<GuildConfigurationRestrictedRole>();
 
-    public DatabaseContext(IConfiguration configuration)
+    public DatabaseContext(IOptions<DatabaseOptions> databaseOptions)
     {
-        _connectionString = configuration.GetSection("Database:ConnectionString").Get<string>() ?? "";
+        _connectionString = databaseOptions.Value.ConnectionString;
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)

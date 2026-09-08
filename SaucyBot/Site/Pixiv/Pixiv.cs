@@ -3,12 +3,14 @@ using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using Discord;
+using Microsoft.Extensions.Options;
 using SaucyBot.Common;
 using SaucyBot.Database.Models;
 using SaucyBot.Extensions;
 using SaucyBot.Extensions.Discord;
 using SaucyBot.Library;
 using SaucyBot.Library.Sites.Pixiv;
+using SaucyBot.Options.Sites;
 
 namespace SaucyBot.Site.Pixiv;
 
@@ -28,18 +30,18 @@ public sealed partial class PixivSite : BaseSite
 
     private readonly IPixivClient _client;
     private readonly ILogger<PixivSite> _logger;
-    private readonly IConfiguration _configuration;
+    private readonly PixivOptions _pixivOptions;
     private readonly IUgoiraVideoRenderer _ugoiraVideoRenderer;
 
     public PixivSite(
         ILogger<PixivSite> logger,
-        IConfiguration configuration,
+        IOptions<PixivOptions> pixivOptions,
         IPixivClient client,
         IUgoiraVideoRenderer ugoiraVideoRenderer
     )
     {
         _logger = logger;
-        _configuration = configuration;
+        _pixivOptions = pixivOptions.Value;
         _client = client;
         _ugoiraVideoRenderer = ugoiraVideoRenderer;
     }
@@ -94,7 +96,7 @@ public sealed partial class PixivSite : BaseSite
 
         var concatFile = Path.Join(basePath, "ffconcat");
 
-        var codec = _configuration.GetSection("Sites:Pixiv:Ugoira:Codec").Get<UgoiraCodec?>() ?? UgoiraCodec.H264;
+        var codec = _pixivOptions.Ugoira.Codec ?? UgoiraCodec.H264;
 
         var fileExtension = codec switch
         {
@@ -227,7 +229,7 @@ public sealed partial class PixivSite : BaseSite
         {
             var pageCount = details.PageCount;
 
-            var postLimit = (int?)guildConfiguration?.MaximumPixivImages ?? _configuration.GetSection("Sites:Pixiv:PostLimit").Get<int>();
+            var postLimit = (int?)guildConfiguration?.MaximumPixivImages ?? _pixivOptions.PostLimit;
 
             if (pageCount == 1)
             {

@@ -2,10 +2,12 @@ using System.Text.RegularExpressions;
 using Discord;
 using Discord.Net;
 using Discord.WebSocket;
+using Microsoft.Extensions.Options;
 using SaucyBot.Database.Models;
 using SaucyBot.Extensions;
 using SaucyBot.Extensions.Discord;
 using SaucyBot.Library.Discord;
+using SaucyBot.Options;
 using SaucyBot.Queue;
 using SaucyBot.Site;
 
@@ -14,7 +16,7 @@ namespace SaucyBot.Services;
 public sealed class SiteManager : IMessageWorkHandler
 {
     private readonly ILogger<SiteManager> _logger;
-    private readonly IConfiguration _configuration;
+    private readonly BotOptions _botOptions;
     private readonly MessageManager _messageManager;
     private readonly IGuildConfigurationManager _guildConfigurationManager;
     private readonly SiteRegistry _siteRegistry;
@@ -23,7 +25,7 @@ public sealed class SiteManager : IMessageWorkHandler
 
     public SiteManager(
         ILogger<SiteManager> logger,
-        IConfiguration configuration,
+        IOptions<BotOptions> botOptions,
         MessageManager messageManager,
         IGuildConfigurationManager guildConfigurationManager,
         SiteRegistry siteRegistry,
@@ -32,7 +34,7 @@ public sealed class SiteManager : IMessageWorkHandler
     )
     {
         _logger = logger;
-        _configuration = configuration;
+        _botOptions = botOptions.Value;
         _messageManager = messageManager;
         _guildConfigurationManager = guildConfigurationManager;
         _siteRegistry = siteRegistry;
@@ -65,7 +67,7 @@ public sealed class SiteManager : IMessageWorkHandler
             return results;
         }
 
-        var maximumEmbeds = guildConfiguration?.MaximumEmbeds ?? _configuration.GetSection("Bot:MaximumEmbeds").Get<uint>();
+        var maximumEmbeds = guildConfiguration?.MaximumEmbeds ?? _botOptions.MaximumEmbeds;
 
         foreach (var (identifier, site) in _siteRegistry.Sites)
         {
@@ -96,7 +98,7 @@ public sealed class SiteManager : IMessageWorkHandler
             return Task.FromResult(results);
         }
 
-        var maximumEmbeds = guildConfiguration?.MaximumEmbeds ?? _configuration.GetSection("Bot:MaximumEmbeds").Get<uint>();
+        var maximumEmbeds = guildConfiguration?.MaximumEmbeds ?? _botOptions.MaximumEmbeds;
         foreach (var (identifier, site) in _siteRegistry.Sites)
         {
             foreach (Match match in site.Pattern.Matches(content))
@@ -125,7 +127,7 @@ public sealed class SiteManager : IMessageWorkHandler
             return results;
         }
 
-        var maximumEmbeds = guildConfiguration?.MaximumEmbeds ?? _configuration.GetSection("Bot:MaximumEmbeds").Get<uint>();
+        var maximumEmbeds = guildConfiguration?.MaximumEmbeds ?? _botOptions.MaximumEmbeds;
 
         foreach (var (identifier, site) in _siteRegistry.Sites)
         {
@@ -328,7 +330,7 @@ public sealed class SiteManager : IMessageWorkHandler
 
     private bool NsfwAllowed()
     {
-        return !(_configuration.GetValue<bool?>("Bot:RestrictNSFW") ?? false);
+        return !_botOptions.RestrictNSFW;
     }
 
     internal ProcessRequest CreateCommandRequest(

@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
+using SaucyBot.Options;
 using SaucyBot.Services;
 using SaucyBot.Services.Cache;
 
@@ -32,12 +33,14 @@ public class MemoryCacheBenchmarks
             ["Cache:Driver"] = "memory",
         });
         var config = configBuilder.Build();
+        var cacheOptions = Microsoft.Extensions.Options.Options.Create(
+            config.GetSection("Cache").Get<CacheOptions>() ?? new CacheOptions());
 
-        _memoryCache = new MemoryCache(new MemoryCacheOptions());
-        _driver = new MemoryCacheDriver(_memoryCache, config);
+        _memoryCache = new MemoryCache(new Microsoft.Extensions.Caching.Memory.MemoryCacheOptions());
+        _driver = new MemoryCacheDriver(_memoryCache, cacheOptions);
 
         var logger = Substitute.For<ILogger<CacheManager>>();
-        _cacheManager = new CacheManager(logger, config, CreateServiceProvider(_driver));
+        _cacheManager = new CacheManager(logger, cacheOptions, CreateServiceProvider(_driver));
     }
 
     [GlobalCleanup]
