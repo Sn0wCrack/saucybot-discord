@@ -34,7 +34,7 @@ services:
       retries: 3
 
   cache:
-    image: docker.io/valkey/valkey:9-alpine@sha256:a174b894902bd3367e330d47cc2054367dc4917701776aaf336f41d83b65ec7a
+    image: docker.io/valkey/valkey:9-alpine@sha256:a0dbf4c1d5708782907c10e2c72deff317518518b5288a58416981d9db95d30b
     command: [ 'valkey-server', '--maxmemory', '512mb', '--maxmemory-policy', 'allkeys-lru']
     ports:
       - '6379:6379'
@@ -48,7 +48,7 @@ services:
       start_period: 10s
 
   queue:
-    image: docker.io/valkey/valkey:9-alpine@sha256:a174b894902bd3367e330d47cc2054367dc4917701776aaf336f41d83b65ec7a
+    image: docker.io/valkey/valkey:9-alpine@sha256:a0dbf4c1d5708782907c10e2c72deff317518518b5288a58416981d9db95d30b
     command: ['valkey-server', '--maxmemory', '512mb', '--maxmemory-policy', 'noeviction']
     volumes:
         - queue:/data
