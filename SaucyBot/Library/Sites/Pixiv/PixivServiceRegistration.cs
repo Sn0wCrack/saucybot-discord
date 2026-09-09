@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Headers;
+using SaucyBot.Extensions;
 using SaucyBot.Options.Sites;
 using SaucyBot.Site.Pixiv;
 
@@ -11,7 +12,7 @@ public static class PixivServiceRegistration
     {
         services.AddSingleton<IUgoiraVideoRenderer, UgoiraVideoRenderer>();
 
-        var pixivOptions = configuration.GetSection("Sites:Pixiv").Get<PixivOptions>() ?? new();
+        var pixivOptions = configuration.BindOrDefault<PixivOptions>("Sites:Pixiv");
 
         var cookieContainer = new CookieContainer();
         cookieContainer.Add(new Cookie

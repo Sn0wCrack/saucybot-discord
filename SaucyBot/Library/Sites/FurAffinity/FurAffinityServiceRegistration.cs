@@ -1,4 +1,5 @@
 using System.Net;
+using SaucyBot.Extensions;
 using SaucyBot.Options.Sites;
 
 namespace SaucyBot.Library.Sites.FurAffinity;
@@ -7,7 +8,7 @@ public static class FurAffinityServiceRegistration
 {
     public static IServiceCollection AddFurAffinityClient(this IServiceCollection services, IConfiguration configuration)
     {
-        var furAffinityOptions = configuration.GetSection("Sites:FurAffinity").Get<FurAffinityOptions>() ?? new();
+        var furAffinityOptions = configuration.BindOrDefault<FurAffinityOptions>("Sites:FurAffinity");
 
         var cookieContainer = new CookieContainer();
         cookieContainer.Add(new Cookie

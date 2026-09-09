@@ -2,6 +2,7 @@ using Microsoft.Extensions.Options;
 using SaucyBot;
 using SaucyBot.Database;
 using SaucyBot.Diagnostics;
+using SaucyBot.Extensions;
 using SaucyBot.Library.Sites;
 using SaucyBot.Library.Sites.ArtStation;
 using SaucyBot.Library.Sites.BlueSky;
@@ -38,8 +39,6 @@ await Host.CreateDefaultBuilder(args)
         services.Configure<BotOptions>(configuration.GetSection("Bot"));
         services.Configure<DatabaseOptions>(configuration.GetSection("Database"));
         services.Configure<CacheOptions>(configuration.GetSection("Cache"));
-        services.Configure<SentryOptions>(configuration.GetSection("Sentry"));
-        services.Configure<TelemetryOptions>(configuration.GetSection("OpenTelemetry"));
         services.Configure<PixivOptions>(configuration.GetSection("Sites:Pixiv"));
         services.Configure<FxTwitterOptions>(configuration.GetSection("Sites:FxTwitter"));
         services.Configure<MisskeyOptions>(configuration.GetSection("Sites:Misskey"));
@@ -50,14 +49,14 @@ await Host.CreateDefaultBuilder(args)
         services.Configure<FurAffinityOptions>(configuration.GetSection("Sites:FurAffinity"));
 
         services.AddSaucyBotTelemetry(
-            Options.Create(configuration.GetSection("OpenTelemetry").Get<TelemetryOptions>() ?? new TelemetryOptions()));
+            Options.Create(configuration.BindOrDefault<TelemetryOptions>("OpenTelemetry")));
         services.AddSaucyBotSentry(
-            Options.Create(configuration.GetSection("Sentry").Get<SentryOptions>() ?? new SentryOptions()));
+            Options.Create(configuration.BindOrDefault<SentryOptions>("Sentry")));
 
         services.AddSaucyBotDatabase();
 
         services.AddSaucyBotCache(configuration);
-        var queueOptions = configuration.GetSection("Queue").Get<WorkQueueOptions>() ?? new();
+        var queueOptions = configuration.BindOrDefault<WorkQueueOptions>("Queue");
         services.AddSingleton(queueOptions);
         services.AddSingleton<InteractionWorkChannel>();
         services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(queueOptions.ConnectionString));

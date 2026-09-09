@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
+using SaucyBot.Extensions;
 using SaucyBot.Options;
 using SaucyBot.Options.Sites;
 
@@ -8,10 +9,10 @@ namespace SaucyBot.Tests;
 public static class TestOptions
 {
     public static IOptions<BotOptions> BotOptions(this IConfiguration configuration) =>
-        Microsoft.Extensions.Options.Options.Create(configuration.GetSection("Bot").Get<BotOptions>() ?? new BotOptions());
+        Microsoft.Extensions.Options.Options.Create(configuration.BindOrDefault<BotOptions>("Bot"));
 
     public static IOptions<CacheOptions> CacheOptions(this IConfiguration configuration) =>
-        Microsoft.Extensions.Options.Options.Create(configuration.GetSection("Cache").Get<CacheOptions>() ?? new CacheOptions());
+        Microsoft.Extensions.Options.Options.Create(configuration.BindOrDefault<CacheOptions>("Cache"));
 
     public static IOptions<PixivOptions> PixivOptions(this IConfiguration configuration) =>
         SiteOptions<PixivOptions>(configuration, "Pixiv");
@@ -33,5 +34,5 @@ public static class TestOptions
 
     private static IOptions<T> SiteOptions<T>(IConfiguration configuration, string sectionName)
         where T : class, new() =>
-        Microsoft.Extensions.Options.Options.Create(configuration.GetSection($"Sites:{sectionName}").Get<T>() ?? new T());
+        Microsoft.Extensions.Options.Options.Create(configuration.BindOrDefault<T>($"Sites:{sectionName}"));
 }
