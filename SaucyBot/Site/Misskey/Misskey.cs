@@ -1,7 +1,9 @@
 using System.Text.RegularExpressions;
 using Discord;
+using Microsoft.Extensions.Options;
 using SaucyBot.Library;
 using SaucyBot.Library.Sites.Misskey;
+using SaucyBot.Options.Sites;
 
 namespace SaucyBot.Site.Misskey;
 
@@ -12,19 +14,19 @@ public sealed class MisskeySite : BaseSite
     public override Color Color => new(0x85B300);
 
     private readonly ILogger<MisskeySite> _logger;
-    private readonly IConfiguration _configuration;
+    private readonly MisskeyOptions _misskeyOptions;
     private readonly IMisskeyClient _client;
     private readonly TimeProvider _timeProvider;
 
     public MisskeySite(
         ILogger<MisskeySite> logger,
-        IConfiguration configuration,
+        IOptions<MisskeyOptions> misskeyOptions,
         IMisskeyClient client,
         TimeProvider timeProvider
     )
     {
         _logger = logger;
-        _configuration = configuration;
+        _misskeyOptions = misskeyOptions.Value;
         _client = client;
         _timeProvider = timeProvider;
 
@@ -58,7 +60,7 @@ public sealed class MisskeySite : BaseSite
         if (context is not null && message is not null)
         {
             await Task.Delay(
-                TimeSpan.FromSeconds(_configuration.GetSection("Sites:Misskey:Delay").Get<double>()),
+                TimeSpan.FromSeconds(_misskeyOptions.Delay),
                 _timeProvider,
                 context.CancellationToken);
 

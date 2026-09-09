@@ -1,8 +1,10 @@
 using System.Text.RegularExpressions;
 using Discord;
+using Microsoft.Extensions.Options;
 using SaucyBot.Extensions;
 using SaucyBot.Library;
 using SaucyBot.Library.Sites.BlueSky;
+using SaucyBot.Options.Sites;
 
 namespace SaucyBot.Site.Bluesky;
 
@@ -18,18 +20,18 @@ public sealed partial class BlueskySite : BaseSite
     public override Color Color => new(0x1083FE);
 
     private readonly ILogger<BlueskySite> _logger;
-    private readonly IConfiguration _configuration;
+    private readonly BlueskyOptions _blueskyOptions;
     private readonly IVixBlueskyClient _client;
     private readonly TimeProvider _timeProvider;
 
     public BlueskySite(
         ILogger<BlueskySite> logger,
-        IConfiguration configuration,
+        IOptions<BlueskyOptions> blueskyOptions,
         IVixBlueskyClient client,
         TimeProvider timeProvider)
     {
         _logger = logger;
-        _configuration = configuration;
+        _blueskyOptions = blueskyOptions.Value;
         _client = client;
         _timeProvider = timeProvider;
     }
@@ -59,7 +61,7 @@ public sealed partial class BlueskySite : BaseSite
         if (context is not null && message is not null)
         {
             await Task.Delay(
-                TimeSpan.FromSeconds(_configuration.GetSection("Sites:Bluesky:Delay").Get<double>()),
+                TimeSpan.FromSeconds(_blueskyOptions.Delay),
                 _timeProvider,
                 context.CancellationToken);
 

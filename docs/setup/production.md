@@ -112,6 +112,7 @@ consumer-group backlog. OpenTelemetry exports `saucybot.queue.depth` and
 `saucybot.queue.age` when enabled. Configure the exporter with the
 `OpenTelemetry__OtlpEndpoint` and related environment variables described in the
 [configuration reference](configuration.md#opentelemetry); keep endpoint credentials in `.env`, not tracked files.
+Set `Sentry__Dsn` to a Sentry project DSN to receive runtime error reports (empty disables it).
 
 Do not treat separate logical Valkey databases as resource isolation. Cache and queue
 must remain separate Valkey services so their memory limits, eviction policies, and

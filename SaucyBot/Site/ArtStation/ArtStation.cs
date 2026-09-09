@@ -1,9 +1,11 @@
 using System.Text.RegularExpressions;
 using Discord;
+using Microsoft.Extensions.Options;
 using SaucyBot.Common;
 using SaucyBot.Extensions;
 using SaucyBot.Library;
 using SaucyBot.Library.Sites.ArtStation;
+using SaucyBot.Options.Sites;
 
 namespace SaucyBot.Site.ArtStation;
 
@@ -17,13 +19,13 @@ public sealed partial class ArtStationSite : BaseSite
     public override Regex Pattern => ArtStationPattern();
 
     private readonly ILogger<ArtStationSite> _logger;
-    private readonly IConfiguration _configuration;
+    private readonly ArtStationOptions _artStationOptions;
     private readonly IArtStationClient _client;
 
-    public ArtStationSite(ILogger<ArtStationSite> logger, IConfiguration configuration, IArtStationClient client)
+    public ArtStationSite(ILogger<ArtStationSite> logger, IOptions<ArtStationOptions> artStationOptions, IArtStationClient client)
     {
         _logger = logger;
-        _configuration = configuration;
+        _artStationOptions = artStationOptions.Value;
         _client = client;
     }
 
@@ -36,7 +38,7 @@ public sealed partial class ArtStationSite : BaseSite
             return null;
         }
 
-        var limit = _configuration.GetSection("Sites:ArtStation:PostLimit").Get<int>();
+        var limit = _artStationOptions.PostLimit;
 
         var response = new ProcessResponse
         {

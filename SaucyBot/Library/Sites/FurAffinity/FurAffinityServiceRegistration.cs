@@ -1,4 +1,6 @@
 using System.Net;
+using SaucyBot.Extensions;
+using SaucyBot.Options.Sites;
 
 namespace SaucyBot.Library.Sites.FurAffinity;
 
@@ -6,11 +8,13 @@ public static class FurAffinityServiceRegistration
 {
     public static IServiceCollection AddFurAffinityClient(this IServiceCollection services, IConfiguration configuration)
     {
+        var furAffinityOptions = configuration.BindOrDefault<FurAffinityOptions>("Sites:FurAffinity");
+
         var cookieContainer = new CookieContainer();
         cookieContainer.Add(new Cookie
         {
             Name = "a",
-            Value = configuration.GetSection("Sites:FurAffinity:Cookies:A").Get<string>(),
+            Value = furAffinityOptions.Cookies.A,
             Domain = ".furaffinity.net",
             Path = "/",
             HttpOnly = true,
@@ -19,7 +23,7 @@ public static class FurAffinityServiceRegistration
         cookieContainer.Add(new Cookie
         {
             Name = "b",
-            Value = configuration.GetSection("Sites:FurAffinity:Cookies:B").Get<string>(),
+            Value = furAffinityOptions.Cookies.B,
             Domain = ".furaffinity.net",
             Path = "/",
             HttpOnly = true,
@@ -27,7 +31,7 @@ public static class FurAffinityServiceRegistration
         });
 
         services.AddHtmlClient<IFurAffinityClient, FurAffinityDirect>(
-            new HttpClientHandler
+            () => new HttpClientHandler
             {
                 CookieContainer = cookieContainer,
                 UseCookies = true,

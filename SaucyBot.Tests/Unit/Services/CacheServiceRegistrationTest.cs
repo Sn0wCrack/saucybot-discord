@@ -46,7 +46,7 @@ public sealed class CacheServiceRegistrationTest
 
         var manager = new CacheManager(
             Substitute.For<ILogger<CacheManager>>(),
-            configuration,
+            configuration.CacheOptions(),
             provider);
 
         _ = manager.Get<string>("key");
@@ -63,7 +63,7 @@ public sealed class CacheServiceRegistrationTest
 
         var exception = Assert.Throws<InvalidOperationException>(() => new CacheManager(
             Substitute.For<ILogger<CacheManager>>(),
-            configuration,
+            configuration.CacheOptions(),
             Substitute.For<IKeyedServiceProvider>()));
 
         Assert.Contains("filesystem", exception.Message, StringComparison.OrdinalIgnoreCase);
@@ -79,7 +79,7 @@ public sealed class CacheServiceRegistrationTest
 
         var exception = Assert.Throws<InvalidOperationException>(() => new CacheManager(
             Substitute.For<ILogger<CacheManager>>(),
-            configuration,
+            configuration.CacheOptions(),
             provider));
 
         Assert.Contains("redis", exception.Message, StringComparison.OrdinalIgnoreCase);

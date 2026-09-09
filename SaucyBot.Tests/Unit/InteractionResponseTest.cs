@@ -27,7 +27,7 @@ public sealed class InteractionResponseTest
         var interaction = new RecordingInteraction { CommandName = "settings" };
 
         await fixture.Service.StartAsync(TestContext.Current.CancellationToken);
-        await fixture.Worker.AdmitInteractionAsync(interaction);
+        await fixture.ClientHost.AdmitInteractionAsync(interaction);
         await interaction.ResponseSent.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         await fixture.Service.StopAsync(TestContext.Current.CancellationToken);
 
@@ -42,7 +42,7 @@ public sealed class InteractionResponseTest
         var interaction = new RecordingInteraction { HasResponded = true };
 
         await fixture.Service.StartAsync(TestContext.Current.CancellationToken);
-        await fixture.Worker.AdmitInteractionAsync(interaction);
+        await fixture.ClientHost.AdmitInteractionAsync(interaction);
         await interaction.ResponseSent.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         await fixture.Service.StopAsync(TestContext.Current.CancellationToken);
 
@@ -92,23 +92,22 @@ public sealed class InteractionResponseTest
             new CallbackInteractionProcessor(process),
             new SaucyBotMetrics());
         var services = new ServiceCollection().BuildServiceProvider();
-        var worker = new Worker(
-            NullLogger<Worker>.Instance,
-            new ConfigurationBuilder().Build(),
-            Substitute.For<IDatabaseMigrator>(),
-            new InteractionHandler(NullLogger<InteractionHandler>.Instance, services),
+        var clientHost = new DiscordClientHost(
+            NullLogger<DiscordClientHost>.Instance,
+            new ConfigurationBuilder().Build().BotOptions(),
             queue,
-            new SiteRegistry(NullLogger<SiteRegistry>.Instance, new ConfigurationBuilder().Build(), services, []),
+            new SiteRegistry(NullLogger<SiteRegistry>.Instance, new ConfigurationBuilder().Build().BotOptions(), services, []),
             channel,
             new CallbackInteractionProcessor(process),
             service,
             new SaucyBotMetrics(),
+            new InteractionHandler(NullLogger<InteractionHandler>.Instance, services),
             Substitute.For<IMessageResolver>());
 
-        return new Fixture(service, worker);
+        return new Fixture(service, clientHost);
     }
 
-    private sealed record Fixture(WorkQueueHostedService Service, Worker Worker) : IAsyncDisposable
+    private sealed record Fixture(WorkQueueHostedService Service, DiscordClientHost ClientHost) : IAsyncDisposable
     {
         public ValueTask DisposeAsync() => Service.DisposeAsync();
     }

@@ -24,7 +24,7 @@ public class MessageManagerTest
 
         var processResponse = new ProcessResponse(text: "This is a test");
 
-        var messageManager = new MessageManager(logger, config);
+        var messageManager = new MessageManager(logger, config.BotOptions());
 
         var messages = await MessageManager.PartitionMessages(processResponse);
 
@@ -49,7 +49,7 @@ public class MessageManagerTest
         context.IsNsfw.Returns(true);
         context.Content.Returns("original");
 
-        var manager = new MessageManager(logger, config);
+        var manager = new MessageManager(logger, config.BotOptions());
 
         await manager.Send(context, new ProcessResponse(text: "reply"), TestContext.Current.CancellationToken);
 

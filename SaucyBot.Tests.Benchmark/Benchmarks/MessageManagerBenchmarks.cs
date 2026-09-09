@@ -4,6 +4,7 @@ using Discord;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
+using SaucyBot.Options;
 using SaucyBot.Services;
 using SaucyBot.Site;
 
@@ -27,7 +28,8 @@ public class MessageManagerBenchmarks
     {
         var logger = Substitute.For<ILogger<MessageManager>>();
         var config = new ConfigurationBuilder().Build();
-        _messageManager = new MessageManager(logger, config);
+        _messageManager = new MessageManager(logger,
+            Microsoft.Extensions.Options.Options.Create(config.GetSection("Bot").Get<BotOptions>() ?? new BotOptions()));
 
         var embed = new EmbedBuilder { Title = "Test Embed", Description = "Test Description" }.Build();
 

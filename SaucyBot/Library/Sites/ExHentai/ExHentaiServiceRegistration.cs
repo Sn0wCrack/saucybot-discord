@@ -1,4 +1,6 @@
 using System.Net;
+using SaucyBot.Extensions;
+using SaucyBot.Options.Sites;
 
 namespace SaucyBot.Library.Sites.ExHentai;
 
@@ -6,12 +8,14 @@ public static class ExHentaiServiceRegistration
 {
     public static IServiceCollection AddExHentaiClient(this IServiceCollection services, IConfiguration configuration)
     {
+        var exHentaiOptions = configuration.BindOrDefault<ExHentaiOptions>("Sites:ExHentai");
+
         var cookieContainer = new CookieContainer();
-        cookieContainer.Add(new Cookie("ipb_member_id", configuration.GetSection("Sites:ExHentai:Cookies:MemberId").Get<string>(), "/", "exhentai.org"));
-        cookieContainer.Add(new Cookie("ipb_pass_hash", configuration.GetSection("Sites:ExHentai:Cookies:PasswordHash").Get<string>(), "/", "exhentai.org"));
+        cookieContainer.Add(new Cookie("ipb_member_id", exHentaiOptions.Cookies.MemberId, "/", "exhentai.org"));
+        cookieContainer.Add(new Cookie("ipb_pass_hash", exHentaiOptions.Cookies.PasswordHash, "/", "exhentai.org"));
 
         services.AddHtmlClient<IExHentaiClient, ExHentaiClient>(
-            new HttpClientHandler
+            () => new HttpClientHandler
             {
                 CookieContainer = cookieContainer,
                 UseCookies = true,

@@ -1,11 +1,13 @@
 using System.Text.RegularExpressions;
 using System.Web;
 using Discord;
+using Microsoft.Extensions.Options;
 using SaucyBot.Common;
 using SaucyBot.Diagnostics;
 using SaucyBot.Extensions;
 using SaucyBot.Library;
 using SaucyBot.Library.Sites.Twitter;
+using SaucyBot.Options.Sites;
 
 namespace SaucyBot.Site.Twitter;
 
@@ -27,20 +29,20 @@ public sealed partial class FxTwitterSite : BaseSite
     public override Color Color => new(0x1DA1F2);
 
     private readonly ILogger<FxTwitterSite> _logger;
-    private readonly IConfiguration _configuration;
+    private readonly FxTwitterOptions _options;
     private readonly HttpClient _httpClient;
     private readonly IFxTwitterClient _client;
     private readonly ISaucyBotMetrics? _metrics;
 
     public FxTwitterSite(
         ILogger<FxTwitterSite> logger,
-        IConfiguration configuration,
+        IOptions<FxTwitterOptions> options,
         IFxTwitterClient client,
         IHttpClientFactory httpClientFactory,
         ISaucyBotMetrics? metrics = null)
     {
         _logger = logger;
-        _configuration = configuration;
+        _options = options.Value;
 
         _httpClient = httpClientFactory.CreateClient("FileDownload");
 
@@ -455,7 +457,7 @@ public sealed partial class FxTwitterSite : BaseSite
             return request.Match.Groups["translate"].Value;
         }
 
-        var autoDetect = _configuration.GetSection("Sites:FxTwitter:AutoDetectLanguage").Get<bool?>() ?? false;
+        var autoDetect = _options.AutoDetectLanguage;
 
         if (!autoDetect)
         {

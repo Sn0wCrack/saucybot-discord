@@ -57,14 +57,14 @@ public sealed class WorkerAdmissionTest
         await channel.WriteAsync(null!, CancellationToken.None);
         await using var queueService = CreateQueueService(queue);
         var processor = new ImmediateInteractionProcessor();
-        var worker = CreateWorker(queue, queueService, channel, processor);
+        var clientHost = CreateClientHost(queue, queueService, channel, processor);
         var interaction = new RecordingInteraction
         {
             CommandName = "unknown",
             IsSlashCommand = false
         };
 
-        await worker.AdmitInteractionAsync(interaction);
+        await clientHost.AdmitInteractionAsync(interaction);
 
         Assert.Equal(1, processor.ProcessedCount);
     }
@@ -404,11 +404,11 @@ public sealed class WorkerAdmissionTest
     {
         var queue = new FakeWorkQueue();
         await using var queueService = CreateQueueService(queue);
-        var worker = CreateWorker(queue, queueService);
+        var clientHost = CreateClientHost(queue, queueService);
         queueService.StopIntake();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-            worker.AdmitMessageAsync(CreateQueuedItem("1-0").Item));
+            clientHost.AdmitMessageAsync(CreateQueuedItem("1-0").Item));
     }
 
     [Fact]
@@ -416,10 +416,10 @@ public sealed class WorkerAdmissionTest
     {
         var queue = new FakeWorkQueue();
         await using var queueService = CreateQueueService(queue);
-        var worker = CreateWorker(queue, queueService);
+        var clientHost = CreateClientHost(queue, queueService);
         queueService.StopIntake();
 
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => worker.AdmitInteractionAsync(
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => clientHost.AdmitInteractionAsync(
             new RecordingInteraction()));
     }
 
@@ -430,10 +430,10 @@ public sealed class WorkerAdmissionTest
         var channel = new InteractionWorkChannel(new WorkQueueOptions { InteractionChannelCapacity = 1 });
         await channel.WriteAsync(null!, CancellationToken.None);
         await using var queueService = CreateQueueService(queue);
-        var worker = CreateWorker(queue, queueService, channel);
+        var clientHost = CreateClientHost(queue, queueService, channel);
         var interaction = new RecordingInteraction { CommandName = "sauce" };
 
-        var admission = worker.AdmitInteractionAsync(interaction);
+        var admission = clientHost.AdmitInteractionAsync(interaction);
         await interaction.Deferred.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         queueService.StopIntake();
@@ -446,10 +446,10 @@ public sealed class WorkerAdmissionTest
         var queue = new FakeWorkQueue();
         var channel = new InteractionWorkChannel(new WorkQueueOptions { InteractionChannelCapacity = 1 });
         await using var queueService = CreateQueueService(queue);
-        var worker = CreateWorker(queue, queueService, channel);
+        var clientHost = CreateClientHost(queue, queueService, channel);
         var interaction = new RecordingInteraction { CommandName = "settings" };
 
-        await worker.AdmitInteractionAsync(interaction);
+        await clientHost.AdmitInteractionAsync(interaction);
 
         Assert.Null(interaction.ResponseKind);
     }
@@ -463,9 +463,9 @@ public sealed class WorkerAdmissionTest
         await using var queueService = CreateQueueService(queue);
         var interaction = new RecordingInteraction { CommandName = "settings" };
         var processor = new ImmediateInteractionProcessor();
-        var worker = CreateWorker(queue, queueService, channel, processor);
+        var clientHost = CreateClientHost(queue, queueService, channel, processor);
 
-        await worker.AdmitInteractionAsync(interaction);
+        await clientHost.AdmitInteractionAsync(interaction);
 
         Assert.Equal(1, processor.ProcessedCount);
         Assert.Equal("initial", interaction.ResponseKind);
@@ -574,30 +574,29 @@ public sealed class WorkerAdmissionTest
         Substitute.For<IInteractionProcessor>(),
         new SaucyBotMetrics());
 
-    private static Worker CreateWorker(
+    private static DiscordClientHost CreateClientHost(
         FakeWorkQueue queue,
         WorkQueueHostedService queueService,
         InteractionWorkChannel? interactionChannel = null,
         IInteractionProcessor? interactionProcessor = null)
     {
         var services = new ServiceCollection().BuildServiceProvider();
-        return new Worker(
-            Microsoft.Extensions.Logging.Abstractions.NullLogger<Worker>.Instance,
-            new ConfigurationBuilder().Build(),
-            Substitute.For<IDatabaseMigrator>(),
-            new InteractionHandler(
-                Microsoft.Extensions.Logging.Abstractions.NullLogger<InteractionHandler>.Instance,
-                services),
+        return new DiscordClientHost(
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<DiscordClientHost>.Instance,
+            new ConfigurationBuilder().Build().BotOptions(),
             queue,
             new SiteRegistry(
                 Microsoft.Extensions.Logging.Abstractions.NullLogger<SiteRegistry>.Instance,
-                new ConfigurationBuilder().Build(),
+                new ConfigurationBuilder().Build().BotOptions(),
                 services,
                 []),
             interactionChannel ?? new InteractionWorkChannel(new WorkQueueOptions()),
             interactionProcessor ?? Substitute.For<IInteractionProcessor>(),
             queueService,
             new SaucyBotMetrics(),
+            new InteractionHandler(
+                Microsoft.Extensions.Logging.Abstractions.NullLogger<InteractionHandler>.Instance,
+                services),
             Substitute.For<IMessageResolver>());
     }
 

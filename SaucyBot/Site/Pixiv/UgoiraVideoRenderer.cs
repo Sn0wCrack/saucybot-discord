@@ -1,8 +1,10 @@
+using Microsoft.Extensions.Options;
+using SaucyBot.Options.Sites;
 using Xabe.FFmpeg;
 
 namespace SaucyBot.Site.Pixiv;
 
-public sealed class UgoiraVideoRenderer(IConfiguration configuration) : IUgoiraVideoRenderer
+public sealed class UgoiraVideoRenderer(IOptions<PixivOptions> pixivOptions) : IUgoiraVideoRenderer
 {
     public async Task RenderAsync(string concatFile, string videoFile, CancellationToken cancellationToken)
     {
@@ -14,8 +16,9 @@ public sealed class UgoiraVideoRenderer(IConfiguration configuration) : IUgoiraV
             .AddParameter("-filter:v \"pad=ceil(iw/2)*2:ceil(ih/2)*2\"")
             .SetOutput(videoFile);
 
-        var codec = configuration.GetSection("Sites:Pixiv:Ugoira:Codec").Get<UgoiraCodec?>() ?? UgoiraCodec.H264;
-        var bitrate = configuration.GetSection("Sites:Pixiv:Ugoira:Bitrate").Get<int?>() ?? 2_000;
+        var ugoiraOptions = pixivOptions.Value.Ugoira;
+        var codec = ugoiraOptions.Codec;
+        var bitrate = ugoiraOptions.Bitrate;
 
         switch (codec)
         {
@@ -26,8 +29,8 @@ public sealed class UgoiraVideoRenderer(IConfiguration configuration) : IUgoiraV
                     .AddParameter($"-b:v {bitrate}k");
                 break;
             case UgoiraCodec.AV1:
-                var preset = configuration.GetSection("Sites:Pixiv:Ugoira:Preset").Get<int?>() ?? 6;
-                var crf = configuration.GetSection("Sites:Pixiv:Ugoira:CRF").Get<int?>() ?? 40;
+                var preset = ugoiraOptions.Preset;
+                var crf = ugoiraOptions.Crf;
 
                 conversion
                     .AddParameter("-c:v libsvtav1")

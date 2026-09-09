@@ -51,7 +51,7 @@ public class BlueskyTest
             .GetPost(Arg.Any<string>(), Arg.Any<string>())
             .Returns(response);
 
-        var site = new BlueskySite(logger, config, client, TimeProvider.System);
+        var site = new BlueskySite(logger, config.BlueskyOptions(), client, TimeProvider.System);
 
         var match = site.Pattern.Matches("https://bsky.app/profile/testuser/post/3kabc123").First();
 
@@ -80,7 +80,7 @@ public class BlueskyTest
             .GetPost(Arg.Any<string>(), Arg.Any<string>())
             .Returns((VixBlueskyResponse?)null);
 
-        var site = new BlueskySite(logger, config, client, TimeProvider.System);
+        var site = new BlueskySite(logger, config.BlueskyOptions(), client, TimeProvider.System);
 
         var match = site.Pattern.Matches("https://bsky.app/profile/testuser/post/3kabc123").First();
 
@@ -120,7 +120,7 @@ public class BlueskyTest
             .GetPost(Arg.Any<string>(), Arg.Any<string>())
             .Returns(response);
 
-        var site = new BlueskySite(logger, config, client, TimeProvider.System);
+        var site = new BlueskySite(logger, config.BlueskyOptions(), client, TimeProvider.System);
 
         var match = site.Pattern.Matches("https://bsky.app/profile/testuser/post/3kabc123").First();
 
@@ -153,7 +153,7 @@ public class BlueskyTest
         var apiResult = new TaskCompletionSource<VixBlueskyResponse?>(TaskCreationOptions.RunContinuationsAsynchronously);
         client.GetPost(Arg.Any<string>(), Arg.Any<string>()).Returns(apiResult.Task);
         var timeProvider = new FakeTimeProvider();
-        var site = new BlueskySite(Substitute.For<ILogger<BlueskySite>>(), config, client, timeProvider);
+        var site = new BlueskySite(Substitute.For<ILogger<BlueskySite>>(), config.BlueskyOptions(), client, timeProvider);
         using var cancellation = new CancellationTokenSource();
         var message = Substitute.For<IMessageContext>();
         var match = site.Pattern.Matches("https://bsky.app/profile/testuser/post/3kabc123").First();
@@ -174,7 +174,7 @@ public class BlueskyTest
         var config = new ConfigurationBuilder().Build();
         var client = Substitute.For<IVixBlueskyClient>();
 
-        var site = new BlueskySite(logger, config, client, TimeProvider.System);
+        var site = new BlueskySite(logger, config.BlueskyOptions(), client, TimeProvider.System);
 
         var content =
             "https://bsky.app/profile/first.bsky.social/post/p1\n" +
@@ -205,7 +205,7 @@ public class BlueskyTest
         var config = new ConfigurationBuilder().Build();
         var client = Substitute.For<IVixBlueskyClient>();
 
-        var site = new BlueskySite(logger, config, client, TimeProvider.System);
+        var site = new BlueskySite(logger, config.BlueskyOptions(), client, TimeProvider.System);
 
         var content = "look https://bsky.app/profile/first.bsky.social/post/p1 and https://bsky.app/profile/second.bsky.social/post/p2 nice";
 

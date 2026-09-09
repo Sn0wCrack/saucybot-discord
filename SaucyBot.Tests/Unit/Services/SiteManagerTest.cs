@@ -31,7 +31,7 @@ public sealed class SiteManagerTest
         using var provider = services.BuildServiceProvider();
         var registry = new SiteRegistry(
             Substitute.For<ILogger<SiteRegistry>>(),
-            new ConfigurationBuilder().Build(),
+            new ConfigurationBuilder().Build().BotOptions(),
             provider,
             [new SiteRegistration(typeof(ContextSite))]);
 
@@ -46,14 +46,14 @@ public sealed class SiteManagerTest
         using var provider = services.BuildServiceProvider();
         var registry = new SiteRegistry(
             Substitute.For<ILogger<SiteRegistry>>(),
-            new ConfigurationBuilder().Build(),
+            new ConfigurationBuilder().Build().BotOptions(),
             provider,
             []);
         var manager = new SiteManager(
             Substitute.For<ILogger<SiteManager>>(),
             new ConfigurationBuilder().AddInMemoryCollection(
-                [new KeyValuePair<string, string?>("Bot:RestrictNSFW", "true")]).Build(),
-            new MessageManager(Substitute.For<ILogger<MessageManager>>(), new ConfigurationBuilder().Build()),
+                [new KeyValuePair<string, string?>("Bot:RestrictNSFW", "true")]).Build().BotOptions(),
+            new MessageManager(Substitute.For<ILogger<MessageManager>>(), new ConfigurationBuilder().Build().BotOptions()),
             Substitute.For<IGuildConfigurationManager>(),
             registry,
             provider,
@@ -105,7 +105,7 @@ public sealed class SiteManagerTest
         using var provider = services.BuildServiceProvider();
         var registry = new SiteRegistry(
             Substitute.For<ILogger<SiteRegistry>>(),
-            new ConfigurationBuilder().Build(),
+            new ConfigurationBuilder().Build().BotOptions(),
             provider,
             [new SiteRegistration(typeof(ContextSite))]);
 
@@ -114,8 +114,8 @@ public sealed class SiteManagerTest
         var manager = new SiteManager(
             Substitute.For<ILogger<SiteManager>>(),
             new ConfigurationBuilder().AddInMemoryCollection(
-                [new KeyValuePair<string, string?>("Bot:RestrictNSFW", "true")]).Build(),
-            new MessageManager(Substitute.For<ILogger<MessageManager>>(), new ConfigurationBuilder().Build()),
+                [new KeyValuePair<string, string?>("Bot:RestrictNSFW", "true")]).Build().BotOptions(),
+            new MessageManager(Substitute.For<ILogger<MessageManager>>(), new ConfigurationBuilder().Build().BotOptions()),
             Substitute.For<IGuildConfigurationManager>(),
             registry,
             provider,
@@ -160,7 +160,7 @@ public sealed class SiteManagerTest
         using var provider = services.BuildServiceProvider();
         var registry = new SiteRegistry(
             Substitute.For<ILogger<SiteRegistry>>(),
-            new ConfigurationBuilder().Build(),
+            new ConfigurationBuilder().Build().BotOptions(),
             provider,
             [new SiteRegistration(typeof(CancellationSite))]);
 
@@ -168,8 +168,8 @@ public sealed class SiteManagerTest
         resolver.IsNsfw(Arg.Any<ulong>()).Returns(false);
         var manager = new SiteManager(
             Substitute.For<ILogger<SiteManager>>(),
-            new ConfigurationBuilder().Build(),
-            new MessageManager(Substitute.For<ILogger<MessageManager>>(), new ConfigurationBuilder().Build()),
+            new ConfigurationBuilder().Build().BotOptions(),
+            new MessageManager(Substitute.For<ILogger<MessageManager>>(), new ConfigurationBuilder().Build().BotOptions()),
             Substitute.For<IGuildConfigurationManager>(),
             registry,
             provider,
@@ -210,10 +210,10 @@ public sealed class SiteManagerTest
         var services = new ServiceCollection().BuildServiceProvider();
         return new SiteManager(
             Substitute.For<ILogger<SiteManager>>(),
-            new ConfigurationBuilder().Build(),
-            new MessageManager(Substitute.For<ILogger<MessageManager>>(), new ConfigurationBuilder().Build()),
+            new ConfigurationBuilder().Build().BotOptions(),
+            new MessageManager(Substitute.For<ILogger<MessageManager>>(), new ConfigurationBuilder().Build().BotOptions()),
             Substitute.For<IGuildConfigurationManager>(),
-            new SiteRegistry(Substitute.For<ILogger<SiteRegistry>>(), new ConfigurationBuilder().Build(), services, []),
+            new SiteRegistry(Substitute.For<ILogger<SiteRegistry>>(), new ConfigurationBuilder().Build().BotOptions(), services, []),
             services,
             Substitute.For<IMessageResolver>());
     }

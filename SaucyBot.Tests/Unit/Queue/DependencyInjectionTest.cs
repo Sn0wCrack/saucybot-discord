@@ -22,6 +22,7 @@ using SaucyBot.Library.Sites.Misskey;
 using SaucyBot.Library.Sites.Newgrounds;
 using SaucyBot.Library.Sites.Pixiv;
 using SaucyBot.Library.Sites.Twitter;
+using SaucyBot.Options;
 using SaucyBot.Queue;
 using SaucyBot.Services;
 using SaucyBot.Services.Cache;
@@ -109,6 +110,7 @@ public sealed class DependencyInjectionTest
                 new KeyValuePair<string, string?>("Sites:Pixiv:SessionCookie", "session"),
             ]).Build();
         services.AddSingleton<IConfiguration>(configuration);
+        services.Configure<BotOptions>(configuration.GetSection("Bot"));
         services.AddSaucyBotDatabase();
         services.AddSaucyBotCache(configuration);
         services.AddSaucyBotServices();
@@ -134,6 +136,7 @@ public sealed class DependencyInjectionTest
         services.AddSingleton<InteractionWorkChannel>();
         services.AddSingleton<WorkQueueHostedService>();
         services.AddSingleton<ISaucyBotMetrics, SaucyBotMetrics>();
+        services.AddSingleton<DiscordClientHost>();
         services.AddSingleton<Worker>();
 
         using var provider = services.BuildServiceProvider(new ServiceProviderOptions
@@ -175,7 +178,7 @@ public sealed class DependencyInjectionTest
         using var provider = services.BuildServiceProvider();
         var registry = new SiteRegistry(
             SubstituteLogger<SiteRegistry>(),
-            configuration,
+            configuration.BotOptions(),
             provider,
             [new SiteRegistration(typeof(PatternSite))]);
 

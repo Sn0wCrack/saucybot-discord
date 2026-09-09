@@ -1,5 +1,7 @@
 using System.Reflection;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Options;
+using SaucyBot.Options;
 using SaucyBot.Site;
 
 namespace SaucyBot.Services;
@@ -7,7 +9,7 @@ namespace SaucyBot.Services;
 public sealed class SiteRegistry
 {
     private readonly ILogger<SiteRegistry> _logger;
-    private readonly IConfiguration _configuration;
+    private readonly BotOptions _botOptions;
 
     private readonly Dictionary<string, SiteMetadata> _sites = new();
 
@@ -15,15 +17,15 @@ public sealed class SiteRegistry
 
     public SiteRegistry(
         ILogger<SiteRegistry> logger,
-        IConfiguration configuration,
+        IOptions<BotOptions> botOptions,
         IServiceProvider serviceProvider,
         IEnumerable<SiteRegistration> registrations
     )
     {
         _logger = logger;
-        _configuration = configuration;
+        _botOptions = botOptions.Value;
 
-        var disabled = _configuration.GetSection("Bot:DisabledSites").Get<string[]>() ?? [];
+        var disabled = _botOptions.DisabledSites;
 
         var siteRegistrations = registrations
             .Select(registration =>

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SaucyBot.Commands;
+using SaucyBot.Options;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Commands;
@@ -68,6 +69,7 @@ public class SauceCommandRegistrationTest
 
         return new ServiceCollection()
             .AddSingleton<IConfiguration>(configuration)
+            .Configure<BotOptions>(configuration.GetSection("Bot"))
             .BuildServiceProvider();
     }
 }

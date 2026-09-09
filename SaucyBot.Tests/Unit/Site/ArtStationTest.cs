@@ -101,7 +101,7 @@ public class ArtStationTest
             .GetProject(Arg.Any<string>())
             .Returns(project);
 
-        var site = new ArtStationSite(logger, config, client);
+        var site = new ArtStationSite(logger, config.ArtStationOptions(), client);
 
         var match = site.Pattern.Matches("https://www.artstation.com/artwork/xYXO5X").First();
 
@@ -130,7 +130,7 @@ public class ArtStationTest
             .GetProject(Arg.Any<string>())
             .Returns((Project?)null);
 
-        var site = new ArtStationSite(logger, config, client);
+        var site = new ArtStationSite(logger, config.ArtStationOptions(), client);
 
         var match = site.Pattern.Matches("https://www.artstation.com/artwork/xYXO5X").First();
 

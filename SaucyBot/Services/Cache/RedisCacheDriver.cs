@@ -1,13 +1,14 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Options;
+using SaucyBot.Options;
 
 namespace SaucyBot.Services.Cache;
 
 public sealed class RedisCacheDriver : ICacheDriver
 {
     private readonly IDistributedCache _cache;
-    private readonly IConfiguration _configuration;
 
     private readonly TimeSpan _defaultExpiry;
 
@@ -17,13 +18,12 @@ public sealed class RedisCacheDriver : ICacheDriver
         WriteIndented = false
     };
 
-    public RedisCacheDriver(IDistributedCache cache, IConfiguration configuration)
+    public RedisCacheDriver(IDistributedCache cache, IOptions<CacheOptions> cacheOptions)
     {
         _cache = cache;
-        _configuration = configuration;
 
         _defaultExpiry = TimeSpan.FromSeconds(
-            _configuration.GetSection("Cache:Redis:DefaultLifetime").Get<int>()
+            cacheOptions.Value.Redis.DefaultLifetime
         );
     }
 

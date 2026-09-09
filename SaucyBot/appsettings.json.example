@@ -11,6 +11,10 @@
       "SamplingRatio": 0.1
     }
   },
+  "Sentry": {
+    "Dsn": "",
+    "SampleRate": 1.0
+  },
   "Serilog": {
     "MinimumLevel": {
       "Default": "Information",
