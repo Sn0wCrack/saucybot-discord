@@ -17,8 +17,8 @@ public sealed class UgoiraVideoRenderer(IOptions<PixivOptions> pixivOptions) : I
             .SetOutput(videoFile);
 
         var ugoiraOptions = pixivOptions.Value.Ugoira;
-        var codec = ugoiraOptions.Codec ?? UgoiraCodec.H264;
-        var bitrate = ugoiraOptions.Bitrate ?? 2_000;
+        var codec = ugoiraOptions.Codec;
+        var bitrate = ugoiraOptions.Bitrate;
 
         switch (codec)
         {
@@ -29,8 +29,8 @@ public sealed class UgoiraVideoRenderer(IOptions<PixivOptions> pixivOptions) : I
                     .AddParameter($"-b:v {bitrate}k");
                 break;
             case UgoiraCodec.AV1:
-                var preset = ugoiraOptions.Preset ?? 6;
-                var crf = ugoiraOptions.Crf ?? 40;
+                var preset = ugoiraOptions.Preset;
+                var crf = ugoiraOptions.Crf;
 
                 conversion
                     .AddParameter("-c:v libsvtav1")

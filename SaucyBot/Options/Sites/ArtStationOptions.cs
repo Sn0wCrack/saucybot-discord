@@ -2,5 +2,5 @@ namespace SaucyBot.Options.Sites;
 
 public sealed class ArtStationOptions
 {
-    public int PostLimit { get; init; }
+    public int PostLimit { get; init; } = 5;
 }

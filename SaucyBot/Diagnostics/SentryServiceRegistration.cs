@@ -18,11 +18,7 @@ public static class SentryServiceRegistration
         SentrySdk.Init(sentry =>
         {
             sentry.Dsn = sentryOptions.Dsn;
-
-            if (sentryOptions.SampleRate is { } sampleRate)
-            {
-                sentry.SampleRate = sampleRate;
-            }
+            sentry.SampleRate = sentryOptions.SampleRate;
         });
 
         return services;

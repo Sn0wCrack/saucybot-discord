@@ -1,4 +1,5 @@
 using Discord;
+using SaucyBot.Library;
 
 namespace SaucyBot.Options;
 
@@ -10,7 +11,7 @@ public sealed class BotOptions
     public int? TotalShards { get; init; }
     public int? MessageCacheSize { get; init; }
     public bool RestrictNSFW { get; init; }
-    public uint MaximumEmbeds { get; init; }
+    public uint MaximumEmbeds { get; init; } = Constants.DefaultMaximumEmbeds;
     public string[] DisabledSites { get; init; } = [];
 
     public DiscordStatusOptions Status { get; init; } = new();

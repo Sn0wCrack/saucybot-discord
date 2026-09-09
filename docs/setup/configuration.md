@@ -81,7 +81,7 @@ server=localhost;user=bot;password=secret;database=bot
 
 | Key | Value Type | Description                                                   | Default |
 |---|---|---------------------------------------------------------------|---|
-| `Driver` | String | Cache driver to use: `redis`, `hybrid` or `memory`.           | `Redis` |
+| `Driver` | String | Cache driver to use: `redis`, `hybrid` or `memory`.           | `Memory` |
 | `Redis.ConnectionString` | String | Valkey/Redis server connection string.                        | `cache:6379` |
 | `Redis.DefaultLifetime` | Integer | Cache entry lifetime in seconds.                              | `3600` |
 | `Memory.DefaultLifetime` | Integer | Cache entry lifetime in seconds when using the memory driver. | `3600` |

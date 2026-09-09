@@ -4,5 +4,5 @@ public sealed class SentryOptions
 {
     public string? Dsn { get; set; }
 
-    public float? SampleRate { get; set; }
+    public float SampleRate { get; set; } = 1.0f;
 }

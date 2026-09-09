@@ -21,7 +21,7 @@ public sealed class CacheManager : ICacheManager
 
     private ICacheDriver CreateDriver(CacheOptions cacheOptions)
     {
-        var driver = cacheOptions.Driver ?? CacheDriverType.Memory;
+        var driver = cacheOptions.Driver;
 
         return _serviceProvider.GetKeyedService<ICacheDriver>(driver)
                ?? throw new InvalidOperationException(
