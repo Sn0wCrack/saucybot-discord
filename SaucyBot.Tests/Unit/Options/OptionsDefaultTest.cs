@@ -77,7 +77,7 @@ public sealed class OptionsDefaultTest
     {
         var options = new SentryOptions();
 
-        Assert.Equal(1.0f, options.SampleRate);
+        Assert.Null(options.SampleRate);
     }
 
     [Fact]
