@@ -21,7 +21,7 @@ public static class HentaiFoundryServiceRegistration
         });
 
         services.AddHtmlClient<IHentaiFoundryClient, HentaiFoundryClient>(
-            new HttpClientHandler
+            () => new HttpClientHandler
             {
                 CookieContainer = cookieContainer,
                 UseCookies = true,

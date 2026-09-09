@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using SaucyBot;
 using SaucyBot.Database;
 using SaucyBot.Diagnostics;
@@ -37,6 +38,8 @@ await Host.CreateDefaultBuilder(args)
         services.Configure<BotOptions>(configuration.GetSection("Bot"));
         services.Configure<DatabaseOptions>(configuration.GetSection("Database"));
         services.Configure<CacheOptions>(configuration.GetSection("Cache"));
+        services.Configure<SentryOptions>(configuration.GetSection("Sentry"));
+        services.Configure<TelemetryOptions>(configuration.GetSection("OpenTelemetry"));
         services.Configure<PixivOptions>(configuration.GetSection("Sites:Pixiv"));
         services.Configure<FxTwitterOptions>(configuration.GetSection("Sites:FxTwitter"));
         services.Configure<MisskeyOptions>(configuration.GetSection("Sites:Misskey"));
@@ -46,7 +49,10 @@ await Host.CreateDefaultBuilder(args)
         services.Configure<HentaiFoundryOptions>(configuration.GetSection("Sites:HentaiFoundry"));
         services.Configure<FurAffinityOptions>(configuration.GetSection("Sites:FurAffinity"));
 
-        services.AddSaucyBotTelemetry(configuration);
+        services.AddSaucyBotTelemetry(
+            Options.Create(configuration.GetSection("OpenTelemetry").Get<TelemetryOptions>() ?? new TelemetryOptions()));
+        services.AddSaucyBotSentry(
+            Options.Create(configuration.GetSection("Sentry").Get<SentryOptions>() ?? new SentryOptions()));
 
         services.AddSaucyBotDatabase();
 

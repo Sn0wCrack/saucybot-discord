@@ -6,7 +6,7 @@ internal static class HttpClientRegistrationExtensions
 {
     extension(IServiceCollection services)
     {
-        public IHttpClientBuilder AddHtmlClient<TInterface, TImplementation>(HttpClientHandler? handler = null)
+        public IHttpClientBuilder AddHtmlClient<TInterface, TImplementation>(Func<HttpClientHandler>? handlerFactory = null)
             where TInterface : class
             where TImplementation : class, TInterface
         {
@@ -31,8 +31,7 @@ internal static class HttpClientRegistrationExtensions
                 client.DefaultRequestHeaders.Add("Upgrade-Insecure-Requests", "1");
             })
             .SetHandlerLifetime(TimeSpan.FromMinutes(2) + TimeSpan.FromSeconds(Random.Shared.Next(0, 31)))
-            .ConfigurePrimaryHttpMessageHandler(() => handler ?? new HttpClientHandler { AllowAutoRedirect = true });
-
+            .ConfigurePrimaryHttpMessageHandler(() => handlerFactory?.Invoke() ?? new HttpClientHandler { AllowAutoRedirect = true });
         }
 
         public IHttpClientBuilder AddJsonApiClient<TInterface, TImplementation>(string userAgent = "SaucyBot/0.0.0 (https://github.com/Sn0wCrack/saucybot-discord)")

@@ -106,7 +106,7 @@ Queue uses a separate Redis-compatible database, such as Redis or Valkey, for st
 
 ### OpenTelemetry
 
-OpenTelemtry Configuraiton, allows for sending debugging metrics to an OTLP compatible server.
+OpenTelemetry configuration allows for sending debugging metrics to an OTLP compatible server.
 
 | Configuration key | Environment variable | Description |
 |---|---|---|
@@ -118,6 +118,15 @@ OpenTelemtry Configuraiton, allows for sending debugging metrics to an OTLP comp
 | `OpenTelemetry:ExportIntervalMilliseconds` | `OpenTelemetry__ExportIntervalMilliseconds` | Periodic metrics export interval. |
 | `OpenTelemetry:Tracing:Enabled` | `OpenTelemetry__Tracing__Enabled` | Enables sampled tracing. |
 | `OpenTelemetry:Tracing:SamplingRatio` | `OpenTelemetry__Tracing__SamplingRatio` | Trace sampling ratio from `0` to `1`. |
+
+### Sentry
+
+Sentry collects error reports from the bot at runtime. Leave `Dsn` empty to disable Sentry.
+
+| Configuration key | Environment variable | Description |
+|---|---|---|
+| `Sentry:Dsn` | `Sentry__Dsn` | Sentry project DSN. Empty string disables Sentry. |
+| `Sentry:SampleRate` | `Sentry__SampleRate` | Fraction of events to report, from `0` to `1`. |
 
 ### Sites
 

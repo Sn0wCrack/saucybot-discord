@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using OpenTelemetry;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
@@ -8,47 +9,48 @@ namespace SaucyBot.Diagnostics;
 
 public static class TelemetryServiceRegistration
 {
-    public static IServiceCollection AddSaucyBotTelemetry(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddSaucyBotTelemetry(this IServiceCollection services, IOptions<TelemetryOptions> options)
     {
-        var options = configuration.GetSection("OpenTelemetry").Get<TelemetryOptions>() ?? new();
+        var telemetry = options.Value;
+
         services.AddSingleton<ISaucyBotMetrics, SaucyBotMetrics>();
 
-        if (!options.Enabled)
+        if (!telemetry.Enabled)
         {
             return services;
         }
 
         var builder = services
             .AddOpenTelemetry()
-            .ConfigureResource(resource => resource.AddService(options.ServiceName))
+            .ConfigureResource(resource => resource.AddService(telemetry.ServiceName))
             .WithMetrics(metrics => metrics
                 .AddMeter(SaucyBotMetrics.MeterName)
                 .AddRuntimeInstrumentation()
                 .AddHttpClientInstrumentation()
-                .AddOtlpExporter((exporter, reader) => ConfigureExporter(exporter, reader, options)));
+                .AddOtlpExporter((exporter, reader) => ConfigureExporter(exporter, reader, telemetry)));
 
-        if (options.Tracing.Enabled)
+        if (telemetry.Tracing.Enabled)
         {
             builder.WithTracing(tracing => tracing
                 .AddSource(QueueTelemetry.ActivitySourceName)
                 .AddHttpClientInstrumentation()
-                .SetSampler(new TraceIdRatioBasedSampler(Math.Clamp(options.Tracing.SamplingRatio, 0, 1)))
-                .AddOtlpExporter(exporter => ConfigureExporter(exporter, options)));
+                .SetSampler(new TraceIdRatioBasedSampler(Math.Clamp(telemetry.Tracing.SamplingRatio, 0, 1)))
+                .AddOtlpExporter(exporter => ConfigureExporter(exporter, telemetry)));
         }
 
         return services;
     }
 
-    private static void ConfigureExporter(OtlpExporterOptions exporter, MetricReaderOptions reader, TelemetryOptions options)
+    private static void ConfigureExporter(OtlpExporterOptions exporter, MetricReaderOptions reader, TelemetryOptions telemetry)
     {
-        ConfigureExporter(exporter, options);
-        reader.PeriodicExportingMetricReaderOptions.ExportIntervalMilliseconds = options.ExportIntervalMilliseconds;
+        ConfigureExporter(exporter, telemetry);
+        reader.PeriodicExportingMetricReaderOptions.ExportIntervalMilliseconds = telemetry.ExportIntervalMilliseconds;
     }
 
-    private static void ConfigureExporter(OtlpExporterOptions exporter, TelemetryOptions options)
+    private static void ConfigureExporter(OtlpExporterOptions exporter, TelemetryOptions telemetry)
     {
-        exporter.Endpoint = new Uri(options.OtlpEndpoint);
-        exporter.Protocol = Enum.Parse<OtlpExportProtocol>(options.OtlpProtocol, ignoreCase: true);
-        exporter.Headers = options.OtlpHeaders;
+        exporter.Endpoint = new Uri(telemetry.OtlpEndpoint);
+        exporter.Protocol = Enum.Parse<OtlpExportProtocol>(telemetry.OtlpProtocol, ignoreCase: true);
+        exporter.Headers = telemetry.OtlpHeaders;
     }
 }

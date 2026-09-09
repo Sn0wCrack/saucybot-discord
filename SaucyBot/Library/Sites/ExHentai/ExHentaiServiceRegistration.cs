@@ -14,7 +14,7 @@ public static class ExHentaiServiceRegistration
         cookieContainer.Add(new Cookie("ipb_pass_hash", exHentaiOptions.Cookies.PasswordHash, "/", "exhentai.org"));
 
         services.AddHtmlClient<IExHentaiClient, ExHentaiClient>(
-            new HttpClientHandler
+            () => new HttpClientHandler
             {
                 CookieContainer = cookieContainer,
                 UseCookies = true,

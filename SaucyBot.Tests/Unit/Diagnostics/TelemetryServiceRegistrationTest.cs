@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 using SaucyBot.Diagnostics;
@@ -27,7 +28,7 @@ public sealed class TelemetryServiceRegistrationTest
             .Build();
         var services = new ServiceCollection();
 
-        services.AddSaucyBotTelemetry(configuration);
+        services.AddSaucyBotTelemetry(BindOptions(configuration));
         using var provider = services.BuildServiceProvider();
 
         var options = configuration.GetSection("OpenTelemetry").Get<TelemetryOptions>();
@@ -56,7 +57,7 @@ public sealed class TelemetryServiceRegistrationTest
             .Build();
         var services = new ServiceCollection();
 
-        services.AddSaucyBotTelemetry(configuration);
+        services.AddSaucyBotTelemetry(BindOptions(configuration));
         using var provider = services.BuildServiceProvider();
 
         Assert.Null(provider.GetService<MeterProvider>());
@@ -77,9 +78,13 @@ public sealed class TelemetryServiceRegistrationTest
             .Build();
         var services = new ServiceCollection();
 
-        services.AddSaucyBotTelemetry(configuration);
+        services.AddSaucyBotTelemetry(BindOptions(configuration));
         using var provider = services.BuildServiceProvider();
 
         Assert.NotNull(provider.GetService<TracerProvider>());
     }
+
+    private static IOptions<TelemetryOptions> BindOptions(IConfiguration configuration) =>
+        Microsoft.Extensions.Options.Options.Create(
+            configuration.GetSection("OpenTelemetry").Get<TelemetryOptions>() ?? new TelemetryOptions());
 }

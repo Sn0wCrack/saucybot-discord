@@ -30,7 +30,7 @@ public static class FurAffinityServiceRegistration
         });
 
         services.AddHtmlClient<IFurAffinityClient, FurAffinityDirect>(
-            new HttpClientHandler
+            () => new HttpClientHandler
             {
                 CookieContainer = cookieContainer,
                 UseCookies = true,
