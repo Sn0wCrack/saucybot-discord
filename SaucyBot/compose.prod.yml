@@ -9,6 +9,7 @@ services:
       - .env
     volumes:
       - ./appsettings.json:/app/appsettings.json
+    restart: unless-stopped
     depends_on:
       cache:
         condition: service_healthy

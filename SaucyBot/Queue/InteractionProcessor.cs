@@ -10,12 +10,10 @@ public interface IInteractionProcessor
 public sealed class InteractionProcessor : IInteractionProcessor
 {
     private readonly InteractionHandler _handler;
-    private readonly IServiceScopeFactory _scopeFactory;
 
-    public InteractionProcessor(InteractionHandler handler, IServiceScopeFactory scopeFactory)
+    public InteractionProcessor(InteractionHandler handler)
     {
         _handler = handler;
-        _scopeFactory = scopeFactory;
     }
 
     public async Task ProcessAsync(IInteractionWorkItem interaction, CancellationToken cancellationToken)
@@ -27,7 +25,6 @@ public sealed class InteractionProcessor : IInteractionProcessor
             throw new InvalidOperationException("Interaction work item has no socket interaction.");
         }
 
-        using var scope = _scopeFactory.CreateScope();
-        await _handler.ExecuteAsync(interaction.SocketInteraction, scope.ServiceProvider, cancellationToken);
+        await _handler.ExecuteAsync(interaction.SocketInteraction, cancellationToken);
     }
 }

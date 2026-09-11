@@ -69,11 +69,12 @@ public sealed class DependencyInjectionTest
     }
 
     [Fact]
-    public void InteractionProcessorCreatesScopesThroughTheScopeFactory()
+    public void InteractionProcessorReliesOnTheFrameworkForScoping()
     {
         var constructor = typeof(InteractionProcessor).GetConstructors().Single();
 
-        Assert.Contains(constructor.GetParameters(), parameter => parameter.ParameterType == typeof(IServiceScopeFactory));
+        Assert.Contains(constructor.GetParameters(), parameter => parameter.ParameterType == typeof(InteractionHandler));
+        Assert.DoesNotContain(constructor.GetParameters(), parameter => parameter.ParameterType == typeof(IServiceScopeFactory));
         Assert.DoesNotContain(constructor.GetParameters(), parameter => parameter.ParameterType == typeof(IServiceProvider));
     }
 
