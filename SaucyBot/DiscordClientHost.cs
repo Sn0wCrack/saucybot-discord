@@ -293,7 +293,13 @@ public sealed class DiscordClientHost
 
     private async Task HandleShardDisconnectedAsync(Exception exception, DiscordSocketClient client)
     {
-        _logger.LogError(exception, "[{Source}] {Message}", "Shard #{client.ShardId}", "Disconnected");
+        if (exception is GatewayReconnectException)
+        {
+            _logger.LogInformation("[{Source}] {Message}", $"Shard #{client.ShardId}", "Reconnecting (server requested a reconnect)");
+            return;
+        }
+
+        _logger.LogError(exception, "[{Source}] {Message}", $"Shard #{client.ShardId}", "Disconnected");
     }
 
     private Task HandleLogAsync(LogMessage message)
@@ -309,7 +315,13 @@ public sealed class DiscordClientHost
             _ => LogLevel.Information
         };
 
-        _logger.Log(severity, message.Exception, "[{Source}] {Message}", message.Source, message.Message);
+        if (message.Exception is GatewayReconnectException)
+        {
+            _logger.LogInformation("[{Source}] {Message}", message.Source, message.Message ?? message.Exception.Message);
+            return Task.CompletedTask;
+        }
+
+        _logger.Log(severity, message.Exception, "[{Source}] {Message}", message.Source, message.Message ?? message.Exception?.Message);
 
         return Task.CompletedTask;
     }
