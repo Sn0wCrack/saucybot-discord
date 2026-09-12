@@ -13,6 +13,7 @@ public static class GuildConfigurationExtensions
     {
         var guildConfiguration = await context.Set<GuildConfiguration>()
             .Include(gc => gc.RestrictedRoles)
+            .Include(gc => gc.DisabledSites)
             .FirstOrDefaultAsync(gc => gc.GuildId == guildId);
 
         if (guildConfiguration is not null)
