@@ -1,6 +1,6 @@
 services:
   bot:
-    image: ghcr.io/sn0wcrack/saucybot-discord:2
+    image: ghcr.io/sn0wcrack/saucybot-discord:2@sha256:bb4acc5b15b5a0d57bd5d8a47524e65895c05b04363eddd6af1be42b271e8358
     user: 1000:1000
     deploy:
       resources:
