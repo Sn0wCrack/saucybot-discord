@@ -82,7 +82,7 @@ public class SettingsModule : InteractionModuleBase<SocketInteractionContext<Soc
                 "disabled_sites",
                 new SelectMenuBuilder("disabled_sites")
                     .WithMinValues(0)
-                    .WithMaxValues(Math.Min(siteOptions.Count, SettingsModal.MaxDisabledSites))
+                    .WithMaxValues(Math.Min(siteOptions.Count, SelectMenuBuilder.MaxOptionCount))
                     .WithPlaceholder("Select sites to disable in this server")
                     .WithOptions(siteOptions),
                 "Disabled Sites");
@@ -143,7 +143,7 @@ public class SettingsModal : IModal
 
     [InputLabel("Disabled Sites")]
     [RequiredInput(false)]
-    [ModalSelectMenu("disabled_sites", minValues: 0, maxValues: MaxDisabledSites)]
+    [ModalSelectMenu("disabled_sites", minValues: 0, maxValues: SelectMenuBuilder.MaxOptionCount)]
     public string[] DisabledSites { get; set; } = [];
 
     public SettingsModal() { }
@@ -167,8 +167,6 @@ public class SettingsModal : IModal
             .ToArray();
     }
 
-    public const int MaxDisabledSites = 25;
-
     public static List<SelectMenuOptionBuilder> CreateSiteOptions(
         IEnumerable<string> enabledSites,
         IEnumerable<string> disabledSites)
@@ -180,7 +178,7 @@ public class SettingsModal : IModal
                 .WithLabel(site)
                 .WithValue(site)
                 .WithDefault(disabled.Contains(site)))
-            .Take(MaxDisabledSites)
+            .Take(SelectMenuBuilder.MaxOptionCount)
             .ToList();
     }
 
