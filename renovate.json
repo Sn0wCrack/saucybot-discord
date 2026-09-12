@@ -10,5 +10,12 @@
       ],
       "minimumReleaseAge": "3 days"
     }
+  ],
+  "ignorePaths": [
+    "**/node_modules/**",
+    "**/bower_components/**",
+    "**/compose.yml",
+    "**/compose.prod.yml",
+    "**/compose.dev.yml"
   ]
 }
