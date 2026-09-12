@@ -180,6 +180,7 @@ public class SettingsModal : IModal
                 .WithLabel(site)
                 .WithValue(site)
                 .WithDefault(disabled.Contains(site)))
+            .Take(MaxDisabledSites)
             .ToList();
     }
 
