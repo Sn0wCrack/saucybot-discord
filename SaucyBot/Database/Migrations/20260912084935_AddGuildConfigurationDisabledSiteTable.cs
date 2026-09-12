@@ -15,8 +15,8 @@ namespace SaucyBot.Database.Migrations
                 name: "guild_configuration_disabled_sites",
                 columns: table => new
                 {
-                    id = table.Column<Guid>(type: "uuid(36)", nullable: false, collation: "ascii_general_ci"),
-                    guild_configuration_id = table.Column<Guid>(type: "uuid(36)", nullable: false, collation: "ascii_general_ci"),
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    guild_configuration_id = table.Column<Guid>(type: "uuid", nullable: false),
                     site = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     created_at = table.Column<DateTime>(type: "datetime(6)", nullable: true),
