@@ -62,4 +62,30 @@ public class SettingsModalTest
 
         Assert.Empty(resolved);
     }
+
+    [Fact]
+    public void CreateSiteOptionsDefaultsToExistingDisabledSites()
+    {
+        var options = SettingsModal.CreateSiteOptions(
+            ["ArtStation", "Pixiv"],
+            ["pixiv"]);
+
+        Assert.Equal(2, options.Count);
+        Assert.Equal("ArtStation", options[0].Value);
+        Assert.False(options[0].IsDefault);
+        Assert.Equal("Pixiv", options[1].Value);
+        Assert.True(options[1].IsDefault);
+    }
+
+    [Fact]
+    public void ResolveDisabledSitesMapsIdentifiersToRecords()
+    {
+        var id = Guid.NewGuid();
+        var sites = SettingsModal.ResolveDisabledSites(id, ["Pixiv", "Pixiv", "fxtwitter"]);
+
+        Assert.Equal(2, sites.Count);
+        Assert.Equal(id, sites[0].GuildConfigurationId);
+        Assert.Equal("Pixiv", sites[0].Site);
+        Assert.Equal("fxtwitter", sites[1].Site);
+    }
 }

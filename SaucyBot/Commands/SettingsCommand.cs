@@ -9,10 +9,12 @@ namespace SaucyBot.Commands;
 public class SettingsModule : InteractionModuleBase<SocketInteractionContext<SocketInteraction>>
 {
     private readonly IGuildConfigurationManager _configurationManager;
+    private readonly SiteRegistry _siteRegistry;
 
-    public SettingsModule(IGuildConfigurationManager configurationManager)
+    public SettingsModule(IGuildConfigurationManager configurationManager, SiteRegistry siteRegistry)
     {
         _configurationManager = configurationManager;
+        _siteRegistry = siteRegistry;
     }
 
     [SlashCommand("settings", "Open the server configuration modal.")]
@@ -39,9 +41,54 @@ public class SettingsModule : InteractionModuleBase<SocketInteractionContext<Soc
             guildConfiguration.RestrictedRoles,
             Context.Guild.GetRole);
 
-        var modal = new SettingsModal(guildConfiguration, restrictedRoles);
+        var modal = BuildSettingsModal(guildConfiguration, restrictedRoles);
 
-        await RespondWithModalAsync("settings_modal", modal);
+        await Context.Interaction.RespondWithModalAsync(modal.Build());
+    }
+
+    private ModalBuilder BuildSettingsModal(GuildConfiguration guildConfiguration, IRole[] restrictedRoles)
+    {
+        var disabledSites = guildConfiguration.DisabledSites
+            .Select(site => site.Site)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var modal = new ModalBuilder()
+            .WithCustomId("settings_modal")
+            .WithTitle(new SettingsModal().Title)
+            .AddCheckBox(
+                "should_restrict_to_roles",
+                "Restrict Roles",
+                guildConfiguration.RestrictToRoles);
+
+        var roleSelect = new SelectMenuBuilder("restricted_roles")
+            .WithType(ComponentType.RoleSelect)
+            .WithMinValues(0)
+            .WithMaxValues(25);
+
+        if (restrictedRoles.Length > 0)
+        {
+            roleSelect.WithDefaultValues(restrictedRoles.Select(SelectMenuDefaultValue.FromRole).ToArray());
+        }
+
+        modal.AddSelectMenu("restricted_roles", roleSelect, "Whitelisted Roles");
+
+        var siteOptions = SettingsModal.CreateSiteOptions(
+            _siteRegistry.Sites.Select(site => site.Key),
+            disabledSites);
+
+        if (siteOptions.Count > 0)
+        {
+            modal.AddSelectMenu(
+                "disabled_sites",
+                new SelectMenuBuilder("disabled_sites")
+                    .WithMinValues(0)
+                    .WithMaxValues(Math.Min(siteOptions.Count, SettingsModal.MaxDisabledSites))
+                    .WithPlaceholder("Select sites to disable in this server")
+                    .WithOptions(siteOptions),
+                "Disabled Sites");
+        }
+
+        return modal;
     }
 
     [ModalInteraction("settings_modal")]
@@ -72,6 +119,8 @@ public class SettingsModule : InteractionModuleBase<SocketInteractionContext<Soc
 
         guildConfiguration.RestrictedRoles = allowedRoles.ToList();
 
+        guildConfiguration.DisabledSites = SettingsModal.ResolveDisabledSites(guildConfiguration.Id, form.DisabledSites);
+
         await _configurationManager.UpdateGuildConfiguration(guildConfiguration);
 
         await RespondAsync("✅ Settings updated successfully!", ephemeral: true);
@@ -92,6 +141,11 @@ public class SettingsModal : IModal
     [ModalRoleSelect("restricted_roles", minValues: 0, maxValues: 25)]
     public IRole[] RestrictedRoles { get; set; } = [];
 
+    [InputLabel("Disabled Sites")]
+    [RequiredInput(false)]
+    [ModalSelectMenu("disabled_sites", minValues: 0, maxValues: MaxDisabledSites)]
+    public string[] DisabledSites { get; set; } = [];
+
     public SettingsModal() { }
 
     public SettingsModal(GuildConfiguration guildConfiguration, IRole[] restrictedRoles)
@@ -111,5 +165,35 @@ public class SettingsModal : IModal
             .DistinctBy(x => x!.Id)
             .Cast<IRole>()
             .ToArray();
+    }
+
+    public const int MaxDisabledSites = 25;
+
+    public static List<SelectMenuOptionBuilder> CreateSiteOptions(
+        IEnumerable<string> enabledSites,
+        IEnumerable<string> disabledSites)
+    {
+        var disabled = disabledSites.ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        return enabledSites
+            .Select(site => new SelectMenuOptionBuilder()
+                .WithLabel(site)
+                .WithValue(site)
+                .WithDefault(disabled.Contains(site)))
+            .ToList();
+    }
+
+    public static List<GuildConfigurationDisabledSite> ResolveDisabledSites(
+        Guid guildConfigurationId,
+        IEnumerable<string> siteIdentifiers)
+    {
+        return siteIdentifiers
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Select(site => new GuildConfigurationDisabledSite
+            {
+                GuildConfigurationId = guildConfigurationId,
+                Site = site,
+            })
+            .ToList();
     }
 }
