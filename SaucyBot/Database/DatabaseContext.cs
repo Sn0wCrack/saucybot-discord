@@ -15,6 +15,8 @@ public sealed class DatabaseContext : DbContext
 
     public DbSet<GuildConfigurationRestrictedRole> GuildConfigurationRestrictedRoles => Set<GuildConfigurationRestrictedRole>();
 
+    public DbSet<GuildConfigurationDisabledSite> GuildConfigurationDisabledSites => Set<GuildConfigurationDisabledSite>();
+
     public DatabaseContext(IOptions<DatabaseOptions> databaseOptions)
     {
         _connectionString = databaseOptions.Value.ConnectionString;

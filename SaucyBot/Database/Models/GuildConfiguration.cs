@@ -22,6 +22,12 @@ public sealed class GuildConfiguration
 
 
     public ICollection<GuildConfigurationRestrictedRole> RestrictedRoles { get; set; } = [];
+
+    public ICollection<GuildConfigurationDisabledSite> DisabledSites { get; set; } = [];
+
+    public bool IsSiteDisabled(string siteIdentifier) =>
+        DisabledSites.Any(site =>
+            string.Equals(site.Site, siteIdentifier, StringComparison.OrdinalIgnoreCase));
 }
 
 public class GuildConfigurationModelConfiguration : IEntityTypeConfiguration<GuildConfiguration>
