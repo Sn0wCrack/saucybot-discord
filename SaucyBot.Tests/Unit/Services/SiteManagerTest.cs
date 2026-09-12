@@ -190,6 +190,44 @@ public sealed class SiteManagerTest
         await Assert.ThrowsAsync<OperationCanceledException>(() => manager.HandleAsync(item, cancellation.Token));
     }
 
+    [Fact]
+    public async Task MatchExcludesGuildDisabledSites()
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton(new AlphaSite());
+        services.AddSingleton(new BetaSite());
+        using var provider = services.BuildServiceProvider();
+        var registry = new SiteRegistry(
+            Substitute.For<ILogger<SiteRegistry>>(),
+            new ConfigurationBuilder().Build().BotOptions(),
+            provider,
+            [new SiteRegistration(typeof(AlphaSite)), new SiteRegistration(typeof(BetaSite))]);
+
+        var manager = new SiteManager(
+            Substitute.For<ILogger<SiteManager>>(),
+            new ConfigurationBuilder().Build().BotOptions(),
+            new MessageManager(Substitute.For<ILogger<MessageManager>>(), new ConfigurationBuilder().Build().BotOptions()),
+            Substitute.For<IGuildConfigurationManager>(),
+            registry,
+            provider,
+            Substitute.For<IMessageResolver>());
+
+        var message = Substitute.For<IMessageContext>();
+        message.CleanContent.Returns("https://example.test");
+        var configuration = new GuildConfiguration
+        {
+            DisabledSites =
+            [
+                new GuildConfigurationDisabledSite { Site = "Beta" }
+            ]
+        };
+
+        var results = await manager.Match(message, configuration);
+
+        var result = Assert.Single(results);
+        Assert.Equal("Alpha", result.Site);
+    }
+
     [SiteIdentifier("Context")]
     public class ContextSite : IBaseSite
     {
@@ -203,6 +241,24 @@ public sealed class SiteManagerTest
     public class CancellationSite : ContextSite
     {
         public override string Identifier => "Cancellation";
+    }
+
+    [SiteIdentifier("Alpha")]
+    public class AlphaSite : IBaseSite
+    {
+        public string Identifier => "Alpha";
+        public Color Color => Color.Default;
+        public Regex Pattern { get; } = new("https://example.test");
+        public Task<ProcessResponse?> Process(ProcessRequest request) => Task.FromResult<ProcessResponse?>(null);
+    }
+
+    [SiteIdentifier("Beta")]
+    public class BetaSite : IBaseSite
+    {
+        public string Identifier => "Beta";
+        public Color Color => Color.Default;
+        public Regex Pattern { get; } = new("https://example.test");
+        public Task<ProcessResponse?> Process(ProcessRequest request) => Task.FromResult<ProcessResponse?>(null);
     }
 
     private static SiteManager CreateManager()
