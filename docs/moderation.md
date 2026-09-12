@@ -65,10 +65,21 @@ When restriction is enabled, a link posted by an un-whitelisted user is simply n
 1. Run `/settings` in your server (guild) channel.
 2. Toggle **Restrict Roles** on if you want to limit who can generate embeds.
 3. Use the **Whitelisted Roles** picker to select the role(s) that are allowed to embed content.
-4. Press submit.
+4. Use the **Disabled Sites** picker to select any sites you do not want embedded in this server.
+5. Press submit.
 
 > [!NOTE]
 > The whitelist grants a **role-based** permission to *generate embeds*. To remove the ability for a setting change to take effect on a per-role or per-user basis, Discord's own role/permission hierarchy still applies for *who may post in a channel at all* — the whitelist only controls who the bot will respond to.
+
+### The "Disabled Sites" option
+
+The modal also contains a **Disabled Sites** multi-select (up to 25 sites):
+
+- Every site the bot currently has enabled appears as an option.
+- Selecting a site stops SaucyBot from embedding links to that site in your server.
+- Clearing a previously-selected site re-enables it.
+- A message that contains only links to disabled sites is ignored by the bot.
+- Sites that are disabled for the whole bot (via the `Bot:DisabledSites` setting in the bot configuration, `docs/setup/configuration.md`) do not appear in this list.
 
 ---
 
