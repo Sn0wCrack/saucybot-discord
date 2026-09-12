@@ -1,10 +1,14 @@
 services:
   bot:
-    build:
-      dockerfile: Containerfile
-      context: .
-      args:
-        CONFIGURATION: 'Release'
+    image: ghcr.io/sn0wcrack/saucybot-discord:2
+    user: 1000:1000
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+    ulimits:
+      nofile: 100000
+      memlock: -1
     env_file:
       - .env
     volumes:
@@ -17,9 +21,13 @@ services:
         condition: service_healthy
       database:
         condition: service_healthy
+      otel-collector:
+        condition: service_started
 
   database:
     image: docker.io/library/mariadb:12.3@sha256:dd9b303aed4f4890ed09f766d8ca9ddfd176c0c6f6267feff53b3192ec65a979
+    ulimits:
+      memlock: -1
     env_file:
       - .env
     ports:
@@ -37,6 +45,8 @@ services:
   cache:
     image: docker.io/valkey/valkey:9-alpine@sha256:a0dbf4c1d5708782907c10e2c72deff317518518b5288a58416981d9db95d30b
     command: [ 'valkey-server', '--maxmemory', '512mb', '--maxmemory-policy', 'allkeys-lru']
+    ulimits:
+      memlock: -1
     ports:
       - '6379:6379'
     volumes:
@@ -51,6 +61,8 @@ services:
   queue:
     image: docker.io/valkey/valkey:9-alpine@sha256:a0dbf4c1d5708782907c10e2c72deff317518518b5288a58416981d9db95d30b
     command: ['valkey-server', '--maxmemory', '512mb', '--maxmemory-policy', 'noeviction']
+    ulimits:
+      memlock: -1
     volumes:
         - queue:/data
     restart: unless-stopped
@@ -60,6 +72,16 @@ services:
       retries: 10
       start_period: 10s
 
+  otel-collector:
+    image: docker.io/otel/opentelemetry-collector-contrib:0.160.0@sha256:799dc6cf12c96192af37b5bdba804da8c10b3bc563b43cb90c3f3c58d9572ad6
+    command: ['--config=/etc/otelcol-contrib/config.yaml']
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml:ro
+    ports:
+      - '8889:8889'
+    restart: unless-stopped
+
 volumes:
   cache:
   database:
+  queue:

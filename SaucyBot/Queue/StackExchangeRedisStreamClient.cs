@@ -1,13 +1,16 @@
+using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 
 namespace SaucyBot.Queue;
 
 public sealed class StackExchangeRedisStreamClient(
     IConnectionMultiplexer connection,
-    WorkQueueOptions options) : IRedisStreamClient
+    WorkQueueOptions options,
+    ILogger<StackExchangeRedisStreamClient> logger) : IRedisStreamClient
 {
     private readonly IDatabase _database = connection.GetDatabase();
     private readonly WorkQueueOptions _options = options;
+    private readonly ILogger<StackExchangeRedisStreamClient> _logger = logger;
 
     public async Task EnsureGroupAsync(CancellationToken cancellationToken)
     {
@@ -33,8 +36,12 @@ public sealed class StackExchangeRedisStreamClient(
                 .WaitAsync(cancellationToken);
             return id.ToString();
         }
-        catch (RedisServerException exception) when (exception.Message.Contains("MISCONF", StringComparison.OrdinalIgnoreCase)
-            || exception.Message.Contains("OOM", StringComparison.OrdinalIgnoreCase))
+        catch
+            (RedisServerException exception)
+        when (
+            exception.Message.Contains("MISCONF", StringComparison.OrdinalIgnoreCase) ||
+            exception.Message.Contains("OOM", StringComparison.OrdinalIgnoreCase)
+        )
         {
             throw new RedisBackpressureException(exception.Message);
         }
@@ -55,7 +62,21 @@ public sealed class StackExchangeRedisStreamClient(
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            entries = await read;
+            using var grace = new CancellationTokenSource(_options.PendingReadTimeout);
+            try
+            {
+                entries = await read.WaitAsync(grace.Token);
+            }
+            catch (Exception exception) when (exception is OperationCanceledException or RedisException or TimeoutException)
+            {
+                _logger.LogWarning(
+                    exception,
+                    "Stream read for consumer {Consumer} did not finish within {PendingReadTimeout}.",
+                    consumer,
+                    _options.PendingReadTimeout);
+                return null;
+            }
+
             foreach (var entry in entries)
             {
                 await _database.StreamAcknowledgeAsync(_options.StreamName, _options.ConsumerGroup, entry.Id);

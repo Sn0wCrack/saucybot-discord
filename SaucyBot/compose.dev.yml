@@ -30,7 +30,7 @@ services:
       - database:/var/lib/mysql
     restart: unless-stopped
     healthcheck:
-      test: ['CMD', 'healthcheck.sh', '--connect', '--innodb_initialized']
+      test: [ 'CMD', 'healthcheck.sh', '--connect', '--innodb_initialized' ]
       start_period: 10s
       interval: 10s
       timeout: 5s
@@ -52,11 +52,11 @@ services:
 
   queue:
     image: docker.io/valkey/valkey:9-alpine@sha256:a0dbf4c1d5708782907c10e2c72deff317518518b5288a58416981d9db95d30b
-    command: ['valkey-server', '--bind', '0.0.0.0']
+    command: [ 'valkey-server', '--bind', '0.0.0.0' ]
     ports:
-        - '6380:6379'
+      - '6380:6379'
     volumes:
-        - queue:/data
+      - queue:/data
     restart: unless-stopped
     healthcheck:
       test: '[ $(valkey-cli -h 127.0.0.1 ping) = "PONG" ]'
@@ -66,7 +66,7 @@ services:
 
   otel-collector:
     image: docker.io/otel/opentelemetry-collector-contrib:0.160.0@sha256:799dc6cf12c96192af37b5bdba804da8c10b3bc563b43cb90c3f3c58d9572ad6
-    command: ['--config=/etc/otelcol-contrib/config.yaml']
+    command: [ '--config=/etc/otelcol-contrib/config.yaml' ]
     volumes:
       - ./otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml:ro
     ports:

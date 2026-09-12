@@ -11,6 +11,7 @@ public sealed record WorkQueueOptions
     public int InteractionWorkerCount { get; init; } = 5;
     public int InteractionChannelCapacity { get; init; } = 100;
     public TimeSpan ShutdownDrainTimeout { get; init; } = TimeSpan.FromSeconds(30);
+    public TimeSpan PendingReadTimeout { get; init; } = TimeSpan.FromSeconds(1);
     public int MalformedCleanupMaxAttempts { get; init; } = 3;
     public TimeSpan MalformedCleanupMaxDelay { get; init; } = TimeSpan.FromSeconds(5);
 }

@@ -1,8 +1,8 @@
 {
   "OpenTelemetry": {
-    "Enabled": false,
+    "Enabled": true,
     "ServiceName": "SaucyBot",
-    "OtlpEndpoint": "http://localhost:4318",
+    "OtlpEndpoint": "http://otel-collector:4318",
     "OtlpProtocol": "HttpProtobuf",
     "OtlpHeaders": "",
     "ExportIntervalMilliseconds": 10000,
@@ -63,7 +63,8 @@
     "MessageWorkerCount": 5,
     "InteractionWorkerCount": 5,
     "InteractionChannelCapacity": 100,
-    "ShutdownDrainTimeout": "00:00:30"
+    "ShutdownDrainTimeout": "00:00:30",
+    "PendingReadTimeout": "00:00:01"
   },
   "Sites": {
     "ArtStation": {
