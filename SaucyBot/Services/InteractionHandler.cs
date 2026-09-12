@@ -28,10 +28,7 @@ public sealed class InteractionHandler
     {
         _client = client;
 
-        var interactionService = new InteractionService(client, new InteractionServiceConfig
-        {
-            AutoServiceScopes = true
-        });
+        var interactionService = new InteractionService(client, CreateInteractionServiceConfig());
 
         if (Log is not null)
         {
@@ -40,6 +37,11 @@ public sealed class InteractionHandler
 
         _interactionService = interactionService;
     }
+
+    internal static InteractionServiceConfig CreateInteractionServiceConfig() => new()
+    {
+        AutoServiceScopes = true,
+    };
 
     public async Task RegisterAsync()
     {
@@ -103,7 +105,6 @@ public sealed class InteractionHandler
 
     public async Task ExecuteAsync(
         SocketInteraction interaction,
-        IServiceProvider services,
         CancellationToken cancellationToken = default
     )
     {
@@ -120,6 +121,6 @@ public sealed class InteractionHandler
         };
 
         using var cancellationScope = InteractionCancellationContext.Push(cancellationToken);
-        await _interactionService.ExecuteCommandAsync(context, services);
+        await _interactionService.ExecuteCommandAsync(context, _services);
     }
 }

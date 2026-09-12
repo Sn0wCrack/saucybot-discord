@@ -230,7 +230,7 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
     private IDatabase Database => Connection.GetDatabase();
 
     private IRedisStreamClient CreateClient(WorkQueueOptions options) =>
-        new StackExchangeRedisStreamClient(Connection, options);
+        new StackExchangeRedisStreamClient(Connection, options, NullLogger<StackExchangeRedisStreamClient>.Instance);
 
     private static WorkQueueOptions CreateOptions(string name, bool clearPendingOnStartup = false) => new()
     {

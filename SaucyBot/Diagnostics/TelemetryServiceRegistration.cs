@@ -26,6 +26,7 @@ public static class TelemetryServiceRegistration
             .WithMetrics(metrics => metrics
                 .AddMeter(SaucyBotMetrics.MeterName)
                 .AddRuntimeInstrumentation()
+                .AddProcessInstrumentation()
                 .AddHttpClientInstrumentation()
                 .AddOtlpExporter((exporter, reader) => ConfigureExporter(exporter, reader, telemetry)));
 
