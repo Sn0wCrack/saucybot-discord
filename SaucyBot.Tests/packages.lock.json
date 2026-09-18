@@ -796,8 +796,8 @@
       },
       "Polly.Core": {
         "type": "Transitive",
-        "resolved": "8.7.0",
-        "contentHash": "BS2t+nsBer16PIebCEPNBK5fgMisADQyRCd7K+BgkMWpFmSaiYE+rVVNpFhGRqUkJmNSLmw0uCNzHHWfgml28Q=="
+        "resolved": "8.8.0",
+        "contentHash": "TewV9uNFsoRFggoFbTAGFwsMYPuckA+wTIpQPyhLL9BANRPQRENz2S4bwATrB3HBOakN5oKLFIllPiDnVecmJg=="
       },
       "RESPite": {
         "type": "Transitive",
@@ -1034,7 +1034,7 @@
           "OpenTelemetry.Instrumentation.Http": "[1.18.0, )",
           "OpenTelemetry.Instrumentation.Process": "[1.18.0-rc.1, )",
           "OpenTelemetry.Instrumentation.Runtime": "[1.18.0, )",
-          "Polly.Core": "[8.7.0, )",
+          "Polly.Core": "[8.8.0, )",
           "SQLitePCLRaw.bundle_e_sqlite3": "[3.0.5, )",
           "Sentry": "[6.11.0, )",
           "Serilog": "[4.4.0, )",
