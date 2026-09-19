@@ -11,12 +11,13 @@ public static class ChannelExtensions
         public bool CanCreateEmbed(bool allowDirectMessages = false) => channel switch
         {
             SocketDMChannel or SocketGroupChannel => allowDirectMessages,
+            SocketNewsChannel => false,
             SocketThreadChannel threadChannel =>
                 threadChannel.Guild.CurrentUser.GetPermissions(threadChannel)
-                    .Has(Constants.RequiredThreadPermissions),
-            SocketGuildChannel guildChannel =>
-                guildChannel.Guild.CurrentUser.GetPermissions(guildChannel)
-                    .Has(Constants.RequiredChannelPermissions),
+                    .Has(Constants.RequiredThreadChannelPermissions),
+            SocketTextChannel textChannel =>
+                textChannel.Guild.CurrentUser.GetPermissions(textChannel)
+                    .Has(Constants.RequiredTextChannelPermissions),
             _ => false,
         };
     }
