@@ -1,0 +1,147 @@
+name: 'Feature Container'
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+  delete:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: feature-container-${{ github.event.pull_request.number || github.event.ref }}
+  cancel-in-progress: true
+
+env:
+  PACKAGE_NAME: 'saucybot-discord'
+
+jobs:
+  prepare:
+    name: 'Prepare Feature Tag'
+    if: ${{ github.event_name == 'pull_request' && github.event.action != 'closed' && github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: 'ubuntu-26.04'
+    outputs:
+      build: ${{ steps.tag.outputs.build }}
+      ref: ${{ steps.tag.outputs.ref }}
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - name: 'Generate Feature Tag'
+        id: tag
+        env:
+          BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          branch="${BRANCH_NAME,,}"
+          case "$branch" in
+            latest|master|main|v*|release|dev|develop|development)
+              echo 'build=false' >> "$GITHUB_OUTPUT"
+              exit 0
+              ;;
+          esac
+
+          branch_tag="${branch//\//-}"
+          branch_tag="$(printf '%s' "$branch_tag" | sed -E 's/[^a-z0-9_.-]+/-/g; s/-+/-/g; s/^[.-]+//; s/[.-]+$//')"
+          tag="pr-${PR_NUMBER}-${branch_tag}"
+          tag="${tag:0:128}"
+
+          if [[ "$tag" == 'latest' || "$tag" == v* || -z "$branch_tag" ]]; then
+            echo 'build=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "build=true" >> "$GITHUB_OUTPUT"
+          echo "ref=${PR_SHA}" >> "$GITHUB_OUTPUT"
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: 'Build and Push Feature Container'
+    needs: prepare
+    if: ${{ needs.prepare.outputs.build == 'true' }}
+    uses: ./.github/workflows/build-container.yml
+    with:
+      push: true
+      ref: ${{ needs.prepare.outputs.ref }}
+      tags: ${{ format('{0}:{1}', 'ghcr.io/sn0wcrack/saucybot-discord', needs.prepare.outputs.tag) }}
+      labels: ${{ format('org.opencontainers.image.source=https://github.com/{0}', github.repository) }}
+    permissions:
+      contents: read
+      packages: write
+
+  cleanup:
+    name: 'Delete Feature Container'
+    if: ${{ (github.event_name == 'pull_request' && github.event.action == 'closed') || (github.event_name == 'delete' && github.event.ref_type == 'branch') }}
+    runs-on: 'ubuntu-26.04'
+    steps:
+      - name: 'Delete Feature Tags'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b # v9
+        env:
+          OWNER: ${{ github.repository_owner }}
+          REPOSITORY: ${{ github.repository }}
+          BRANCH_NAME: ${{ github.event.pull_request.head.ref || github.event.ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const owner = process.env.OWNER;
+            const repo = process.env.REPOSITORY.split('/')[1];
+            const packageName = process.env.PACKAGE_NAME;
+            const branchName = process.env.BRANCH_NAME;
+            const tags = new Set();
+
+            function tagFor(number, branch) {
+              const branchTag = branch
+                .toLowerCase()
+                .replaceAll('/', '-')
+                .replace(/[^a-z0-9_.-]+/g, '-')
+                .replace(/-+/g, '-')
+                .replace(/^[.-]+|[.-]+$/g, '');
+
+              return `pr-${number}-${branchTag}`.slice(0, 128);
+            }
+
+            if (context.eventName === 'pull_request') {
+              tags.add(tagFor(process.env.PR_NUMBER, branchName));
+            } else {
+              const pullRequests = await github.paginate(github.rest.pulls.list, {
+                owner,
+                repo,
+                state: 'all',
+                head: `${owner}:${branchName}`,
+                per_page: 100,
+              });
+
+              for (const pullRequest of pullRequests) {
+                tags.add(tagFor(pullRequest.number, pullRequest.head.ref));
+              }
+            }
+
+            const versions = await github.paginate(
+              github.rest.packages.getAllPackageVersionsForPackageOwnedByUser,
+              {
+                username: owner,
+                package_type: 'container',
+                package_name: packageName,
+                per_page: 100,
+              },
+            );
+
+            for (const tag of tags) {
+              for (const version of versions) {
+                const versionTags = version.metadata?.container?.tags ?? [];
+                if (!versionTags.includes(tag)) {
+                  continue;
+                }
+
+                core.info(`Deleting GHCR package version ${version.id} (${tag})`);
+                await github.rest.packages.deletePackageVersionForUser({
+                  username: owner,
+                  package_type: 'container',
+                  package_name: packageName,
+                  package_version_id: version.id,
+                });
+              }
+            }
