@@ -103,27 +103,51 @@ public sealed class WorkQueueHostedServiceTest
         Assert.Single(queue.Acknowledged);
     }
 
+    [Fact]
+    public async Task ProcessingFailureAtAttemptLimitAcknowledgesAndDeletesItem()
+    {
+        var queue = new TestWorkQueue();
+        queue.Add(CreateItem("1-0", deliveryCount: 2));
+        var processor = new FailingProcessor();
+
+        await using var service = CreateService(
+            queue,
+            processor,
+            TimeSpan.FromSeconds(1),
+            maxProcessingAttempts: 2);
+
+        await service.StartAsync(TestContext.Current.CancellationToken);
+        await queue.AcknowledgedSignal.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await service.StopAsync(TestContext.Current.CancellationToken);
+
+        Assert.Single(queue.Acknowledged);
+        Assert.Equal(1, processor.Attempts);
+    }
+
     private static WorkQueueHostedService CreateService(
         TestWorkQueue queue,
-        NonCooperativeProcessor processor,
-        TimeSpan shutdownDrainTimeout) => new(
+        IWorkItemProcessor processor,
+        TimeSpan shutdownDrainTimeout,
+        int maxProcessingAttempts = 3) => new(
         queue,
         processor,
         new WorkQueueOptions
         {
             MessageWorkerCount = 1,
             InteractionWorkerCount = 0,
-            ShutdownDrainTimeout = shutdownDrainTimeout
+            ShutdownDrainTimeout = shutdownDrainTimeout,
+            MaxProcessingAttempts = maxProcessingAttempts
         },
         NullLogger<WorkQueueHostedService>.Instance,
         new InteractionWorkChannel(new WorkQueueOptions()),
         Substitute.For<IInteractionProcessor>(),
         new SaucyBotMetrics());
 
-    private static QueuedMessageWorkItem CreateItem(string entryId) => new(
+    private static QueuedMessageWorkItem CreateItem(string entryId, int deliveryCount = 1) => new(
         entryId,
         new MessageWorkItem(1, 2, 3, 4, [], "content", null, [], true, true,
-            Guid.Parse("11111111-1111-1111-1111-111111111111")));
+            Guid.Parse("11111111-1111-1111-1111-111111111111")),
+        deliveryCount);
 
     private sealed class NonCooperativeProcessor : IWorkItemProcessor
     {
@@ -155,11 +179,23 @@ public sealed class WorkQueueHostedServiceTest
         public void Release() => ReleaseSignal.TrySetResult();
     }
 
+    private sealed class FailingProcessor : IWorkItemProcessor
+    {
+        public int Attempts { get; private set; }
+
+        public Task ProcessAsync(QueuedMessageWorkItem item, CancellationToken cancellationToken)
+        {
+            Attempts++;
+            return Task.FromException(new InvalidOperationException("processing failed"));
+        }
+    }
+
     private sealed class TestWorkQueue : IMessageWorkQueue
     {
         private readonly Channel<QueuedMessageWorkItem> _items = Channel.CreateUnbounded<QueuedMessageWorkItem>();
 
         public List<QueuedMessageWorkItem> Acknowledged { get; } = [];
+        public TaskCompletionSource AcknowledgedSignal { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public bool ReadCancellationObserved { get; private set; }
         public TaskCompletionSource ReadCancellationObservedSignal { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -190,12 +226,22 @@ public sealed class WorkQueueHostedServiceTest
             }
         }
 
-        public Task AcknowledgeAsync(QueuedMessageWorkItem item, CancellationToken cancellationToken)
+        public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+        public Task CompleteAsync(QueuedMessageWorkItem item, CancellationToken cancellationToken)
         {
             Acknowledged.Add(item);
+            AcknowledgedSignal.TrySetResult();
             return Task.CompletedTask;
         }
 
-        public Task ClearPendingAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+        public async Task<WorkItemFailureResult> FailAsync(
+            QueuedMessageWorkItem item,
+            Exception exception,
+            CancellationToken cancellationToken)
+        {
+            await CompleteAsync(item, cancellationToken);
+            return new WorkItemFailureResult(WorkItemFailureAction.Discarded, item.DeliveryCount);
+        }
     }
 }

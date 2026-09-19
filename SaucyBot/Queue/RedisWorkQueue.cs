@@ -19,6 +19,7 @@ public sealed class RedisWorkQueue(
     internal const string PayloadField = "payload";
     private readonly IRedisStreamClient _client = client;
     private readonly WorkQueueOptions _options = options;
+    private readonly RedisWorkQueueOptions _redisOptions = options.Redis;
     private readonly ISaucyBotMetrics? _metrics = metrics;
     private readonly ILogger<RedisWorkQueue> _logger = logger ?? NullLogger<RedisWorkQueue>.Instance;
 
@@ -41,8 +42,8 @@ public sealed class RedisWorkQueue(
                     _metrics?.Retried.Add(1);
                     _logger.LogDebug(
                         "Redis queue is applying backpressure; retrying enqueue after {RetryDelay}",
-                        _options.RetryDelay);
-                    await Task.Delay(_options.RetryDelay, cancellationToken);
+                        _redisOptions.RetryDelay);
+                    await Task.Delay(_redisOptions.RetryDelay, cancellationToken);
                 }
             }
         }
@@ -52,6 +53,9 @@ public sealed class RedisWorkQueue(
             throw;
         }
     }
+
+    public Task StartAsync(CancellationToken cancellationToken) =>
+        ClearPendingAsync(cancellationToken);
 
     public async IAsyncEnumerable<QueuedMessageWorkItem> ReadAsync(
         string consumer,
@@ -87,11 +91,11 @@ public sealed class RedisWorkQueue(
                 continue;
             }
 
-            yield return new QueuedMessageWorkItem(entry.EntryId, item);
+            yield return new QueuedMessageWorkItem(entry.EntryId, item, entry.DeliveryCount);
         }
     }
 
-    public async Task AcknowledgeAsync(QueuedMessageWorkItem item, CancellationToken cancellationToken)
+    public async Task CompleteAsync(QueuedMessageWorkItem item, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         await _client.AcknowledgeAsync(item.EntryId, CancellationToken.None);
@@ -105,6 +109,32 @@ public sealed class RedisWorkQueue(
             _logger.LogError(exception, "Acknowledged work item {EntryId} but failed to delete it", item.EntryId);
             throw;
         }
+    }
+
+    public async Task<WorkItemFailureResult> FailAsync(
+        QueuedMessageWorkItem item,
+        Exception exception,
+        CancellationToken cancellationToken)
+    {
+        var maxAttempts = Math.Max(1, _options.MaxProcessingAttempts);
+        if (item.DeliveryCount < maxAttempts)
+        {
+            _logger.LogWarning(
+                exception,
+                "Queue entry {EntryId} failed; Redis will retry it after it becomes idle (attempt {Attempt} of {MaxAttempts})",
+                item.EntryId,
+                item.DeliveryCount,
+                maxAttempts);
+            return new WorkItemFailureResult(WorkItemFailureAction.Retried, item.DeliveryCount);
+        }
+
+        await CompleteAsync(item, cancellationToken);
+        _logger.LogError(
+            exception,
+            "Discarded queue entry {EntryId} after {Attempt} processing attempts",
+            item.EntryId,
+            item.DeliveryCount);
+        return new WorkItemFailureResult(WorkItemFailureAction.Discarded, item.DeliveryCount);
     }
 
     public Task ClearPendingAsync(CancellationToken cancellationToken)
@@ -159,7 +189,7 @@ public sealed class RedisWorkQueue(
             catch (Exception exception)
             {
                 _metrics?.CleanupFailed.Add(1);
-                if (attempt >= Math.Max(1, _options.MalformedCleanupMaxAttempts))
+                if (attempt >= Math.Max(1, _redisOptions.MalformedCleanupMaxAttempts))
                 {
                     _logger.LogError(
                         exception,
@@ -171,7 +201,7 @@ public sealed class RedisWorkQueue(
 
                 _logger.LogWarning(exception, "Retrying malformed work item cleanup {Operation} for {EntryId}", operation, entryId);
                 await Task.Delay(
-                    TimeSpan.FromTicks(Math.Min(_options.RetryDelay.Ticks, _options.MalformedCleanupMaxDelay.Ticks)),
+                    TimeSpan.FromTicks(Math.Min(_redisOptions.RetryDelay.Ticks, _redisOptions.MalformedCleanupMaxDelay.Ticks)),
                     cancellationToken);
             }
         }

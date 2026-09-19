@@ -77,7 +77,7 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
 
     public override async Task StartAsync(CancellationToken cancellationToken)
     {
-        await _queue.ClearPendingAsync(cancellationToken);
+        await _queue.StartAsync(cancellationToken);
         await base.StartAsync(cancellationToken);
     }
 
@@ -191,7 +191,7 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
                 {
                     await _processor.ProcessAsync(item, cancellationToken);
                     cancellationToken.ThrowIfCancellationRequested();
-                    await _queue.AcknowledgeAsync(item, CancellationToken.None);
+                    await _queue.CompleteAsync(item, CancellationToken.None);
                     _metrics.Succeeded.Add(1);
                     activity?.SetStatus(ActivityStatusCode.Ok);
                     _logger.LogDebug(
@@ -207,10 +207,29 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
                 }
                 catch (Exception exception)
                 {
-                    _logger.LogError(exception, "Message worker {Consumer} failed for {EntryId}", consumer, item.EntryId);
                     _metrics.Failed.Add(1);
                     activity?.SetStatus(ActivityStatusCode.Error, exception.Message);
                     activity?.SetTag("error.type", exception.GetType().FullName);
+
+                    try
+                    {
+                        var failure = await _queue.FailAsync(item, exception, CancellationToken.None);
+                        _logger.LogDebug(
+                            "Message worker {Consumer} handled failed queue entry {EntryId} with action {Action} at attempt {Attempt}",
+                            consumer,
+                            item.EntryId,
+                            failure.Action,
+                            failure.Attempt);
+                    }
+                    catch (Exception cleanupException)
+                    {
+                        _metrics.CleanupFailed.Add(1);
+                        _logger.LogError(
+                            cleanupException,
+                            "Message worker {Consumer} failed to handle failed queue entry {EntryId}",
+                            consumer,
+                            item.EntryId);
+                    }
                 }
                 finally
                 {

@@ -5,11 +5,11 @@ namespace SaucyBot.Queue;
 
 public sealed class StackExchangeRedisStreamClient(
     IConnectionMultiplexer connection,
-    WorkQueueOptions options,
+    RedisWorkQueueOptions options,
     ILogger<StackExchangeRedisStreamClient> logger) : IRedisStreamClient
 {
     private readonly IDatabase _database = connection.GetDatabase();
-    private readonly WorkQueueOptions _options = options;
+    private readonly RedisWorkQueueOptions _options = options;
     private readonly ILogger<StackExchangeRedisStreamClient> _logger = logger;
 
     public async Task EnsureGroupAsync(CancellationToken cancellationToken)
@@ -38,10 +38,14 @@ public sealed class StackExchangeRedisStreamClient(
         }
         catch
             (RedisServerException exception)
-        when (
-            exception.Message.Contains("MISCONF", StringComparison.OrdinalIgnoreCase) ||
-            exception.Message.Contains("OOM", StringComparison.OrdinalIgnoreCase)
-        )
+            when (
+                exception.Message.Contains("MISCONF", StringComparison.OrdinalIgnoreCase) ||
+                exception.Message.Contains("OOM", StringComparison.OrdinalIgnoreCase)
+            )
+        {
+            throw new RedisBackpressureException(exception.Message);
+        }
+        catch (RedisTimeoutException exception)
         {
             throw new RedisBackpressureException(exception.Message);
         }
@@ -54,6 +58,33 @@ public sealed class StackExchangeRedisStreamClient(
     public async Task<RedisStreamEntry?> ReadNewAsync(string consumer, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        var reclaimed = await _database.StreamAutoClaimAsync(
+                _options.StreamName,
+                _options.ConsumerGroup,
+                consumer,
+                Math.Max(0, (long)_options.PendingMessageIdleTime.TotalMilliseconds),
+                "0-0",
+                count: 1)
+            .WaitAsync(cancellationToken);
+
+        if (reclaimed.ClaimedEntries.Length > 0)
+        {
+            var entry = reclaimed.ClaimedEntries[0];
+            var pending = await _database.StreamPendingMessagesAsync(
+                    _options.StreamName,
+                    _options.ConsumerGroup,
+                    1,
+                    consumer,
+                    entry.Id,
+                    entry.Id)
+                .WaitAsync(cancellationToken);
+
+            var deliveryCount = pending.Length > 0
+                ? pending[0].DeliveryCount
+                : entry.DeliveryCount;
+            return ToEntry(entry, deliveryCount);
+        }
+
         var read = _database.StreamReadGroupAsync(_options.StreamName, _options.ConsumerGroup, consumer, ">", count: 1);
         StreamEntry[] entries;
         try
@@ -114,9 +145,12 @@ public sealed class StackExchangeRedisStreamClient(
         return _database.KeyDeleteAsync(_options.StreamName).WaitAsync(cancellationToken);
     }
 
-    private static RedisStreamEntry ToEntry(StreamEntry entry)
+    private static RedisStreamEntry ToEntry(StreamEntry entry, int? deliveryCount = null)
     {
         var payload = entry.Values.FirstOrDefault(x => x.Name == RedisWorkQueue.PayloadField).Value;
-        return new RedisStreamEntry(entry.Id.ToString(), payload.ToString());
+        return new RedisStreamEntry(
+            entry.Id.ToString(),
+            payload.ToString(),
+            Math.Max(1, deliveryCount ?? entry.DeliveryCount));
     }
 }

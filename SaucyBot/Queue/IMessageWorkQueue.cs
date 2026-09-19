@@ -6,7 +6,22 @@ public interface IMessageWorkQueue
 
     IAsyncEnumerable<QueuedMessageWorkItem> ReadAsync(string consumer, CancellationToken cancellationToken);
 
-    Task AcknowledgeAsync(QueuedMessageWorkItem item, CancellationToken cancellationToken);
+    Task StartAsync(CancellationToken cancellationToken);
 
-    Task ClearPendingAsync(CancellationToken cancellationToken);
+    Task CompleteAsync(QueuedMessageWorkItem item, CancellationToken cancellationToken);
+
+    Task<WorkItemFailureResult> FailAsync(
+        QueuedMessageWorkItem item,
+        Exception exception,
+        CancellationToken cancellationToken);
 }
+
+public enum WorkItemFailureAction
+{
+    Retried,
+    Discarded,
+}
+
+public sealed record WorkItemFailureResult(
+    WorkItemFailureAction Action,
+    int Attempt);

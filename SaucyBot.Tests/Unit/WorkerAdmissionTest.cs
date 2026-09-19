@@ -312,7 +312,7 @@ public sealed class WorkerAdmissionTest
         await using var service = new WorkQueueHostedService(
             queue,
             processor,
-            new WorkQueueOptions { ClearPendingOnStartup = true },
+            new WorkQueueOptions(),
             SubstituteLogger<WorkQueueHostedService>(),
             new InteractionWorkChannel(new WorkQueueOptions()),
             Substitute.For<IInteractionProcessor>(),
@@ -697,7 +697,14 @@ public sealed class WorkerAdmissionTest
             }
         }
 
-        public Task AcknowledgeAsync(QueuedMessageWorkItem item, CancellationToken cancellationToken)
+        public Task StartAsync(CancellationToken cancellationToken)
+        {
+            ClearCalls++;
+            ClearPendingCallback?.Invoke();
+            return Task.CompletedTask;
+        }
+
+        public Task CompleteAsync(QueuedMessageWorkItem item, CancellationToken cancellationToken)
         {
             AcknowledgedAttempts.Add(item);
             if (AcknowledgeFailure is not null)
@@ -709,13 +716,12 @@ public sealed class WorkerAdmissionTest
             return Task.CompletedTask;
         }
 
-        public Task DeleteAsync(string entryId, CancellationToken cancellationToken) => Task.CompletedTask;
-
-        public Task ClearPendingAsync(CancellationToken cancellationToken)
+        public Task<WorkItemFailureResult> FailAsync(
+            QueuedMessageWorkItem item,
+            Exception exception,
+            CancellationToken cancellationToken)
         {
-            ClearCalls++;
-            ClearPendingCallback?.Invoke();
-            return Task.CompletedTask;
+            return Task.FromResult(new WorkItemFailureResult(WorkItemFailureAction.Retried, item.DeliveryCount));
         }
     }
 }

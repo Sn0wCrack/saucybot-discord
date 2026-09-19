@@ -71,6 +71,11 @@ public sealed class SiteManager : IMessageWorkHandler
 
         foreach (var (identifier, site) in _siteRegistry.Sites)
         {
+            if (guildConfiguration?.IsSiteDisabled(identifier) == true)
+            {
+                continue;
+            }
+
             var matches = site.Pattern.Matches(content);
 
             foreach (Match match in matches)
@@ -101,6 +106,11 @@ public sealed class SiteManager : IMessageWorkHandler
         var maximumEmbeds = guildConfiguration?.MaximumEmbeds ?? _botOptions.MaximumEmbeds;
         foreach (var (identifier, site) in _siteRegistry.Sites)
         {
+            if (guildConfiguration?.IsSiteDisabled(identifier) == true)
+            {
+                continue;
+            }
+
             foreach (Match match in site.Pattern.Matches(content))
             {
                 results.Add(new SiteManagerProcessResult(identifier, match));
@@ -131,6 +141,11 @@ public sealed class SiteManager : IMessageWorkHandler
 
         foreach (var (identifier, site) in _siteRegistry.Sites)
         {
+            if (guildConfiguration?.IsSiteDisabled(identifier) == true)
+            {
+                continue;
+            }
+
             var matches = site.Pattern.Matches(content);
 
             foreach (Match match in matches)

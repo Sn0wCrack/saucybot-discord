@@ -21,7 +21,7 @@ public sealed class RedisWorkQueueTest
         {
             AddFailures = 2
         };
-        var queue = new RedisWorkQueue(client, new WorkQueueOptions { RetryDelay = TimeSpan.Zero });
+        var queue = new RedisWorkQueue(client, new WorkQueueOptions { Redis = new() { RetryDelay = TimeSpan.Zero } });
         var item = CreateItem();
 
         await queue.EnqueueAsync(item, CancellationToken.None);
@@ -36,7 +36,7 @@ public sealed class RedisWorkQueueTest
         var client = new FakeRedisStreamClient();
         var item = CreateItem();
         client.Entries.Enqueue(new RedisStreamEntry("42-0", item.Serialize()));
-        var queue = new RedisWorkQueue(client, new WorkQueueOptions { RetryDelay = TimeSpan.Zero });
+        var queue = new RedisWorkQueue(client, new WorkQueueOptions { Redis = new() { RetryDelay = TimeSpan.Zero } });
 
         await using var messages = queue.ReadAsync("worker-1", TestContext.Current.CancellationToken)
             .GetAsyncEnumerator(TestContext.Current.CancellationToken);
@@ -48,10 +48,55 @@ public sealed class RedisWorkQueueTest
         Assert.Equal(item.CorrelationId, queued.Item.CorrelationId);
         Assert.Empty(client.Acknowledged);
 
-        await queue.AcknowledgeAsync(queued, CancellationToken.None);
+        await queue.CompleteAsync(queued, CancellationToken.None);
 
         Assert.Equal(["42-0"], client.Acknowledged);
         Assert.Equal(["42-0"], client.Deleted);
+        Assert.Equal(["ack:42-0", "delete:42-0"], client.Operations);
+    }
+
+    [Fact]
+    public async Task ReadPreservesRedisDeliveryCountForPendingRetryLimits()
+    {
+        var client = new FakeRedisStreamClient();
+        var item = CreateItem();
+        client.Entries.Enqueue(new RedisStreamEntry("42-0", item.Serialize(), DeliveryCount: 3));
+        var queue = new RedisWorkQueue(client, new WorkQueueOptions { Redis = new() { RetryDelay = TimeSpan.Zero } });
+
+        await using var messages = queue.ReadAsync("worker-1", TestContext.Current.CancellationToken)
+            .GetAsyncEnumerator(TestContext.Current.CancellationToken);
+
+        Assert.True(await messages.MoveNextAsync());
+        Assert.Equal(3, messages.Current.DeliveryCount);
+    }
+
+    [Fact]
+    public async Task FailureBelowAttemptLimitLeavesEntryPendingForRecovery()
+    {
+        var client = new FakeRedisStreamClient();
+        var queue = new RedisWorkQueue(
+            client,
+            new WorkQueueOptions { MaxProcessingAttempts = 3 });
+        var item = new QueuedMessageWorkItem("42-0", CreateItem(), DeliveryCount: 1);
+
+        var result = await queue.FailAsync(item, new InvalidOperationException("failed"), CancellationToken.None);
+
+        Assert.Equal(WorkItemFailureAction.Retried, result.Action);
+        Assert.Empty(client.Operations);
+    }
+
+    [Fact]
+    public async Task FailureAtAttemptLimitCompletesAndDiscardsEntry()
+    {
+        var client = new FakeRedisStreamClient();
+        var queue = new RedisWorkQueue(
+            client,
+            new WorkQueueOptions { MaxProcessingAttempts = 3 });
+        var item = new QueuedMessageWorkItem("42-0", CreateItem(), DeliveryCount: 3);
+
+        var result = await queue.FailAsync(item, new InvalidOperationException("failed"), CancellationToken.None);
+
+        Assert.Equal(WorkItemFailureAction.Discarded, result.Action);
         Assert.Equal(["ack:42-0", "delete:42-0"], client.Operations);
     }
 
@@ -61,7 +106,7 @@ public sealed class RedisWorkQueueTest
         var client = new FakeRedisStreamClient();
         var item = CreateItem();
         client.Entries.Enqueue(new RedisStreamEntry("8-0", item.Serialize()));
-        var queue = new RedisWorkQueue(client, new WorkQueueOptions { RetryDelay = TimeSpan.Zero });
+        var queue = new RedisWorkQueue(client, new WorkQueueOptions { Redis = new() { RetryDelay = TimeSpan.Zero } });
 
         await using var messages = queue.ReadAsync("worker-1", TestContext.Current.CancellationToken)
             .GetAsyncEnumerator(TestContext.Current.CancellationToken);
@@ -75,7 +120,7 @@ public sealed class RedisWorkQueueTest
     public async Task EnqueueCancellationStopsBackpressureRetry()
     {
         var client = new FakeRedisStreamClient { AddFailures = int.MaxValue };
-        var queue = new RedisWorkQueue(client, new WorkQueueOptions { RetryDelay = TimeSpan.FromSeconds(10) });
+        var queue = new RedisWorkQueue(client, new WorkQueueOptions { Redis = new() { RetryDelay = TimeSpan.FromSeconds(10) } });
         using var cancellation = new CancellationTokenSource();
 
         var enqueue = queue.EnqueueAsync(CreateItem(), cancellation.Token);
@@ -91,7 +136,7 @@ public sealed class RedisWorkQueueTest
         var queue = new RedisWorkQueue(client, new WorkQueueOptions());
         var queued = new QueuedMessageWorkItem("7-0", CreateItem());
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => queue.AcknowledgeAsync(queued, CancellationToken.None));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => queue.CompleteAsync(queued, CancellationToken.None));
     }
 
     [Fact]
@@ -101,7 +146,7 @@ public sealed class RedisWorkQueueTest
         var queue = new RedisWorkQueue(client, new WorkQueueOptions());
         var queued = new QueuedMessageWorkItem("7-0", CreateItem());
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => queue.AcknowledgeAsync(queued, CancellationToken.None));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => queue.CompleteAsync(queued, CancellationToken.None));
 
         Assert.Equal(["7-0"], client.Acknowledged);
         Assert.Equal(["7-0"], client.DeleteAttempts);
@@ -114,7 +159,7 @@ public sealed class RedisWorkQueueTest
         client.Entries.Enqueue(new RedisStreamEntry("bad-0", "{\"version\":999,\"item\":null}"));
         var valid = CreateItem();
         client.Entries.Enqueue(new RedisStreamEntry("good-0", valid.Serialize()));
-        var queue = new RedisWorkQueue(client, new WorkQueueOptions { RetryDelay = TimeSpan.Zero });
+        var queue = new RedisWorkQueue(client, new WorkQueueOptions { Redis = new() { RetryDelay = TimeSpan.Zero } });
 
         await using var messages = queue.ReadAsync("worker-1", TestContext.Current.CancellationToken)
             .GetAsyncEnumerator(TestContext.Current.CancellationToken);
@@ -135,7 +180,7 @@ public sealed class RedisWorkQueueTest
         };
         client.Entries.Enqueue(new RedisStreamEntry("bad-0", "invalid"));
         client.Entries.Enqueue(new RedisStreamEntry("good-0", CreateItem().Serialize()));
-        var queue = new RedisWorkQueue(client, new WorkQueueOptions { RetryDelay = TimeSpan.Zero });
+        var queue = new RedisWorkQueue(client, new WorkQueueOptions { Redis = new() { RetryDelay = TimeSpan.Zero } });
 
         await using var messages = queue.ReadAsync("worker-1", TestContext.Current.CancellationToken)
             .GetAsyncEnumerator(TestContext.Current.CancellationToken);
@@ -169,7 +214,7 @@ public sealed class RedisWorkQueueTest
             }
         });
         listener.Start();
-        var queue = new RedisWorkQueue(client, new WorkQueueOptions { RetryDelay = TimeSpan.Zero }, metrics, NullLogger<RedisWorkQueue>.Instance);
+        var queue = new RedisWorkQueue(client, new WorkQueueOptions { Redis = new() { RetryDelay = TimeSpan.Zero } }, metrics, NullLogger<RedisWorkQueue>.Instance);
 
         await using var messages = queue.ReadAsync("worker-1", TestContext.Current.CancellationToken)
             .GetAsyncEnumerator(TestContext.Current.CancellationToken);
@@ -222,7 +267,7 @@ public sealed class RedisWorkQueueTest
         using var cancellation = new CancellationTokenSource();
         cancellation.Cancel();
 
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => queue.AcknowledgeAsync(queued, cancellation.Token));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => queue.CompleteAsync(queued, cancellation.Token));
 
         Assert.Empty(client.Operations);
     }
@@ -238,7 +283,7 @@ public sealed class RedisWorkQueueTest
         var queued = new QueuedMessageWorkItem("7-0", CreateItem());
         using var cancellation = new CancellationTokenSource();
 
-        var acknowledgement = queue.AcknowledgeAsync(queued, cancellation.Token);
+        var acknowledgement = queue.CompleteAsync(queued, cancellation.Token);
         await client.AcknowledgeStarted.Task.WaitAsync(TestContext.Current.CancellationToken);
         cancellation.Cancel();
         client.AcknowledgeCompletion.TrySetResult();
@@ -256,7 +301,7 @@ public sealed class RedisWorkQueueTest
         client.Entries.Enqueue(new RedisStreamEntry("good-0", CreateItem().Serialize()));
         var queue = new RedisWorkQueue(
             client,
-            new WorkQueueOptions { RetryDelay = TimeSpan.Zero, MalformedCleanupMaxAttempts = 2 });
+            new WorkQueueOptions { Redis = new() { RetryDelay = TimeSpan.Zero, MalformedCleanupMaxAttempts = 2 } });
 
         await using var messages = queue.ReadAsync("worker-1", TestContext.Current.CancellationToken)
             .GetAsyncEnumerator(TestContext.Current.CancellationToken);
@@ -273,7 +318,7 @@ public sealed class RedisWorkQueueTest
         var client = new FakeRedisStreamClient();
         var queue = new RedisWorkQueue(client, new WorkQueueOptions { ClearPendingOnStartup = true });
 
-        await queue.ClearPendingAsync(CancellationToken.None);
+        await queue.StartAsync(CancellationToken.None);
 
         Assert.Equal(1, client.ClearCalls);
     }
@@ -316,7 +361,9 @@ public sealed class RedisWorkQueueTest
             return Task.FromResult("1-0");
         }
 
-        public async Task<RedisStreamEntry?> ReadNewAsync(string consumer, CancellationToken cancellationToken)
+        public async Task<RedisStreamEntry?> ReadNewAsync(
+            string consumer,
+            CancellationToken cancellationToken)
         {
             NewReads++;
             if (ReturnEntryAfterCancellation)
@@ -379,5 +426,14 @@ public sealed class RedisWorkQueueTest
             ClearCalls++;
             return Task.CompletedTask;
         }
+
+        public Task CompleteAsync(QueuedMessageWorkItem item, CancellationToken cancellationToken) =>
+            AcknowledgeAsync(item.EntryId, cancellationToken);
+
+        public Task<WorkItemFailureResult> FailAsync(
+            QueuedMessageWorkItem item,
+            Exception exception,
+            CancellationToken cancellationToken) =>
+            Task.FromResult(new WorkItemFailureResult(WorkItemFailureAction.Retried, item.DeliveryCount));
     }
 }

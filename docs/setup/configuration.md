@@ -88,20 +88,43 @@ server=localhost;user=bot;password=secret;database=bot
 
 ### Queue
 
-Queue uses a separate Redis-compatible database, such as Redis or Valkey, for storing incoming message work. 
+Queue uses a separate Redis-compatible database, such as Redis or Valkey, for storing incoming message work.
+
+Use the `Driver` key to select the queue backend. Redis is the default backend.
+
+```json
+{
+  "Queue": {
+    "Driver": "Redis",
+    "MessageWorkerCount": 5,
+    "Redis": {
+      "ConnectionString": "queue:6379"
+    }
+  }
+}
+```
 
 | Key | Value Type | Description | Default |
 |---|---|---|---|
-| `ConnectionString` | String | Redis/Valkey endpoint, including credentials when required. | `queue:6379` |
-| `StreamName` | String | Redis/Valkey stream containing queued message work. | `saucybot:messages` |
-| `ConsumerGroup` | String | Consumer group used by message workers. | `saucybot-workers` |
-| `RetryDelay` | TimeSpan | Delay before retrying an unavailable queue operation. | `00:00:01` |
-| `ClearPendingOnStartup` | Boolean | Delete the entire queue stream on startup. Enable only when intentionally discarding pending work. | `false` |
+| `Driver` | String | Queue driver to use. | `Redis` |
+| `MaxProcessingAttempts` | Integer | Maximum processing attempts before a failed message is acknowledged and deleted. | `3` |
 | `MessageWorkerCount` | Integer | Number of message workers. Increase only after checking queue age, CPU, memory, and upstream rate limits. | `5` |
 | `InteractionWorkerCount` | Integer | Number of interaction workers. | `5` |
 | `InteractionChannelCapacity` | Integer | Maximum number of admitted in-process interactions waiting for workers. | `100` |
+| `ClearPendingOnStartup` | Boolean | Delete pending work when the queue starts. Enable only when intentionally discarding pending work. | `false` |
 | `ShutdownDrainTimeout` | TimeSpan | Maximum time allowed to drain admitted work during shutdown. | `00:00:30` |
-| `MalformedCleanupMaxAttempts` | Integer | Maximum acknowledgement/deletion attempts for malformed queue entries before leaving them pending. | `3` |
+
+#### Queue.Redis
+
+| Key | Value Type | Description | Default |
+|---|---|---|---|
+| `ConnectionString` | String | Valkey/Redis endpoint, including credentials when required. | `queue:6379` |
+| `StreamName` | String | Redis/Valkey stream containing queued message work. | `saucybot:messages` |
+| `ConsumerGroup` | String | Consumer group used by message workers. | `saucybot-workers` |
+| `RetryDelay` | TimeSpan | Delay before retrying an unavailable Redis operation. | `00:00:01` |
+| `PendingMessageIdleTime` | TimeSpan | Minimum idle time before a pending message can be recovered. | `00:05:00` |
+| `PendingReadTimeout` | TimeSpan | Maximum wait for a Redis read to finish during cancellation. | `00:00:01` |
+| `MalformedCleanupMaxAttempts` | Integer | Maximum cleanup attempts for malformed queue entries. | `3` |
 | `MalformedCleanupMaxDelay` | TimeSpan | Maximum delay between malformed-entry cleanup attempts. | `00:00:05` |
 
 ### OpenTelemetry

@@ -99,12 +99,16 @@ The original message can be deleted while the work item waits in the queue. In t
 
 ## 7. Finish the queue item
 
-After processing and sending succeed, the worker:
+After processing and sending succeed, the worker calls the queue's completion method. The configured queue backend then acknowledges and removes the item.
 
-1. Acknowledges the Redis stream entry with `XACK`.
-2. Deletes the entry with `XDEL`.
+1. Completes the work item through the queue interface.
+2. Lets the queue backend apply its acknowledgement and deletion rules.
 
-If processing fails, the worker does not acknowledge the item. The item remains available for the configured recovery path.
+If processing fails, the worker calls the queue's failure method. Redis keeps the item pending until a worker recovers it after the idle period.
+
+The worker uses the Redis delivery count to limit processing attempts. After the limit, the worker acknowledges and deletes the failed item.
+
+`ClearPendingOnStartup` deletes the entire stream. Do not enable it when you need to recover pending work after a restart.
 
 The worker records queue, worker, and processing metrics. OpenTelemetry also records message and interaction processing spans when tracing is enabled.
 
