@@ -12,7 +12,7 @@ using SaucyBot.Options.Sites;
 namespace SaucyBot.Site.Twitter;
 
 
-[SiteIdentifier("FxTwitter")]
+[SiteIdentifier("Twitter")]
 public sealed partial class FxTwitterSite : BaseSite
 {
     [GeneratedRegex(@"https?://(www\.|mobile\.)?(?<domain>twitter|x|nitter)\.(com|net)/(?<user>\S*)/status/(?<id>\d+)(/(video|photo)/\d{1})?(/(?<translate>\w{2}|\w{5}|original))?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]

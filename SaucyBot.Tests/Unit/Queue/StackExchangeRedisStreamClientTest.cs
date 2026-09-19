@@ -14,7 +14,7 @@ public sealed class StackExchangeRedisStreamClientTest
 {
     private const string Consumer = "worker-1";
 
-    private static WorkQueueOptions Options(TimeSpan pendingReadTimeout) =>
+    private static RedisWorkQueueOptions Options(TimeSpan pendingReadTimeout) =>
         new()
         {
             ConnectionString = "queue:6379",
@@ -31,9 +31,19 @@ public sealed class StackExchangeRedisStreamClientTest
     {
         _database = Substitute.For<IDatabase>();
         _connection.GetDatabase().Returns(_database);
+        _database
+            .StreamAutoClaimAsync(
+                Arg.Any<RedisKey>(),
+                Arg.Any<RedisValue>(),
+                Arg.Any<RedisValue>(),
+                Arg.Any<long>(),
+                Arg.Any<RedisValue>(),
+                Arg.Any<int?>(),
+                Arg.Any<CommandFlags>())
+            .Returns(Task.FromResult(StreamAutoClaimResult.Null));
     }
 
-    private StackExchangeRedisStreamClient CreateClient(WorkQueueOptions options) =>
+    private StackExchangeRedisStreamClient CreateClient(RedisWorkQueueOptions options) =>
         new(_connection, options, NullLogger<StackExchangeRedisStreamClient>.Instance);
 
     private void ConfigureRead(Task<StreamEntry[]> readTask) =>
