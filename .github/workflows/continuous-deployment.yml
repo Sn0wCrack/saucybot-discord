@@ -19,7 +19,7 @@ env:
 jobs:
   metadata:
     name: 'Generate Metadata'
-    runs-on: 'ubuntu-24.04'
+    runs-on: 'ubuntu-26.04'
     outputs:
       tags: ${{ steps.docker_meta.outputs.tags }}
       labels: ${{ steps.docker_meta.outputs.labels }}
@@ -49,7 +49,7 @@ jobs:
   deploy:
     name: 'Deploy'
     needs: package
-    runs-on: 'ubuntu-24.04'
+    runs-on: 'ubuntu-26.04'
     environment: Production
 
     steps:
