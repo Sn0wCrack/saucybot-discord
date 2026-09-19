@@ -9,6 +9,9 @@ public sealed class DiscordMessageResolver : IMessageResolver
 
     public void Initialize(BaseSocketClient client) => _client = client;
 
+    public ISocketMessageChannel? GetChannel(ulong channelId) =>
+        _client?.GetChannel(channelId) as ISocketMessageChannel;
+
     public IUserMessage? GetCachedMessage(ulong channelId, ulong messageId)
     {
         return (_client?.GetChannel(channelId) as ISocketMessageChannel)?.GetCachedMessage(messageId) as IUserMessage;

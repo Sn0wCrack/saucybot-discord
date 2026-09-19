@@ -20,6 +20,34 @@ namespace SaucyBot.Tests.Unit.Services;
 public sealed class SiteManagerTest
 {
     [Fact]
+    public void PermissionFailureDiagnosticsIncludeMessageChannelGuildAndPermissionContext()
+    {
+        var diagnostic = SiteManager.FormatPermissionFailure(
+            operation: "sending",
+            site: "Twitter",
+            messageId: 11,
+            channelId: 22,
+            guildId: 33,
+            discordCode: 50013,
+            isThread: true,
+            contextType: "QueuedMessageContext",
+            canCreateEmbed: true,
+            canManageMessages: false,
+            isNsfw: false,
+            cachedPermissions: "raw=123, embedLinks=True");
+
+        Assert.Contains("sending", diagnostic);
+        Assert.Contains("Twitter", diagnostic);
+        Assert.Contains("message 11", diagnostic);
+        Assert.Contains("channel 22", diagnostic);
+        Assert.Contains("guild 33", diagnostic);
+        Assert.Contains("discordCode=50013", diagnostic);
+        Assert.Contains("isThread=True", diagnostic);
+        Assert.Contains("context=QueuedMessageContext", diagnostic);
+        Assert.Contains("cachedPermissions=raw=123, embedLinks=True", diagnostic);
+    }
+
+    [Fact]
     public void SiteRegistryMatchesOnlyEnabledSitePatterns()
     {
         var site = Substitute.For<ContextSite>();
