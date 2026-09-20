@@ -71,6 +71,11 @@ public sealed class SiteManager : IMessageWorkHandler
 
         foreach (var (identifier, site) in _siteRegistry.Sites)
         {
+            if (guildConfiguration?.IsSiteDisabled(identifier) == true)
+            {
+                continue;
+            }
+
             var matches = site.Pattern.Matches(content);
 
             foreach (Match match in matches)
@@ -101,6 +106,11 @@ public sealed class SiteManager : IMessageWorkHandler
         var maximumEmbeds = guildConfiguration?.MaximumEmbeds ?? _botOptions.MaximumEmbeds;
         foreach (var (identifier, site) in _siteRegistry.Sites)
         {
+            if (guildConfiguration?.IsSiteDisabled(identifier) == true)
+            {
+                continue;
+            }
+
             foreach (Match match in site.Pattern.Matches(content))
             {
                 results.Add(new SiteManagerProcessResult(identifier, match));
@@ -131,6 +141,11 @@ public sealed class SiteManager : IMessageWorkHandler
 
         foreach (var (identifier, site) in _siteRegistry.Sites)
         {
+            if (guildConfiguration?.IsSiteDisabled(identifier) == true)
+            {
+                continue;
+            }
+
             var matches = site.Pattern.Matches(content);
 
             foreach (Match match in matches)
@@ -188,6 +203,7 @@ public sealed class SiteManager : IMessageWorkHandler
                 _logger.LogDebug("Matched link \"{Match}\" to site {Site}", match, site);
 
                 ProcessResponse? response = null;
+                var operation = "processing";
 
                 try
                 {
@@ -211,6 +227,7 @@ public sealed class SiteManager : IMessageWorkHandler
                         continue;
                     }
 
+                    operation = "sending";
                     await SendAndDispose(response, () => _messageManager.Send(message, response, cancellationToken));
 
                     var target = await message.ResolveMessageAsync(cancellationToken);
@@ -229,7 +246,7 @@ public sealed class SiteManager : IMessageWorkHandler
                     TimeSpan? messageAge = null;
                     if (message.EnqueuedAt is not null)
                     {
-                        messageAge = DateTimeOffset.UtcNow - message.EnqueuedAt.Value;
+                        messageAge = DateTimeOffset.UtcNow - message.EnqueuedAt;
                     }
 
                     _logger.LogDebug(
@@ -237,6 +254,31 @@ public sealed class SiteManager : IMessageWorkHandler
                         message.Id,
                         site,
                         messageAge);
+                }
+                catch (HttpException exception) when (
+                    exception.DiscordCode is DiscordErrorCode.MissingPermissions or DiscordErrorCode.InsufficientPermissions)
+                {
+                    var channel = _messageResolver.GetChannel(message.ChannelId);
+                    var discordCode = (int)exception.DiscordCode.GetValueOrDefault();
+                    var cachedPermissions = channel is SocketGuildChannel guildChannel
+                        ? FormatCachedPermissions(guildChannel.Guild.CurrentUser.GetPermissions(guildChannel))
+                        : null;
+
+                    _logger.LogError(
+                        exception,
+                        FormatPermissionFailure(
+                            operation,
+                            site,
+                            message.Id,
+                            message.ChannelId,
+                            message.GuildId ?? 0,
+                            (int)exception.DiscordCode,
+                            channel is SocketThreadChannel,
+                            message.GetType().Name,
+                            message.CanCreateEmbed,
+                            message.CanManageMessages,
+                            message.IsNsfw,
+                            cachedPermissions));
                 }
                 catch (Exception ex)
                 {
@@ -252,6 +294,31 @@ public sealed class SiteManager : IMessageWorkHandler
             }
         }
     }
+
+    internal static string FormatPermissionFailure(
+        string operation,
+        string site,
+        ulong messageId,
+        ulong channelId,
+        ulong guildId,
+        int discordCode,
+        bool isThread,
+        string contextType,
+        bool canCreateEmbed,
+        bool canManageMessages,
+        bool isNsfw,
+        string? cachedPermissions) =>
+        $"Discord denied {operation} for site {site}, message {messageId}, channel {channelId}, guild {guildId}; "
+        + $"discordCode={discordCode}, isThread={isThread}, context={contextType}, "
+        + $"canCreateEmbed={canCreateEmbed}, canManageMessages={canManageMessages}, isNsfw={isNsfw}, "
+        + $"cachedPermissions={cachedPermissions ?? "unavailable"}";
+
+    private static string FormatCachedPermissions(ChannelPermissions permissions) =>
+        $"raw={permissions.RawValue}, "
+        + $"view={permissions.ViewChannel}, readHistory={permissions.ReadMessageHistory}, "
+        + $"send={permissions.SendMessages}, sendInThreads={permissions.SendMessagesInThreads}, "
+        + $"embedLinks={permissions.EmbedLinks}, attachFiles={permissions.AttachFiles}, "
+        + $"manageMessages={permissions.ManageMessages}";
 
     public async Task HandleAsync(MessageWorkItem item, CancellationToken cancellationToken)
     {

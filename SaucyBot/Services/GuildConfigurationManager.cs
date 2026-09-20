@@ -43,6 +43,7 @@ public sealed class GuildConfigurationManager : IGuildConfigurationManager
     {
         var existing = await _context.GuildConfigurations
             .Include(gc => gc.RestrictedRoles)
+            .Include(gc => gc.DisabledSites)
             .FirstOrDefaultAsync(gc => gc.Id == guildConfiguration.Id);
 
         if (existing is null)
@@ -62,6 +63,30 @@ public sealed class GuildConfigurationManager : IGuildConfigurationManager
             GuildConfigurationId = existing.Id,
             RoleId = role.RoleId,
         });
+
+        var disabledSites = guildConfiguration.DisabledSites.Select(site => new GuildConfigurationDisabledSite
+        {
+            GuildConfigurationId = existing.Id,
+            Site = site.Site,
+        });
+
+        existing.DisabledSites.Sync(
+            incomingCollection: disabledSites,
+            currentKeySelector: entity => entity.Site,
+            incomingKeySelector: dto => dto.Site,
+            updateAction: (entity, dto) =>
+            {
+                entity.GuildConfigurationId = dto.GuildConfigurationId;
+                entity.Site = dto.Site;
+                entity.UpdatedAt = DateTime.UtcNow;
+            },
+            createAction: dto => new GuildConfigurationDisabledSite
+            {
+                GuildConfigurationId = dto.GuildConfigurationId,
+                Site = dto.Site,
+            },
+            context: _context
+        );
 
         existing.RestrictedRoles.Sync(
             incomingCollection: allowedRoles,

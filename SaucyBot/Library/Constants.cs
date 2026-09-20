@@ -51,13 +51,13 @@ public static class Constants
     public const GatewayIntents RequiredGatewayIntents =
         GatewayIntents.Guilds | GatewayIntents.GuildMessages | GatewayIntents.MessageContent;
 
-    public const ChannelPermission RequiredChannelPermissions = ChannelPermission.ReadMessageHistory |
+    public const ChannelPermission RequiredTextChannelPermissions = ChannelPermission.ReadMessageHistory |
                                                                  ChannelPermission.SendMessages |
                                                                  ChannelPermission.EmbedLinks |
                                                                  ChannelPermission.AttachFiles;
 
-    public const ChannelPermission RequiredThreadPermissions =
-        RequiredChannelPermissions | ChannelPermission.SendMessagesInThreads;
+    public const ChannelPermission RequiredThreadChannelPermissions =
+        RequiredTextChannelPermissions | ChannelPermission.SendMessagesInThreads;
 
     /// <summary>
     /// The default maximum number of embeds to attempt to send in a single processing run.

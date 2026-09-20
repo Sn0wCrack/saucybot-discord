@@ -15,20 +15,30 @@ public sealed class DatabaseContext : DbContext
 
     public DbSet<GuildConfigurationRestrictedRole> GuildConfigurationRestrictedRoles => Set<GuildConfigurationRestrictedRole>();
 
+    public DbSet<GuildConfigurationDisabledSite> GuildConfigurationDisabledSites => Set<GuildConfigurationDisabledSite>();
+
     public DatabaseContext(IOptions<DatabaseOptions> databaseOptions)
     {
         _connectionString = databaseOptions.Value.ConnectionString;
+    }
+
+    internal DatabaseContext(DbContextOptions<DatabaseContext> options) : base(options)
+    {
+        _connectionString = null!;
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
     {
         base.OnConfiguring(options);
 
-        var version = ServerVersion.AutoDetect(_connectionString);
+        if (!options.IsConfigured)
+        {
+            var version = ServerVersion.AutoDetect(_connectionString);
 
-        options
-            .UseSnakeCaseNamingConvention()
-            .UseMySql(_connectionString, version);
+            options
+                .UseSnakeCaseNamingConvention()
+                .UseMySql(_connectionString, version);
+        }
 
 #if DEBUG
         options

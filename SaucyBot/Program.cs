@@ -57,9 +57,15 @@ await Host.CreateDefaultBuilder(args)
 
         services.AddSaucyBotCache(configuration);
         var queueOptions = configuration.BindOrDefault<WorkQueueOptions>("Queue");
+        if (queueOptions.Driver != QueueDriverType.Redis)
+        {
+            throw new InvalidOperationException($"Unsupported queue driver: {queueOptions.Driver}");
+        }
+
         services.AddSingleton(queueOptions);
+        services.AddSingleton(queueOptions.Redis);
         services.AddSingleton<InteractionWorkChannel>();
-        services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(queueOptions.ConnectionString));
+        services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(queueOptions.Redis.ConnectionString));
         services.AddSingleton<IRedisStreamClient, StackExchangeRedisStreamClient>();
         services.AddSingleton<IMessageWorkQueue, RedisWorkQueue>();
         services.AddSingleton<IWorkItemProcessor, WorkItemProcessor>();

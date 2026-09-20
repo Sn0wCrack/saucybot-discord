@@ -178,12 +178,15 @@ public sealed class InteractionResponseTest
             }
         }
 
-        public Task AcknowledgeAsync(QueuedMessageWorkItem item, CancellationToken cancellationToken) =>
-            throw new NotSupportedException("Interaction response tests do not acknowledge message work.");
+        public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
-        public Task DeleteAsync(string entryId, CancellationToken cancellationToken) =>
-            throw new NotSupportedException("Interaction response tests do not delete message work.");
+        public Task CompleteAsync(QueuedMessageWorkItem item, CancellationToken cancellationToken) =>
+            throw new NotSupportedException("Interaction response tests do not complete message work.");
 
-        public Task ClearPendingAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task<WorkItemFailureResult> FailAsync(
+            QueuedMessageWorkItem item,
+            Exception exception,
+            CancellationToken cancellationToken) =>
+            throw new NotSupportedException("Interaction response tests do not fail message work.");
     }
 }
