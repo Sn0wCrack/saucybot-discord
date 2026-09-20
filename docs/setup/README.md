@@ -22,7 +22,7 @@ Supported Sites
 | Site | Description |
 |---|---|
 | **ArtStation** | Embeds up to 8 extra images (configurable). |
-| **Twitter** | Embeds posts when native embeds fail. Uses [fxtwitter](https://github.com/FixTweet/FixTweet)'s API. Creates an embed when Twitter fails to embed a link itself. Embeds video if it cannot be played natively in Discord. Falls back to an fxtwitter link when files exceed Discord's maximum size. |
+| **Twitter** | Embeds posts when native embeds fail. Uses [VxTwitter](https://github.com/dylanpdx/BetterTwitFix)'s API. Creates an embed when Twitter fails to embed a link itself. Falls back to a VxTwitter link for video posts and oversized text. |
 | **DeviantArt** | Embeds main image or thumbnail with more information than the built-in embed. |
 | **Hentai Foundry** | Creates an embed as none exists for the site. |
 | **Pixiv** | Posts up to 5 images of the set (configurable). Supports Ugoira video conversion with correct framerate and frame-timing (format is configurable, requires ffmpeg). |

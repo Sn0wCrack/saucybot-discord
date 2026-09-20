@@ -58,6 +58,7 @@ public sealed class ServiceProviderTest
         services.AddDeviantArtOpenEmbedClient();
         services.AddE621Client();
         services.AddFxTwitterClient();
+        services.AddVxTwitterClient();
         services.AddTwitterImageSyndicationClient();
         services.AddMisskeyClient();
         services.AddVixBlueskyClient();
@@ -85,6 +86,7 @@ public sealed class ServiceProviderTest
         });
 
         Assert.NotNull(provider.GetRequiredService<Worker>());
+        Assert.NotNull(provider.GetRequiredService<IVxTwitterClient>());
         Assert.NotNull(provider.GetRequiredService<WorkQueueHostedService>());
         Assert.NotNull(provider.GetRequiredService<SiteRegistry>());
         Assert.NotNull(provider.GetServices<IHostedService>().Single(hosted => hosted is Worker));

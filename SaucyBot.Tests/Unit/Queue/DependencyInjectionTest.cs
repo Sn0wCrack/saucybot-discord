@@ -122,6 +122,7 @@ public sealed class DependencyInjectionTest
         services.AddDeviantArtOpenEmbedClient();
         services.AddE621Client();
         services.AddFxTwitterClient();
+        services.AddVxTwitterClient();
         services.AddTwitterImageSyndicationClient();
         services.AddMisskeyClient();
         services.AddVixBlueskyClient();

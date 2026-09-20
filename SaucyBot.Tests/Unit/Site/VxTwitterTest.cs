@@ -1,0 +1,104 @@
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using NSubstitute;
+using SaucyBot.Library.Sites.Twitter;
+using SaucyBot.Site;
+using SaucyBot.Site.Twitter;
+using Xunit;
+
+namespace SaucyBot.Tests.Unit.Site;
+
+public sealed class VxTwitterTest
+{
+    [Fact]
+    public async Task AnEmbedIsCreatedForTweet()
+    {
+        var client = Substitute.For<IVxTwitterClient>();
+        client.GetTweet(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<string?>())
+            .Returns(CreateTweet());
+        var site = CreateSite(client);
+
+        var result = await site.Process(CreateRequest(site, "https://twitter.com/testuser/status/123456789"));
+
+        Assert.NotNull(result);
+        var embed = Assert.Single(result.Embeds);
+        Assert.Equal("Test tweet content", embed.Description);
+        Assert.Equal("https://twitter.com/testuser/status/123456789", embed.Url);
+        Assert.Equal("Test User (@testuser)", embed.Author?.Name);
+    }
+
+    [Fact]
+    public async Task TweetImagesAreAddedAsEmbeds()
+    {
+        var client = Substitute.For<IVxTwitterClient>();
+        client.GetTweet(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<string?>())
+            .Returns(CreateTweet(
+                media: [
+                    new VxTwitterMedia("first", null, new VxTwitterMediaSize(600, 800), "https://example.com/one.jpg", "image", "https://example.com/one.jpg"),
+                    new VxTwitterMedia("second", null, new VxTwitterMediaSize(600, 800), "https://example.com/two.jpg", "image", "https://example.com/two.jpg")
+                ]));
+        var site = CreateSite(client);
+
+        var result = await site.Process(CreateRequest(site, "https://x.com/testuser/status/123456789"));
+
+        Assert.NotNull(result);
+        Assert.Equal(2, result.Embeds.Count);
+        Assert.Equal("https://example.com/one.jpg", result.Embeds[0].Image?.Url);
+        Assert.Equal("https://example.com/two.jpg", result.Embeds[1].Image?.Url);
+    }
+
+    [Fact]
+    public async Task VideoTweetFallsBackToVxTwitterLink()
+    {
+        var client = Substitute.For<IVxTwitterClient>();
+        client.GetTweet(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<string?>())
+            .Returns(CreateTweet(media: [
+                new VxTwitterMedia(null, 1000, new VxTwitterMediaSize(600, 800), "https://example.com/video.jpg", "video", "https://example.com/video.mp4")
+            ]));
+        var site = CreateSite(client);
+
+        var result = await site.Process(CreateRequest(site, "https://twitter.com/testuser/status/123456789"));
+
+        Assert.NotNull(result);
+        Assert.Empty(result.Embeds);
+        Assert.Equal("https://vxtwitter.com/testuser/status/123456789", result.Text);
+    }
+
+    [Fact]
+    public async Task NothingIsReturnedWhenTheApiClientReturnsUnsuccessfully()
+    {
+        var client = Substitute.For<IVxTwitterClient>();
+        client.GetTweet(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<string?>())
+            .Returns((VxTwitterResponse?)null);
+        var site = CreateSite(client);
+
+        var result = await site.Process(CreateRequest(site, "https://twitter.com/testuser/status/123456789"));
+
+        Assert.Null(result);
+    }
+
+    private static VxTwitterSite CreateSite(IVxTwitterClient client) =>
+        new(Substitute.For<ILogger<VxTwitterSite>>(), client);
+
+    private static ProcessRequest CreateRequest(VxTwitterSite site, string url) =>
+        new(site.Pattern.Match(url));
+
+    private static VxTwitterResponse CreateTweet(List<VxTwitterMedia>? media = null) =>
+        new(
+            "Mon Jan 01 00:00:00 +0000 2024",
+            1704067200,
+            ["test"],
+            20,
+            media?.ConvertAll(item => item.Url) ?? [],
+            media ?? [],
+            5,
+            10,
+            "Test tweet content",
+            "123456789",
+            "https://twitter.com/testuser/status/123456789",
+            "Test User",
+            "testuser",
+            "");
+}

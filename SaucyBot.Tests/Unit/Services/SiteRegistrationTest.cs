@@ -94,7 +94,9 @@ public sealed class SiteRegistrationTest
             provider.GetServices<SiteRegistration>());
 
         Assert.Empty(registry.Sites);
-        Assert.Equal("Twitter", typeof(FxTwitterSite).GetCustomAttributes(typeof(SiteIdentifierAttribute), false)
+        Assert.Contains(registrations, registration => registration.ImplementationType == typeof(VxTwitterSite));
+        Assert.DoesNotContain(registrations, registration => registration.ImplementationType == typeof(FxTwitterSite));
+        Assert.Equal("Twitter", typeof(VxTwitterSite).GetCustomAttributes(typeof(SiteIdentifierAttribute), false)
             .Cast<SiteIdentifierAttribute>().Single().Identifier);
         Assert.Equal("ArtStation", typeof(ArtStationSite).GetCustomAttributes(typeof(SiteIdentifierAttribute), false)
             .Cast<SiteIdentifierAttribute>().Single().Identifier);
