@@ -48,7 +48,7 @@ public sealed partial class VxTwitterSite : BaseSite
         var quotedImages = tweet.QuotedTweet is null ? [] : GetImages(tweet.QuotedTweet);
         var quotedHasVideo = tweet.QuotedTweet is not null && HasVideo(tweet.QuotedTweet);
 
-        if (mainHasVideo || (!mainImages.Any() && quotedHasVideo))
+        if (mainHasVideo || quotedHasVideo)
         {
             _logger.LogDebug("Processing VxTwitter tweet as video link");
             return CreateLinkResponse(tweet);

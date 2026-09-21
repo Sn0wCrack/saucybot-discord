@@ -110,6 +110,27 @@ public sealed class VxTwitterTest
         Assert.Equal("https://example.com/quoted.jpg", embed.Image?.Url);
     }
 
+    [Fact]
+    public async Task AnyQuotedVideoForcesTheVxTwitterLinkFallback()
+    {
+        var client = Substitute.For<IVxTwitterClient>();
+        client.GetTweet(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<string?>())
+            .Returns(CreateTweet(
+                media: [
+                    new VxTwitterMedia("main", null, new VxTwitterMediaSize(600, 800), "https://example.com/main.jpg", "image", "https://example.com/main.jpg")
+                ],
+                qrt: CreateTweet(media: [
+                    new VxTwitterMedia(null, 1000, new VxTwitterMediaSize(600, 800), "https://example.com/quoted-video.jpg", "video", "https://example.com/quoted-video.mp4")
+                ])));
+        var site = CreateSite(client);
+
+        var result = await site.Process(CreateRequest(site, "https://twitter.com/testuser/status/123456789"));
+
+        Assert.NotNull(result);
+        Assert.Empty(result.Embeds);
+        Assert.Equal("https://vxtwitter.com/testuser/status/123456789", result.Text);
+    }
+
     private static VxTwitterSite CreateSite(IVxTwitterClient client) =>
         new(Substitute.For<ILogger<VxTwitterSite>>(), client);
 
