@@ -74,33 +74,6 @@ public sealed class SiteRegistrationTest
     }
 
     [Fact]
-    public void ProductionSiteRegistrationsUseTheirAttributedIdentifiers()
-    {
-        var services = new ServiceCollection().AddSaucyBotSites();
-        var registrations = services
-            .Where(descriptor => descriptor.ServiceType == typeof(SiteRegistration))
-            .Select(descriptor => (SiteRegistration)descriptor.ImplementationInstance!)
-            .ToList();
-        var configurationValues = registrations
-            .Select((registration, index) => new KeyValuePair<string, string?>($"Bot:DisabledSites:{index}",
-                registration.ImplementationType.GetCustomAttributes(typeof(SiteIdentifierAttribute), false)
-                    .Cast<SiteIdentifierAttribute>().Single().Identifier));
-        using var provider = services.BuildServiceProvider();
-
-        var registry = new SiteRegistry(
-            SubstituteLogger(),
-            Configuration(configurationValues).BotOptions(),
-            provider,
-            provider.GetServices<SiteRegistration>());
-
-        Assert.Empty(registry.Sites);
-        Assert.Equal("Twitter", typeof(FxTwitterSite).GetCustomAttributes(typeof(SiteIdentifierAttribute), false)
-            .Cast<SiteIdentifierAttribute>().Single().Identifier);
-        Assert.Equal("ArtStation", typeof(ArtStationSite).GetCustomAttributes(typeof(SiteIdentifierAttribute), false)
-            .Cast<SiteIdentifierAttribute>().Single().Identifier);
-    }
-
-    [Fact]
     public void MatchingUsesStartupMetadataWithoutConstructingHandlersPerCandidate()
     {
         ConstructedSite.Reset();

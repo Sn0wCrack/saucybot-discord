@@ -190,7 +190,7 @@ Each site has its own configuration block. Only configure the sites you intend t
 | `Cookies.MemberId` | String | ExHentai member ID cookie. | *(empty)* |
 | `Cookies.PasswordHash` | String | ExHentai password hash cookie. | *(empty)* |
 
-#### FxTwitter
+#### FxTwitter (alternate implementation)
 
 | Key | Value Type | Description | Default |
 |---|---|---|---|
