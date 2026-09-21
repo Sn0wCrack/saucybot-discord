@@ -79,13 +79,47 @@ public sealed class VxTwitterTest
         Assert.Null(result);
     }
 
+    [Fact]
+    public async Task QuoteTweetTextIsIncludedInTheDescription()
+    {
+        var client = Substitute.For<IVxTwitterClient>();
+        client.GetTweet(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<string?>())
+            .Returns(CreateTweet(qrt: CreateTweet(text: "Quoted tweet content")));
+        var site = CreateSite(client);
+
+        var result = await site.Process(CreateRequest(site, "https://twitter.com/testuser/status/123456789"));
+
+        var embed = Assert.Single(result!.Embeds);
+        Assert.Contains("> **[Quoting](https://twitter.com/testuser/status/123456789) Test User ([@testuser](https://twitter.com/testuser))**", embed.Description);
+        Assert.Contains("> Quoted tweet content", embed.Description);
+    }
+
+    [Fact]
+    public async Task QuotedTweetImagesAreAddedWhenTheMainTweetHasNoMedia()
+    {
+        var client = Substitute.For<IVxTwitterClient>();
+        client.GetTweet(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<string?>())
+            .Returns(CreateTweet(qrt: CreateTweet(media: [
+                new VxTwitterMedia("quoted", null, new VxTwitterMediaSize(600, 800), "https://example.com/quoted.jpg", "image", "https://example.com/quoted.jpg")
+            ])));
+        var site = CreateSite(client);
+
+        var result = await site.Process(CreateRequest(site, "https://twitter.com/testuser/status/123456789"));
+
+        var embed = Assert.Single(result!.Embeds);
+        Assert.Equal("https://example.com/quoted.jpg", embed.Image?.Url);
+    }
+
     private static VxTwitterSite CreateSite(IVxTwitterClient client) =>
         new(Substitute.For<ILogger<VxTwitterSite>>(), client);
 
     private static ProcessRequest CreateRequest(VxTwitterSite site, string url) =>
         new(site.Pattern.Match(url));
 
-    private static VxTwitterResponse CreateTweet(List<VxTwitterMedia>? media = null) =>
+    private static VxTwitterResponse CreateTweet(
+        List<VxTwitterMedia>? media = null,
+        VxTwitterResponse? qrt = null,
+        string text = "Test tweet content") =>
         new(
             "Mon Jan 01 00:00:00 +0000 2024",
             1704067200,
@@ -95,10 +129,11 @@ public sealed class VxTwitterTest
             media ?? [],
             5,
             10,
-            "Test tweet content",
+            text,
             "123456789",
             "https://twitter.com/testuser/status/123456789",
             "Test User",
             "testuser",
-            "");
+            "",
+            qrt);
 }

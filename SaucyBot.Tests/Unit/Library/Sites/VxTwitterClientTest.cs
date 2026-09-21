@@ -37,7 +37,24 @@ public sealed class VxTwitterClientTest
               "tweetID": "1577730467436138524",
               "tweetURL": "https://twitter.com/Twitter/status/1577730467436138524",
               "user_name": "Twitter",
-              "user_screen_name": "Twitter"
+              "user_screen_name": "Twitter",
+              "user_profile_image_url": "https://pbs.twimg.com/profile_images/example.jpg",
+              "qrt": {
+                "date": "Tue Oct 04 18:40:30 +0000 2022",
+                "date_epoch": 1664908830,
+                "hashtags": [],
+                "likes": 1,
+                "mediaURLs": [],
+                "media_extended": [],
+                "replies": 2,
+                "retweets": 3,
+                "text": "quoted text",
+                "tweetID": "1577000000000000000",
+                "tweetURL": "https://twitter.com/Other/status/1577000000000000000",
+                "user_name": "Other User",
+                "user_screen_name": "Other",
+                "user_profile_image_url": "https://pbs.twimg.com/profile_images/other.jpg"
+              }
             }
             """);
         var client = new VxTwitterClient(
@@ -54,6 +71,7 @@ public sealed class VxTwitterClientTest
         Assert.Equal("example.jpg", result.MediaExtended[0].Url.Split('/').Last());
         Assert.Equal("image", result.MediaExtended[0].Type);
         Assert.Equal("Twitter", result.UserScreenName);
+        Assert.Equal("quoted text", result.QuotedTweet?.Text);
         Assert.Equal("https://api.vxtwitter.com/Twitter/status/1577730467436138524?include_rtf=true&include_txt=ifnomedia", handler.RequestUri?.ToString());
     }
 

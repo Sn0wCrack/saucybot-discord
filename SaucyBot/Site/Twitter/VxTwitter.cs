@@ -37,22 +37,24 @@ public sealed partial class VxTwitterSite : BaseSite
             return null;
         }
 
-        var description = Helper.EscapeDiscordMarkdown(tweet.Text);
+        var description = GetTweetText(tweet);
         if (description.Length >= Constants.MaximumEmbedBodyLength)
         {
             return CreateLinkResponse(tweet);
         }
 
-        var media = tweet.MediaExtended;
-        if (media.Any(item => item.Type.Equals("video", StringComparison.OrdinalIgnoreCase)))
+        var mainImages = GetImages(tweet);
+        var mainHasVideo = HasVideo(tweet);
+        var quotedImages = tweet.QuotedTweet is null ? [] : GetImages(tweet.QuotedTweet);
+        var quotedHasVideo = tweet.QuotedTweet is not null && HasVideo(tweet.QuotedTweet);
+
+        if (mainHasVideo || (!mainImages.Any() && quotedHasVideo))
         {
             _logger.LogDebug("Processing VxTwitter tweet as video link");
             return CreateLinkResponse(tweet);
         }
 
-        var images = media
-            .Where(item => item.Type.Equals("image", StringComparison.OrdinalIgnoreCase))
-            .ToList();
+        var images = mainImages.Any() ? mainImages : quotedImages;
 
         if (images.Count == 0)
         {
@@ -75,6 +77,34 @@ public sealed partial class VxTwitterSite : BaseSite
     {
         Text = $"https://vxtwitter.com/{tweet.UserScreenName}/status/{tweet.TweetId}",
     };
+
+    private static List<VxTwitterMedia> GetImages(VxTwitterResponse tweet) => tweet.MediaExtended
+        .Where(item => item.Type.Equals("image", StringComparison.OrdinalIgnoreCase))
+        .ToList();
+
+    private static bool HasVideo(VxTwitterResponse tweet) => tweet.MediaExtended
+        .Any(item => item.Type.Equals("video", StringComparison.OrdinalIgnoreCase));
+
+    private static string GetTweetText(VxTwitterResponse tweet)
+    {
+        var text = Helper.EscapeDiscordMarkdown(tweet.Text);
+        if (tweet.QuotedTweet is null)
+        {
+            return text;
+        }
+
+        var quote = tweet.QuotedTweet;
+        var quoteAuthorUrl = $"https://twitter.com/{quote.UserScreenName}";
+        return text +
+            $"\n\n> **[Quoting]({tweet.TweetUrl}) {quote.UserName} ([@{quote.UserScreenName}]({quoteAuthorUrl}))**\n" +
+            GetQuoteText(quote);
+    }
+
+    private static string GetQuoteText(VxTwitterResponse quote)
+    {
+        var quotedText = GetTweetText(quote);
+        return quotedText.Insert(0, "> ").Replace("\n", "\n> ");
+    }
 
     private Embed CreateEmbed(VxTwitterResponse tweet, string description, string? imageUrl = null)
     {

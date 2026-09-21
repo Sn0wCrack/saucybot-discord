@@ -151,7 +151,9 @@ public sealed record VxTwitterResponse(
     [property: JsonPropertyName("user_screen_name")]
     string UserScreenName,
     [property: JsonPropertyName("user_profile_image_url")]
-    string UserProfileImageUrl
+    string UserProfileImageUrl,
+    [property: JsonPropertyName("qrt")]
+    VxTwitterResponse? QuotedTweet
 );
 
 public sealed record VxTwitterMedia(
