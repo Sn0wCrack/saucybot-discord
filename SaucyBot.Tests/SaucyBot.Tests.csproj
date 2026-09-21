@@ -8,7 +8,7 @@
     <SentryImplicitUsings>false</SentryImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
     <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" Version="10.10.0" />
     <PackageReference Include="NSubstitute" Version="6.2.0" />
     <PackageReference Include="Testcontainers.Redis" Version="4.15.0" />
