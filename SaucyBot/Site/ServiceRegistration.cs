@@ -31,7 +31,7 @@ public static class SiteServiceRegistration
         AddSite<NewgroundsSite>(services);
         AddSite<PixivSite>(services);
         AddSite<RedditSite>(services);
-        AddSite<VxTwitterSite>(services);
+        AddSite<FxTwitterSite>(services);
         return services;
     }
 
