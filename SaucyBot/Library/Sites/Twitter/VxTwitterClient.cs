@@ -136,6 +136,8 @@ public sealed record VxTwitterResponse(
     List<string> MediaUrls,
     [property: JsonPropertyName("media_extended")]
     List<VxTwitterMedia> MediaExtended,
+    [property: JsonPropertyName("possibly_sensitive")]
+    bool PossiblySensitive,
     [property: JsonPropertyName("replies")]
     int Replies,
     [property: JsonPropertyName("retweets")]

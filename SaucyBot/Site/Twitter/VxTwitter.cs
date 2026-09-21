@@ -13,6 +13,12 @@ public sealed partial class VxTwitterSite : BaseSite
     [GeneratedRegex(@"https?://(www\.|mobile\.)?(?<domain>twitter|x|nitter)\.(com|net)/(?<user>\S*)/status/(?<id>\d+)(/(video|photo)/\d{1})?(/(?<translate>\w{2}|\w{5}|original))?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex VxTwitterPattern();
 
+    [GeneratedRegex(@"(?<!https?://[\w.\-_%$@&?!:;/'()*]+)@([\w.]+)(?=\W|$)", RegexOptions.IgnoreCase)]
+    private static partial Regex MentionPattern();
+
+    [GeneratedRegex(@"(?<!https?://[\w.\-_%$@&?!:;/'()*]+)#([\w.]+)(?=\W|$)", RegexOptions.IgnoreCase)]
+    private static partial Regex HashtagPattern();
+
     public override Regex Pattern => VxTwitterPattern();
 
     public override Color Color => new(0x1DA1F2);
@@ -61,10 +67,15 @@ public sealed partial class VxTwitterSite : BaseSite
             return new ProcessResponse
             {
                 Embeds = { CreateEmbed(tweet, description) },
+                IsNsfw = tweet.PossiblySensitive,
             };
         }
 
-        var response = new ProcessResponse();
+        var response = new ProcessResponse
+        {
+            IsNsfw = tweet.PossiblySensitive
+        };
+
         foreach (var image in images)
         {
             response.Embeds.Add(CreateEmbed(tweet, description, image.Url));
@@ -76,6 +87,7 @@ public sealed partial class VxTwitterSite : BaseSite
     private ProcessResponse CreateLinkResponse(VxTwitterResponse tweet) => new()
     {
         Text = $"https://vxtwitter.com/{tweet.UserScreenName}/status/{tweet.TweetId}",
+        IsNsfw = tweet.PossiblySensitive
     };
 
     private static List<VxTwitterMedia> GetImages(VxTwitterResponse tweet) => tweet.MediaExtended
@@ -83,11 +95,12 @@ public sealed partial class VxTwitterSite : BaseSite
         .ToList();
 
     private static bool HasVideo(VxTwitterResponse tweet) => tweet.MediaExtended
-        .Any(item => item.Type.Equals("video", StringComparison.OrdinalIgnoreCase));
+        .Any(item => item.Type.IsIn(["video", "gif"]));
 
     private static string GetTweetText(VxTwitterResponse tweet)
     {
-        var text = Helper.EscapeDiscordMarkdown(tweet.Text);
+        var text = LinkifyTwitterContent(tweet.Text);
+        text = Helper.EscapeDiscordMarkdown(text);
         if (tweet.QuotedTweet is null)
         {
             return text;
@@ -104,6 +117,23 @@ public sealed partial class VxTwitterSite : BaseSite
     {
         var quotedText = GetTweetText(quote);
         return quotedText.Insert(0, "> ").Replace("\n", "\n> ");
+    }
+
+    private static string LinkifyTwitterContent(string text)
+    {
+        text = MentionPattern().Replace(text, match =>
+        {
+            var username = match.Groups[1].Value;
+            return $"[@{username}](https://twitter.com/{username})";
+        });
+
+        text = HashtagPattern().Replace(text, match =>
+        {
+            var hashtag = match.Groups[1].Value;
+            return $"[#{hashtag}](https://twitter.com/hashtag/{hashtag})";
+        });
+
+        return text;
     }
 
     private Embed CreateEmbed(VxTwitterResponse tweet, string description, string? imageUrl = null)

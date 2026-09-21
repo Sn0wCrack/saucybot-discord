@@ -30,6 +30,36 @@ public sealed class VxTwitterTest
     }
 
     [Fact]
+    public async Task TweetMentionsAndHashtagsAreLinkifiedWithoutChangingUrls()
+    {
+        var client = Substitute.For<IVxTwitterClient>();
+        client.GetTweet(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<string?>())
+            .Returns(CreateTweet(text: "@alice #saucy https://example.com/@not-a-mention"));
+        var site = CreateSite(client);
+
+        var result = await site.Process(CreateRequest(site, "https://twitter.com/testuser/status/123456789"));
+
+        var description = Assert.Single(result!.Embeds).Description;
+        Assert.Contains("[@alice](https://twitter.com/alice)", description);
+        Assert.Contains("[#saucy](https://twitter.com/hashtag/saucy)", description);
+        Assert.Contains("https://example.com/@not-a-mention", description);
+    }
+
+    [Fact]
+    public async Task QuotedTweetMentionsAndHashtagsAreLinkified()
+    {
+        var client = Substitute.For<IVxTwitterClient>();
+        client.GetTweet(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<string?>())
+            .Returns(CreateTweet(qrt: CreateTweet(text: "@quoted #topic")));
+        var site = CreateSite(client);
+
+        var result = await site.Process(CreateRequest(site, "https://twitter.com/testuser/status/123456789"));
+
+        var description = Assert.Single(result!.Embeds).Description;
+        Assert.Contains("> [@quoted](https://twitter.com/quoted) [#topic](https://twitter.com/hashtag/topic)", description);
+    }
+
+    [Fact]
     public async Task TweetImagesAreAddedAsEmbeds()
     {
         var client = Substitute.For<IVxTwitterClient>();
@@ -148,6 +178,7 @@ public sealed class VxTwitterTest
             20,
             media?.ConvertAll(item => item.Url) ?? [],
             media ?? [],
+            false,
             5,
             10,
             text,
