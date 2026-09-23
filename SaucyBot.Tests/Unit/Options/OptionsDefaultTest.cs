@@ -1,6 +1,7 @@
 using System;
 using SaucyBot.Options;
 using SaucyBot.Options.Sites;
+using SaucyBot.Queue;
 using SaucyBot.Services.Cache;
 using SaucyBot.Site.Pixiv;
 using Xunit;
@@ -78,6 +79,16 @@ public sealed class OptionsDefaultTest
         var options = new SentryOptions();
 
         Assert.Null(options.SampleRate);
+    }
+
+    [Fact]
+    public void QueueLeaseRecoveryDefaultsToShortHeartbeatAndReclaimIntervals()
+    {
+        var options = new RedisWorkQueueOptions();
+
+        Assert.Equal(TimeSpan.FromSeconds(5), options.HeartbeatInterval);
+        Assert.Equal(TimeSpan.FromSeconds(5), options.ReclaimerInterval);
+        Assert.Equal(TimeSpan.FromSeconds(30), options.PendingMessageIdleTime);
     }
 
     [Fact]

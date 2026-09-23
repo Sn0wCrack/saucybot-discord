@@ -65,6 +65,10 @@ dlldata.c
 # Benchmark Results
 BenchmarkDotNet.Artifacts/
 
+# Superpowers planning artifacts
+docs/superpowers/plans/
+docs/superpowers/specs/
+
 # .NET
 project.lock.json
 project.fragment.lock.json
