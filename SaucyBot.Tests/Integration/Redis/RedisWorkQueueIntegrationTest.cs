@@ -196,8 +196,17 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
     public async Task HostedWorkerProcessesAndAcknowledgesAQueuedMessage()
     {
         var options = CreateOptions("worker");
-        var queue = new RedisWorkQueue(CreateClient(options.Redis), options);
+        var client = CreateClient(options.Redis);
+        var queue = new RedisWorkQueue(client, options);
         var processor = new RecordingProcessor();
+        var metrics = new SaucyBotMetrics();
+        var executor = new QueuedWorkItemExecutor(
+            processor,
+            queue,
+            client,
+            new WorkQueueOptions { Redis = options.Redis, MaxProcessingTime = TimeSpan.FromSeconds(5) },
+            NullLogger<QueuedWorkItemExecutor>.Instance,
+            metrics);
         await using var service = new WorkQueueHostedService(
             queue,
             processor,
@@ -211,7 +220,8 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
             NullLogger<WorkQueueHostedService>.Instance,
             new InteractionWorkChannel(new WorkQueueOptions { InteractionWorkerCount = 0 }),
             new NoOpInteractionProcessor(),
-            new SaucyBotMetrics());
+            metrics,
+            executor);
 
         await service.StartAsync(TestContext.Current.CancellationToken);
         await queue.EnqueueAsync(TestItem(), TestContext.Current.CancellationToken);
@@ -220,6 +230,59 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
 
         Assert.Equal(1, processor.ProcessedCount);
         Assert.Equal(TestItem().MessageId, processor.Item!.Item.MessageId);
+        Assert.Equal(0, await Database.StreamLengthAsync(options.Redis.StreamName));
+    }
+
+    [Fact]
+    public async Task RecoveryWorkerProcessesAnIdlePendingMessage()
+    {
+        var options = CreateOptions(
+            "recovery-worker",
+            pendingMessageIdleTime: TimeSpan.Zero);
+        var client = CreateClient(options.Redis);
+        var queue = new RedisWorkQueue(client, options);
+        var processor = new RecordingProcessor();
+        var metrics = new SaucyBotMetrics();
+        var executor = new QueuedWorkItemExecutor(
+            processor,
+            queue,
+            client,
+            new WorkQueueOptions
+            {
+                Redis = options.Redis,
+                MessageWorkerCount = 1,
+                InteractionWorkerCount = 0,
+                MaxProcessingTime = TimeSpan.FromSeconds(5),
+            },
+            NullLogger<QueuedWorkItemExecutor>.Instance,
+            metrics);
+
+        await client.EnsureGroupAsync(TestContext.Current.CancellationToken);
+        await queue.EnqueueAsync(TestItem(), TestContext.Current.CancellationToken);
+        var pending = await client.ReadNewAsync("dead-worker", TestContext.Current.CancellationToken);
+        Assert.NotNull(pending);
+
+        await using var service = new WorkQueueHostedService(
+            queue,
+            processor,
+            new WorkQueueOptions
+            {
+                Redis = options.Redis,
+                MessageWorkerCount = 1,
+                InteractionWorkerCount = 0,
+                ShutdownDrainTimeout = TimeSpan.FromSeconds(5),
+            },
+            NullLogger<WorkQueueHostedService>.Instance,
+            new InteractionWorkChannel(new WorkQueueOptions { InteractionWorkerCount = 0 }),
+            new NoOpInteractionProcessor(),
+            metrics,
+            executor);
+
+        await service.StartAsync(TestContext.Current.CancellationToken);
+        await processor.Processed.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await service.StopAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(1, processor.ProcessedCount);
         Assert.Equal(0, await Database.StreamLengthAsync(options.Redis.StreamName));
     }
 

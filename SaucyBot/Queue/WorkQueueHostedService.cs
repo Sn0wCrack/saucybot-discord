@@ -18,6 +18,7 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
     private readonly CancellationTokenSource _workerCancellation = new();
     private readonly CancellationTokenSource _readCancellation = new();
     private readonly TaskCompletionSource _workersReady = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly string _consumerInstance = $"{Environment.MachineName}-{Guid.NewGuid():N}";
     private Task? _completion;
     private int _disposed;
 
@@ -74,12 +75,17 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
 
         for (var i = 0; i < messageWorkers; i++)
         {
-            _workers.Add(RunWorkerAsync($"{Environment.MachineName}-{i}", workerCancellation));
+            _workers.Add(RunSupervisedWorkerAsync($"{_consumerInstance}-{i}", workerCancellation));
         }
 
         for (var i = 0; i < interactionWorkers; i++)
         {
             _workers.Add(RunInteractionWorkerAsync(workerCancellation));
+        }
+
+        if (_executor is not null)
+        {
+            _workers.Add(RunRecoveryAsync($"{_consumerInstance}-recovery", workerCancellation));
         }
 
         _logger.LogInformation(
@@ -280,6 +286,90 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
             _logger.LogDebug(
                 "Message worker {Consumer} stopped because queue consumption was cancelled",
                 consumer);
+        }
+    }
+
+    private async Task RunSupervisedWorkerAsync(string consumer, CancellationToken cancellationToken)
+    {
+        while (!cancellationToken.IsCancellationRequested && !_readCancellation.IsCancellationRequested)
+        {
+            try
+            {
+                await RunWorkerAsync(consumer, cancellationToken);
+
+                if (cancellationToken.IsCancellationRequested || _readCancellation.IsCancellationRequested)
+                {
+                    return;
+                }
+
+                _logger.LogWarning("Message worker {Consumer} stopped unexpectedly; restarting", consumer);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested || _readCancellation.IsCancellationRequested)
+            {
+                return;
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(exception, "Message worker {Consumer} failed; restarting", consumer);
+            }
+
+            try
+            {
+                await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+        }
+    }
+
+    private async Task RunRecoveryAsync(string consumer, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _workersReady.Task.WaitAsync(cancellationToken);
+
+            while (!cancellationToken.IsCancellationRequested && !_readCancellation.IsCancellationRequested)
+            {
+                try
+                {
+                    await foreach (var item in _queue.ReclaimAsync(
+                                       consumer,
+                                       _options.Redis.PendingMessageIdleTime,
+                                       Math.Max(1, _options.MessageWorkerCount),
+                                       cancellationToken))
+                    {
+                        _logger.LogWarning(
+                            "Recovery worker {Consumer} reclaimed queue entry {EntryId}",
+                            consumer,
+                            item.EntryId);
+                        _metrics.ActiveWorkers.Add(1);
+                        try
+                        {
+                            await _executor!.ExecuteAsync(consumer, item, cancellationToken);
+                        }
+                        finally
+                        {
+                            _metrics.ActiveWorkers.Add(-1);
+                        }
+                    }
+
+                    await Task.Delay(_options.Redis.ReclaimerInterval, cancellationToken);
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested || _readCancellation.IsCancellationRequested)
+                {
+                    return;
+                }
+                catch (Exception exception)
+                {
+                    _logger.LogError(exception, "Queue recovery worker {Consumer} failed", consumer);
+                    await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+                }
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested || _readCancellation.IsCancellationRequested)
+        {
         }
     }
 

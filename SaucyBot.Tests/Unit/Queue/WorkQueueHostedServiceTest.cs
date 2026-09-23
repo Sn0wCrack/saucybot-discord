@@ -124,11 +124,66 @@ public sealed class WorkQueueHostedServiceTest
         Assert.Equal(1, processor.Attempts);
     }
 
+    [Fact]
+    public async Task WorkerReadFailureRestartsAndProcessesLaterItem()
+    {
+        var queue = new TestWorkQueue { FailFirstRead = true };
+        var processor = new RecordingProcessor();
+        queue.Add(CreateItem("2-0"));
+
+        await using var service = CreateService(queue, processor, TimeSpan.FromSeconds(5));
+        await service.StartAsync(TestContext.Current.CancellationToken);
+        await processor.Started.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await service.StopAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(2, queue.ReadCalls);
+        Assert.Single(queue.Acknowledged);
+    }
+
+    [Fact]
+    public async Task RecoveryLoopProcessesReclaimedItem()
+    {
+        var queue = new TestWorkQueue();
+        var processor = new RecordingProcessor();
+        var recovered = CreateItem("recovered-0");
+        queue.Reclaimed.Enqueue(recovered);
+        var executor = new RecordingExecutor();
+
+        await using var service = CreateService(
+            queue,
+            processor,
+            TimeSpan.FromSeconds(5),
+            executor: executor,
+            reclaimerInterval: TimeSpan.FromMilliseconds(10));
+        await service.StartAsync(TestContext.Current.CancellationToken);
+        await executor.Processed.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await service.StopAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal([recovered], executor.Items);
+    }
+
+    [Fact]
+    public async Task StoppingAfterWorkerFailureDoesNotRestartTheWorker()
+    {
+        var queue = new TestWorkQueue { FailFirstRead = true };
+        var processor = new RecordingProcessor();
+
+        await using var service = CreateService(queue, processor, TimeSpan.FromSeconds(5));
+        await service.StartAsync(TestContext.Current.CancellationToken);
+        await queue.ReadFailureObserved.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        await service.StopAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(1, queue.ReadCalls);
+    }
+
     private static WorkQueueHostedService CreateService(
         TestWorkQueue queue,
         IWorkItemProcessor processor,
         TimeSpan shutdownDrainTimeout,
-        int maxProcessingAttempts = 3) => new(
+        int maxProcessingAttempts = 3,
+        IQueuedWorkItemExecutor? executor = null,
+        TimeSpan? reclaimerInterval = null) => new(
         queue,
         processor,
         new WorkQueueOptions
@@ -136,12 +191,14 @@ public sealed class WorkQueueHostedServiceTest
             MessageWorkerCount = 1,
             InteractionWorkerCount = 0,
             ShutdownDrainTimeout = shutdownDrainTimeout,
-            MaxProcessingAttempts = maxProcessingAttempts
+            MaxProcessingAttempts = maxProcessingAttempts,
+            Redis = new() { ReclaimerInterval = reclaimerInterval ?? TimeSpan.FromSeconds(5) }
         },
         NullLogger<WorkQueueHostedService>.Instance,
         new InteractionWorkChannel(new WorkQueueOptions()),
         Substitute.For<IInteractionProcessor>(),
-        new SaucyBotMetrics());
+        new SaucyBotMetrics(),
+        executor);
 
     private static QueuedMessageWorkItem CreateItem(string entryId, int deliveryCount = 1) => new(
         entryId,
@@ -190,6 +247,30 @@ public sealed class WorkQueueHostedServiceTest
         }
     }
 
+    private sealed class RecordingProcessor : IWorkItemProcessor
+    {
+        public TaskCompletionSource Started { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public Task ProcessAsync(QueuedMessageWorkItem item, CancellationToken cancellationToken)
+        {
+            Started.TrySetResult();
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class RecordingExecutor : IQueuedWorkItemExecutor
+    {
+        public List<QueuedMessageWorkItem> Items { get; } = [];
+        public TaskCompletionSource Processed { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public Task ExecuteAsync(string consumer, QueuedMessageWorkItem item, CancellationToken cancellationToken)
+        {
+            Items.Add(item);
+            Processed.TrySetResult();
+            return Task.CompletedTask;
+        }
+    }
+
     private sealed class TestWorkQueue : IMessageWorkQueue
     {
         private readonly Channel<QueuedMessageWorkItem> _items = Channel.CreateUnbounded<QueuedMessageWorkItem>();
@@ -198,6 +279,10 @@ public sealed class WorkQueueHostedServiceTest
         public TaskCompletionSource AcknowledgedSignal { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public bool ReadCancellationObserved { get; private set; }
         public TaskCompletionSource ReadCancellationObservedSignal { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource ReadFailureObserved { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public Queue<QueuedMessageWorkItem> Reclaimed { get; } = new();
+        public bool FailFirstRead { get; init; }
+        public int ReadCalls { get; private set; }
 
         public void Add(QueuedMessageWorkItem item) => _items.Writer.TryWrite(item);
 
@@ -208,6 +293,13 @@ public sealed class WorkQueueHostedServiceTest
             string consumer,
             [EnumeratorCancellation] CancellationToken cancellationToken)
         {
+            ReadCalls++;
+            if (FailFirstRead && ReadCalls == 1)
+            {
+                ReadFailureObserved.TrySetResult();
+                throw new InvalidOperationException("simulated read failure");
+            }
+
             while (true)
             {
                 QueuedMessageWorkItem item;
@@ -232,8 +324,12 @@ public sealed class WorkQueueHostedServiceTest
             int count,
             [EnumeratorCancellation] CancellationToken cancellationToken)
         {
+            while (Reclaimed.Count > 0)
+            {
+                yield return Reclaimed.Dequeue();
+            }
+
             await Task.CompletedTask;
-            yield break;
         }
 
         public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
