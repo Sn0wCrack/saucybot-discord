@@ -29,7 +29,7 @@ public sealed class SiteManagerTest
             channelId: 22,
             guildId: 33,
             discordCode: 50013,
-            isThread: true,
+            channelType: nameof(ChannelType.Text),
             contextType: "QueuedMessageContext",
             canCreateEmbed: true,
             canManageMessages: false,
@@ -39,10 +39,9 @@ public sealed class SiteManagerTest
         Assert.Contains("sending", diagnostic);
         Assert.Contains("Twitter", diagnostic);
         Assert.Contains("message 11", diagnostic);
-        Assert.Contains("channel 22", diagnostic);
+        Assert.Contains("channel 22 (Text)", diagnostic);
         Assert.Contains("guild 33", diagnostic);
         Assert.Contains("discordCode=50013", diagnostic);
-        Assert.Contains("isThread=True", diagnostic);
         Assert.Contains("context=QueuedMessageContext", diagnostic);
         Assert.Contains("cachedPermissions=raw=123, embedLinks=True", diagnostic);
     }

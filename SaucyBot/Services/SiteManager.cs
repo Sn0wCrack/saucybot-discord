@@ -273,7 +273,7 @@ public sealed class SiteManager : IMessageWorkHandler
                             message.ChannelId,
                             message.GuildId ?? 0,
                             (int)exception.DiscordCode,
-                            channel is SocketThreadChannel,
+                            nameof(channel.ChannelType),
                             message.GetType().Name,
                             message.CanCreateEmbed,
                             message.CanManageMessages,
@@ -302,14 +302,14 @@ public sealed class SiteManager : IMessageWorkHandler
         ulong channelId,
         ulong guildId,
         int discordCode,
-        bool isThread,
+        string channelType,
         string contextType,
         bool canCreateEmbed,
         bool canManageMessages,
         bool isNsfw,
         string? cachedPermissions) =>
-        $"Discord denied {operation} for site {site}, message {messageId}, channel {channelId}, guild {guildId}; "
-        + $"discordCode={discordCode}, isThread={isThread}, context={contextType}, "
+        $"Discord denied {operation} for site {site}, message {messageId}, channel {channelId} ({channelType}), guild {guildId}; "
+        + $"discordCode={discordCode}, context={contextType}, "
         + $"canCreateEmbed={canCreateEmbed}, canManageMessages={canManageMessages}, isNsfw={isNsfw}, "
         + $"cachedPermissions={cachedPermissions ?? "unavailable"}";
 
