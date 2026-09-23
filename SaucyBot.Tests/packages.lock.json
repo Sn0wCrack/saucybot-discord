@@ -695,20 +695,20 @@
       },
       "Microting.EntityFrameworkCore.MySql": {
         "type": "Transitive",
-        "resolved": "10.0.11",
-        "contentHash": "h8bAt0fSaASNkFKBLUToamz7ZfrXGqwoyp15NFblzrcC/wTJjIjkma593ArP40rm30wOMrywzToHah1oeh0GXg==",
+        "resolved": "10.0.12",
+        "contentHash": "SCMTTNR+Ltfcd3BJghLZdUz8utzfyBNToO/z4p+OxFJJXU3BmZy6l2GRfZAbbf+PJFhqu0/965qTYj91zv4b3g==",
         "dependencies": {
-          "Microsoft.EntityFrameworkCore.Relational": "[10.0.11, 10.0.999]",
+          "Microsoft.EntityFrameworkCore.Relational": "[10.0.12, 10.0.999]",
           "MySqlConnector": "2.6.2"
         }
       },
       "Microting.EntityFrameworkCore.MySql.Json.Microsoft": {
         "type": "Transitive",
-        "resolved": "10.0.11",
-        "contentHash": "l2ksEvfNkJ4g5yaszRu9RVI5RFQdt4WqSzdkHyJJfeMZ6vlW5Zpo8mt+VVFP/zYDGNzvHe1L3g3ttcOYiMiJTg==",
+        "resolved": "10.0.12",
+        "contentHash": "yLmTRExvkPwkWsXv8Wu9LlRHIra02ZCIItMi/Wfl9TT5yAY3bmzGziItO2y631F5kyTa2qzgPSNwWa8M46ZwaQ==",
         "dependencies": {
-          "Microsoft.EntityFrameworkCore.Relational": "[10.0.11, 10.0.999]",
-          "Microting.EntityFrameworkCore.MySql": "10.0.11",
+          "Microsoft.EntityFrameworkCore.Relational": "[10.0.12, 10.0.999]",
+          "Microting.EntityFrameworkCore.MySql": "10.0.12",
           "MySqlConnector": "2.6.2"
         }
       },
@@ -788,10 +788,10 @@
       },
       "OpenTelemetry.Instrumentation.Runtime": {
         "type": "Transitive",
-        "resolved": "1.18.0",
-        "contentHash": "McuXGjBJDL/Cown2PxfUQysK98MZG7ZDjO/IKUtaAx8t1m0PB0d+QtJC79RFTVipMhRIwjJiULNOp0OGfZbvwg==",
+        "resolved": "1.19.0",
+        "contentHash": "VIH2tQ2h31j4wQyZ9Utk8ZXIyj7Z1j0xIiyPRGjYu1MmZjJtpxRh0Y/NnB6fEBimNg/WrX0jDyfMeEjPQqmaMA==",
         "dependencies": {
-          "OpenTelemetry.Api": "[1.18.0, 2.0.0)"
+          "OpenTelemetry.Api": "[1.19.0, 2.0.0)"
         }
       },
       "Polly.Core": {
@@ -806,8 +806,8 @@
       },
       "Sentry": {
         "type": "Transitive",
-        "resolved": "6.11.0",
-        "contentHash": "TsT5Gj77PTh3lHQGS+8dLxucTmiZEfLxkqRygIHwYQXRXmMC4fFDbf1AoQe8LXOOFDYhPM2SNf8TTfexvkP0nQ=="
+        "resolved": "6.11.1",
+        "contentHash": "wBC0H/5xpGo+RFK3k4j5Xa1IhVMgQr1qhoAMMkZGpI1SkyG9UhRv97rU/+O29+SJVzwU2CimBKo48/qZKyKy5w=="
       },
       "Serilog": {
         "type": "Transitive",
@@ -1026,17 +1026,17 @@
           "Microsoft.Extensions.Caching.StackExchangeRedis": "[10.0.12, )",
           "Microsoft.Extensions.Hosting": "[10.0.12, )",
           "Microsoft.Extensions.Http": "[10.0.12, )",
-          "Microting.EntityFrameworkCore.MySql": "[10.0.11, )",
-          "Microting.EntityFrameworkCore.MySql.Json.Microsoft": "[10.0.11, )",
+          "Microting.EntityFrameworkCore.MySql": "[10.0.12, )",
+          "Microting.EntityFrameworkCore.MySql.Json.Microsoft": "[10.0.12, )",
           "OpenTelemetry": "[1.19.1, )",
           "OpenTelemetry.Exporter.OpenTelemetryProtocol": "[1.19.1, )",
           "OpenTelemetry.Extensions.Hosting": "[1.19.1, )",
           "OpenTelemetry.Instrumentation.Http": "[1.19.0, )",
           "OpenTelemetry.Instrumentation.Process": "[1.18.0-rc.1, )",
-          "OpenTelemetry.Instrumentation.Runtime": "[1.18.0, )",
+          "OpenTelemetry.Instrumentation.Runtime": "[1.19.0, )",
           "Polly.Core": "[8.8.0, )",
           "SQLitePCLRaw.bundle_e_sqlite3": "[3.0.5, )",
-          "Sentry": "[6.11.0, )",
+          "Sentry": "[6.11.1, )",
           "Serilog": "[4.4.0, )",
           "Serilog.Extensions.Hosting": "[10.0.0, )",
           "Serilog.Settings.Configuration": "[10.0.1, )",
