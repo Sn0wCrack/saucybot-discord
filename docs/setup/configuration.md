@@ -108,6 +108,7 @@ Use the `Driver` key to select the queue backend. Redis is the default backend.
 |---|---|---|---|
 | `Driver` | String | Queue driver to use. | `Redis` |
 | `MaxProcessingAttempts` | Integer | Maximum processing attempts before a failed message is acknowledged and deleted. | `3` |
+| `MaxProcessingTime` | TimeSpan | Maximum time a worker may process one item before it gives up ownership for recovery. | `00:05:00` |
 | `MessageWorkerCount` | Integer | Number of message workers. Increase only after checking queue age, CPU, memory, and upstream rate limits. | `5` |
 | `InteractionWorkerCount` | Integer | Number of interaction workers. | `5` |
 | `InteractionChannelCapacity` | Integer | Maximum number of admitted in-process interactions waiting for workers. | `100` |

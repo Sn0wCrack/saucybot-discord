@@ -12,6 +12,7 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
     private readonly InteractionWorkChannel _interactionChannel;
     private readonly IInteractionProcessor _interactionProcessor;
     private readonly ISaucyBotMetrics _metrics;
+    private readonly IQueuedWorkItemExecutor? _executor;
     private readonly List<Task> _workers = [];
     private readonly CancellationTokenSource _admissionCancellation = new();
     private readonly CancellationTokenSource _workerCancellation = new();
@@ -31,6 +32,27 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
         InteractionWorkChannel interactionChannel,
         IInteractionProcessor interactionProcessor,
         ISaucyBotMetrics metrics)
+        : this(
+            queue,
+            processor,
+            options,
+            logger,
+            interactionChannel,
+            interactionProcessor,
+            metrics,
+            executor: null)
+    {
+    }
+
+    public WorkQueueHostedService(
+        IMessageWorkQueue queue,
+        IWorkItemProcessor processor,
+        WorkQueueOptions options,
+        ILogger<WorkQueueHostedService> logger,
+        InteractionWorkChannel interactionChannel,
+        IInteractionProcessor interactionProcessor,
+        ISaucyBotMetrics metrics,
+        IQueuedWorkItemExecutor? executor)
     {
         _queue = queue;
         _processor = processor;
@@ -39,6 +61,7 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
         _interactionChannel = interactionChannel;
         _interactionProcessor = interactionProcessor;
         _metrics = metrics;
+        _executor = executor;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -189,46 +212,61 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
                 activity?.SetTag("saucybot.queue.entry_id", item.EntryId);
                 try
                 {
-                    await _processor.ProcessAsync(item, cancellationToken);
-                    cancellationToken.ThrowIfCancellationRequested();
-                    await _queue.CompleteAsync(item, CancellationToken.None);
-                    _metrics.Succeeded.Add(1);
-                    activity?.SetStatus(ActivityStatusCode.Ok);
-                    _logger.LogDebug(
-                        "Message worker {Consumer} completed queue entry {EntryId}",
-                        consumer,
-                        item.EntryId);
-                }
-                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-                {
-                    _logger.LogDebug("Message worker {Consumer} cancelled while processing {EntryId}", consumer, item.EntryId);
-                    _metrics.Cancelled.Add(1);
-                    activity?.SetTag("saucybot.cancelled", true);
-                }
-                catch (Exception exception)
-                {
-                    _metrics.Failed.Add(1);
-                    activity?.SetStatus(ActivityStatusCode.Error, exception.Message);
-                    activity?.SetTag("error.type", exception.GetType().FullName);
-
-                    try
+                    if (_executor is not null)
                     {
-                        var failure = await _queue.FailAsync(item, exception, CancellationToken.None);
+                        await _executor.ExecuteAsync(consumer, item, cancellationToken);
+                        activity?.SetStatus(ActivityStatusCode.Ok);
                         _logger.LogDebug(
-                            "Message worker {Consumer} handled failed queue entry {EntryId} with action {Action} at attempt {Attempt}",
-                            consumer,
-                            item.EntryId,
-                            failure.Action,
-                            failure.Attempt);
-                    }
-                    catch (Exception cleanupException)
-                    {
-                        _metrics.CleanupFailed.Add(1);
-                        _logger.LogError(
-                            cleanupException,
-                            "Message worker {Consumer} failed to handle failed queue entry {EntryId}",
+                            "Message worker {Consumer} completed queue entry {EntryId}",
                             consumer,
                             item.EntryId);
+                    }
+                    else
+                    {
+                        try
+                        {
+                            await _processor.ProcessAsync(item, cancellationToken);
+                            cancellationToken.ThrowIfCancellationRequested();
+                            await _queue.CompleteAsync(item, CancellationToken.None);
+                            _metrics.Succeeded.Add(1);
+                            activity?.SetStatus(ActivityStatusCode.Ok);
+                            _logger.LogDebug(
+                                "Message worker {Consumer} completed queue entry {EntryId}",
+                                consumer,
+                                item.EntryId);
+                        }
+                        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                        {
+                            _logger.LogDebug("Message worker {Consumer} cancelled while processing {EntryId}", consumer, item.EntryId);
+                            _metrics.Cancelled.Add(1);
+                            activity?.SetTag("saucybot.cancelled", true);
+                        }
+                        catch (Exception exception)
+                        {
+                            _metrics.Failed.Add(1);
+                            activity?.SetStatus(ActivityStatusCode.Error, exception.Message);
+                            activity?.SetTag("error.type", exception.GetType().FullName);
+
+                            try
+                            {
+                                var failure = await _queue.FailAsync(item, exception, CancellationToken.None);
+                                _logger.LogDebug(
+                                    "Message worker {Consumer} handled failed queue entry {EntryId} with action {Action} at attempt {Attempt}",
+                                    consumer,
+                                    item.EntryId,
+                                    failure.Action,
+                                    failure.Attempt);
+                            }
+                            catch (Exception cleanupException)
+                            {
+                                _metrics.CleanupFailed.Add(1);
+                                _logger.LogError(
+                                    cleanupException,
+                                    "Message worker {Consumer} failed to handle failed queue entry {EntryId}",
+                                    consumer,
+                                    item.EntryId);
+                            }
+                        }
                     }
                 }
                 finally

@@ -69,6 +69,7 @@ await Host.CreateDefaultBuilder(args)
         services.AddSingleton<IRedisStreamClient, StackExchangeRedisStreamClient>();
         services.AddSingleton<IMessageWorkQueue, RedisWorkQueue>();
         services.AddSingleton<IWorkItemProcessor, WorkItemProcessor>();
+        services.AddSingleton<IQueuedWorkItemExecutor, QueuedWorkItemExecutor>();
         services.AddSaucyBotServices();
         services.AddSaucyBotSites();
 
