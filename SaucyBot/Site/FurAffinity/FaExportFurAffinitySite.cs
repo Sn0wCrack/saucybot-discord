@@ -6,17 +6,17 @@ using SaucyBot.Library.Sites.FurAffinity;
 namespace SaucyBot.Site.FurAffinity;
 
 [SiteIdentifier("FurAffinity")]
-public sealed partial class FurAffinitySite : BaseSite
+public sealed partial class FaExportFurAffinitySite : BaseSite
 {
     [GeneratedRegex(@"https?://(www\.)?furaffinity\.net/(?:view|full)/(?<id>\d+)/?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex FurAffinityPattern();
 
     public override Regex Pattern => FurAffinityPattern();
 
-    private readonly ILogger<FurAffinitySite> _logger;
-    private readonly IFurAffinityClient _client;
+    private readonly ILogger<FaExportFurAffinitySite> _logger;
+    private readonly IFaExportClient _client;
 
-    public FurAffinitySite(ILogger<FurAffinitySite> logger, IFurAffinityClient client)
+    public FaExportFurAffinitySite(ILogger<FaExportFurAffinitySite> logger, IFaExportClient client)
     {
         _logger = logger;
         _client = client;

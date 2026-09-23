@@ -9,7 +9,7 @@ using SaucyBot.Services;
 
 namespace SaucyBot.Library.Sites.FurAffinity;
 
-public sealed class FaExportClient : IFurAffinityClient
+public sealed class FaExportClient : IFaExportClient
 {
     private const string BaseUrl = "https://faexport.spangle.org.uk";
 

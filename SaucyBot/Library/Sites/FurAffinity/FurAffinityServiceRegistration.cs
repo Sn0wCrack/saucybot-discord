@@ -30,7 +30,7 @@ public static class FurAffinityServiceRegistration
             Secure = true,
         });
 
-        services.AddHtmlClient<IFurAffinityClient, FurAffinityDirect>(
+        services.AddHtmlClient<IFaExportClient, FurAffinityDirectClient>(
             () => new HttpClientHandler
             {
                 CookieContainer = cookieContainer,
@@ -39,7 +39,7 @@ public static class FurAffinityServiceRegistration
             }
         );
 
-        // services.AddJsonApiClient<IFurAffinityClient, FaExportClient>();
+        services.AddJsonApiClient<IFaExportClient, FaExportClient>();
 
         return services;
     }

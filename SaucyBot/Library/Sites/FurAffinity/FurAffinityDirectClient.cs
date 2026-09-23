@@ -10,7 +10,7 @@ using SaucyBot.Services;
 
 namespace SaucyBot.Library.Sites.FurAffinity;
 
-public class FurAffinityDirect : IFurAffinityClient
+public class FurAffinityDirectClient : IFaExportClient
 {
     private const string BaseUrl = "https://furaffinity.net";
 
@@ -18,11 +18,11 @@ public class FurAffinityDirect : IFurAffinityClient
 
     private readonly HttpClient _client;
 
-    private readonly ILogger<FurAffinityDirect> _logger;
+    private readonly ILogger<FurAffinityDirectClient> _logger;
 
     private readonly ResiliencePipeline<string?> _pipeline;
 
-    public FurAffinityDirect(ICacheManager cacheManager, HttpClient client, ILogger<FurAffinityDirect> logger)
+    public FurAffinityDirectClient(ICacheManager cacheManager, HttpClient client, ILogger<FurAffinityDirectClient> logger)
     {
         _cache = cacheManager;
         _client = client;

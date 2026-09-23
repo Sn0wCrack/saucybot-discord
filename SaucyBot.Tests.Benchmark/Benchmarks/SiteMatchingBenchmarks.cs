@@ -46,7 +46,7 @@ public class SiteMatchingBenchmarks
     private DeviantArtSite _deviantArt = null!;
     private E621Site _e621 = null!;
     private ExHentaiSite _exHentai = null!;
-    private FurAffinitySite _furAffinity = null!;
+    private FaExportFurAffinitySite _faExportFurAffinity = null!;
     private HentaiFoundrySite _hentaiFoundry = null!;
     private VxInstagramSite _vxInstagram = null!;
     private MisskeySite _misskey = null!;
@@ -84,7 +84,7 @@ public class SiteMatchingBenchmarks
         _deviantArt = CreateDeviantArt(config);
         _e621 = CreateE621(config);
         _exHentai = CreateExHentai(SiteOptions<ExHentaiOptions>(config, "ExHentai"));
-        _furAffinity = CreateFurAffinity(config);
+        _faExportFurAffinity = CreateFurAffinity(config);
         _hentaiFoundry = CreateHentaiFoundry(config);
         _vxInstagram = CreateInstagram(config);
         _misskey = CreateMisskey(SiteOptions<MisskeyOptions>(config, "Misskey"));
@@ -95,7 +95,7 @@ public class SiteMatchingBenchmarks
         _allSites =
         [
             _artStation, _bluesky, _deviantArt, _e621, _exHentai,
-            _furAffinity, _fxTwitter, _hentaiFoundry, _vxInstagram,
+            _faExportFurAffinity, _fxTwitter, _hentaiFoundry, _vxInstagram,
             _misskey, _newgrounds, _pixiv, _reddit
         ];
     }
@@ -122,7 +122,7 @@ public class SiteMatchingBenchmarks
     public MatchCollection EHentai_MatchingGallery() => _exHentai.Pattern.Matches(EHentaiUrl);
 
     [Benchmark]
-    public MatchCollection FurAffinity_MatchingSubmission() => _furAffinity.Pattern.Matches(FurAffinityUrl);
+    public MatchCollection FurAffinity_MatchingSubmission() => _faExportFurAffinity.Pattern.Matches(FurAffinityUrl);
 
     [Benchmark]
     public MatchCollection HentaiFoundry_MatchingPicture() => _hentaiFoundry.Pattern.Matches(HentaiFoundryUrl);
@@ -224,11 +224,11 @@ public class SiteMatchingBenchmarks
         return new ExHentaiSite(logger, options, client);
     }
 
-    private static FurAffinitySite CreateFurAffinity(IConfiguration config)
+    private static FaExportFurAffinitySite CreateFurAffinity(IConfiguration config)
     {
-        var logger = Substitute.For<ILogger<FurAffinitySite>>();
-        var client = Substitute.For<IFurAffinityClient>();
-        return new FurAffinitySite(logger, client);
+        var logger = Substitute.For<ILogger<FaExportFurAffinitySite>>();
+        var client = Substitute.For<IFaExportClient>();
+        return new FaExportFurAffinitySite(logger, client);
     }
 
     private static HentaiFoundrySite CreateHentaiFoundry(IConfiguration config)

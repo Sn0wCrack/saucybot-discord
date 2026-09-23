@@ -15,9 +15,9 @@ public class FurAffinityTest
     [Fact]
     public async Task SingleEmbedIsReturnWhenTheApiClientReturnsSuccessfullyTest()
     {
-        var logger = Substitute.For<ILogger<FurAffinitySite>>();
+        var logger = Substitute.For<ILogger<FaExportFurAffinitySite>>();
 
-        var client = Substitute.For<IFurAffinityClient>();
+        var client = Substitute.For<IFaExportClient>();
 
         var submission = new FaExportSubmission(
             "You're A Furry Aren't Ya? (Nude Alt)",
@@ -49,7 +49,7 @@ public class FurAffinityTest
             .GetSubmission(Arg.Any<string>())
             .Returns(submission);
 
-        var site = new FurAffinitySite(logger, client);
+        var site = new FaExportFurAffinitySite(logger, client);
 
         var match = site.Pattern.Matches("https://www.furaffinity.net/view/38790081/").First();
 
@@ -77,15 +77,15 @@ public class FurAffinityTest
     [Fact]
     public async Task NothingIsReturnedWhenTheApiClientReturnsUnsuccessfully()
     {
-        var logger = Substitute.For<ILogger<FurAffinitySite>>();
+        var logger = Substitute.For<ILogger<FaExportFurAffinitySite>>();
 
-        var client = Substitute.For<IFurAffinityClient>();
+        var client = Substitute.For<IFaExportClient>();
 
         client
             .GetSubmission(Arg.Any<string>())
             .Returns((FaExportSubmission?)null);
 
-        var site = new FurAffinitySite(logger, client);
+        var site = new FaExportFurAffinitySite(logger, client);
 
         var match = site.Pattern.Matches("https://www.furaffinity.net/view/38790081/").First();
 
