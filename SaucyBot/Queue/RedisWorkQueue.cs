@@ -95,6 +95,38 @@ public sealed class RedisWorkQueue(
         }
     }
 
+    public async IAsyncEnumerable<QueuedMessageWorkItem> ReclaimAsync(
+        string consumer,
+        TimeSpan minimumIdleTime,
+        int count,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        var entries = await _client.ReclaimAsync(
+            consumer,
+            minimumIdleTime,
+            count,
+            cancellationToken);
+
+        foreach (var entry in entries)
+        {
+            MessageWorkItem item;
+            try
+            {
+                item = MessageWorkItem.Deserialize(entry.Payload);
+            }
+            catch (Exception exception) when (exception is not OperationCanceledException)
+            {
+                _logger.LogError(exception, "Discarding malformed recovered work item {EntryId}", entry.EntryId);
+                _metrics?.Malformed.Add(1);
+                _metrics?.QueueDepth.Add(-1);
+                await DiscardMalformedAsync(entry.EntryId, cancellationToken);
+                continue;
+            }
+
+            yield return new QueuedMessageWorkItem(entry.EntryId, item, entry.DeliveryCount);
+        }
+    }
+
     public async Task CompleteAsync(QueuedMessageWorkItem item, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();

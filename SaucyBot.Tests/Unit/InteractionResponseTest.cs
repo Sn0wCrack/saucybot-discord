@@ -178,6 +178,16 @@ public sealed class InteractionResponseTest
             }
         }
 
+        public async IAsyncEnumerable<QueuedMessageWorkItem> ReclaimAsync(
+            string consumer,
+            TimeSpan minimumIdleTime,
+            int count,
+            [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            await Task.CompletedTask;
+            yield break;
+        }
+
         public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
         public Task CompleteAsync(QueuedMessageWorkItem item, CancellationToken cancellationToken) =>

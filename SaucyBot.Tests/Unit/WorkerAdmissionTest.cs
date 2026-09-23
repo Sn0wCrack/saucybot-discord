@@ -697,6 +697,16 @@ public sealed class WorkerAdmissionTest
             }
         }
 
+        public async IAsyncEnumerable<QueuedMessageWorkItem> ReclaimAsync(
+            string consumer,
+            TimeSpan minimumIdleTime,
+            int count,
+            [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            await Task.CompletedTask;
+            yield break;
+        }
+
         public Task StartAsync(CancellationToken cancellationToken)
         {
             ClearCalls++;

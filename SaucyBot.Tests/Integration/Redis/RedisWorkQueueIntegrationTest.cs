@@ -165,9 +165,9 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
     }
 
     [Fact]
-    public async Task ReclaimsIdlePendingEntryAndReportsDeliveryCount()
+    public async Task ExplicitRecoveryReclaimsIdlePendingEntryAndReportsDeliveryCount()
     {
-        var options = CreateOptions("reclaim");
+        var options = CreateOptions("reclaim", pendingMessageIdleTime: TimeSpan.Zero);
         var client = CreateClient(options.Redis);
 
         await client.EnsureGroupAsync(TestContext.Current.CancellationToken);
@@ -181,13 +181,15 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
         Assert.NotNull(first);
         Assert.Equal(1, first.DeliveryCount);
 
-        var reclaimed = await client.ReadNewAsync(
+        var reclaimed = await client.ReclaimAsync(
             "consumer-2",
+            TimeSpan.Zero,
+            count: 1,
             TestContext.Current.CancellationToken);
 
-        Assert.NotNull(reclaimed);
-        Assert.Equal(first.EntryId, reclaimed.EntryId);
-        Assert.Equal(2, reclaimed.DeliveryCount);
+        var recovered = Assert.Single(reclaimed);
+        Assert.Equal(first.EntryId, recovered.EntryId);
+        Assert.Equal(2, recovered.DeliveryCount);
     }
 
     [Fact]
@@ -256,18 +258,22 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
     private IRedisStreamClient CreateClient(RedisWorkQueueOptions options) =>
         new StackExchangeRedisStreamClient(Connection, options, NullLogger<StackExchangeRedisStreamClient>.Instance);
 
-    private static WorkQueueOptions CreateOptions(string name, bool clearPendingOnStartup = false) => new()
-    {
-        ClearPendingOnStartup = clearPendingOnStartup,
-        Redis = new RedisWorkQueueOptions
+    private static WorkQueueOptions CreateOptions(
+        string name,
+        bool clearPendingOnStartup = false,
+        TimeSpan? pendingMessageIdleTime = null) => new()
         {
-            StreamName = $"integration:queue:{Interlocked.Increment(ref _streamNumber)}:{name}",
-            ConsumerGroup = $"integration-workers-{name}",
-            RetryDelay = TimeSpan.FromMilliseconds(10),
-            MalformedCleanupMaxAttempts = 2,
-            MalformedCleanupMaxDelay = TimeSpan.FromMilliseconds(10),
-        },
-    };
+            ClearPendingOnStartup = clearPendingOnStartup,
+            Redis = new RedisWorkQueueOptions
+            {
+                StreamName = $"integration:queue:{Interlocked.Increment(ref _streamNumber)}:{name}",
+                ConsumerGroup = $"integration-workers-{name}",
+                RetryDelay = TimeSpan.FromMilliseconds(10),
+                PendingMessageIdleTime = pendingMessageIdleTime ?? TimeSpan.FromSeconds(30),
+                MalformedCleanupMaxAttempts = 2,
+                MalformedCleanupMaxDelay = TimeSpan.FromMilliseconds(10),
+            },
+        };
 
     private static MessageWorkItem TestItem() => new(
         1,

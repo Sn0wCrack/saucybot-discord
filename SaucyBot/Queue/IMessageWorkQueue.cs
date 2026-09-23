@@ -6,6 +6,12 @@ public interface IMessageWorkQueue
 
     IAsyncEnumerable<QueuedMessageWorkItem> ReadAsync(string consumer, CancellationToken cancellationToken);
 
+    IAsyncEnumerable<QueuedMessageWorkItem> ReclaimAsync(
+        string consumer,
+        TimeSpan minimumIdleTime,
+        int count,
+        CancellationToken cancellationToken);
+
     Task StartAsync(CancellationToken cancellationToken);
 
     Task CompleteAsync(QueuedMessageWorkItem item, CancellationToken cancellationToken);

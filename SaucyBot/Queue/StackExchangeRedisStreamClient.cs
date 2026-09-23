@@ -58,33 +58,6 @@ public sealed class StackExchangeRedisStreamClient(
     public async Task<RedisStreamEntry?> ReadNewAsync(string consumer, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var reclaimed = await _database.StreamAutoClaimAsync(
-                _options.StreamName,
-                _options.ConsumerGroup,
-                consumer,
-                Math.Max(0, (long)_options.PendingMessageIdleTime.TotalMilliseconds),
-                "0-0",
-                count: 1)
-            .WaitAsync(cancellationToken);
-
-        if (reclaimed.ClaimedEntries.Length > 0)
-        {
-            var entry = reclaimed.ClaimedEntries[0];
-            var pending = await _database.StreamPendingMessagesAsync(
-                    _options.StreamName,
-                    _options.ConsumerGroup,
-                    1,
-                    consumer,
-                    entry.Id,
-                    entry.Id)
-                .WaitAsync(cancellationToken);
-
-            var deliveryCount = pending.Length > 0
-                ? pending[0].DeliveryCount
-                : entry.DeliveryCount;
-            return ToEntry(entry, deliveryCount);
-        }
-
         var read = _database.StreamReadGroupAsync(_options.StreamName, _options.ConsumerGroup, consumer, ">", count: 1);
         StreamEntry[] entries;
         try
@@ -123,6 +96,66 @@ public sealed class StackExchangeRedisStreamClient(
         }
 
         return ToEntry(entries[0]);
+    }
+
+    public async Task<bool> RenewAsync(
+        string consumer,
+        string entryId,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var claimed = await _database.StreamClaimAsync(
+                _options.StreamName,
+                _options.ConsumerGroup,
+                consumer,
+                0L,
+                [entryId],
+                flags: CommandFlags.None)
+            .WaitAsync(cancellationToken);
+
+        return claimed.Length > 0;
+    }
+
+    public async Task<IReadOnlyList<RedisStreamEntry>> ReclaimAsync(
+        string consumer,
+        TimeSpan minimumIdleTime,
+        int count,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var reclaimed = await _database.StreamAutoClaimAsync(
+                _options.StreamName,
+                _options.ConsumerGroup,
+                consumer,
+                Math.Max(0, (long)minimumIdleTime.TotalMilliseconds),
+                "0-0",
+                count: Math.Max(1, count))
+            .WaitAsync(cancellationToken);
+
+        if (reclaimed.ClaimedEntries.Length == 0)
+        {
+            return [];
+        }
+
+        var results = new List<RedisStreamEntry>(reclaimed.ClaimedEntries.Length);
+        foreach (var entry in reclaimed.ClaimedEntries)
+        {
+            var pending = await _database.StreamPendingMessagesAsync(
+                    _options.StreamName,
+                    _options.ConsumerGroup,
+                    1,
+                    consumer,
+                    entry.Id,
+                    entry.Id)
+                .WaitAsync(cancellationToken);
+
+            var deliveryCount = pending.Length > 0
+                ? pending[0].DeliveryCount
+                : entry.DeliveryCount;
+            results.Add(ToEntry(entry, deliveryCount));
+        }
+
+        return results;
     }
 
     public async Task AcknowledgeAsync(string entryId, CancellationToken cancellationToken)
