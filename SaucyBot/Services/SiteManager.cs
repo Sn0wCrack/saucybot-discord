@@ -263,6 +263,9 @@ public sealed class SiteManager : IMessageWorkHandler
                     var cachedPermissions = channel is SocketGuildChannel guildChannel
                         ? FormatCachedPermissions(guildChannel.Guild.CurrentUser.GetPermissions(guildChannel))
                         : null;
+                    var channelType = channel is not null
+                        ? channel.ChannelType.ToString()
+                        : "unknown";
 
                     _logger.LogError(
                         exception,
@@ -272,8 +275,8 @@ public sealed class SiteManager : IMessageWorkHandler
                             message.Id,
                             message.ChannelId,
                             message.GuildId ?? 0,
-                            (int)exception.DiscordCode,
-                            nameof(channel.ChannelType),
+                            discordCode,
+                            channelType,
                             message.GetType().Name,
                             message.CanCreateEmbed,
                             message.CanManageMessages,

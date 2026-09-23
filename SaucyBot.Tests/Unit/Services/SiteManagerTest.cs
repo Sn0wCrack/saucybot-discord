@@ -29,7 +29,7 @@ public sealed class SiteManagerTest
             channelId: 22,
             guildId: 33,
             discordCode: 50013,
-            channelType: nameof(ChannelType.Text),
+            channelType: ChannelType.Text.ToString(),
             contextType: "QueuedMessageContext",
             canCreateEmbed: true,
             canManageMessages: false,
