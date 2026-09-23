@@ -48,7 +48,13 @@ public sealed class QueuedWorkItemExecutor : IQueuedWorkItemExecutor
             consumer,
             item.EntryId,
             processingCancellation,
-            () => Interlocked.Exchange(ref leaseLost, 1));
+            () =>
+            {
+                if (Interlocked.Exchange(ref leaseLost, 1) == 0)
+                {
+                    _metrics.LeaseLost.Add(1);
+                }
+            });
 
         Exception? failure = null;
         var completed = false;
@@ -120,6 +126,7 @@ public sealed class QueuedWorkItemExecutor : IQueuedWorkItemExecutor
 
                 if (renewed)
                 {
+                    _metrics.LeaseRenewed.Add(1);
                     continue;
                 }
 

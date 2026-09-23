@@ -15,6 +15,10 @@ public interface ISaucyBotMetrics : IDisposable
     Counter<long> Cancelled { get; }
     Counter<long> Malformed { get; }
     Counter<long> CleanupFailed { get; }
+    Counter<long> LeaseRenewed { get; }
+    Counter<long> LeaseLost { get; }
+    Counter<long> Reclaimed { get; }
+    Counter<long> WorkerRestarts { get; }
     Counter<long> DownloadBytes { get; }
     UpDownCounter<long> DownloadConcurrency { get; }
 }

@@ -21,6 +21,10 @@ public sealed class SaucyBotMetrics : ISaucyBotMetrics
         Cancelled = _meter.CreateCounter<long>("saucybot.queue.cancelled", "items");
         Malformed = _meter.CreateCounter<long>("saucybot.queue.malformed", "items");
         CleanupFailed = _meter.CreateCounter<long>("saucybot.queue.cleanup_failed", "items");
+        LeaseRenewed = _meter.CreateCounter<long>("saucybot.queue.lease_renewed", "renewals");
+        LeaseLost = _meter.CreateCounter<long>("saucybot.queue.lease_lost", "items");
+        Reclaimed = _meter.CreateCounter<long>("saucybot.queue.reclaimed", "items");
+        WorkerRestarts = _meter.CreateCounter<long>("saucybot.queue.worker_restarted", "restarts");
         DownloadBytes = _meter.CreateCounter<long>("saucybot.download.bytes", "By");
         DownloadConcurrency = _meter.CreateUpDownCounter<long>("saucybot.download.concurrency", "downloads");
     }
@@ -46,6 +50,14 @@ public sealed class SaucyBotMetrics : ISaucyBotMetrics
     public Counter<long> Malformed { get; }
 
     public Counter<long> CleanupFailed { get; }
+
+    public Counter<long> LeaseRenewed { get; }
+
+    public Counter<long> LeaseLost { get; }
+
+    public Counter<long> Reclaimed { get; }
+
+    public Counter<long> WorkerRestarts { get; }
 
     public Counter<long> DownloadBytes { get; }
 

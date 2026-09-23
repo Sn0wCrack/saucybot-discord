@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Metrics;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,12 +15,25 @@ namespace SaucyBot.Tests.Unit.Queue;
 public sealed class QueuedWorkItemExecutorTest
 {
     [Fact]
+    public void MetricsExposeLeaseAndRecoveryInstruments()
+    {
+        using var metrics = new SaucyBotMetrics();
+
+        Assert.NotNull(metrics.LeaseRenewed);
+        Assert.NotNull(metrics.LeaseLost);
+        Assert.NotNull(metrics.Reclaimed);
+        Assert.NotNull(metrics.WorkerRestarts);
+    }
+
+    [Fact]
     public async Task LongProcessingRenewsLeaseAndCompletesOnlyAfterHeartbeatStops()
     {
         var redis = new FakeRedisStreamClient();
         var queue = new FakeWorkQueue();
         var processor = new BlockingProcessor();
-        var executor = CreateExecutor(redis, queue, processor);
+        using var metrics = new SaucyBotMetrics();
+        using var listener = Listen(metrics, out var measurements);
+        var executor = CreateExecutor(redis, queue, processor, metrics);
         var item = new QueuedMessageWorkItem("42-0", TestData.Queued().Item);
         var renewalsAtCompletion = -1;
         queue.OnComplete = () => renewalsAtCompletion = redis.RenewCalls;
@@ -36,6 +50,7 @@ public sealed class QueuedWorkItemExecutorTest
         Assert.Single(queue.Completed);
         Assert.True(redis.RenewCalls > 0);
         Assert.Equal(redis.RenewCalls, renewalsAtCompletion);
+        Assert.True(measurements["saucybot.queue.lease_renewed"] > 0);
     }
 
     [Fact]
@@ -44,13 +59,16 @@ public sealed class QueuedWorkItemExecutorTest
         var redis = new FakeRedisStreamClient { RenewResult = false };
         var queue = new FakeWorkQueue();
         var processor = new BlockingProcessor();
-        var executor = CreateExecutor(redis, queue, processor);
+        using var metrics = new SaucyBotMetrics();
+        using var listener = Listen(metrics, out var measurements);
+        var executor = CreateExecutor(redis, queue, processor, metrics);
         var item = new QueuedMessageWorkItem("42-0", TestData.Queued().Item);
 
         await executor.ExecuteAsync("worker-1", item, CancellationToken.None);
 
         Assert.True(processor.CancellationObserved);
         Assert.Empty(queue.Completed);
+        Assert.Equal(1, measurements["saucybot.queue.lease_lost"]);
     }
 
     [Fact]
@@ -59,7 +77,8 @@ public sealed class QueuedWorkItemExecutorTest
         var redis = new FakeRedisStreamClient();
         var queue = new FakeWorkQueue();
         var processor = new BlockingProcessor();
-        var executor = CreateExecutor(redis, queue, processor);
+        using var metrics = new SaucyBotMetrics();
+        var executor = CreateExecutor(redis, queue, processor, metrics);
         var item = new QueuedMessageWorkItem("42-0", TestData.Queued().Item);
         using var cancellation = new CancellationTokenSource();
 
@@ -75,7 +94,8 @@ public sealed class QueuedWorkItemExecutorTest
     private static QueuedWorkItemExecutor CreateExecutor(
         FakeRedisStreamClient redis,
         FakeWorkQueue queue,
-        BlockingProcessor processor) =>
+        BlockingProcessor processor,
+        SaucyBotMetrics? metrics = null) =>
         new(
             processor,
             queue,
@@ -89,7 +109,30 @@ public sealed class QueuedWorkItemExecutorTest
                 },
             },
             NullLogger<QueuedWorkItemExecutor>.Instance,
-            new SaucyBotMetrics());
+            metrics ?? new SaucyBotMetrics());
+
+    private static MeterListener Listen(
+        SaucyBotMetrics metrics,
+        out Dictionary<string, long> measurements)
+    {
+        var values = new Dictionary<string, long>();
+        measurements = values;
+        var listener = new MeterListener();
+        listener.InstrumentPublished = (instrument, current) =>
+        {
+            if (instrument.Name.StartsWith("saucybot.queue.lease", StringComparison.Ordinal))
+            {
+                current.EnableMeasurementEvents(instrument);
+            }
+        };
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, _, _) =>
+        {
+            values[instrument.Name] =
+                values.GetValueOrDefault(instrument.Name) + measurement;
+        });
+        listener.Start();
+        return listener;
+    }
 
     private sealed class BlockingProcessor : IWorkItemProcessor
     {

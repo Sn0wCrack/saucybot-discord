@@ -108,11 +108,21 @@ docker compose exec queue valkey-cli XPENDING saucybot:messages saucybot-workers
 ```
 
 Use `XINFO STREAM` and `XPENDING` to monitor stream length, oldest entry age, and
-consumer-group backlog. OpenTelemetry exports `saucybot.queue.depth` and
-`saucybot.queue.age` when enabled. Configure the exporter with the
+consumer-group backlog. `saucybot.queue.depth` represents available work and does
+not include items currently claimed by workers. Use `saucybot.workers.active`,
+`saucybot.queue.lease_renewed`, `saucybot.queue.lease_lost`,
+`saucybot.queue.reclaimed`, and `saucybot.queue.worker_restarted` to investigate
+in-flight work and worker failures. OpenTelemetry exports these metrics when
+enabled. Configure the exporter with the
 `OpenTelemetry__OtlpEndpoint` and related environment variables described in the
 [configuration reference](configuration.md#opentelemetry); keep endpoint credentials in `.env`, not tracked files.
 Set `Sentry__Dsn` to a Sentry project DSN to receive runtime error reports (empty disables it).
+
+The default queue lease settings are a five-second heartbeat, a five-second
+recovery scan, and a 30-second pending-entry idle timeout. A healthy worker
+renews its lease while processing. If it stops renewing, another worker can
+recover the item after the idle timeout. Redis Streams provide at-least-once
+delivery, so message processing must tolerate duplicate delivery.
 
 Do not treat separate logical Valkey databases as resource isolation. Cache and queue
 must remain separate Valkey services so their memory limits, eviction policies, and

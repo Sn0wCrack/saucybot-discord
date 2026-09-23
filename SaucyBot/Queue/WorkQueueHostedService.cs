@@ -303,6 +303,7 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
                 }
 
                 _logger.LogWarning("Message worker {Consumer} stopped unexpectedly; restarting", consumer);
+                _metrics.WorkerRestarts.Add(1);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested || _readCancellation.IsCancellationRequested)
             {
@@ -311,6 +312,7 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
             catch (Exception exception)
             {
                 _logger.LogError(exception, "Message worker {Consumer} failed; restarting", consumer);
+                _metrics.WorkerRestarts.Add(1);
             }
 
             try
@@ -344,6 +346,7 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
                             "Recovery worker {Consumer} reclaimed queue entry {EntryId}",
                             consumer,
                             item.EntryId);
+                        _metrics.Reclaimed.Add(1);
                         _metrics.ActiveWorkers.Add(1);
                         try
                         {
