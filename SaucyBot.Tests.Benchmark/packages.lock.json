@@ -648,10 +648,10 @@
       },
       "Microting.EntityFrameworkCore.MySql": {
         "type": "Transitive",
-        "resolved": "10.0.11",
-        "contentHash": "h8bAt0fSaASNkFKBLUToamz7ZfrXGqwoyp15NFblzrcC/wTJjIjkma593ArP40rm30wOMrywzToHah1oeh0GXg==",
+        "resolved": "10.0.12",
+        "contentHash": "SCMTTNR+Ltfcd3BJghLZdUz8utzfyBNToO/z4p+OxFJJXU3BmZy6l2GRfZAbbf+PJFhqu0/965qTYj91zv4b3g==",
         "dependencies": {
-          "Microsoft.EntityFrameworkCore.Relational": "[10.0.11, 10.0.999]",
+          "Microsoft.EntityFrameworkCore.Relational": "[10.0.12, 10.0.999]",
           "MySqlConnector": "2.6.2"
         }
       },
@@ -924,7 +924,7 @@
           "Microsoft.Extensions.Caching.StackExchangeRedis": "[10.0.12, )",
           "Microsoft.Extensions.Hosting": "[10.0.12, )",
           "Microsoft.Extensions.Http": "[10.0.12, )",
-          "Microting.EntityFrameworkCore.MySql": "[10.0.11, )",
+          "Microting.EntityFrameworkCore.MySql": "[10.0.12, )",
           "Microting.EntityFrameworkCore.MySql.Json.Microsoft": "[10.0.11, )",
           "OpenTelemetry": "[1.19.1, )",
           "OpenTelemetry.Exporter.OpenTelemetryProtocol": "[1.19.1, )",
