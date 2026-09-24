@@ -220,12 +220,27 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
                 {
                     if (_executor is not null)
                     {
-                        await _executor.ExecuteAsync(consumer, item, cancellationToken);
-                        activity?.SetStatus(ActivityStatusCode.Ok);
+                        var outcome = await _executor.ExecuteAsync(consumer, item, cancellationToken);
+                        switch (outcome)
+                        {
+                            case QueuedWorkItemExecutionOutcome.Completed:
+                                activity?.SetStatus(ActivityStatusCode.Ok);
+                                break;
+                            case QueuedWorkItemExecutionOutcome.Failed:
+                                activity?.SetStatus(ActivityStatusCode.Error, "queue item processing failed");
+                                break;
+                            case QueuedWorkItemExecutionOutcome.Cancelled:
+                                activity?.SetTag("saucybot.cancelled", true);
+                                break;
+                            case QueuedWorkItemExecutionOutcome.LeaseLost:
+                                activity?.SetTag("saucybot.lease_lost", true);
+                                break;
+                        }
                         _logger.LogDebug(
-                            "Message worker {Consumer} completed queue entry {EntryId}",
+                            "Message worker {Consumer} handled queue entry {EntryId} with outcome {Outcome}",
                             consumer,
-                            item.EntryId);
+                            item.EntryId,
+                            outcome);
                     }
                     else
                     {
@@ -303,7 +318,7 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
                 }
 
                 _logger.LogWarning("Message worker {Consumer} stopped unexpectedly; restarting", consumer);
-                _metrics.WorkerRestarts.Add(1);
+                _metrics.WorkerRestarts.Add(1, new KeyValuePair<string, object?>("worker_type", "message"));
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested || _readCancellation.IsCancellationRequested)
             {
@@ -312,7 +327,7 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
             catch (Exception exception)
             {
                 _logger.LogError(exception, "Message worker {Consumer} failed; restarting", consumer);
-                _metrics.WorkerRestarts.Add(1);
+                _metrics.WorkerRestarts.Add(1, new KeyValuePair<string, object?>("worker_type", "message"));
             }
 
             try
@@ -346,11 +361,18 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
                             "Recovery worker {Consumer} reclaimed queue entry {EntryId}",
                             consumer,
                             item.EntryId);
-                        _metrics.Reclaimed.Add(1);
+                        _metrics.Reclaimed.Add(1, new KeyValuePair<string, object?>("consumer_type", "recovery"));
                         _metrics.ActiveWorkers.Add(1);
                         try
                         {
-                            await _executor!.ExecuteAsync(consumer, item, cancellationToken);
+                            var outcome = await _executor!.ExecuteAsync(consumer, item, cancellationToken);
+                            if (outcome is QueuedWorkItemExecutionOutcome.LeaseLost)
+                            {
+                                _logger.LogWarning(
+                                    "Recovery worker {Consumer} lost the lease for queue entry {EntryId}",
+                                    consumer,
+                                    item.EntryId);
+                            }
                         }
                         finally
                         {

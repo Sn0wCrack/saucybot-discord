@@ -123,9 +123,9 @@ Use the `Driver` key to select the queue backend. Redis is the default backend.
 | `StreamName` | String | Redis/Valkey stream containing queued message work. | `saucybot:messages` |
 | `ConsumerGroup` | String | Consumer group used by message workers. | `saucybot-workers` |
 | `RetryDelay` | TimeSpan | Delay before retrying an unavailable Redis operation. | `00:00:01` |
-| `HeartbeatInterval` | TimeSpan | How often an active worker renews its Redis lease. Keep this substantially shorter than `PendingMessageIdleTime`. | `00:00:05` |
-| `ReclaimerInterval` | TimeSpan | How often the recovery worker scans for abandoned pending messages. | `00:00:05` |
-| `PendingMessageIdleTime` | TimeSpan | Minimum idle time before a pending message can be recovered after its worker stops renewing the lease. | `00:00:30` |
+| `HeartbeatInterval` | TimeSpan | How often an active worker renews its Redis lease. Environment variable: `Queue__Redis__HeartbeatInterval`. Keep this substantially shorter than `PendingMessageIdleTime`. | `00:00:05` |
+| `ReclaimerInterval` | TimeSpan | How often the recovery worker scans for abandoned pending messages. Environment variable: `Queue__Redis__ReclaimerInterval`. | `00:00:05` |
+| `PendingMessageIdleTime` | TimeSpan | Minimum idle time before a pending message can be recovered after its worker stops renewing the lease. Environment variable: `Queue__Redis__PendingMessageIdleTime`. | `00:00:30` |
 | `PendingReadTimeout` | TimeSpan | Maximum wait for a Redis read to finish during cancellation. | `00:00:01` |
 | `MalformedCleanupMaxAttempts` | Integer | Maximum cleanup attempts for malformed queue entries. | `3` |
 | `MalformedCleanupMaxDelay` | TimeSpan | Maximum delay between malformed-entry cleanup attempts. | `00:00:05` |

@@ -1,13 +1,23 @@
+using System.Diagnostics;
+using System.Diagnostics.Metrics;
 using SaucyBot.Diagnostics;
 
 namespace SaucyBot.Queue;
 
 public interface IQueuedWorkItemExecutor
 {
-    Task ExecuteAsync(
+    Task<QueuedWorkItemExecutionOutcome> ExecuteAsync(
         string consumer,
         QueuedMessageWorkItem item,
         CancellationToken cancellationToken);
+}
+
+public enum QueuedWorkItemExecutionOutcome
+{
+    Completed,
+    Failed,
+    Cancelled,
+    LeaseLost,
 }
 
 public sealed class QueuedWorkItemExecutor : IQueuedWorkItemExecutor
@@ -35,7 +45,7 @@ public sealed class QueuedWorkItemExecutor : IQueuedWorkItemExecutor
         _metrics = metrics;
     }
 
-    public async Task ExecuteAsync(
+    public async Task<QueuedWorkItemExecutionOutcome> ExecuteAsync(
         string consumer,
         QueuedMessageWorkItem item,
         CancellationToken cancellationToken)
@@ -52,7 +62,7 @@ public sealed class QueuedWorkItemExecutor : IQueuedWorkItemExecutor
             {
                 if (Interlocked.Exchange(ref leaseLost, 1) == 0)
                 {
-                    _metrics.LeaseLost.Add(1);
+                    _metrics.LeaseLost.Add(1, LeaseTags(consumer));
                 }
             });
 
@@ -83,28 +93,53 @@ public sealed class QueuedWorkItemExecutor : IQueuedWorkItemExecutor
         if (Volatile.Read(ref leaseLost) != 0)
         {
             _logger.LogWarning("Skipping completion for queue entry {EntryId} after lease loss", item.EntryId);
-            return;
+            return QueuedWorkItemExecutionOutcome.LeaseLost;
         }
 
         if (failure is not null)
         {
             _metrics.Failed.Add(1);
-            var result = await _queue.FailAsync(item, failure, CancellationToken.None);
-            _logger.LogDebug(
-                "Handled failed queue entry {EntryId} with action {Action} at attempt {Attempt}",
-                item.EntryId,
-                result.Action,
-                result.Attempt);
-            return;
+            try
+            {
+                var result = await _queue.FailAsync(item, failure, CancellationToken.None);
+                _logger.LogDebug(
+                    "Handled failed queue entry {EntryId} with action {Action} at attempt {Attempt}",
+                    item.EntryId,
+                    result.Action,
+                    result.Attempt);
+            }
+            catch (Exception cleanupException)
+            {
+                _metrics.CleanupFailed.Add(1);
+                _logger.LogError(
+                    cleanupException,
+                    "Failed to handle failed queue entry {EntryId}",
+                    item.EntryId);
+            }
+
+            return QueuedWorkItemExecutionOutcome.Failed;
         }
 
         if (!completed)
         {
-            return;
+            return QueuedWorkItemExecutionOutcome.Cancelled;
         }
 
-        await _queue.CompleteAsync(item, CancellationToken.None);
-        _metrics.Succeeded.Add(1);
+        try
+        {
+            await _queue.CompleteAsync(item, CancellationToken.None);
+            _metrics.Succeeded.Add(1);
+            return QueuedWorkItemExecutionOutcome.Completed;
+        }
+        catch (Exception cleanupException)
+        {
+            _metrics.CleanupFailed.Add(1);
+            _logger.LogError(
+                cleanupException,
+                "Failed to complete queue entry {EntryId}",
+                item.EntryId);
+            return QueuedWorkItemExecutionOutcome.Failed;
+        }
     }
 
     private async Task RunHeartbeatAsync(
@@ -126,7 +161,7 @@ public sealed class QueuedWorkItemExecutor : IQueuedWorkItemExecutor
 
                 if (renewed)
                 {
-                    _metrics.LeaseRenewed.Add(1);
+                    _metrics.LeaseRenewed.Add(1, LeaseTags(consumer));
                     continue;
                 }
 
@@ -145,4 +180,10 @@ public sealed class QueuedWorkItemExecutor : IQueuedWorkItemExecutor
             processingCancellation.Cancel();
         }
     }
+
+    private static TagList LeaseTags(string consumer) => new()
+    {
+        { "work_type", "message" },
+        { "consumer_type", consumer.EndsWith("-recovery", StringComparison.Ordinal) ? "recovery" : "normal" },
+    };
 }

@@ -263,11 +263,11 @@ public sealed class WorkQueueHostedServiceTest
         public List<QueuedMessageWorkItem> Items { get; } = [];
         public TaskCompletionSource Processed { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        public Task ExecuteAsync(string consumer, QueuedMessageWorkItem item, CancellationToken cancellationToken)
+        public Task<QueuedWorkItemExecutionOutcome> ExecuteAsync(string consumer, QueuedMessageWorkItem item, CancellationToken cancellationToken)
         {
             Items.Add(item);
             Processed.TrySetResult();
-            return Task.CompletedTask;
+            return Task.FromResult(QueuedWorkItemExecutionOutcome.Completed);
         }
     }
 

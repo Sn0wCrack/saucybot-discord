@@ -124,6 +124,10 @@ renews its lease while processing. If it stops renewing, another worker can
 recover the item after the idle timeout. Redis Streams provide at-least-once
 delivery, so message processing must tolerate duplicate delivery.
 
+Lease renewal does not provide fencing against a worker that pauses and later
+resumes after another worker has reclaimed its item. Keep message side effects
+idempotent; use the message ID or queue entry ID for deduplication where needed.
+
 Do not treat separate logical Valkey databases as resource isolation. Cache and queue
 must remain separate Valkey services so their memory limits, eviction policies, and
 restart behavior are independent.
