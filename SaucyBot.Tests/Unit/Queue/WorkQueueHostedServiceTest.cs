@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -15,6 +16,17 @@ namespace SaucyBot.Tests.Unit.Queue;
 
 public sealed class WorkQueueHostedServiceTest
 {
+    [Fact]
+    public void HostedServiceExposesOnlyTheLeaseAwareConstructor()
+    {
+        var constructors = typeof(WorkQueueHostedService).GetConstructors();
+
+        var constructor = Assert.Single(constructors);
+        Assert.Contains(
+            typeof(IQueuedWorkItemExecutor),
+            constructor.GetParameters().Select(parameter => parameter.ParameterType));
+    }
+
     [Fact]
     public async Task CancellationAfterNonCooperativeProcessingLeavesItemPending()
     {
@@ -185,7 +197,6 @@ public sealed class WorkQueueHostedServiceTest
         IQueuedWorkItemExecutor? executor = null,
         TimeSpan? reclaimerInterval = null) => new(
         queue,
-        processor,
         new WorkQueueOptions
         {
             MessageWorkerCount = 1,
@@ -198,7 +209,7 @@ public sealed class WorkQueueHostedServiceTest
         new InteractionWorkChannel(new WorkQueueOptions()),
         Substitute.For<IInteractionProcessor>(),
         new SaucyBotMetrics(),
-        executor);
+        executor ?? new DelegatingExecutor(queue, processor));
 
     private static QueuedMessageWorkItem CreateItem(string entryId, int deliveryCount = 1) => new(
         entryId,
@@ -268,6 +279,34 @@ public sealed class WorkQueueHostedServiceTest
             Items.Add(item);
             Processed.TrySetResult();
             return Task.FromResult(QueuedWorkItemExecutionOutcome.Completed);
+        }
+    }
+
+    private sealed class DelegatingExecutor(
+        TestWorkQueue queue,
+        IWorkItemProcessor processor) : IQueuedWorkItemExecutor
+    {
+        public async Task<QueuedWorkItemExecutionOutcome> ExecuteAsync(
+            string consumer,
+            QueuedMessageWorkItem item,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                await processor.ProcessAsync(item, cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
+                await queue.CompleteAsync(item, CancellationToken.None);
+                return QueuedWorkItemExecutionOutcome.Completed;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                return QueuedWorkItemExecutionOutcome.Cancelled;
+            }
+            catch (Exception exception)
+            {
+                await queue.FailAsync(item, exception, CancellationToken.None);
+                return QueuedWorkItemExecutionOutcome.Failed;
+            }
         }
     }
 

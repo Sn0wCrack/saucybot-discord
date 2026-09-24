@@ -79,12 +79,12 @@ public sealed class WorkerAdmissionTest
 
         await using var service = new WorkQueueHostedService(
             queue,
-            processor,
             new WorkQueueOptions { MessageWorkerCount = 1 },
             SubstituteLogger<WorkQueueHostedService>(),
             new InteractionWorkChannel(new WorkQueueOptions()),
             Substitute.For<IInteractionProcessor>(),
-            new SaucyBotMetrics());
+            new SaucyBotMetrics(),
+            new DelegatingExecutor(queue, processor));
 
         await service.StartAsync(TestContext.Current.CancellationToken);
         await processor.Processed.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
@@ -106,12 +106,12 @@ public sealed class WorkerAdmissionTest
 
         await using var service = new WorkQueueHostedService(
             queue,
-            processor,
             new WorkQueueOptions { MessageWorkerCount = 1 },
             SubstituteLogger<WorkQueueHostedService>(),
             new InteractionWorkChannel(new WorkQueueOptions()),
             Substitute.For<IInteractionProcessor>(),
-            new SaucyBotMetrics());
+            new SaucyBotMetrics(),
+            new DelegatingExecutor(queue, processor));
 
         await service.StartAsync(TestContext.Current.CancellationToken);
         await processor.Processed.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
@@ -131,7 +131,6 @@ public sealed class WorkerAdmissionTest
 
         await using var service = new WorkQueueHostedService(
             queue,
-            processor,
             new WorkQueueOptions
             {
                 MessageWorkerCount = 1,
@@ -140,7 +139,8 @@ public sealed class WorkerAdmissionTest
             SubstituteLogger<WorkQueueHostedService>(),
             new InteractionWorkChannel(new WorkQueueOptions()),
             Substitute.For<IInteractionProcessor>(),
-            new SaucyBotMetrics());
+            new SaucyBotMetrics(),
+            new DelegatingExecutor(queue, processor));
 
         await service.StartAsync(TestContext.Current.CancellationToken);
         await processor.Started.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
@@ -161,12 +161,12 @@ public sealed class WorkerAdmissionTest
 
         await using var service = new WorkQueueHostedService(
             queue,
-            processor,
             new WorkQueueOptions { MessageWorkerCount = 1 },
             SubstituteLogger<WorkQueueHostedService>(),
             new InteractionWorkChannel(new WorkQueueOptions()),
             Substitute.For<IInteractionProcessor>(),
-            new SaucyBotMetrics());
+            new SaucyBotMetrics(),
+            new DelegatingExecutor(queue, processor));
 
         using var stopping = new CancellationTokenSource();
         var executeAsync = typeof(WorkQueueHostedService)
@@ -194,12 +194,12 @@ public sealed class WorkerAdmissionTest
 
         await using var service = new WorkQueueHostedService(
             queue,
-            processor,
             new WorkQueueOptions { MessageWorkerCount = 1, ShutdownDrainTimeout = TimeSpan.FromMilliseconds(100) },
             SubstituteLogger<WorkQueueHostedService>(),
             interactionChannel,
             Substitute.For<IInteractionProcessor>(),
-            new SaucyBotMetrics());
+            new SaucyBotMetrics(),
+            new DelegatingExecutor(queue, processor));
 
         service.StopIntake();
 
@@ -228,12 +228,12 @@ public sealed class WorkerAdmissionTest
 
         await using var service = new WorkQueueHostedService(
             queue,
-            processor,
             new WorkQueueOptions { MessageWorkerCount = 2, ShutdownDrainTimeout = TimeSpan.FromMilliseconds(100) },
             SubstituteLogger<WorkQueueHostedService>(),
             new InteractionWorkChannel(new WorkQueueOptions()),
             Substitute.For<IInteractionProcessor>(),
-            new SaucyBotMetrics());
+            new SaucyBotMetrics(),
+            new DelegatingExecutor(queue, processor));
 
         await service.StartAsync(TestContext.Current.CancellationToken);
         await processor.StartedCount.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
@@ -251,12 +251,12 @@ public sealed class WorkerAdmissionTest
 
         await using var service = new WorkQueueHostedService(
             queue,
-            processor,
             new WorkQueueOptions { MessageWorkerCount = 1 },
             SubstituteLogger<WorkQueueHostedService>(),
             new InteractionWorkChannel(new WorkQueueOptions()),
             Substitute.For<IInteractionProcessor>(),
-            new SaucyBotMetrics());
+            new SaucyBotMetrics(),
+            new DelegatingExecutor(queue, processor));
 
         await service.StartAsync(TestContext.Current.CancellationToken);
         await processor.Processed.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
@@ -275,10 +275,10 @@ public sealed class WorkerAdmissionTest
         var processed = 0;
         var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var drained = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var messageProcessor = new RecordingProcessor();
 
         await using var service = new WorkQueueHostedService(
             queue,
-            new RecordingProcessor(),
             new WorkQueueOptions { InteractionWorkerCount = 1, ShutdownDrainTimeout = TimeSpan.FromSeconds(1) },
             SubstituteLogger<WorkQueueHostedService>(),
             interactionChannel: channel,
@@ -291,7 +291,8 @@ public sealed class WorkerAdmissionTest
                     drained.TrySetResult();
                 }
             }),
-            metrics: new SaucyBotMetrics());
+            metrics: new SaucyBotMetrics(),
+            executor: new DelegatingExecutor(queue, messageProcessor));
 
         await service.StartAsync(TestContext.Current.CancellationToken);
         await started.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
@@ -311,12 +312,12 @@ public sealed class WorkerAdmissionTest
 
         await using var service = new WorkQueueHostedService(
             queue,
-            processor,
             new WorkQueueOptions(),
             SubstituteLogger<WorkQueueHostedService>(),
             new InteractionWorkChannel(new WorkQueueOptions()),
             Substitute.For<IInteractionProcessor>(),
-            new SaucyBotMetrics());
+            new SaucyBotMetrics(),
+            new DelegatingExecutor(queue, processor));
 
         await service.StartAsync(TestContext.Current.CancellationToken);
         service.StopIntake();
@@ -335,12 +336,12 @@ public sealed class WorkerAdmissionTest
 
         await using var service = new WorkQueueHostedService(
             queue,
-            processor,
             new WorkQueueOptions { ShutdownDrainTimeout = TimeSpan.FromSeconds(1) },
             SubstituteLogger<WorkQueueHostedService>(),
             new InteractionWorkChannel(new WorkQueueOptions()),
             Substitute.For<IInteractionProcessor>(),
-            new SaucyBotMetrics());
+            new SaucyBotMetrics(),
+            new DelegatingExecutor(queue, processor));
 
         await service.StartAsync(TestContext.Current.CancellationToken);
         await processor.Started.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
@@ -360,12 +361,12 @@ public sealed class WorkerAdmissionTest
 
         await using var service = new WorkQueueHostedService(
             queue,
-            processor,
             new WorkQueueOptions { ShutdownDrainTimeout = TimeSpan.FromMilliseconds(50) },
             SubstituteLogger<WorkQueueHostedService>(),
             new InteractionWorkChannel(new WorkQueueOptions()),
             Substitute.For<IInteractionProcessor>(),
-            new SaucyBotMetrics());
+            new SaucyBotMetrics(),
+            new DelegatingExecutor(queue, processor));
 
         await service.StartAsync(TestContext.Current.CancellationToken);
         await processor.Started.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
@@ -383,12 +384,12 @@ public sealed class WorkerAdmissionTest
 
         await using var service = new WorkQueueHostedService(
             queue,
-            processor,
             new WorkQueueOptions { ShutdownDrainTimeout = TimeSpan.FromSeconds(5) },
             SubstituteLogger<WorkQueueHostedService>(),
             new InteractionWorkChannel(new WorkQueueOptions()),
             Substitute.For<IInteractionProcessor>(),
-            new SaucyBotMetrics());
+            new SaucyBotMetrics(),
+            new DelegatingExecutor(queue, processor));
 
         await service.StartAsync(TestContext.Current.CancellationToken);
         await processor.Started.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
@@ -545,6 +546,34 @@ public sealed class WorkerAdmissionTest
         public void Release() => _release.TrySetResult();
     }
 
+    private sealed class DelegatingExecutor(
+        FakeWorkQueue queue,
+        IWorkItemProcessor processor) : IQueuedWorkItemExecutor
+    {
+        public async Task<QueuedWorkItemExecutionOutcome> ExecuteAsync(
+            string consumer,
+            QueuedMessageWorkItem item,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                await processor.ProcessAsync(item, cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
+                await queue.CompleteAsync(item, CancellationToken.None);
+                return QueuedWorkItemExecutionOutcome.Completed;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                return QueuedWorkItemExecutionOutcome.Cancelled;
+            }
+            catch (Exception exception)
+            {
+                await queue.FailAsync(item, exception, CancellationToken.None);
+                return QueuedWorkItemExecutionOutcome.Failed;
+            }
+        }
+    }
+
     private sealed class RecordingInteractionProcessor(Action callback) : IInteractionProcessor
     {
         public Task ProcessAsync(IInteractionWorkItem interaction, CancellationToken cancellationToken)
@@ -567,12 +596,12 @@ public sealed class WorkerAdmissionTest
 
     private static WorkQueueHostedService CreateQueueService(FakeWorkQueue queue) => new(
         queue,
-        new RecordingProcessor(),
         new WorkQueueOptions { ShutdownDrainTimeout = TimeSpan.FromMilliseconds(100) },
         SubstituteLogger<WorkQueueHostedService>(),
         new InteractionWorkChannel(new WorkQueueOptions()),
         Substitute.For<IInteractionProcessor>(),
-        new SaucyBotMetrics());
+        new SaucyBotMetrics(),
+        new DelegatingExecutor(queue, new RecordingProcessor()));
 
     private static DiscordClientHost CreateClientHost(
         FakeWorkQueue queue,

@@ -85,12 +85,12 @@ public sealed class InteractionResponseTest
         var channel = new InteractionWorkChannel(new WorkQueueOptions());
         var service = new WorkQueueHostedService(
             queue,
-            Substitute.For<IWorkItemProcessor>(),
             new WorkQueueOptions { InteractionWorkerCount = 1, ShutdownDrainTimeout = TimeSpan.FromMilliseconds(100) },
             NullLogger<WorkQueueHostedService>.Instance,
             channel,
             new CallbackInteractionProcessor(process),
-            new SaucyBotMetrics());
+            new SaucyBotMetrics(),
+            Substitute.For<IQueuedWorkItemExecutor>());
         var services = new ServiceCollection().BuildServiceProvider();
         var clientHost = new DiscordClientHost(
             NullLogger<DiscordClientHost>.Instance,

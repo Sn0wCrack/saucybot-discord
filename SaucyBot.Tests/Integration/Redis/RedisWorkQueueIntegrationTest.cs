@@ -209,7 +209,6 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
             metrics);
         await using var service = new WorkQueueHostedService(
             queue,
-            processor,
             new WorkQueueOptions
             {
                 Redis = options.Redis,
@@ -264,7 +263,6 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
 
         await using var service = new WorkQueueHostedService(
             queue,
-            processor,
             new WorkQueueOptions
             {
                 Redis = options.Redis,
