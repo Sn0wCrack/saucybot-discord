@@ -53,18 +53,12 @@ public sealed class QueuedWorkItemExecutor : IQueuedWorkItemExecutor
         using var processingCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         processingCancellation.CancelAfter(_options.MaxProcessingTime);
 
-        var leaseLost = 0;
+        var leaseState = new LeaseState(_metrics, consumer);
         var heartbeat = RunHeartbeatAsync(
             consumer,
             item.EntryId,
             processingCancellation,
-            () =>
-            {
-                if (Interlocked.Exchange(ref leaseLost, 1) == 0)
-                {
-                    _metrics.LeaseLost.Add(1, LeaseTags(consumer));
-                }
-            });
+            leaseState);
 
         Exception? failure = null;
         var completed = false;
@@ -90,7 +84,7 @@ public sealed class QueuedWorkItemExecutor : IQueuedWorkItemExecutor
             await heartbeat;
         }
 
-        if (Volatile.Read(ref leaseLost) != 0)
+        if (leaseState.IsLost)
         {
             _logger.LogWarning("Skipping completion for queue entry {EntryId} after lease loss", item.EntryId);
             return QueuedWorkItemExecutionOutcome.LeaseLost;
@@ -146,7 +140,7 @@ public sealed class QueuedWorkItemExecutor : IQueuedWorkItemExecutor
         string consumer,
         string entryId,
         CancellationTokenSource processingCancellation,
-        Action markLeaseLost)
+        LeaseState leaseState)
     {
         using var timer = new PeriodicTimer(_options.Redis.HeartbeatInterval);
 
@@ -165,7 +159,7 @@ public sealed class QueuedWorkItemExecutor : IQueuedWorkItemExecutor
                     continue;
                 }
 
-                markLeaseLost();
+                leaseState.MarkLost();
                 processingCancellation.Cancel();
                 return;
             }
@@ -175,9 +169,24 @@ public sealed class QueuedWorkItemExecutor : IQueuedWorkItemExecutor
         }
         catch (Exception exception)
         {
-            markLeaseLost();
+            leaseState.MarkLost();
             _logger.LogWarning(exception, "Failed to renew lease for queue entry {EntryId}", entryId);
             processingCancellation.Cancel();
+        }
+    }
+
+    private sealed class LeaseState(ISaucyBotMetrics metrics, string consumer)
+    {
+        private int _lost;
+
+        public bool IsLost => Volatile.Read(ref _lost) != 0;
+
+        public void MarkLost()
+        {
+            if (Interlocked.Exchange(ref _lost, 1) == 0)
+            {
+                metrics.LeaseLost.Add(1, LeaseTags(consumer));
+            }
         }
     }
 
