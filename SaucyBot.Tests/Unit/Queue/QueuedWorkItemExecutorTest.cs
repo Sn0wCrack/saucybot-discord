@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
-using System.Runtime.CompilerServices;
+using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -9,6 +10,7 @@ using SaucyBot.Diagnostics;
 using SaucyBot.Queue;
 using SaucyBot.Queue.Redis;
 using SaucyBot.Tests.Unit.Common;
+using StackExchange.Redis;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Queue;
@@ -27,120 +29,124 @@ public sealed class QueuedWorkItemExecutorTest
     }
 
     [Fact]
-    public async Task LongProcessingRenewsLeaseAndCompletesOnlyAfterHeartbeatStops()
+    public void ExecutorDependsOnTheLeaseNotOnRedisOrTheWorkQueue()
     {
-        var redis = new FakeRedisStreamClient();
-        var queue = new FakeWorkQueue();
+        var constructor = Assert.Single(typeof(QueuedWorkItemExecutor).GetConstructors());
+
+        Assert.DoesNotContain(constructor.GetParameters(), parameter => parameter.ParameterType == typeof(IRedisStreamClient));
+        Assert.DoesNotContain(constructor.GetParameters(), parameter => parameter.ParameterType == typeof(IMessageWorkQueue));
+        Assert.DoesNotContain(constructor.GetParameters(), parameter => parameter.ParameterType == typeof(IConnectionMultiplexer));
+        Assert.Contains(constructor.GetParameters(), parameter => parameter.ParameterType == typeof(IWorkItemProcessor));
+    }
+
+    [Fact]
+    public async Task SuccessfulProcessingCompletesThroughTheLeaseAndDisposesIt()
+    {
+        var lease = new FakeWorkItemLease();
         var processor = new BlockingProcessor();
         using var metrics = new SaucyBotMetrics();
-        using var listener = Listen(metrics, out var measurements);
-        var executor = CreateExecutor(redis, queue, processor, metrics);
-        var item = new QueuedMessageWorkItem("42-0", TestData.Queued().Item);
-        var renewalsAtCompletion = -1;
-        queue.OnComplete = () => renewalsAtCompletion = redis.RenewCalls;
+        var executor = CreateExecutor(processor, metrics);
+        var item = new QueuedMessageWorkItem("42-0", TestData.Queued().Item, lease);
 
         var execution = executor.ExecuteAsync("worker-1", item, CancellationToken.None);
         await processor.Started.Task.WaitAsync(TestContext.Current.CancellationToken);
-        await redis.Renewed.Task.WaitAsync(TestContext.Current.CancellationToken);
-
-        Assert.Empty(queue.Completed);
-
         processor.Release();
-        await execution;
+        var outcome = await execution;
 
-        Assert.Single(queue.Completed);
-        Assert.True(redis.RenewCalls > 0);
-        Assert.Equal(redis.RenewCalls, renewalsAtCompletion);
-        Assert.True(measurements["saucybot.queue.lease_renewed"] > 0);
+        Assert.Equal(QueuedWorkItemExecutionOutcome.Completed, outcome);
+        Assert.Equal(1, lease.CompleteCalls);
+        Assert.Empty(lease.RetryExceptions);
+        Assert.Equal(1, lease.DisposeCalls);
     }
 
     [Fact]
-    public async Task HeartbeatFailureCancelsProcessingAndDoesNotCompleteItem()
+    public async Task FailedProcessingRetriesThroughTheLease()
     {
-        var redis = new FakeRedisStreamClient { RenewResult = false };
-        var queue = new FakeWorkQueue();
-        var processor = new BlockingProcessor();
+        var lease = new FakeWorkItemLease();
         using var metrics = new SaucyBotMetrics();
-        using var listener = Listen(metrics, out var measurements);
-        var executor = CreateExecutor(redis, queue, processor, metrics);
-        var item = new QueuedMessageWorkItem("42-0", TestData.Queued().Item);
-
-        await executor.ExecuteAsync("worker-1", item, CancellationToken.None);
-
-        Assert.True(processor.CancellationObserved);
-        Assert.Empty(queue.Completed);
-        Assert.Equal(1, measurements["saucybot.queue.lease_lost"]);
-    }
-
-    [Fact]
-    public async Task HeartbeatExceptionCancelsProcessingAndDoesNotCompleteItem()
-    {
-        var redis = new FakeRedisStreamClient
-        {
-            RenewException = new InvalidOperationException("redis unavailable"),
-        };
-        var queue = new FakeWorkQueue();
-        var processor = new BlockingProcessor();
-        var executor = CreateExecutor(redis, queue, processor);
-        var item = new QueuedMessageWorkItem("42-0", TestData.Queued().Item);
+        var executor = CreateExecutor(new FailingProcessor(), metrics);
+        var item = new QueuedMessageWorkItem("42-0", TestData.Queued().Item, lease);
 
         var outcome = await executor.ExecuteAsync("worker-1", item, CancellationToken.None);
 
+        Assert.Equal(QueuedWorkItemExecutionOutcome.Failed, outcome);
+        var exception = Assert.Single(lease.RetryExceptions);
+        Assert.Equal("processing failed", exception.Message);
+        Assert.Equal(0, lease.CompleteCalls);
+        Assert.Equal(1, lease.DisposeCalls);
+    }
+
+    [Fact]
+    public async Task LeaseLossPreventsCompletionAndRetry()
+    {
+        var lease = new FakeWorkItemLease();
+        var processor = new BlockingProcessor();
+        using var metrics = new SaucyBotMetrics();
+        using var listener = Listen(metrics, out var measurements);
+        var executor = CreateExecutor(processor, metrics);
+        var item = new QueuedMessageWorkItem("42-0", TestData.Queued().Item, lease);
+
+        var execution = executor.ExecuteAsync("worker-1", item, CancellationToken.None);
+        await processor.Started.Task.WaitAsync(TestContext.Current.CancellationToken);
+        lease.SignalLost();
+
+        var outcome = await execution;
+
         Assert.Equal(QueuedWorkItemExecutionOutcome.LeaseLost, outcome);
         Assert.True(processor.CancellationObserved);
-        Assert.Empty(queue.Completed);
+        Assert.Equal(0, lease.CompleteCalls);
+        Assert.Empty(lease.RetryExceptions);
+        Assert.Equal(1, measurements["saucybot.queue.lease_lost"]);
     }
 
     [Fact]
     public async Task ProcessingCancellationDoesNotCompleteItem()
     {
-        var redis = new FakeRedisStreamClient();
-        var queue = new FakeWorkQueue();
+        var lease = new FakeWorkItemLease();
         var processor = new BlockingProcessor();
         using var metrics = new SaucyBotMetrics();
-        var executor = CreateExecutor(redis, queue, processor, metrics);
-        var item = new QueuedMessageWorkItem("42-0", TestData.Queued().Item);
+        var executor = CreateExecutor(processor, metrics);
+        var item = new QueuedMessageWorkItem("42-0", TestData.Queued().Item, lease);
         using var cancellation = new CancellationTokenSource();
 
         var execution = executor.ExecuteAsync("worker-1", item, cancellation.Token);
         await processor.Started.Task.WaitAsync(TestContext.Current.CancellationToken);
         cancellation.Cancel();
-        await execution;
+        var outcome = await execution;
 
+        Assert.Equal(QueuedWorkItemExecutionOutcome.Cancelled, outcome);
         Assert.True(processor.CancellationObserved);
-        Assert.Empty(queue.Completed);
+        Assert.Equal(0, lease.CompleteCalls);
+        Assert.Empty(lease.RetryExceptions);
     }
 
     [Fact]
     public async Task MaximumProcessingTimeCancelsAndLeavesItemForRecovery()
     {
-        var redis = new FakeRedisStreamClient();
-        var queue = new FakeWorkQueue();
-        var processor = new BlockingProcessor();
+        var lease = new FakeWorkItemLease();
         var executor = CreateExecutor(
-            redis,
-            queue,
-            processor,
+            new BlockingProcessor(),
+            new SaucyBotMetrics(),
             maxProcessingTime: TimeSpan.FromMilliseconds(10));
-        var item = new QueuedMessageWorkItem("42-0", TestData.Queued().Item);
+        var item = new QueuedMessageWorkItem("42-0", TestData.Queued().Item, lease);
 
         var outcome = await executor.ExecuteAsync("worker-1", item, CancellationToken.None);
 
         Assert.Equal(QueuedWorkItemExecutionOutcome.Cancelled, outcome);
-        Assert.True(processor.CancellationObserved);
-        Assert.Empty(queue.Completed);
+        Assert.Equal(0, lease.CompleteCalls);
+        Assert.Empty(lease.RetryExceptions);
     }
 
     [Fact]
-    public async Task FailureCleanupFailureIsLoggedAndDoesNotEscapeTheExecutor()
+    public async Task RetryCleanupFailureIsLoggedAndDoesNotEscapeTheExecutor()
     {
-        var redis = new FakeRedisStreamClient();
-        var queue = new FakeWorkQueue
+        var lease = new FakeWorkItemLease
         {
-            FailureException = new InvalidOperationException("cleanup failed"),
+            RetryException = new InvalidOperationException("cleanup failed"),
         };
-        var executor = CreateExecutor(redis, queue, new FailingProcessor());
-        var item = new QueuedMessageWorkItem("42-0", TestData.Queued().Item);
+        using var metrics = new SaucyBotMetrics();
+        var executor = CreateExecutor(new FailingProcessor(), metrics);
+        var item = new QueuedMessageWorkItem("42-0", TestData.Queued().Item, lease);
 
         var outcome = await executor.ExecuteAsync("worker-1", item, CancellationToken.None);
 
@@ -148,22 +154,17 @@ public sealed class QueuedWorkItemExecutorTest
     }
 
     private static QueuedWorkItemExecutor CreateExecutor(
-        FakeRedisStreamClient redis,
-        FakeWorkQueue queue,
         IWorkItemProcessor processor,
-        SaucyBotMetrics? metrics = null,
+        SaucyBotMetrics metrics,
         TimeSpan? maxProcessingTime = null) =>
         new(
             processor,
-            queue,
-            redis,
             new WorkQueueOptions
             {
-                MaxProcessingTime = maxProcessingTime ?? System.TimeSpan.FromSeconds(5),
-                HeartbeatInterval = System.TimeSpan.FromMilliseconds(10),
+                MaxProcessingTime = maxProcessingTime ?? TimeSpan.FromSeconds(5),
             },
             NullLogger<QueuedWorkItemExecutor>.Instance,
-            metrics ?? new SaucyBotMetrics());
+            metrics);
 
     private static MeterListener Listen(
         SaucyBotMetrics metrics,
@@ -186,6 +187,49 @@ public sealed class QueuedWorkItemExecutorTest
         });
         listener.Start();
         return listener;
+    }
+
+    private sealed class FakeWorkItemLease : IWorkItemLease
+    {
+        private readonly CancellationTokenSource _lost = new();
+
+        public int CompleteCalls { get; private set; }
+        public List<Exception> RetryExceptions { get; } = [];
+        public int DisposeCalls { get; private set; }
+        public Exception? CompleteException { get; init; }
+        public Exception? RetryException { get; init; }
+
+        public CancellationToken LostToken => _lost.Token;
+
+        public void SignalLost() => _lost.Cancel();
+
+        public Task<LeaseOperationResult> CompleteAsync(CancellationToken cancellationToken)
+        {
+            CompleteCalls++;
+            if (CompleteException is not null)
+            {
+                return Task.FromException<LeaseOperationResult>(CompleteException);
+            }
+
+            return Task.FromResult(LeaseOperationResult.Applied);
+        }
+
+        public Task<LeaseOperationResult> RetryAsync(Exception exception, CancellationToken cancellationToken)
+        {
+            RetryExceptions.Add(exception);
+            if (RetryException is not null)
+            {
+                return Task.FromException<LeaseOperationResult>(RetryException);
+            }
+
+            return Task.FromResult(LeaseOperationResult.Applied);
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            DisposeCalls++;
+            return ValueTask.CompletedTask;
+        }
     }
 
     private sealed class BlockingProcessor : IWorkItemProcessor
@@ -215,90 +259,5 @@ public sealed class QueuedWorkItemExecutorTest
     {
         public Task ProcessAsync(QueuedMessageWorkItem item, CancellationToken cancellationToken) =>
             Task.FromException(new InvalidOperationException("processing failed"));
-    }
-
-    private sealed class FakeWorkQueue : IMessageWorkQueue
-    {
-        public List<QueuedMessageWorkItem> Completed { get; } = [];
-        public Action? OnComplete { get; set; }
-        public Exception? FailureException { get; init; }
-
-        public Task EnqueueAsync(MessageWorkItem item, CancellationToken cancellationToken) =>
-            throw new System.NotSupportedException();
-
-        public async IAsyncEnumerable<QueuedMessageWorkItem> ReadAsync(
-            string consumer,
-            [EnumeratorCancellation] CancellationToken cancellationToken)
-        {
-            await Task.CompletedTask;
-            yield break;
-        }
-
-        public async IAsyncEnumerable<QueuedMessageWorkItem> ReclaimAsync(
-            string consumer,
-            System.TimeSpan minimumIdleTime,
-            int count,
-            [EnumeratorCancellation] CancellationToken cancellationToken)
-        {
-            await Task.CompletedTask;
-            yield break;
-        }
-
-        public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
-
-        public Task CompleteAsync(QueuedMessageWorkItem item, CancellationToken cancellationToken)
-        {
-            OnComplete?.Invoke();
-            Completed.Add(item);
-            return Task.CompletedTask;
-        }
-
-        public Task<WorkItemFailureResult> FailAsync(
-            QueuedMessageWorkItem item,
-            System.Exception exception,
-            CancellationToken cancellationToken)
-        {
-            if (FailureException is not null)
-            {
-                return Task.FromException<WorkItemFailureResult>(FailureException);
-            }
-
-            return Task.FromResult(new WorkItemFailureResult(WorkItemFailureAction.Retried, item.DeliveryCount));
-        }
-    }
-
-    private sealed class FakeRedisStreamClient : IRedisStreamClient
-    {
-        public bool RenewResult { get; init; } = true;
-        public Exception? RenewException { get; init; }
-        public int RenewCalls { get; private set; }
-        public TaskCompletionSource Renewed { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
-
-        public Task EnsureGroupAsync(CancellationToken cancellationToken) => Task.CompletedTask;
-        public Task<string> AddAsync(string payload, CancellationToken cancellationToken) => Task.FromResult("1-0");
-        public Task<RedisStreamEntry?> ReadNewAsync(string consumer, CancellationToken cancellationToken) => Task.FromResult<RedisStreamEntry?>(null);
-
-        public Task<bool> RenewAsync(string consumer, string entryId, CancellationToken cancellationToken)
-        {
-            RenewCalls++;
-            Renewed.TrySetResult();
-            if (RenewException is not null)
-            {
-                return Task.FromException<bool>(RenewException);
-            }
-
-            return Task.FromResult(RenewResult);
-        }
-
-        public Task<IReadOnlyList<RedisStreamEntry>> ReclaimAsync(
-            string consumer,
-            System.TimeSpan minimumIdleTime,
-            int count,
-            CancellationToken cancellationToken) =>
-            Task.FromResult<IReadOnlyList<RedisStreamEntry>>([]);
-
-        public Task AcknowledgeAsync(string entryId, CancellationToken cancellationToken) => Task.CompletedTask;
-        public Task DeleteAsync(string entryId, CancellationToken cancellationToken) => Task.CompletedTask;
-        public Task ClearPendingAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }
 }

@@ -234,8 +234,6 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
         var metrics = new SaucyBotMetrics();
         var executor = new QueuedWorkItemExecutor(
             processor,
-            queue,
-            client,
             new WorkQueueOptions { MaxProcessingTime = TimeSpan.FromSeconds(5) },
             NullLogger<QueuedWorkItemExecutor>.Instance,
             metrics);
@@ -273,8 +271,6 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
         var metrics = new SaucyBotMetrics();
         var executor = new QueuedWorkItemExecutor(
             processor,
-            queue,
-            client,
             new WorkQueueOptions
             {
                 MessageWorkerCount = 1,

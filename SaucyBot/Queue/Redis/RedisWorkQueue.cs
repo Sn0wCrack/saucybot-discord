@@ -132,37 +132,25 @@ public sealed class RedisWorkQueue : IMessageWorkQueue, IWorkItemProducer<Messag
     {
         await foreach (var prepared in ReclaimPreparedAsync(consumer, minimumIdleTime, count, cancellationToken))
         {
-            yield return new QueuedMessageWorkItem(prepared.EntryId, prepared.Item, prepared.Attempt);
+            yield return CreateQueuedItem(consumer, prepared);
         }
     }
 
     public Task CompleteAsync(QueuedMessageWorkItem item, CancellationToken cancellationToken) =>
-        CompleteEntryAsync(item.EntryId, cancellationToken);
+        item.Lease.CompleteAsync(cancellationToken);
 
     public async Task<WorkItemFailureResult> FailAsync(
         QueuedMessageWorkItem item,
         Exception exception,
         CancellationToken cancellationToken)
     {
-        var maxAttempts = Math.Max(1, _options.MaxProcessingAttempts);
-        if (item.DeliveryCount < maxAttempts)
-        {
-            _logger.LogWarning(
-                exception,
-                "Queue entry {EntryId} failed; Redis will retry it after it becomes idle (attempt {Attempt} of {MaxAttempts})",
-                item.EntryId,
-                item.DeliveryCount,
-                maxAttempts);
-            return new WorkItemFailureResult(WorkItemFailureAction.Retried, item.DeliveryCount);
-        }
-
-        await CompleteEntryAsync(item.EntryId, cancellationToken);
-        _logger.LogError(
-            exception,
-            "Discarded queue entry {EntryId} after {Attempt} processing attempts",
+        var action = await ApplyRetryPolicyAsync(
+            item.Lease,
             item.EntryId,
-            item.DeliveryCount);
-        return new WorkItemFailureResult(WorkItemFailureAction.Discarded, item.DeliveryCount);
+            item.DeliveryCount,
+            exception,
+            cancellationToken);
+        return new WorkItemFailureResult(action, item.DeliveryCount);
     }
 
     public Task ClearPendingAsync(CancellationToken cancellationToken)
@@ -189,7 +177,7 @@ public sealed class RedisWorkQueue : IMessageWorkQueue, IWorkItemProducer<Messag
 
         await foreach (var prepared in ReadPreparedAsync(consumer, cancellationToken))
         {
-            yield return new QueuedMessageWorkItem(prepared.EntryId, prepared.Item, prepared.Attempt);
+            yield return CreateQueuedItem(consumer, prepared);
         }
     }
 
@@ -266,7 +254,43 @@ public sealed class RedisWorkQueue : IMessageWorkQueue, IWorkItemProducer<Messag
             prepared.EntryId,
             prepared.Attempt,
             prepared.ReceivedAt,
-            new DeliveryLease(this, consumer, prepared.EntryId, prepared.Attempt));
+            CreateLease(consumer, prepared));
+
+    private QueuedMessageWorkItem CreateQueuedItem(string consumer, PreparedDelivery prepared) =>
+        new(prepared.EntryId, prepared.Item, CreateLease(consumer, prepared), prepared.Attempt);
+
+    private IWorkItemLease CreateLease(string consumer, PreparedDelivery prepared) =>
+        new DeliveryLease(this, consumer, prepared.EntryId, prepared.Attempt);
+
+    // One retry/discard policy. Legacy FailAsync and lease RetryAsync both run it.
+    private async Task<WorkItemFailureAction> ApplyRetryPolicyAsync(
+        IWorkItemLease lease,
+        string entryId,
+        int attempt,
+        Exception exception,
+        CancellationToken cancellationToken)
+    {
+        var maxAttempts = Math.Max(1, _options.MaxProcessingAttempts);
+        if (attempt < maxAttempts)
+        {
+            _logger.LogWarning(
+                exception,
+                "Queue entry {EntryId} failed; Redis will retry it after it becomes idle (attempt {Attempt} of {MaxAttempts})",
+                entryId,
+                attempt,
+                maxAttempts);
+            await lease.DisposeAsync();
+            return WorkItemFailureAction.Retried;
+        }
+
+        _logger.LogError(
+            exception,
+            "Discarded queue entry {EntryId} after {Attempt} processing attempts",
+            entryId,
+            attempt);
+        await lease.CompleteAsync(cancellationToken);
+        return WorkItemFailureAction.Discarded;
+    }
 
     private async Task CompleteEntryAsync(string entryId, CancellationToken cancellationToken)
     {
@@ -390,24 +414,7 @@ public sealed class RedisWorkQueue : IMessageWorkQueue, IWorkItemProducer<Messag
                 return LeaseOperationResult.LeaseLost;
             }
 
-            var maxAttempts = Math.Max(1, _owner._options.MaxProcessingAttempts);
-            if (_attempt < maxAttempts)
-            {
-                _owner._logger.LogWarning(
-                    exception,
-                    "Queue entry {EntryId} failed; Redis will retry it after it becomes idle (attempt {Attempt} of {MaxAttempts})",
-                    _entryId,
-                    _attempt,
-                    maxAttempts);
-                return LeaseOperationResult.Applied;
-            }
-
-            await _owner.CompleteEntryAsync(_entryId, CancellationToken.None);
-            _owner._logger.LogError(
-                exception,
-                "Discarded queue entry {EntryId} after {Attempt} processing attempts",
-                _entryId,
-                _attempt);
+            await _owner.ApplyRetryPolicyAsync(this, _entryId, _attempt, exception, cancellationToken);
             return LeaseOperationResult.Applied;
         }
 
@@ -423,9 +430,12 @@ public sealed class RedisWorkQueue : IMessageWorkQueue, IWorkItemProducer<Messag
         private async Task RenewAsync()
         {
             using var timer = new PeriodicTimer(_owner._options.HeartbeatInterval);
+            using var renewalLifetime = CancellationTokenSource.CreateLinkedTokenSource(_renewalStop.Token);
+            // The renewal deadline preserves MaxProcessingTime even when a handler ignores cancellation.
+            renewalLifetime.CancelAfter(_owner._options.MaxProcessingTime);
             try
             {
-                while (await timer.WaitForNextTickAsync(_renewalStop.Token))
+                while (await timer.WaitForNextTickAsync(renewalLifetime.Token))
                 {
                     var renewed = await _owner._client.RenewAsync(_consumer, _entryId, _renewalStop.Token);
                     if (!renewed)
@@ -433,9 +443,11 @@ public sealed class RedisWorkQueue : IMessageWorkQueue, IWorkItemProducer<Messag
                         MarkLost();
                         return;
                     }
+
+                    _owner._metrics?.LeaseRenewed.Add(1, QueueMetricTags.Lease(_consumer));
                 }
             }
-            catch (OperationCanceledException) when (_renewalStop.IsCancellationRequested)
+            catch (OperationCanceledException) when (_renewalStop.IsCancellationRequested || renewalLifetime.IsCancellationRequested)
             {
             }
             catch (Exception exception)

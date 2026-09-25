@@ -15,6 +15,7 @@ using SaucyBot.Diagnostics;
 using SaucyBot.Library.Discord;
 using SaucyBot.Queue;
 using SaucyBot.Services;
+using SaucyBot.Tests.Unit.Common;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit;
@@ -484,7 +485,8 @@ public sealed class WorkerAdmissionTest
 
     private static QueuedMessageWorkItem CreateQueuedItem(string entryId) => new(entryId,
         new MessageWorkItem(1, 2, 3, 4, [], "content", null, [], true, true,
-            Guid.Parse("11111111-1111-1111-1111-111111111111")));
+            Guid.Parse("11111111-1111-1111-1111-111111111111")),
+        new TestData.NoOpWorkItemLease());
 
     private static ILogger<T> SubstituteLogger<T>() =>
         Microsoft.Extensions.Logging.Abstractions.NullLogger<T>.Instance;

@@ -1,4 +1,6 @@
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 using SaucyBot.Queue;
 
 namespace SaucyBot.Tests.Unit.Common;
@@ -21,6 +23,19 @@ internal static class TestData
         true,
         CorrelationId);
 
-    public static QueuedMessageWorkItem Queued(string entryId = "1-0") =>
-        new(entryId, Message());
+    public static QueuedMessageWorkItem Queued(string entryId = "1-0", int deliveryCount = 1) =>
+        new(entryId, Message(), new NoOpWorkItemLease(), deliveryCount);
+
+    public sealed class NoOpWorkItemLease : IWorkItemLease
+    {
+        public CancellationToken LostToken => CancellationToken.None;
+
+        public Task<LeaseOperationResult> CompleteAsync(CancellationToken cancellationToken) =>
+            Task.FromResult(LeaseOperationResult.Applied);
+
+        public Task<LeaseOperationResult> RetryAsync(Exception exception, CancellationToken cancellationToken) =>
+            Task.FromResult(LeaseOperationResult.Applied);
+
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+    }
 }

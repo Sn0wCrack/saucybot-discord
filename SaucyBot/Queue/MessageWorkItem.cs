@@ -80,4 +80,8 @@ public sealed record MessageWorkItem(
     private sealed record VersionedPayload(int Version, MessageWorkItem? Item);
 }
 
-public sealed record QueuedMessageWorkItem(string EntryId, MessageWorkItem Item, int DeliveryCount = 1);
+public sealed record QueuedMessageWorkItem(
+    string EntryId,
+    MessageWorkItem Item,
+    IWorkItemLease Lease,
+    int DeliveryCount = 1);

@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using SaucyBot.Diagnostics;
 using SaucyBot.Queue;
+using SaucyBot.Tests.Unit.Common;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Queue;
@@ -215,6 +216,7 @@ public sealed class WorkQueueHostedServiceTest
         entryId,
         new MessageWorkItem(1, 2, 3, 4, [], "content", null, [], true, true,
             Guid.Parse("11111111-1111-1111-1111-111111111111")),
+        new TestData.NoOpWorkItemLease(),
         deliveryCount);
 
     private sealed class NonCooperativeProcessor : IWorkItemProcessor
