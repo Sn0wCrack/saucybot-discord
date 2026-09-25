@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 
@@ -11,6 +12,8 @@ public sealed class StackExchangeRedisStreamClient(
     private readonly IDatabase _database = connection.GetDatabase();
     private readonly RedisWorkQueueOptions _options = options;
     private readonly ILogger<StackExchangeRedisStreamClient> _logger = logger;
+    private readonly ConcurrentDictionary<string, string> _reclaimCursors = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, SemaphoreSlim> _reclaimLocks = new(StringComparer.Ordinal);
 
     public async Task EnsureGroupAsync(CancellationToken cancellationToken)
     {
@@ -122,34 +125,83 @@ public sealed class StackExchangeRedisStreamClient(
     {
         cancellationToken.ThrowIfCancellationRequested();
         var owner = RedisWorkQueue.ConsumerName(consumer, leaseToken);
-        var reclaimed = await _database.StreamAutoClaimAsync(
-                _options.StreamName,
-                _options.ConsumerGroup,
-                owner,
-                Math.Max(0, (long)minimumIdleTime.TotalMilliseconds),
-                "0-0",
-                count: 1)
-            .WaitAsync(cancellationToken);
-
-        if (reclaimed.ClaimedEntries.Length == 0)
+        var reclaimLock = _reclaimLocks.GetOrAdd(consumer, static _ => new SemaphoreSlim(1, 1));
+        await reclaimLock.WaitAsync(cancellationToken);
+        try
         {
-            return null;
+            var cursor = _reclaimCursors.GetValueOrDefault(consumer, "0-0");
+            while (true)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var reclaimed = await _database.StreamAutoClaimAsync(
+                        _options.StreamName,
+                        _options.ConsumerGroup,
+                        owner,
+                        Math.Max(0, (long)minimumIdleTime.TotalMilliseconds),
+                        cursor,
+                        count: 1)
+                    .WaitAsync(cancellationToken);
+
+                cursor = reclaimed.NextStartId.ToString();
+                if (cursor == "0-0")
+                {
+                    _reclaimCursors.TryRemove(consumer, out _);
+                }
+                else
+                {
+                    _reclaimCursors[consumer] = cursor;
+                }
+
+                if (reclaimed.ClaimedEntries.Length == 0)
+                {
+                    if (cursor == "0-0")
+                    {
+                        return null;
+                    }
+
+                    continue;
+                }
+
+                var entry = reclaimed.ClaimedEntries[0];
+                var pending = await _database.StreamPendingMessagesAsync(
+                        _options.StreamName,
+                        _options.ConsumerGroup,
+                        1,
+                        owner,
+                        entry.Id,
+                        entry.Id)
+                    .WaitAsync(cancellationToken);
+
+                await RemoveEmptyConsumersAsync(cancellationToken);
+                var deliveryCount = pending.Length > 0
+                    ? pending[0].DeliveryCount
+                    : entry.DeliveryCount;
+                return ToEntry(entry, deliveryCount);
+            }
         }
+        finally
+        {
+            reclaimLock.Release();
+        }
+    }
 
-        var entry = reclaimed.ClaimedEntries[0];
-        var pending = await _database.StreamPendingMessagesAsync(
+    private async Task RemoveEmptyConsumersAsync(CancellationToken cancellationToken)
+    {
+        var consumers = await _database.StreamConsumerInfoAsync(
                 _options.StreamName,
-                _options.ConsumerGroup,
-                1,
-                owner,
-                entry.Id,
-                entry.Id)
+                _options.ConsumerGroup)
             .WaitAsync(cancellationToken);
-
-        var deliveryCount = pending.Length > 0
-            ? pending[0].DeliveryCount
-            : entry.DeliveryCount;
-        return ToEntry(entry, deliveryCount);
+        foreach (var consumer in consumers)
+        {
+            if (consumer.PendingMessageCount == 0)
+            {
+                await _database.StreamDeleteConsumerAsync(
+                        _options.StreamName,
+                        _options.ConsumerGroup,
+                        consumer.Name)
+                    .WaitAsync(cancellationToken);
+            }
+        }
     }
 
     public Task<LeaseOperationResult> CompleteAsync(

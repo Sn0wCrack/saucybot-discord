@@ -189,6 +189,7 @@ public sealed class RedisWorkQueue : IMessageWorkQueue, IWorkItemProducer<Messag
             var entry = await _client.ReadNewAsync(consumer, leaseToken, cancellationToken);
             if (entry is null)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 continue;
             }
 

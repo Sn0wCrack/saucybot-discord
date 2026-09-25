@@ -16,22 +16,29 @@ internal static class RedisQueueScripts
 
     internal const string CompleteLease = """
         local pending = redis.call('XPENDING', KEYS[1], ARGV[1], ARGV[2], ARGV[2], 1)
+        local expected = ARGV[3] .. '|' .. ARGV[4]
         if #pending == 0 then
             local entry = redis.call('XRANGE', KEYS[1], ARGV[2], ARGV[2], 'COUNT', 1)
-            if #entry == 0 then return 2 end
-            redis.call('XDEL', KEYS[1], ARGV[2])
+            if #entry > 0 then return -1 end
+            local remaining = redis.call('XPENDING', KEYS[1], ARGV[1], '-', '+', 1, expected)
+            if #remaining == 0 then
+                redis.call('XGROUP', 'DELCONSUMER', KEYS[1], ARGV[1], expected)
+            end
             return 2
         end
-        local expected = ARGV[3] .. '|' .. ARGV[4]
         if pending[1][2] ~= expected then return -1 end
         if redis.call('XACK', KEYS[1], ARGV[1], ARGV[2]) == 0 then return -1 end
         redis.call('XDEL', KEYS[1], ARGV[2])
+        local remaining = redis.call('XPENDING', KEYS[1], ARGV[1], '-', '+', 1, expected)
+        if #remaining == 0 then
+            redis.call('XGROUP', 'DELCONSUMER', KEYS[1], ARGV[1], expected)
+        end
         return 1
         """;
 
     internal const string RetryLease = """
         local pending = redis.call('XPENDING', KEYS[1], ARGV[1], ARGV[2], ARGV[2], 1)
-        if #pending == 0 then return 2 end
+        if #pending == 0 then return -1 end
         local expected = ARGV[3] .. '|' .. ARGV[4]
         if pending[1][2] ~= expected then return -1 end
         return 1

@@ -610,6 +610,22 @@ public sealed class RedisWorkQueueTest
     }
 
     [Fact]
+    public async Task ReadCancellationPropagatesWhenBackendReturnsNullAfterDrain()
+    {
+        var client = new FakeRedisStreamClient { ReturnNullAfterCancellation = true };
+        IMessageWorkQueue queue = CreateQueue(client);
+        using var cancellation = new CancellationTokenSource();
+        await using var messages = queue.ReadAsync("worker-1", cancellation.Token)
+            .GetAsyncEnumerator(cancellation.Token);
+
+        var read = messages.MoveNextAsync().AsTask();
+        await client.RemoteReadStarted.Task.WaitAsync(TestContext.Current.CancellationToken);
+        cancellation.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => read);
+    }
+
+    [Fact]
     public async Task ReadCancellationReconcilesEntryClaimedByRemoteRead()
     {
         var client = new FakeRedisStreamClient { ReturnEntryAfterCancellation = true };
@@ -766,6 +782,7 @@ public sealed class RedisWorkQueueTest
         public TaskCompletionSource CompleteStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public TaskCompletionSource? CompleteCompletion { get; init; }
         public bool ReturnEntryAfterCancellation { get; init; }
+        public bool ReturnNullAfterCancellation { get; init; }
         public TaskCompletionSource RemoteReadStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public TaskCompletionSource RemoteReadCompletion { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -798,6 +815,19 @@ public sealed class RedisWorkQueueTest
                 RemoteReadStarted.TrySetResult();
                 await RemoteReadCompletion.Task;
                 return new RedisStreamEntry("claimed-0", CreateItem().Serialize());
+            }
+
+            if (ReturnNullAfterCancellation)
+            {
+                RemoteReadStarted.TrySetResult();
+                try
+                {
+                    await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    return null;
+                }
             }
 
             while (Entries.Count == 0)

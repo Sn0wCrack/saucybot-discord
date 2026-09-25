@@ -316,6 +316,224 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
     }
 
     [Fact]
+    public async Task CompletionWithoutPendingRecordLeavesExistingEntryAndReturnsLeaseLost()
+    {
+        var redis = CreateRedisOptions("completion-without-pending");
+        var queue = new RedisWorkQueue(CreateClient(redis), CreateOptions(), redis);
+        IWorkItemConsumer<MessageWorkItem> consumer = queue;
+        await consumer.StartAsync(TestContext.Current.CancellationToken);
+        await queue.EnqueueAsync(TestItem(), TestContext.Current.CancellationToken);
+
+        await using var read = consumer.ReadAsync("consumer-a", TestContext.Current.CancellationToken)
+            .GetAsyncEnumerator(TestContext.Current.CancellationToken);
+        Assert.True(await read.MoveNextAsync());
+        await using var lease = read.Current.Lease;
+        Assert.Equal(
+            1,
+            await Database.StreamAcknowledgeAsync(redis.StreamName, redis.ConsumerGroup, read.Current.DeliveryId));
+
+        Assert.Equal(
+            LeaseOperationResult.LeaseLost,
+            await lease.CompleteAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(1, await Database.StreamLengthAsync(redis.StreamName));
+    }
+
+    [Fact]
+    public async Task RetryWithoutPendingRecordReturnsLeaseLost()
+    {
+        var redis = CreateRedisOptions("retry-without-pending");
+        var queue = new RedisWorkQueue(CreateClient(redis), CreateOptions(), redis);
+        IWorkItemConsumer<MessageWorkItem> consumer = queue;
+        await consumer.StartAsync(TestContext.Current.CancellationToken);
+        await queue.EnqueueAsync(TestItem(), TestContext.Current.CancellationToken);
+
+        await using var read = consumer.ReadAsync("consumer-a", TestContext.Current.CancellationToken)
+            .GetAsyncEnumerator(TestContext.Current.CancellationToken);
+        Assert.True(await read.MoveNextAsync());
+        await using var lease = read.Current.Lease;
+        Assert.Equal(
+            1,
+            await Database.StreamAcknowledgeAsync(redis.StreamName, redis.ConsumerGroup, read.Current.DeliveryId));
+
+        Assert.Equal(
+            LeaseOperationResult.LeaseLost,
+            await lease.RetryAsync(new InvalidOperationException("missing pending record"), TestContext.Current.CancellationToken));
+        Assert.Equal(1, await Database.StreamLengthAsync(redis.StreamName));
+    }
+
+    [Fact]
+    public async Task RecoveryAdvancesPastEmptyNonterminalAutoClaimPages()
+    {
+        var redis = CreateRedisOptions("recovery-cursor-empty-page");
+        var client = CreateClient(redis);
+        var queue = new RedisWorkQueue(client, CreateOptions(), redis);
+        IWorkItemConsumer<MessageWorkItem> consumer = queue;
+        await consumer.StartAsync(TestContext.Current.CancellationToken);
+
+        for (var index = 0; index < 25; index++)
+        {
+            await queue.EnqueueAsync(TestItem(), TestContext.Current.CancellationToken);
+        }
+
+        // EnqueueAsync returns only admission status. Read the entries into the PEL
+        // to create a first scan page of fresh items followed by idle items.
+        var entryIds = new List<string>();
+        for (var index = 0; index < 25; index++)
+        {
+            var entry = await client.ReadNewAsync("seed", $"seed-{index}", TestContext.Current.CancellationToken);
+            Assert.NotNull(entry);
+            entryIds.Add(entry.EntryId);
+        }
+
+        var recent = entryIds.Take(12).ToArray();
+        var idle = entryIds.Skip(12).ToArray();
+        await SetPendingIdleAsync(redis, "seed-recent", recent, idleMilliseconds: 0);
+        await SetPendingIdleAsync(redis, "seed-idle", idle, idleMilliseconds: 60_000);
+
+        var recovered = new List<WorkDelivery<MessageWorkItem>>();
+        for (var index = 0; index < idle.Length; index++)
+        {
+            await using var page = consumer.RecoverAsync(
+                    "recovery-cursor",
+                    TimeSpan.FromSeconds(10),
+                    count: 1,
+                    TestContext.Current.CancellationToken)
+                .GetAsyncEnumerator(TestContext.Current.CancellationToken);
+            Assert.True(await page.MoveNextAsync(), $"Recovery stopped before idle entry {index}.");
+            recovered.Add(page.Current);
+        }
+
+        Assert.Equal(idle.OrderBy(id => id), recovered.Select(delivery => delivery.DeliveryId).OrderBy(id => id));
+
+        foreach (var delivery in recovered)
+        {
+            Assert.Equal(
+                LeaseOperationResult.Applied,
+                await delivery.Lease.CompleteAsync(TestContext.Current.CancellationToken));
+            await delivery.Lease.DisposeAsync();
+        }
+
+        var remainingPending = await Database.StreamPendingMessagesAsync(
+            redis.StreamName,
+            redis.ConsumerGroup,
+            100,
+            default,
+            default,
+            default);
+        Assert.Equal(recent.Length, remainingPending.Length);
+        Assert.Contains(
+            await Database.StreamConsumerInfoAsync(redis.StreamName, redis.ConsumerGroup),
+            consumer => consumer.Name == "seed-recent" && consumer.PendingMessageCount == recent.Length);
+    }
+
+    [Fact]
+    public async Task CompletionAndOwnershipTransferRemoveZeroPendingConsumers()
+    {
+        const int deliveryCount = 8;
+        var redis = CreateRedisOptions("consumer-cleanup");
+        var queue = new RedisWorkQueue(CreateClient(redis), CreateOptions(), redis);
+        IWorkItemConsumer<MessageWorkItem> consumer = queue;
+        await consumer.StartAsync(TestContext.Current.CancellationToken);
+        for (var index = 0; index < deliveryCount; index++)
+        {
+            await queue.EnqueueAsync(TestItem(), TestContext.Current.CancellationToken);
+        }
+
+        var firstDeliveries = await ReadDeliveriesAsync(consumer, "first-owner", deliveryCount);
+        foreach (var delivery in firstDeliveries.Take(deliveryCount / 2))
+        {
+            Assert.Equal(
+                LeaseOperationResult.Applied,
+                await delivery.Lease.CompleteAsync(TestContext.Current.CancellationToken));
+            await delivery.Lease.DisposeAsync();
+        }
+
+        foreach (var delivery in firstDeliveries.Skip(deliveryCount / 2))
+        {
+            Assert.Equal(
+                LeaseOperationResult.Applied,
+                await delivery.Lease.RetryAsync(new InvalidOperationException("retry for recovery"), TestContext.Current.CancellationToken));
+        }
+
+        var reclaimed = await ReadDeliveriesAsync(
+            consumer,
+            "recovery-owner",
+            deliveryCount / 2,
+            minimumIdleTime: TimeSpan.Zero);
+        Assert.Equal(deliveryCount / 2, reclaimed.Count);
+
+        foreach (var delivery in reclaimed)
+        {
+            Assert.Equal(
+                LeaseOperationResult.Applied,
+                await delivery.Lease.CompleteAsync(TestContext.Current.CancellationToken));
+            await delivery.Lease.DisposeAsync();
+        }
+
+        Assert.Empty(await Database.StreamConsumerInfoAsync(redis.StreamName, redis.ConsumerGroup));
+    }
+
+    [Fact]
+    public async Task CompletionRemovesPerDeliveryConsumerRecords()
+    {
+        const int deliveryCount = 8;
+        var redis = CreateRedisOptions("completed-consumer-cleanup");
+        var queue = new RedisWorkQueue(CreateClient(redis), CreateOptions(), redis);
+        IWorkItemConsumer<MessageWorkItem> consumer = queue;
+        await consumer.StartAsync(TestContext.Current.CancellationToken);
+        for (var index = 0; index < deliveryCount; index++)
+        {
+            await queue.EnqueueAsync(TestItem(), TestContext.Current.CancellationToken);
+        }
+
+        var deliveries = await ReadDeliveriesAsync(consumer, "batch-owner", deliveryCount);
+        foreach (var delivery in deliveries)
+        {
+            Assert.Equal(
+                LeaseOperationResult.Applied,
+                await delivery.Lease.CompleteAsync(TestContext.Current.CancellationToken));
+            await delivery.Lease.DisposeAsync();
+        }
+
+        Assert.Empty(await Database.StreamConsumerInfoAsync(redis.StreamName, redis.ConsumerGroup));
+    }
+
+    [Fact]
+    public async Task AlreadyAppliedCompletionDoesNotDeleteConsumerWithOtherPendingWork()
+    {
+        var redis = CreateRedisOptions("keep-pending-consumer");
+        var client = CreateClient(redis);
+        await client.EnsureGroupAsync(TestContext.Current.CancellationToken);
+        await client.AddAsync(TestItem().Serialize(), TestContext.Current.CancellationToken);
+        await client.AddAsync(TestItem().Serialize(), TestContext.Current.CancellationToken);
+
+        var first = await client.ReadNewAsync("shared-owner", "shared-token", TestContext.Current.CancellationToken);
+        var second = await client.ReadNewAsync("shared-owner", "shared-token", TestContext.Current.CancellationToken);
+        Assert.NotNull(first);
+        Assert.NotNull(second);
+
+        Assert.Equal(
+            LeaseOperationResult.Applied,
+            await client.CompleteAsync("shared-owner", first.EntryId, "shared-token", TestContext.Current.CancellationToken));
+        Assert.Equal(
+            LeaseOperationResult.AlreadyApplied,
+            await client.CompleteAsync("shared-owner", first.EntryId, "shared-token", TestContext.Current.CancellationToken));
+
+        var consumers = await Database.StreamConsumerInfoAsync(redis.StreamName, redis.ConsumerGroup);
+        var remainingOwner = Assert.Single(consumers);
+        Assert.Equal("shared-owner|shared-token", remainingOwner.Name);
+        Assert.Equal(1, remainingOwner.PendingMessageCount);
+        var pending = await Database.StreamPendingMessagesAsync(
+            redis.StreamName,
+            redis.ConsumerGroup,
+            10,
+            default,
+            default,
+            default);
+        Assert.Single(pending);
+    }
+
+    [Fact]
     public async Task RepeatedCompletionAfterAmbiguousResultIsAlreadyAppliedAndDoesNotRedeliver()
     {
         var redis = CreateRedisOptions("ambiguous-completion");
@@ -503,6 +721,64 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
             HeartbeatInterval = heartbeatInterval ?? TimeSpan.FromSeconds(5),
             PendingMessageIdleTime = pendingMessageIdleTime ?? TimeSpan.FromSeconds(30),
         };
+
+    private async Task SetPendingIdleAsync(
+        RedisWorkQueueOptions redis,
+        string owner,
+        IReadOnlyList<string> entryIds,
+        long idleMilliseconds)
+    {
+        var arguments = new List<object>
+        {
+            redis.StreamName,
+            redis.ConsumerGroup,
+            owner,
+            0L,
+        };
+        arguments.AddRange(entryIds.Cast<object>());
+        arguments.Add("IDLE");
+        arguments.Add(idleMilliseconds);
+        arguments.Add("JUSTID");
+        await Database.ExecuteAsync("XCLAIM", arguments.ToArray());
+    }
+
+    private static async Task<List<WorkDelivery<MessageWorkItem>>> ReadDeliveriesAsync(
+        IWorkItemConsumer<MessageWorkItem> consumer,
+        string owner,
+        int count,
+        TimeSpan? minimumIdleTime = null)
+    {
+        var deliveries = new List<WorkDelivery<MessageWorkItem>>();
+        await using var iterator = consumer.RecoverAsync(
+                owner,
+                minimumIdleTime ?? TimeSpan.Zero,
+                count,
+                TestContext.Current.CancellationToken)
+            .GetAsyncEnumerator(TestContext.Current.CancellationToken);
+        while (await iterator.MoveNextAsync())
+        {
+            deliveries.Add(iterator.Current);
+        }
+
+        return deliveries;
+    }
+
+    private static async Task<List<WorkDelivery<MessageWorkItem>>> ReadDeliveriesAsync(
+        IWorkItemConsumer<MessageWorkItem> consumer,
+        string owner,
+        int count)
+    {
+        var deliveries = new List<WorkDelivery<MessageWorkItem>>();
+        await using var iterator = consumer.ReadAsync(owner, TestContext.Current.CancellationToken)
+            .GetAsyncEnumerator(TestContext.Current.CancellationToken);
+        for (var index = 0; index < count; index++)
+        {
+            Assert.True(await iterator.MoveNextAsync());
+            deliveries.Add(iterator.Current);
+        }
+
+        return deliveries;
+    }
 
     private static RedisWorkQueueOptions CreateRedisOptions(string name) => new()
     {
