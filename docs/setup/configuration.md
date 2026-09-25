@@ -123,6 +123,11 @@ The `Queue` keys below are generic worker settings. They apply to every backend.
 | `ClearPendingOnStartup` | Boolean | Delete pending work when the queue starts. Enable only when intentionally discarding pending work. | `false` |
 | `ShutdownDrainTimeout` | TimeSpan | Maximum time allowed to drain admitted work during shutdown. | `00:00:30` |
 
+> [!WARNING]
+> The timing keys `HeartbeatInterval`, `PendingMessageIdleTime`, and `ReclaimerInterval` moved from `Queue:Redis` to `Queue`.
+> The legacy keys `Queue__Redis__HeartbeatInterval`, `Queue__Redis__PendingMessageIdleTime`, and `Queue__Redis__ReclaimerInterval` still work when the matching generic key is not set, and the bot logs a deprecation warning for each one it uses.
+> Move these values to `Queue__HeartbeatInterval`, `Queue__PendingMessageIdleTime`, and `Queue__ReclaimerInterval`. A generic key always takes precedence over its legacy key.
+
 #### Queue.Redis
 
 These keys are specific to the Redis backend. A different backend validates and documents its own settings.

@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SaucyBot;
 using SaucyBot.Database;
@@ -25,13 +27,7 @@ using Serilog;
 using StackExchange.Redis;
 
 await Host.CreateDefaultBuilder(args)
-    .UseSerilog((context, configuration) =>
-    {
-        configuration
-            .ReadFrom.Configuration(context.Configuration)
-            .Enrich.FromLogContext()
-            .WriteTo.Console(outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}");
-    })
+    .UseSerilog((context, configuration) => ApplySerilogConfiguration(configuration, context.Configuration))
     .ConfigureServices((context, services) =>
     {
         var configuration = context.Configuration;
@@ -56,7 +52,14 @@ await Host.CreateDefaultBuilder(args)
         services.AddSaucyBotDatabase();
 
         services.AddSaucyBotCache(configuration);
-        var queueOptions = configuration.BindOrDefault<WorkQueueOptions>("Queue");
+        var bootstrapLoggerConfiguration = new LoggerConfiguration();
+        ApplySerilogConfiguration(bootstrapLoggerConfiguration, configuration);
+        var bootstrapSerilogLogger = bootstrapLoggerConfiguration.CreateLogger();
+        using var bootstrapLoggerFactory = LoggerFactory.Create(
+            logging => logging.AddSerilog(bootstrapSerilogLogger));
+        var queueOptions = WorkQueueOptionsLoader.Bind(
+            configuration,
+            bootstrapLoggerFactory.CreateLogger("SaucyBot.Queue"));
         WorkQueueOptionsValidator.Validate(queueOptions);
 
         if (queueOptions.Driver != QueueDriverType.Redis)
@@ -99,3 +102,9 @@ await Host.CreateDefaultBuilder(args)
     .UseConsoleLifetime()
     .Build()
     .RunAsync();
+
+static void ApplySerilogConfiguration(LoggerConfiguration loggerConfiguration, IConfiguration configuration) =>
+    loggerConfiguration
+        .ReadFrom.Configuration(configuration)
+        .Enrich.FromLogContext()
+        .WriteTo.Console(outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}");
