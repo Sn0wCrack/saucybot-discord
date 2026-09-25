@@ -325,12 +325,12 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
         TimeSpan? pendingMessageIdleTime = null) => new()
         {
             ClearPendingOnStartup = clearPendingOnStartup,
+            PendingMessageIdleTime = pendingMessageIdleTime ?? TimeSpan.FromSeconds(30),
             Redis = new RedisWorkQueueOptions
             {
                 StreamName = $"integration:queue:{Interlocked.Increment(ref _streamNumber)}:{name}",
                 ConsumerGroup = $"integration-workers-{name}",
                 RetryDelay = TimeSpan.FromMilliseconds(10),
-                PendingMessageIdleTime = pendingMessageIdleTime ?? TimeSpan.FromSeconds(30),
                 MalformedCleanupMaxAttempts = 2,
                 MalformedCleanupMaxDelay = TimeSpan.FromMilliseconds(10),
             },

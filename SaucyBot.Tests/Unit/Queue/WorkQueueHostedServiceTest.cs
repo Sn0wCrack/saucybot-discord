@@ -203,7 +203,7 @@ public sealed class WorkQueueHostedServiceTest
             InteractionWorkerCount = 0,
             ShutdownDrainTimeout = shutdownDrainTimeout,
             MaxProcessingAttempts = maxProcessingAttempts,
-            Redis = new() { ReclaimerInterval = reclaimerInterval ?? TimeSpan.FromSeconds(5) }
+            ReclaimerInterval = reclaimerInterval ?? TimeSpan.FromSeconds(5),
         },
         NullLogger<WorkQueueHostedService>.Instance,
         new InteractionWorkChannel(new WorkQueueOptions()),

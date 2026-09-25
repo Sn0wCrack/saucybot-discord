@@ -92,6 +92,8 @@ Queue uses a separate Redis-compatible database, such as Redis or Valkey, for st
 
 Use the `Driver` key to select the queue backend. Redis is the default backend.
 
+The `Queue` keys below are generic worker settings. They apply to every backend. Connection strings, stream names, consumer groups, and Redis command settings live under `Queue.Redis`.
+
 ```json
 {
   "Queue": {
@@ -107,15 +109,23 @@ Use the `Driver` key to select the queue backend. Redis is the default backend.
 | Key | Value Type | Description | Default |
 |---|---|---|---|
 | `Driver` | String | Queue driver to use. | `Redis` |
+| `EnqueueTimeout` | TimeSpan | Maximum time an enqueue call waits for the backend before it reports a timeout. Environment variable: `Queue__EnqueueTimeout`. The backend can still accept the item after the caller stops waiting, so callers do not retry automatically. | `00:00:05` |
+| `BackendOperationTimeout` | TimeSpan | Maximum time one backend operation, such as lease renewal, completion, retry, or cleanup, may take. Environment variable: `Queue__BackendOperationTimeout`. | `00:00:05` |
 | `MaxProcessingAttempts` | Integer | Maximum processing attempts before a failed message is acknowledged and deleted. | `3` |
 | `MaxProcessingTime` | TimeSpan | Maximum time a worker may process one item before it gives up ownership for recovery. | `00:05:00` |
+| `HeartbeatInterval` | TimeSpan | How often an active worker renews its delivery lease. Environment variable: `Queue__HeartbeatInterval`. Keep this shorter than `PendingMessageIdleTime`. | `00:00:05` |
+| `PendingMessageIdleTime` | TimeSpan | Minimum idle time before an unfinished delivery can be recovered after its worker stops renewing the lease. Environment variable: `Queue__PendingMessageIdleTime`. | `00:00:30` |
+| `ReclaimerInterval` | TimeSpan | How often the recovery worker scans for abandoned deliveries. Environment variable: `Queue__ReclaimerInterval`. | `00:00:05` |
 | `MessageWorkerCount` | Integer | Number of message workers. Increase only after checking queue age, CPU, memory, and upstream rate limits. | `5` |
 | `InteractionWorkerCount` | Integer | Number of interaction workers. | `5` |
 | `InteractionChannelCapacity` | Integer | Maximum number of admitted in-process interactions waiting for workers. | `100` |
+| `RecoveryHandoffCapacity` | Integer | Maximum number of recovered deliveries waiting in the in-process handoff before recovery pauses. Environment variable: `Queue__RecoveryHandoffCapacity`. | `25` |
 | `ClearPendingOnStartup` | Boolean | Delete pending work when the queue starts. Enable only when intentionally discarding pending work. | `false` |
 | `ShutdownDrainTimeout` | TimeSpan | Maximum time allowed to drain admitted work during shutdown. | `00:00:30` |
 
 #### Queue.Redis
+
+These keys are specific to the Redis backend. A different backend validates and documents its own settings.
 
 | Key | Value Type | Description | Default |
 |---|---|---|---|
@@ -123,9 +133,6 @@ Use the `Driver` key to select the queue backend. Redis is the default backend.
 | `StreamName` | String | Redis/Valkey stream containing queued message work. | `saucybot:messages` |
 | `ConsumerGroup` | String | Consumer group used by message workers. | `saucybot-workers` |
 | `RetryDelay` | TimeSpan | Delay before retrying an unavailable Redis operation. | `00:00:01` |
-| `HeartbeatInterval` | TimeSpan | How often an active worker renews its Redis lease. Environment variable: `Queue__Redis__HeartbeatInterval`. Keep this substantially shorter than `PendingMessageIdleTime`. | `00:00:05` |
-| `ReclaimerInterval` | TimeSpan | How often the recovery worker scans for abandoned pending messages. Environment variable: `Queue__Redis__ReclaimerInterval`. | `00:00:05` |
-| `PendingMessageIdleTime` | TimeSpan | Minimum idle time before a pending message can be recovered after its worker stops renewing the lease. Environment variable: `Queue__Redis__PendingMessageIdleTime`. | `00:00:30` |
 | `PendingReadTimeout` | TimeSpan | Maximum wait for a Redis read to finish during cancellation. | `00:00:01` |
 | `MalformedCleanupMaxAttempts` | Integer | Maximum cleanup attempts for malformed queue entries. | `3` |
 | `MalformedCleanupMaxDelay` | TimeSpan | Maximum delay between malformed-entry cleanup attempts. | `00:00:05` |

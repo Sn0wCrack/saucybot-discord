@@ -57,6 +57,8 @@ await Host.CreateDefaultBuilder(args)
 
         services.AddSaucyBotCache(configuration);
         var queueOptions = configuration.BindOrDefault<WorkQueueOptions>("Queue");
+        WorkQueueOptionsValidator.Validate(queueOptions);
+
         if (queueOptions.Driver != QueueDriverType.Redis)
         {
             throw new InvalidOperationException($"Unsupported queue driver: {queueOptions.Driver}");

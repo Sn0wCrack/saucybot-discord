@@ -159,10 +159,7 @@ public sealed class QueuedWorkItemExecutorTest
             new WorkQueueOptions
             {
                 MaxProcessingTime = maxProcessingTime ?? System.TimeSpan.FromSeconds(5),
-                Redis = new()
-                {
-                    HeartbeatInterval = System.TimeSpan.FromMilliseconds(10),
-                },
+                HeartbeatInterval = System.TimeSpan.FromMilliseconds(10),
             },
             NullLogger<QueuedWorkItemExecutor>.Instance,
             metrics ?? new SaucyBotMetrics());

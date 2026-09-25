@@ -282,7 +282,7 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
                 {
                     await foreach (var item in _queue.ReclaimAsync(
                                        consumer,
-                                       _options.Redis.PendingMessageIdleTime,
+                                       _options.PendingMessageIdleTime,
                                        Math.Max(1, _options.MessageWorkerCount),
                                        recoveryToken))
                     {
@@ -309,7 +309,7 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
                         }
                     }
 
-                    await Task.Delay(_options.Redis.ReclaimerInterval, recoveryToken);
+                    await Task.Delay(_options.ReclaimerInterval, recoveryToken);
                 }
                 catch (OperationCanceledException) when (recoveryToken.IsCancellationRequested)
                 {

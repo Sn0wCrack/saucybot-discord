@@ -142,7 +142,7 @@ public sealed class QueuedWorkItemExecutor : IQueuedWorkItemExecutor
         CancellationTokenSource processingCancellation,
         LeaseState leaseState)
     {
-        using var timer = new PeriodicTimer(_options.Redis.HeartbeatInterval);
+        using var timer = new PeriodicTimer(_options.HeartbeatInterval);
 
         try
         {
