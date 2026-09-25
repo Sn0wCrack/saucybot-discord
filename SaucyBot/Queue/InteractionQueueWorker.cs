@@ -41,6 +41,11 @@ public sealed class InteractionQueueWorker
         }
     }
 
+    public Task ProcessImmediatelyAsync(
+        IInteractionWorkItem interaction,
+        CancellationToken cancellationToken) =>
+        ProcessInteractionAsync(interaction, cancellationToken, wasQueued: false);
+
     public async Task RunSupervisedAsync(CancellationToken cancellationToken)
     {
         while (!cancellationToken.IsCancellationRequested)
@@ -70,10 +75,20 @@ public sealed class InteractionQueueWorker
         }
     }
 
-    private async Task ProcessOneAsync(IInteractionWorkItem interaction, CancellationToken cancellationToken)
+    private Task ProcessOneAsync(IInteractionWorkItem interaction, CancellationToken cancellationToken) =>
+        ProcessInteractionAsync(interaction, cancellationToken, wasQueued: true);
+
+    private async Task ProcessInteractionAsync(
+        IInteractionWorkItem interaction,
+        CancellationToken cancellationToken,
+        bool wasQueued)
     {
-        _metrics.Dequeued.Add(1);
-        _metrics.QueueDepth.Add(-1);
+        if (wasQueued)
+        {
+            _metrics.Dequeued.Add(1);
+            _metrics.QueueDepth.Add(-1);
+        }
+
         _metrics.ActiveWorkers.Add(1);
         using var activity = QueueTelemetry.ActivitySource.StartActivity(ActivityKind.Consumer);
         activity?.SetTag("saucybot.work.type", "interaction");
@@ -87,7 +102,7 @@ public sealed class InteractionQueueWorker
 
         try
         {
-            await _pipeline.InvokeAsync(context, ProcessInteractionAsync, cancellationToken);
+            await _pipeline.InvokeAsync(context, ProcessInteractionTerminalAsync, cancellationToken);
             _metrics.Succeeded.Add(1);
             activity?.SetStatus(ActivityStatusCode.Ok);
         }
@@ -112,7 +127,7 @@ public sealed class InteractionQueueWorker
         }
     }
 
-    private Task ProcessInteractionAsync(
+    private Task ProcessInteractionTerminalAsync(
         QueueWorkContext<IInteractionWorkItem> context,
         CancellationToken cancellationToken) =>
         _processor.ProcessAsync(context.Item, cancellationToken);

@@ -36,6 +36,26 @@ public sealed class InteractionQueueWorkerTest
     }
 
     [Fact]
+    public async Task ImmediateInteractionUsesPipelineWithoutChannelAdmission()
+    {
+        var trace = new List<string>();
+        var channel = CreateChannel(capacity: 1);
+        var interaction = new RecordingInteraction();
+        var worker = CreateWorker(
+            channel,
+            new CallbackProcessor((_, _) =>
+            {
+                trace.Add("terminal");
+                return Task.CompletedTask;
+            }),
+            new TraceMiddleware(trace));
+
+        await worker.ProcessImmediatelyAsync(interaction, TestContext.Current.CancellationToken);
+
+        Assert.Equal(["enter", "terminal", "exit"], trace);
+    }
+
+    [Fact]
     public async Task MiddlewareFailureSendsFailureResponseAndReleasesChannelCapacity()
     {
         var channel = CreateChannel(capacity: 1);

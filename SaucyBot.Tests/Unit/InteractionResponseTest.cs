@@ -117,7 +117,7 @@ public sealed class InteractionResponseTest
             options,
             new SiteRegistry(NullLogger<SiteRegistry>.Instance, new ConfigurationBuilder().Build().BotOptions(), services, []),
             channel,
-            new CallbackInteractionProcessor(process),
+            interactionWorker,
             service,
             new SaucyBotMetrics(),
             new InteractionHandler(NullLogger<InteractionHandler>.Instance, services),

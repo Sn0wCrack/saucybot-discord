@@ -20,7 +20,7 @@ public sealed class DiscordClientHost
     private readonly WorkQueueOptions _options;
     private readonly SiteRegistry _siteRegistry;
     private readonly InteractionWorkChannel _interactionWorkChannel;
-    private readonly IInteractionProcessor _interactionProcessor;
+    private readonly InteractionQueueWorker _interactionWorker;
     private readonly WorkQueueHostedService _workQueueHostedService;
     private readonly ISaucyBotMetrics _metrics;
     private readonly InteractionHandler _interactionHandler;
@@ -35,7 +35,7 @@ public sealed class DiscordClientHost
         WorkQueueOptions options,
         SiteRegistry siteRegistry,
         InteractionWorkChannel interactionWorkChannel,
-        IInteractionProcessor interactionProcessor,
+        InteractionQueueWorker interactionWorker,
         WorkQueueHostedService workQueueHostedService,
         ISaucyBotMetrics metrics,
         InteractionHandler interactionHandler,
@@ -48,7 +48,7 @@ public sealed class DiscordClientHost
         _options = options;
         _siteRegistry = siteRegistry;
         _interactionWorkChannel = interactionWorkChannel;
-        _interactionProcessor = interactionProcessor;
+        _interactionWorker = interactionWorker;
         _workQueueHostedService = workQueueHostedService;
         _metrics = metrics;
         _interactionHandler = interactionHandler;
@@ -87,23 +87,7 @@ public sealed class DiscordClientHost
     {
         if (InteractionAcknowledgementPolicy.ShouldExecuteImmediately(item))
         {
-            try
-            {
-                await _interactionProcessor.ProcessAsync(item, _workQueueHostedService.AdmissionToken);
-                _metrics.Succeeded.Add(1);
-            }
-            catch (OperationCanceledException) when (_workQueueHostedService.AdmissionToken.IsCancellationRequested)
-            {
-                _metrics.Cancelled.Add(1);
-                await InteractionFailureResponder.SendAsync(item, _logger, TimeSpan.FromSeconds(1));
-            }
-            catch (Exception exception)
-            {
-                _logger.LogError(exception, "Immediate interaction processing failed for {InteractionId}", item.Id);
-                _metrics.Failed.Add(1);
-                await InteractionFailureResponder.SendAsync(item, _logger, TimeSpan.FromSeconds(1));
-            }
-
+            await _interactionWorker.ProcessImmediatelyAsync(item, _workQueueHostedService.AdmissionToken);
             return;
         }
 

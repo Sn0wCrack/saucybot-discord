@@ -624,20 +624,30 @@ public sealed class WorkerAdmissionTest
         ILogger<DiscordClientHost>? logger = null)
     {
         var services = new ServiceCollection().BuildServiceProvider();
+        var options = workQueueOptions ?? new WorkQueueOptions();
+        var metricsInstance = metrics ?? new SaucyBotMetrics();
+        var interactions = interactionChannel ?? new InteractionWorkChannel(options);
+        var interactionWorker = new InteractionQueueWorker(
+            interactions,
+            new QueueMiddlewarePipeline<IInteractionWorkItem>(
+                [new QueueMetricsMiddleware<IInteractionWorkItem>(metricsInstance)]),
+            interactionProcessor ?? Substitute.For<IInteractionProcessor>(),
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<InteractionQueueWorker>.Instance,
+            metricsInstance);
         return new DiscordClientHost(
             logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<DiscordClientHost>.Instance,
             new ConfigurationBuilder().Build().BotOptions(),
             producer,
-            workQueueOptions ?? new WorkQueueOptions(),
+            options,
             new SiteRegistry(
                 Microsoft.Extensions.Logging.Abstractions.NullLogger<SiteRegistry>.Instance,
                 new ConfigurationBuilder().Build().BotOptions(),
                 services,
                 []),
-            interactionChannel ?? new InteractionWorkChannel(new WorkQueueOptions()),
-            interactionProcessor ?? Substitute.For<IInteractionProcessor>(),
+            interactions,
+            interactionWorker,
             queueService,
-            metrics ?? new SaucyBotMetrics(),
+            metricsInstance,
             new InteractionHandler(
                 Microsoft.Extensions.Logging.Abstractions.NullLogger<InteractionHandler>.Instance,
                 services),
