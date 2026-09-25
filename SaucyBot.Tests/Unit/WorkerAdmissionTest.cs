@@ -575,9 +575,9 @@ public sealed class WorkerAdmissionTest
         public int MaximumConcurrency { get; private set; }
         private int _concurrency;
 
-        public async Task ProcessAsync(WorkDelivery<MessageWorkItem> delivery, CancellationToken cancellationToken)
+        public async Task ProcessAsync(MessageWorkItem item, CancellationToken cancellationToken)
         {
-            Items.Add(delivery.Item);
+            Items.Add(item);
             Started.TrySetResult();
             var concurrency = Interlocked.Increment(ref _concurrency);
             MaximumConcurrency = Math.Max(MaximumConcurrency, concurrency);
@@ -628,7 +628,7 @@ public sealed class WorkerAdmissionTest
         {
             try
             {
-                await processor.ProcessAsync(item.ToDelivery(), cancellationToken);
+                await processor.ProcessAsync(item.Item, cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
                 await queue.CompleteAsync(item, CancellationToken.None);
                 return QueuedWorkItemExecutionOutcome.Completed;

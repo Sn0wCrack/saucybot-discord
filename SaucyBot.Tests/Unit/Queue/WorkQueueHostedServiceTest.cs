@@ -227,7 +227,7 @@ public sealed class WorkQueueHostedServiceTest
         public TaskCompletionSource CancellationObservedSignal { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public bool CancellationObserved { get; private set; }
 
-        public async Task ProcessAsync(WorkDelivery<MessageWorkItem> delivery, CancellationToken cancellationToken)
+        public async Task ProcessAsync(MessageWorkItem item, CancellationToken cancellationToken)
         {
             Started.TrySetResult();
             if (cancellationToken.IsCancellationRequested)
@@ -253,7 +253,7 @@ public sealed class WorkQueueHostedServiceTest
     {
         public int Attempts { get; private set; }
 
-        public Task ProcessAsync(WorkDelivery<MessageWorkItem> delivery, CancellationToken cancellationToken)
+        public Task ProcessAsync(MessageWorkItem item, CancellationToken cancellationToken)
         {
             Attempts++;
             return Task.FromException(new InvalidOperationException("processing failed"));
@@ -264,7 +264,7 @@ public sealed class WorkQueueHostedServiceTest
     {
         public TaskCompletionSource Started { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        public Task ProcessAsync(WorkDelivery<MessageWorkItem> delivery, CancellationToken cancellationToken)
+        public Task ProcessAsync(MessageWorkItem item, CancellationToken cancellationToken)
         {
             Started.TrySetResult();
             return Task.CompletedTask;
@@ -295,7 +295,7 @@ public sealed class WorkQueueHostedServiceTest
         {
             try
             {
-                await processor.ProcessAsync(item.ToDelivery(), cancellationToken);
+                await processor.ProcessAsync(item.Item, cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
                 await queue.CompleteAsync(item, CancellationToken.None);
                 return QueuedWorkItemExecutionOutcome.Completed;

@@ -628,7 +628,7 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
         await service.StopAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(1, processor.ProcessedCount);
-        Assert.Equal(TestItem().MessageId, processor.Item!.Item.MessageId);
+        Assert.Equal(TestItem().MessageId, processor.Item!.MessageId);
         Assert.Equal(0, await Database.StreamLengthAsync(redis.StreamName));
     }
 
@@ -805,12 +805,12 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
     private sealed class RecordingProcessor : IWorkItemProcessor
     {
         public TaskCompletionSource Processed { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        public WorkDelivery<MessageWorkItem>? Item { get; private set; }
+        public MessageWorkItem? Item { get; private set; }
         public int ProcessedCount { get; private set; }
 
-        public Task ProcessAsync(WorkDelivery<MessageWorkItem> delivery, CancellationToken cancellationToken)
+        public Task ProcessAsync(MessageWorkItem item, CancellationToken cancellationToken)
         {
-            Item = delivery;
+            Item = item;
             ProcessedCount++;
             Processed.TrySetResult();
             return Task.CompletedTask;

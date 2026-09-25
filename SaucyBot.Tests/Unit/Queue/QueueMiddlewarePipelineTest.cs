@@ -61,20 +61,23 @@ public sealed class QueueMiddlewarePipelineTest
         Assert.Equal(context.DeliveryId, TerminalContext!.DeliveryId);
         Assert.Equal(context.Attempt, TerminalContext!.Attempt);
         Assert.Equal(context.ReceivedAt, TerminalContext!.ReceivedAt);
-        Assert.Same(context.Lease, TerminalContext!.Lease);
     }
 
     [Fact]
-    public async Task PipelinePassesContextsWithoutALeaseToSupportInteractions()
+    public async Task PipelineSupportsInteractionWorkContext()
     {
-        var middleware = new RecordingMiddleware("first", _trace);
-        var pipeline = CreatePipeline(middleware);
-        var context = new QueueWorkContext<MessageWorkItem>(TestData.Message(), "delivery-2", 3, ReceivedAt, null);
+        var context = new QueueWorkContext<IInteractionWorkItem>(
+            Substitute.For<IInteractionWorkItem>(),
+            "interaction-2",
+            3,
+            ReceivedAt);
 
-        await pipeline.InvokeAsync(context, TerminalAsync, CancellationToken.None);
+        var interactionPipeline = new QueueMiddlewarePipeline<IInteractionWorkItem>(
+            Array.Empty<IQueueMiddleware<IInteractionWorkItem>>());
+        await interactionPipeline.InvokeAsync(context, InteractionTerminalAsync, CancellationToken.None);
 
-        Assert.Null(middleware.Contexts[0].Lease);
-        Assert.Null(TerminalContext!.Lease);
+        Assert.Equal("interaction-2", context.DeliveryId);
+        Assert.Equal(3, context.Attempt);
     }
 
     [Fact]
@@ -249,6 +252,31 @@ public sealed class QueueMiddlewarePipelineTest
     }
 
     [Fact]
+    public async Task MetricsMiddlewareClassifiesUnrequestedCancellationAsFailure()
+    {
+        using var metrics = new SaucyBotMetrics();
+        using var capture = new MetricsCapture();
+        TerminalFailure = new OperationCanceledException(CancellationToken.None);
+        var pipeline = CreatePipeline(new QueueMetricsMiddleware<MessageWorkItem>(metrics));
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => pipeline.InvokeAsync(CreateContext(), TerminalAsync, CancellationToken.None));
+
+        var outcome = Assert.Single(capture.Samples, sample => sample.Name == "saucybot.queue.handler_outcomes");
+        Assert.Equal("failed", outcome.Tags["outcome"]);
+    }
+
+    [Fact]
+    public void MiddlewareContextDoesNotExposeLeaseOperations()
+    {
+        var properties = typeof(QueueWorkContext<MessageWorkItem>).GetProperties();
+
+        Assert.DoesNotContain(
+            properties,
+            property => typeof(IWorkItemLease).IsAssignableFrom(property.PropertyType));
+    }
+
+    [Fact]
     public async Task MetricsMiddlewareLabelsInteractionWorkAsInteraction()
     {
         using var metrics = new SaucyBotMetrics();
@@ -259,8 +287,7 @@ public sealed class QueueMiddlewarePipelineTest
             Substitute.For<IInteractionWorkItem>(),
             "interaction-1",
             1,
-            ReceivedAt,
-            null);
+            ReceivedAt);
 
         await pipeline.InvokeAsync(context, InteractionTerminalAsync, CancellationToken.None);
 
@@ -309,8 +336,7 @@ public sealed class QueueMiddlewarePipelineTest
         TestData.Message(),
         "delivery-1",
         2,
-        ReceivedAt,
-        new TestData.NoOpWorkItemLease());
+        ReceivedAt);
 
     private Task TerminalAsync(QueueWorkContext<MessageWorkItem> context, CancellationToken cancellationToken)
     {

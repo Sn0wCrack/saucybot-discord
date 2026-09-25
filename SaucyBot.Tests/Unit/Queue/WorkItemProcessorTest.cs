@@ -12,6 +12,15 @@ namespace SaucyBot.Tests.Unit.Queue;
 public sealed class WorkItemProcessorTest
 {
     [Fact]
+    public void ProcessorHandlerContractAcceptsOnlyTheMessageWorkItem()
+    {
+        var method = typeof(IWorkItemProcessor).GetMethod(nameof(IWorkItemProcessor.ProcessAsync));
+
+        Assert.NotNull(method);
+        Assert.Equal(typeof(MessageWorkItem), method!.GetParameters()[0].ParameterType);
+    }
+
+    [Fact]
     public async Task ProcessingPassesTheItemCancellationTokenToTheScopedHandler()
     {
         using var cancellation = new CancellationTokenSource();
@@ -25,7 +34,7 @@ public sealed class WorkItemProcessorTest
         await using var provider = services.BuildServiceProvider();
         var processor = new WorkItemProcessor(provider.GetRequiredService<IServiceScopeFactory>(), NullLogger<WorkItemProcessor>.Instance);
 
-        await processor.ProcessAsync(CreateDelivery(), cancellation.Token);
+        await processor.ProcessAsync(TestData.Message(), cancellation.Token);
 
         Assert.Equal(cancellation.Token, await observed.Task);
     }
@@ -33,7 +42,7 @@ public sealed class WorkItemProcessorTest
     [Fact]
     public async Task ProcessingInvokesTheScopedHandlerWithTheDeliveryItem()
     {
-        var delivery = CreateDelivery();
+        var item = TestData.Message();
         MessageWorkItem? observed = null;
         var services = new ServiceCollection();
         services.AddScoped<IMessageWorkHandler>(_ => new DelegateMessageWorkHandler((item, _) =>
@@ -44,9 +53,9 @@ public sealed class WorkItemProcessorTest
         await using var provider = services.BuildServiceProvider();
         var processor = new WorkItemProcessor(provider.GetRequiredService<IServiceScopeFactory>(), NullLogger<WorkItemProcessor>.Instance);
 
-        await processor.ProcessAsync(delivery, CancellationToken.None);
+        await processor.ProcessAsync(item, CancellationToken.None);
 
-        Assert.Same(delivery.Item, observed);
+        Assert.Same(item, observed);
     }
 
     [Fact]
@@ -59,15 +68,8 @@ public sealed class WorkItemProcessorTest
         var processor = new WorkItemProcessor(provider.GetRequiredService<IServiceScopeFactory>(), NullLogger<WorkItemProcessor>.Instance);
 
         await Assert.ThrowsAsync<InvalidOperationException>(
-            () => processor.ProcessAsync(CreateDelivery(), CancellationToken.None));
+            () => processor.ProcessAsync(TestData.Message(), CancellationToken.None));
     }
-
-    private static WorkDelivery<MessageWorkItem> CreateDelivery() => new(
-        TestData.Message(),
-        "1-0",
-        1,
-        DateTimeOffset.UtcNow,
-        new TestData.NoOpWorkItemLease());
 
     private sealed class DelegateMessageWorkHandler(Func<MessageWorkItem, CancellationToken, Task> handler) : IMessageWorkHandler
     {

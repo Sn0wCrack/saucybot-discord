@@ -9,7 +9,7 @@ public interface IMessageWorkHandler
 
 public interface IWorkItemProcessor
 {
-    Task ProcessAsync(WorkDelivery<MessageWorkItem> delivery, CancellationToken cancellationToken);
+    Task ProcessAsync(MessageWorkItem item, CancellationToken cancellationToken);
 }
 
 public sealed class WorkItemProcessor : IWorkItemProcessor
@@ -23,18 +23,18 @@ public sealed class WorkItemProcessor : IWorkItemProcessor
         _logger = logger;
     }
 
-    public async Task ProcessAsync(WorkDelivery<MessageWorkItem> delivery, CancellationToken cancellationToken)
+    public async Task ProcessAsync(MessageWorkItem item, CancellationToken cancellationToken)
     {
         using var scope = _scopeFactory.CreateScope();
         var handler = scope.ServiceProvider.GetRequiredService<IMessageWorkHandler>();
 
         try
         {
-            await handler.HandleAsync(delivery.Item, cancellationToken);
+            await handler.HandleAsync(item, cancellationToken);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            _logger.LogError(exception, "Failed to process message work item {DeliveryId}", delivery.DeliveryId);
+            _logger.LogError(exception, "Failed to process message work item {CorrelationId}", item.CorrelationId);
             throw;
         }
     }

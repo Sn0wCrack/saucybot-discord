@@ -30,7 +30,7 @@ public sealed class QueueMetricsMiddleware<T> : IQueueMiddleware<T>
             await next(context, cancellationToken);
             Record("succeeded", startedAt);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             Record("cancelled", startedAt);
             throw;

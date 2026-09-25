@@ -4,8 +4,7 @@ public sealed record QueueWorkContext<T>(
     T Item,
     string DeliveryId,
     int Attempt,
-    DateTimeOffset ReceivedAt,
-    IWorkItemLease? Lease);
+    DateTimeOffset ReceivedAt);
 
 public delegate Task QueueWorkDelegate<T>(
     QueueWorkContext<T> context,

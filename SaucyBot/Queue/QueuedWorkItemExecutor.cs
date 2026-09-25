@@ -176,5 +176,5 @@ public sealed class QueuedWorkItemExecutor : IQueuedWorkItemExecutor
     // Wrapping the call keeps synchronous handler exceptions observable as a
     // faulted task for the overdue check.
     private async Task RunHandlerAsync(QueuedMessageWorkItem item, CancellationToken cancellationToken) =>
-        await _processor.ProcessAsync(item.ToDelivery(), cancellationToken);
+        await _processor.ProcessAsync(item.Item, cancellationToken);
 }
