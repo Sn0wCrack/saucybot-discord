@@ -132,6 +132,11 @@ The `Queue` keys below are generic worker settings. They apply to every backend.
 
 These keys are specific to the Redis backend. A different backend validates and documents its own settings.
 
+Lease scripts use only the configured `StreamName` key. Redis Cluster routes each script by that key, so `StreamName` does not need a hash tag.
+
+> [!WARNING]
+> Do not run old and new queue workers at the same time during a rollout. Old workers do not use lease tokens. They can change ownership or delete work after a new worker claims it.
+
 | Key | Value Type | Description | Default |
 |---|---|---|---|
 | `ConnectionString` | String | Valkey/Redis endpoint, including credentials when required. | `queue:6379` |

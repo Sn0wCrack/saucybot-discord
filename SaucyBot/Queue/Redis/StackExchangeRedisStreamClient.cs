@@ -55,10 +55,14 @@ public sealed class StackExchangeRedisStreamClient(
         }
     }
 
-    public async Task<RedisStreamEntry?> ReadNewAsync(string consumer, CancellationToken cancellationToken)
+    public async Task<RedisStreamEntry?> ReadNewAsync(
+        string consumer,
+        string leaseToken,
+        CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var read = _database.StreamReadGroupAsync(_options.StreamName, _options.ConsumerGroup, consumer, ">", count: 1);
+        var owner = RedisWorkQueue.ConsumerName(consumer, leaseToken);
+        var read = _database.StreamReadGroupAsync(_options.StreamName, _options.ConsumerGroup, owner, ">", count: 1);
         StreamEntry[] entries;
         try
         {
@@ -81,11 +85,8 @@ public sealed class StackExchangeRedisStreamClient(
                 return null;
             }
 
-            foreach (var entry in entries)
-            {
-                await _database.StreamAcknowledgeAsync(_options.StreamName, _options.ConsumerGroup, entry.Id);
-            }
-
+            // The read may have claimed an entry remotely. Leave it pending so
+            // recovery can reclaim it; cancellation must not acknowledge work.
             throw;
         }
 
@@ -101,75 +102,112 @@ public sealed class StackExchangeRedisStreamClient(
     public async Task<bool> RenewAsync(
         string consumer,
         string entryId,
+        string leaseToken,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var claimed = await _database.StreamClaimAsync(
-                _options.StreamName,
-                _options.ConsumerGroup,
-                consumer,
-                0L,
-                [entryId],
-                flags: CommandFlags.None)
+        var result = await _database.ScriptEvaluateAsync(
+                RedisQueueScripts.RenewLease,
+                [_options.StreamName],
+                [_options.ConsumerGroup, entryId, consumer, leaseToken])
             .WaitAsync(cancellationToken);
-
-        return claimed.Length > 0;
+        return (long)result == 1;
     }
 
-    public async Task<IReadOnlyList<RedisStreamEntry>> ReclaimAsync(
+    public async Task<RedisStreamEntry?> ReclaimAsync(
         string consumer,
         TimeSpan minimumIdleTime,
-        int count,
+        string leaseToken,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        var owner = RedisWorkQueue.ConsumerName(consumer, leaseToken);
         var reclaimed = await _database.StreamAutoClaimAsync(
                 _options.StreamName,
                 _options.ConsumerGroup,
-                consumer,
+                owner,
                 Math.Max(0, (long)minimumIdleTime.TotalMilliseconds),
                 "0-0",
-                count: Math.Max(1, count))
+                count: 1)
             .WaitAsync(cancellationToken);
 
         if (reclaimed.ClaimedEntries.Length == 0)
         {
-            return [];
+            return null;
         }
 
-        var results = new List<RedisStreamEntry>(reclaimed.ClaimedEntries.Length);
-        foreach (var entry in reclaimed.ClaimedEntries)
+        var entry = reclaimed.ClaimedEntries[0];
+        var pending = await _database.StreamPendingMessagesAsync(
+                _options.StreamName,
+                _options.ConsumerGroup,
+                1,
+                owner,
+                entry.Id,
+                entry.Id)
+            .WaitAsync(cancellationToken);
+
+        var deliveryCount = pending.Length > 0
+            ? pending[0].DeliveryCount
+            : entry.DeliveryCount;
+        return ToEntry(entry, deliveryCount);
+    }
+
+    public Task<LeaseOperationResult> CompleteAsync(
+        string consumer,
+        string entryId,
+        string leaseToken,
+        CancellationToken cancellationToken) =>
+        ExecuteLeaseScriptAsync(
+            RedisQueueScripts.CompleteLease,
+            consumer,
+            entryId,
+            leaseToken,
+            cancellationToken);
+
+    public Task<LeaseOperationResult> RetryAsync(
+        string consumer,
+        string entryId,
+        string leaseToken,
+        CancellationToken cancellationToken) =>
+        ExecuteLeaseScriptAsync(
+            RedisQueueScripts.RetryLease,
+            consumer,
+            entryId,
+            leaseToken,
+            cancellationToken);
+
+    private async Task<LeaseOperationResult> ExecuteLeaseScriptAsync(
+        string script,
+        string consumer,
+        string entryId,
+        string leaseToken,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        try
         {
-            var pending = await _database.StreamPendingMessagesAsync(
-                    _options.StreamName,
-                    _options.ConsumerGroup,
-                    1,
-                    consumer,
-                    entry.Id,
-                    entry.Id)
-                .WaitAsync(cancellationToken);
-
-            var deliveryCount = pending.Length > 0
-                ? pending[0].DeliveryCount
-                : entry.DeliveryCount;
-            results.Add(ToEntry(entry, deliveryCount));
+            // All mutation scripts use only the stream key, so Redis Cluster
+            // can route each script without cross-slot key requirements.
+            var result = await _database.ScriptEvaluateAsync(
+                script,
+                [_options.StreamName],
+                [_options.ConsumerGroup, entryId, consumer, leaseToken]);
+            return (long)result switch
+            {
+                1 => LeaseOperationResult.Applied,
+                2 => LeaseOperationResult.AlreadyApplied,
+                -1 => LeaseOperationResult.LeaseLost,
+                _ => LeaseOperationResult.OutcomeUnknown,
+            };
         }
-
-        return results;
-    }
-
-    public async Task AcknowledgeAsync(string entryId, CancellationToken cancellationToken)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        // Acknowledgement is issued only for completed work. Once issued, await the mutation to reconcile its result.
-        await _database.StreamAcknowledgeAsync(_options.StreamName, _options.ConsumerGroup, entryId);
-    }
-
-    public async Task DeleteAsync(string entryId, CancellationToken cancellationToken)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        // Deletion follows XACK; once issued, await the idempotent mutation to reconcile its result.
-        await _database.StreamDeleteAsync(_options.StreamName, [entryId]);
+        catch (Exception exception) when (exception is RedisTimeoutException or RedisConnectionException)
+        {
+            _logger.LogWarning(
+                exception,
+                "Redis lease mutation outcome is unknown for queue entry {EntryId}",
+                entryId);
+            return LeaseOperationResult.OutcomeUnknown;
+        }
     }
 
     public Task ClearPendingAsync(CancellationToken cancellationToken)

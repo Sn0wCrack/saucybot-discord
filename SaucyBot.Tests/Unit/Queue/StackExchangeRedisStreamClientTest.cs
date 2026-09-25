@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -73,7 +74,7 @@ public sealed class StackExchangeRedisStreamClientTest
         var client = CreateClient(Options(TimeSpan.FromMilliseconds(50)));
 
         var sw = Stopwatch.StartNew();
-        var readTask = client.ReadNewAsync(Consumer, cts.Token);
+        var readTask = client.ReadNewAsync(Consumer, "opaque-token", cts.Token);
         await Task.Delay(200, TestContext.Current.CancellationToken);
         cts.Cancel();
 
@@ -90,7 +91,7 @@ public sealed class StackExchangeRedisStreamClientTest
     }
 
     [Fact]
-    public async Task ReadNewAsync_WhenInFlightReadCompletesWithinGrace_AcknowledgesAndRethrowsCancellation()
+    public async Task ReadNewAsync_WhenInFlightReadCompletesWithinGrace_LeavesEntryPendingAndRethrowsCancellation()
     {
         var pendingRead = new TaskCompletionSource<StreamEntry[]>(TaskCreationOptions.RunContinuationsAsynchronously);
         ConfigureRead(pendingRead.Task);
@@ -98,7 +99,7 @@ public sealed class StackExchangeRedisStreamClientTest
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
         var client = CreateClient(Options(TimeSpan.FromSeconds(10)));
 
-        var readTask = client.ReadNewAsync(Consumer, cts.Token);
+        var readTask = client.ReadNewAsync(Consumer, "opaque-token", cts.Token);
         await Task.Delay(200, TestContext.Current.CancellationToken);
         cts.Cancel();
         await Task.Delay(300, TestContext.Current.CancellationToken);
@@ -107,11 +108,11 @@ public sealed class StackExchangeRedisStreamClientTest
         var exception = await Assert.ThrowsAnyAsync<OperationCanceledException>(() => readTask);
 
         Assert.Equal(cts.Token, exception.CancellationToken);
-        await _database.Received(1).StreamAcknowledgeAsync(
-            Arg.Any<RedisKey>(),
-            Arg.Any<RedisValue>(),
-            Arg.Any<RedisValue>(),
-            Arg.Any<CommandFlags>());
+        await _database.DidNotReceiveWithAnyArgs().StreamAcknowledgeAsync(
+            (RedisKey)default,
+            (RedisValue)default,
+            (RedisValue)default,
+            default);
     }
 
     [Fact]
@@ -123,7 +124,7 @@ public sealed class StackExchangeRedisStreamClientTest
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
         var client = CreateClient(Options(TimeSpan.FromSeconds(10)));
 
-        var readTask = client.ReadNewAsync(Consumer, cts.Token);
+        var readTask = client.ReadNewAsync(Consumer, "opaque-token", cts.Token);
         await Task.Delay(200, TestContext.Current.CancellationToken);
         cts.Cancel();
         await Task.Delay(300, TestContext.Current.CancellationToken);
@@ -137,5 +138,58 @@ public sealed class StackExchangeRedisStreamClientTest
             (RedisValue)default,
             (RedisValue)default,
             default);
+    }
+
+    [Theory]
+    [InlineData(1, LeaseOperationResult.Applied)]
+    [InlineData(2, LeaseOperationResult.AlreadyApplied)]
+    [InlineData(-1, LeaseOperationResult.LeaseLost)]
+    public async Task CompleteAsync_UsesOneStreamKeyAndMapsAtomicScriptResult(
+        int scriptResult,
+        LeaseOperationResult expected)
+    {
+        _database
+            .ScriptEvaluateAsync(
+                Arg.Any<string>(),
+                Arg.Any<RedisKey[]>(),
+                Arg.Any<RedisValue[]>(),
+                Arg.Any<CommandFlags>())
+            .Returns(Task.FromResult(RedisResult.Create((RedisValue)scriptResult)));
+        var client = CreateClient(Options(TimeSpan.FromSeconds(1)));
+
+        var result = await client.CompleteAsync(
+            Consumer,
+            "42-0",
+            "lease-token-opaque",
+            CancellationToken.None);
+
+        Assert.Equal(expected, result);
+        var call = Assert.Single(_database.ReceivedCalls(), call => call.GetMethodInfo().Name == "ScriptEvaluateAsync");
+        var keys = Assert.IsType<RedisKey[]>(call.GetArguments()[1]);
+        Assert.Equal(["saucybot:messages"], keys.Select(key => key.ToString()));
+        var values = Assert.IsType<RedisValue[]>(call.GetArguments()[2]);
+        Assert.Contains((RedisValue)"lease-token-opaque", values);
+    }
+
+    [Fact]
+    public async Task CompleteAsync_WhenRedisTimesOutReturnsOutcomeUnknown()
+    {
+        _database
+            .ScriptEvaluateAsync(
+                Arg.Any<string>(),
+                Arg.Any<RedisKey[]>(),
+                Arg.Any<RedisValue[]>(),
+                Arg.Any<CommandFlags>())
+            .Returns(Task.FromException<RedisResult>(
+                new RedisTimeoutException(CommandFlags.None, "simulated completion timeout", CommandStatus.WaitingToBeSent)));
+        var client = CreateClient(Options(TimeSpan.FromSeconds(1)));
+
+        var result = await client.CompleteAsync(
+            Consumer,
+            "42-0",
+            "lease-token-opaque",
+            CancellationToken.None);
+
+        Assert.Equal(LeaseOperationResult.OutcomeUnknown, result);
     }
 }

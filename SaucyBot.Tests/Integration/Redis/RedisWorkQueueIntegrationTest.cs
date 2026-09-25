@@ -62,7 +62,9 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
                 ])
                 .Build();
             await container.StartAsync();
-            _connection = await ConnectionMultiplexer.ConnectAsync(container.GetConnectionString());
+            var configuration = ConfigurationOptions.Parse(container.GetConnectionString());
+            configuration.AllowAdmin = true;
+            _connection = await ConnectionMultiplexer.ConnectAsync(configuration);
             _container = container;
         }
         catch (DockerUnavailableException exception)
@@ -108,7 +110,14 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
         Assert.True(await messages.MoveNextAsync());
 
         var queued = messages.Current;
-        Assert.Equal(item, queued.Item);
+        Assert.Equal(item.MessageId, queued.Item.MessageId);
+        Assert.Equal(item.GuildId, queued.Item.GuildId);
+        Assert.Equal(item.ChannelId, queued.Item.ChannelId);
+        Assert.Equal(item.AuthorId, queued.Item.AuthorId);
+        Assert.Equal(item.AuthorRoleIds, queued.Item.AuthorRoleIds);
+        Assert.Equal(item.Content, queued.Item.Content);
+        Assert.Equal(item.Embeds, queued.Item.Embeds);
+        Assert.Equal(item.CorrelationId, queued.Item.CorrelationId);
         await queue.CompleteAsync(queued, TestContext.Current.CancellationToken);
 
         Assert.Equal(0, await Database.StreamLengthAsync(redis.StreamName));
@@ -177,18 +186,19 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
             TestContext.Current.CancellationToken);
         var first = await client.ReadNewAsync(
             "consumer-1",
+            "first-lease-token",
             TestContext.Current.CancellationToken);
 
         Assert.NotNull(first);
         Assert.Equal(1, first.DeliveryCount);
 
-        var reclaimed = await client.ReclaimAsync(
+        var recovered = await client.ReclaimAsync(
             "consumer-2",
             TimeSpan.Zero,
-            count: 1,
+            "second-lease-token",
             TestContext.Current.CancellationToken);
 
-        var recovered = Assert.Single(reclaimed);
+        Assert.NotNull(recovered);
         Assert.Equal(first.EntryId, recovered.EntryId);
         Assert.Equal(2, recovered.DeliveryCount);
     }
@@ -222,6 +232,149 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
             LeaseOperationResult.Applied,
             await lease.CompleteAsync(TestContext.Current.CancellationToken));
         Assert.Equal(0, await Database.StreamLengthAsync(redis.StreamName));
+    }
+
+    [Fact]
+    public async Task StaleHeartbeatCannotTakeOwnershipBackAfterAnotherConsumerReclaimsIt()
+    {
+        var redis = CreateRedisOptions("stale-heartbeat");
+        var options = CreateOptions(heartbeatInterval: TimeSpan.FromMilliseconds(30));
+        var queue = new RedisWorkQueue(CreateClient(redis), options, redis);
+        IWorkItemConsumer<MessageWorkItem> consumer = queue;
+        await consumer.StartAsync(TestContext.Current.CancellationToken);
+        await queue.EnqueueAsync(TestItem(), TestContext.Current.CancellationToken);
+
+        await using var firstRead = consumer.ReadAsync("consumer-a", TestContext.Current.CancellationToken)
+            .GetAsyncEnumerator(TestContext.Current.CancellationToken);
+        Assert.True(await firstRead.MoveNextAsync());
+        var stale = firstRead.Current;
+
+        await using var recovery = consumer.RecoverAsync(
+                "consumer-b",
+                TimeSpan.Zero,
+                count: 1,
+                TestContext.Current.CancellationToken)
+            .GetAsyncEnumerator(TestContext.Current.CancellationToken);
+        Assert.True(await recovery.MoveNextAsync());
+        var current = recovery.Current;
+        await using var currentLease = current.Lease;
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => Task.Delay(Timeout.InfiniteTimeSpan, stale.Lease.LostToken)
+                .WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken));
+        Assert.Equal(1, await Database.StreamLengthAsync(redis.StreamName));
+        Assert.Equal(
+            LeaseOperationResult.Applied,
+            await currentLease.CompleteAsync(TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task StaleDeliveryCannotRetryCompleteOrDeleteAfterAnotherConsumerReclaimsIt()
+    {
+        var redis = CreateRedisOptions("stale-owner");
+        var client = CreateClient(redis);
+        var queue = new RedisWorkQueue(client, CreateOptions(), redis);
+        IWorkItemConsumer<MessageWorkItem> consumer = queue;
+        await consumer.StartAsync(TestContext.Current.CancellationToken);
+        await queue.EnqueueAsync(TestItem(), TestContext.Current.CancellationToken);
+
+        await using var firstRead = consumer.ReadAsync("consumer-a", TestContext.Current.CancellationToken)
+            .GetAsyncEnumerator(TestContext.Current.CancellationToken);
+        Assert.True(await firstRead.MoveNextAsync());
+        var stale = firstRead.Current;
+        await stale.Lease.DisposeAsync();
+
+        await using var recovery = consumer.RecoverAsync(
+                "consumer-b",
+                TimeSpan.Zero,
+                count: 1,
+                TestContext.Current.CancellationToken)
+            .GetAsyncEnumerator(TestContext.Current.CancellationToken);
+        Assert.True(await recovery.MoveNextAsync());
+        var current = recovery.Current;
+        await using var currentLease = current.Lease;
+
+        Assert.Equal(
+            LeaseOperationResult.LeaseLost,
+            await stale.Lease.RetryAsync(new InvalidOperationException("late failure"), TestContext.Current.CancellationToken));
+        Assert.Equal(
+            LeaseOperationResult.LeaseLost,
+            await stale.Lease.CompleteAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(1, await Database.StreamLengthAsync(redis.StreamName));
+        Assert.Single(await Database.StreamPendingMessagesAsync(
+            redis.StreamName,
+            redis.ConsumerGroup,
+            10,
+            default,
+            default,
+            default));
+
+        Assert.Equal(
+            LeaseOperationResult.Applied,
+            await currentLease.CompleteAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(0, await Database.StreamLengthAsync(redis.StreamName));
+    }
+
+    [Fact]
+    public async Task RepeatedCompletionAfterAmbiguousResultIsAlreadyAppliedAndDoesNotRedeliver()
+    {
+        var redis = CreateRedisOptions("ambiguous-completion");
+        var queue = new RedisWorkQueue(CreateClient(redis), CreateOptions(), redis);
+        IWorkItemConsumer<MessageWorkItem> consumer = queue;
+        await consumer.StartAsync(TestContext.Current.CancellationToken);
+        await queue.EnqueueAsync(TestItem(), TestContext.Current.CancellationToken);
+
+        await using var read = consumer.ReadAsync("consumer-a", TestContext.Current.CancellationToken)
+            .GetAsyncEnumerator(TestContext.Current.CancellationToken);
+        Assert.True(await read.MoveNextAsync());
+        await using var lease = read.Current.Lease;
+
+        Assert.Equal(
+            LeaseOperationResult.Applied,
+            await lease.CompleteAsync(TestContext.Current.CancellationToken));
+        // Model a lost response by retrying the exact same mutation with the same lease.
+        Assert.Equal(
+            LeaseOperationResult.AlreadyApplied,
+            await lease.CompleteAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(0, await Database.StreamLengthAsync(redis.StreamName));
+        Assert.Empty(await Database.StreamPendingMessagesAsync(
+            redis.StreamName,
+            redis.ConsumerGroup,
+            10,
+            default,
+            default,
+            default));
+    }
+
+    [Fact]
+    public async Task HeartbeatKeepsDeliveryClaimedWhileItWaitsInLocalHandoff()
+    {
+        var redis = CreateRedisOptions("handoff-heartbeat");
+        var options = CreateOptions(
+            heartbeatInterval: TimeSpan.FromMilliseconds(20),
+            pendingMessageIdleTime: TimeSpan.FromMilliseconds(120));
+        var queue = new RedisWorkQueue(CreateClient(redis), options, redis);
+        IWorkItemConsumer<MessageWorkItem> consumer = queue;
+        await consumer.StartAsync(TestContext.Current.CancellationToken);
+        await queue.EnqueueAsync(TestItem(), TestContext.Current.CancellationToken);
+
+        await using var read = consumer.ReadAsync("consumer-a", TestContext.Current.CancellationToken)
+            .GetAsyncEnumerator(TestContext.Current.CancellationToken);
+        Assert.True(await read.MoveNextAsync());
+        await using var lease = read.Current.Lease;
+
+        await Task.Delay(TimeSpan.FromMilliseconds(350), TestContext.Current.CancellationToken);
+
+        await using var recovery = consumer.RecoverAsync(
+                "consumer-b",
+                options.PendingMessageIdleTime,
+                count: 1,
+                TestContext.Current.CancellationToken)
+            .GetAsyncEnumerator(TestContext.Current.CancellationToken);
+
+        Assert.False(await recovery.MoveNextAsync());
+        Assert.False(lease.LostToken.IsCancellationRequested);
+        Assert.Equal(1, await Database.StreamLengthAsync(redis.StreamName));
     }
 
     [Fact]
@@ -282,7 +435,7 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
 
         await client.EnsureGroupAsync(TestContext.Current.CancellationToken);
         await queue.EnqueueAsync(TestItem(), TestContext.Current.CancellationToken);
-        var pending = await client.ReadNewAsync("dead-worker", TestContext.Current.CancellationToken);
+        var pending = await client.ReadNewAsync("dead-worker", "dead-worker-token", TestContext.Current.CancellationToken);
         Assert.NotNull(pending);
 
         await using var service = new WorkQueueHostedService(
@@ -291,6 +444,7 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
             {
                 MessageWorkerCount = 1,
                 InteractionWorkerCount = 0,
+                PendingMessageIdleTime = TimeSpan.Zero,
                 ShutdownDrainTimeout = TimeSpan.FromSeconds(5),
             },
             NullLogger<WorkQueueHostedService>.Instance,
@@ -310,10 +464,8 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
     [Fact]
     public async Task UsesProductionNoEvictionPolicyWithoutEvictingSmallQueueStream()
     {
-        var configuration = Assert.IsType<RedisResult[]>(
-            await Database.ExecuteAsync("CONFIG", "GET", "maxmemory-policy"));
-        var maxMemory = Assert.IsType<RedisResult[]>(
-            await Database.ExecuteAsync("CONFIG", "GET", "maxmemory"));
+        var configuration = (RedisResult[])(await Database.ExecuteAsync("CONFIG", "GET", "maxmemory-policy"))!;
+        var maxMemory = (RedisResult[])(await Database.ExecuteAsync("CONFIG", "GET", "maxmemory"))!;
 
         Assert.Equal("noeviction", configuration[1].ToString());
         Assert.Equal("536870912", maxMemory[1].ToString());
@@ -342,10 +494,15 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
     private IRedisStreamClient CreateClient(RedisWorkQueueOptions options) =>
         new StackExchangeRedisStreamClient(Connection, options, NullLogger<StackExchangeRedisStreamClient>.Instance);
 
-    private static WorkQueueOptions CreateOptions(bool clearPendingOnStartup = false) => new()
-    {
-        ClearPendingOnStartup = clearPendingOnStartup,
-    };
+    private static WorkQueueOptions CreateOptions(
+        bool clearPendingOnStartup = false,
+        TimeSpan? heartbeatInterval = null,
+        TimeSpan? pendingMessageIdleTime = null) => new()
+        {
+            ClearPendingOnStartup = clearPendingOnStartup,
+            HeartbeatInterval = heartbeatInterval ?? TimeSpan.FromSeconds(5),
+            PendingMessageIdleTime = pendingMessageIdleTime ?? TimeSpan.FromSeconds(30),
+        };
 
     private static RedisWorkQueueOptions CreateRedisOptions(string name) => new()
     {

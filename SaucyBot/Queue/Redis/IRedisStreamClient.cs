@@ -4,14 +4,22 @@ public interface IRedisStreamClient
 {
     Task EnsureGroupAsync(CancellationToken cancellationToken);
     Task<string> AddAsync(string payload, CancellationToken cancellationToken);
-    Task<RedisStreamEntry?> ReadNewAsync(string consumer, CancellationToken cancellationToken);
-    Task<bool> RenewAsync(string consumer, string entryId, CancellationToken cancellationToken);
-    Task<IReadOnlyList<RedisStreamEntry>> ReclaimAsync(
+    Task<RedisStreamEntry?> ReadNewAsync(string consumer, string leaseToken, CancellationToken cancellationToken);
+    Task<bool> RenewAsync(string consumer, string entryId, string leaseToken, CancellationToken cancellationToken);
+    Task<RedisStreamEntry?> ReclaimAsync(
         string consumer,
         TimeSpan minimumIdleTime,
-        int count,
+        string leaseToken,
         CancellationToken cancellationToken);
-    Task AcknowledgeAsync(string entryId, CancellationToken cancellationToken);
-    Task DeleteAsync(string entryId, CancellationToken cancellationToken);
+    Task<LeaseOperationResult> CompleteAsync(
+        string consumer,
+        string entryId,
+        string leaseToken,
+        CancellationToken cancellationToken);
+    Task<LeaseOperationResult> RetryAsync(
+        string consumer,
+        string entryId,
+        string leaseToken,
+        CancellationToken cancellationToken);
     Task ClearPendingAsync(CancellationToken cancellationToken);
 }

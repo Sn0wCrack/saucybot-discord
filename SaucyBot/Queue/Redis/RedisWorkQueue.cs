@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
 using Microsoft.Extensions.Logging.Abstractions;
 using SaucyBot.Diagnostics;
 
@@ -8,13 +9,12 @@ public sealed class RedisWorkQueue : IMessageWorkQueue, IWorkItemProducer<Messag
 {
     internal const string PayloadField = "payload";
 
-    private enum MalformedCleanupOperation
-    {
-        Acknowledge,
-        Delete,
-    }
-
-    private sealed record PreparedDelivery(string EntryId, MessageWorkItem Item, int Attempt, DateTimeOffset ReceivedAt);
+    private sealed record PreparedDelivery(
+        string EntryId,
+        MessageWorkItem Item,
+        int Attempt,
+        DateTimeOffset ReceivedAt,
+        string LeaseToken);
 
     private readonly IRedisStreamClient _client;
     private readonly WorkQueueOptions _options;
@@ -144,12 +144,10 @@ public sealed class RedisWorkQueue : IMessageWorkQueue, IWorkItemProducer<Messag
         Exception exception,
         CancellationToken cancellationToken)
     {
-        var action = await ApplyRetryPolicyAsync(
-            item.Lease,
-            item.EntryId,
-            item.DeliveryCount,
-            exception,
-            cancellationToken);
+        var action = ShouldDiscard(item.DeliveryCount)
+            ? WorkItemFailureAction.Discarded
+            : WorkItemFailureAction.Retried;
+        await item.Lease.RetryAsync(exception, cancellationToken);
         return new WorkItemFailureResult(action, item.DeliveryCount);
     }
 
@@ -187,7 +185,8 @@ public sealed class RedisWorkQueue : IMessageWorkQueue, IWorkItemProducer<Messag
     {
         while (!cancellationToken.IsCancellationRequested)
         {
-            var entry = await _client.ReadNewAsync(consumer, cancellationToken);
+            var leaseToken = CreateLeaseToken();
+            var entry = await _client.ReadNewAsync(consumer, leaseToken, cancellationToken);
             if (entry is null)
             {
                 continue;
@@ -195,11 +194,12 @@ public sealed class RedisWorkQueue : IMessageWorkQueue, IWorkItemProducer<Messag
 
             if (cancellationToken.IsCancellationRequested)
             {
-                await _client.AcknowledgeAsync(entry.EntryId, CancellationToken.None);
+                // The remote read may have claimed work. Leave it pending for
+                // recovery rather than acknowledging it during cancellation.
                 cancellationToken.ThrowIfCancellationRequested();
             }
 
-            var prepared = await PrepareAsync(entry, cancellationToken);
+            var prepared = await PrepareAsync(entry, consumer, leaseToken, cancellationToken);
             if (prepared is not null)
             {
                 yield return prepared;
@@ -213,15 +213,20 @@ public sealed class RedisWorkQueue : IMessageWorkQueue, IWorkItemProducer<Messag
         int count,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var entries = await _client.ReclaimAsync(
-            consumer,
-            minimumIdleTime,
-            count,
-            cancellationToken);
-
-        foreach (var entry in entries)
+        for (var index = 0; index < Math.Max(1, count); index++)
         {
-            var prepared = await PrepareAsync(entry, cancellationToken);
+            var leaseToken = CreateLeaseToken();
+            var entry = await _client.ReclaimAsync(
+                consumer,
+                minimumIdleTime,
+                leaseToken,
+                cancellationToken);
+            if (entry is null)
+            {
+                yield break;
+            }
+
+            var prepared = await PrepareAsync(entry, consumer, leaseToken, cancellationToken);
             if (prepared is not null)
             {
                 yield return prepared;
@@ -229,7 +234,11 @@ public sealed class RedisWorkQueue : IMessageWorkQueue, IWorkItemProducer<Messag
         }
     }
 
-    private async Task<PreparedDelivery?> PrepareAsync(RedisStreamEntry entry, CancellationToken cancellationToken)
+    private async Task<PreparedDelivery?> PrepareAsync(
+        RedisStreamEntry entry,
+        string consumer,
+        string leaseToken,
+        CancellationToken cancellationToken)
     {
         MessageWorkItem item;
         try
@@ -241,11 +250,16 @@ public sealed class RedisWorkQueue : IMessageWorkQueue, IWorkItemProducer<Messag
             _logger.LogError(exception, "Discarding malformed work item {EntryId}", entry.EntryId);
             _metrics?.Malformed.Add(1);
             _metrics?.QueueDepth.Add(-1);
-            await DiscardMalformedAsync(entry.EntryId, cancellationToken);
+            await DiscardMalformedAsync(entry.EntryId, consumer, leaseToken, cancellationToken);
             return null;
         }
 
-        return new PreparedDelivery(entry.EntryId, item, entry.DeliveryCount, DateTimeOffset.UtcNow);
+        return new PreparedDelivery(
+            entry.EntryId,
+            item,
+            entry.DeliveryCount,
+            DateTimeOffset.UtcNow,
+            leaseToken);
     }
 
     private WorkDelivery<MessageWorkItem> CreateDelivery(string consumer, PreparedDelivery prepared) =>
@@ -260,27 +274,40 @@ public sealed class RedisWorkQueue : IMessageWorkQueue, IWorkItemProducer<Messag
         new(prepared.EntryId, prepared.Item, CreateLease(consumer, prepared), prepared.Attempt);
 
     private IWorkItemLease CreateLease(string consumer, PreparedDelivery prepared) =>
-        new DeliveryLease(this, consumer, prepared.EntryId, prepared.Attempt);
+        new RedisWorkItemLease(
+            _client,
+            _options,
+            consumer,
+            prepared.EntryId,
+            prepared.LeaseToken,
+            (exception, cancellationToken) => ApplyRetryPolicyAsync(
+                consumer,
+                prepared.EntryId,
+                prepared.LeaseToken,
+                prepared.Attempt,
+                exception,
+                cancellationToken),
+            _metrics,
+            _logger);
 
-    // One retry/discard policy. Legacy FailAsync and lease RetryAsync both run it.
-    private async Task<WorkItemFailureAction> ApplyRetryPolicyAsync(
-        IWorkItemLease lease,
+    // One retry/discard policy. Legacy FailAsync delegates to the same lease path.
+    private async Task<LeaseOperationResult> ApplyRetryPolicyAsync(
+        string consumer,
         string entryId,
+        string leaseToken,
         int attempt,
         Exception exception,
         CancellationToken cancellationToken)
     {
-        var maxAttempts = Math.Max(1, _options.MaxProcessingAttempts);
-        if (attempt < maxAttempts)
+        if (!ShouldDiscard(attempt))
         {
             _logger.LogWarning(
                 exception,
                 "Queue entry {EntryId} failed; Redis will retry it after it becomes idle (attempt {Attempt} of {MaxAttempts})",
                 entryId,
                 attempt,
-                maxAttempts);
-            await lease.DisposeAsync();
-            return WorkItemFailureAction.Retried;
+                Math.Max(1, _options.MaxProcessingAttempts));
+            return await _client.RetryAsync(consumer, entryId, leaseToken, cancellationToken);
         }
 
         _logger.LogError(
@@ -288,50 +315,13 @@ public sealed class RedisWorkQueue : IMessageWorkQueue, IWorkItemProducer<Messag
             "Discarded queue entry {EntryId} after {Attempt} processing attempts",
             entryId,
             attempt);
-        await lease.CompleteAsync(cancellationToken);
-        return WorkItemFailureAction.Discarded;
+        return await _client.CompleteAsync(consumer, entryId, leaseToken, cancellationToken);
     }
 
-    private async Task CompleteEntryAsync(string entryId, CancellationToken cancellationToken)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        await _client.AcknowledgeAsync(entryId, CancellationToken.None);
-        try
-        {
-            await _client.DeleteAsync(entryId, CancellationToken.None);
-        }
-        catch (Exception exception)
-        {
-            _metrics?.CleanupFailed.Add(1);
-            _logger.LogError(exception, "Acknowledged work item {EntryId} but failed to delete it", entryId);
-            throw;
-        }
-    }
-
-    private async Task DiscardMalformedAsync(string entryId, CancellationToken cancellationToken)
-    {
-        var acknowledged = await RetryMalformedCleanupAsync(
-            entryId,
-            MalformedCleanupOperation.Acknowledge,
-            () => _client.AcknowledgeAsync(entryId, CancellationToken.None),
-            cancellationToken);
-
-        if (!acknowledged)
-        {
-            return;
-        }
-
-        await RetryMalformedCleanupAsync(
-            entryId,
-            MalformedCleanupOperation.Delete,
-            () => _client.DeleteAsync(entryId, CancellationToken.None),
-            cancellationToken);
-    }
-
-    private async Task<bool> RetryMalformedCleanupAsync(
+    private async Task DiscardMalformedAsync(
         string entryId,
-        MalformedCleanupOperation operation,
-        Func<Task> cleanup,
+        string consumer,
+        string leaseToken,
         CancellationToken cancellationToken)
     {
         for (var attempt = 1; ; attempt++)
@@ -339,13 +329,28 @@ public sealed class RedisWorkQueue : IMessageWorkQueue, IWorkItemProducer<Messag
             cancellationToken.ThrowIfCancellationRequested();
             try
             {
-                await cleanup();
-                return true;
+                var result = await _client.CompleteAsync(
+                    consumer,
+                    entryId,
+                    leaseToken,
+                    cancellationToken);
+                if (result is LeaseOperationResult.Applied or LeaseOperationResult.AlreadyApplied)
+                {
+                    return;
+                }
+
+                if (result == LeaseOperationResult.LeaseLost)
+                {
+                    _logger.LogWarning(
+                        "Malformed queue entry {EntryId} was claimed by a newer delivery owner before cleanup",
+                        entryId);
+                    return;
+                }
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
-                _logger.LogDebug("Cancelled malformed work item cleanup {Operation} for {EntryId}", operation, entryId);
-                return false;
+                _logger.LogDebug("Cancelled malformed work item cleanup for {EntryId}", entryId);
+                return;
             }
             catch (Exception exception)
             {
@@ -354,128 +359,32 @@ public sealed class RedisWorkQueue : IMessageWorkQueue, IWorkItemProducer<Messag
                 {
                     _logger.LogError(
                         exception,
-                        "Malformed work item {EntryId} remains pending after cleanup operation {Operation} reached its attempt limit",
-                        entryId,
-                        operation);
-                    return false;
+                        "Malformed work item {EntryId} remains pending after atomic cleanup reached its attempt limit",
+                        entryId);
+                    return;
                 }
 
-                _logger.LogWarning(exception, "Retrying malformed work item cleanup {Operation} for {EntryId}", operation, entryId);
-                await Task.Delay(
-                    TimeSpan.FromTicks(Math.Min(_redisOptions.RetryDelay.Ticks, _redisOptions.MalformedCleanupMaxDelay.Ticks)),
-                    cancellationToken);
+                _logger.LogWarning(exception, "Retrying malformed work item cleanup for {EntryId}", entryId);
             }
+
+            if (attempt >= Math.Max(1, _redisOptions.MalformedCleanupMaxAttempts))
+            {
+                _metrics?.CleanupFailed.Add(1);
+                _logger.LogError(
+                    "Malformed work item {EntryId} remains pending after atomic cleanup reached its attempt limit",
+                    entryId);
+                return;
+            }
+
+            await Task.Delay(
+                TimeSpan.FromTicks(Math.Min(_redisOptions.RetryDelay.Ticks, _redisOptions.MalformedCleanupMaxDelay.Ticks)),
+                cancellationToken);
         }
     }
 
-    private sealed class DeliveryLease : IWorkItemLease
-    {
-        private readonly RedisWorkQueue _owner;
-        private readonly string _consumer;
-        private readonly string _entryId;
-        private readonly int _attempt;
-        private readonly CancellationTokenSource _renewalStop = new();
-        private readonly CancellationTokenSource _lost = new();
-        private readonly CancellationToken _lostToken;
-        private readonly Task _renewal;
-        private int _renewalStopped;
+    private bool ShouldDiscard(int attempt) => attempt >= Math.Max(1, _options.MaxProcessingAttempts);
 
-        public DeliveryLease(RedisWorkQueue owner, string consumer, string entryId, int attempt)
-        {
-            _owner = owner;
-            _consumer = consumer;
-            _entryId = entryId;
-            _attempt = attempt;
-            _lostToken = _lost.Token;
-            _renewal = RenewAsync();
-        }
+    private static string CreateLeaseToken() => Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
 
-        public CancellationToken LostToken => _lostToken;
-
-        public async Task<LeaseOperationResult> CompleteAsync(CancellationToken cancellationToken)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            await StopRenewalAsync();
-            if (IsLost)
-            {
-                return LeaseOperationResult.LeaseLost;
-            }
-
-            await _owner.CompleteEntryAsync(_entryId, CancellationToken.None);
-            return LeaseOperationResult.Applied;
-        }
-
-        public async Task<LeaseOperationResult> RetryAsync(Exception exception, CancellationToken cancellationToken)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            await StopRenewalAsync();
-            if (IsLost)
-            {
-                return LeaseOperationResult.LeaseLost;
-            }
-
-            await _owner.ApplyRetryPolicyAsync(this, _entryId, _attempt, exception, cancellationToken);
-            return LeaseOperationResult.Applied;
-        }
-
-        public async ValueTask DisposeAsync()
-        {
-            await StopRenewalAsync();
-            _renewalStop.Dispose();
-            _lost.Dispose();
-        }
-
-        private bool IsLost => _lost.IsCancellationRequested;
-
-        private async Task RenewAsync()
-        {
-            using var timer = new PeriodicTimer(_owner._options.HeartbeatInterval);
-            using var renewalLifetime = CancellationTokenSource.CreateLinkedTokenSource(_renewalStop.Token);
-            // The renewal deadline preserves MaxProcessingTime even when a handler ignores cancellation.
-            renewalLifetime.CancelAfter(_owner._options.MaxProcessingTime);
-            try
-            {
-                while (await timer.WaitForNextTickAsync(renewalLifetime.Token))
-                {
-                    var renewed = await _owner._client.RenewAsync(_consumer, _entryId, _renewalStop.Token);
-                    if (!renewed)
-                    {
-                        MarkLost();
-                        return;
-                    }
-
-                    _owner._metrics?.LeaseRenewed.Add(1, QueueMetricTags.Lease(_consumer));
-                }
-            }
-            catch (OperationCanceledException) when (_renewalStop.IsCancellationRequested || renewalLifetime.IsCancellationRequested)
-            {
-            }
-            catch (Exception exception)
-            {
-                _owner._logger.LogWarning(
-                    exception,
-                    "Failed to renew the lease for queue entry {EntryId}; the delivery is considered lost",
-                    _entryId);
-                MarkLost();
-            }
-        }
-
-        private void MarkLost()
-        {
-            if (!_lost.IsCancellationRequested)
-            {
-                _lost.Cancel();
-            }
-        }
-
-        private async Task StopRenewalAsync()
-        {
-            if (Interlocked.Exchange(ref _renewalStopped, 1) == 0)
-            {
-                _renewalStop.Cancel();
-            }
-
-            await _renewal;
-        }
-    }
+    internal static string ConsumerName(string consumer, string leaseToken) => $"{consumer}|{leaseToken}";
 }
