@@ -46,15 +46,15 @@ public sealed class StackExchangeRedisStreamClient(
                 exception.Message.Contains("OOM", StringComparison.OrdinalIgnoreCase)
             )
         {
+            // The server explicitly rejected the write, so the item is not queued
+            // and a bounded retry stays safe.
             throw new RedisBackpressureException(exception.Message);
         }
-        catch (RedisTimeoutException exception)
+        catch (Exception exception) when (exception is RedisTimeoutException or RedisConnectionException)
         {
-            throw new RedisBackpressureException(exception.Message);
-        }
-        catch (RedisConnectionException exception)
-        {
-            throw new RedisBackpressureException(exception.Message);
+            // The write may still reach Redis after the caller stops waiting, so
+            // the outcome is ambiguous and must not be retried automatically.
+            throw new RedisEnqueueAmbiguousException(exception.Message, exception);
         }
     }
 

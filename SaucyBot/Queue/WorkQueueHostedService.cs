@@ -207,6 +207,9 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
                         case QueuedWorkItemExecutionOutcome.LeaseLost:
                             activity?.SetTag("saucybot.lease_lost", true);
                             break;
+                        case QueuedWorkItemExecutionOutcome.OutcomeUnknown:
+                            activity?.SetTag("saucybot.outcome_unknown", true);
+                            break;
                     }
                     _logger.LogDebug(
                         "Message worker {Consumer} handled queue entry {EntryId} with outcome {Outcome}",

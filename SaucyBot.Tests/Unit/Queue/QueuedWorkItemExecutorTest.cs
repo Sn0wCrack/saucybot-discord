@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using SaucyBot.Diagnostics;
 using SaucyBot.Queue;
@@ -82,7 +84,7 @@ public sealed class QueuedWorkItemExecutorTest
         var lease = new FakeWorkItemLease();
         var processor = new BlockingProcessor();
         using var metrics = new SaucyBotMetrics();
-        using var listener = Listen(metrics, out var measurements);
+        using var listener = Listen(metrics, "saucybot.queue.lease", out var measurements);
         var executor = CreateExecutor(processor, metrics);
         var item = new QueuedMessageWorkItem("42-0", TestData.Queued().Item, lease);
 
@@ -153,6 +155,155 @@ public sealed class QueuedWorkItemExecutorTest
         Assert.Equal(QueuedWorkItemExecutionOutcome.Failed, outcome);
     }
 
+    [Fact]
+    public async Task AmbiguousCompletionIsNotReportedAsSuccess()
+    {
+        var lease = new FakeWorkItemLease
+        {
+            CompleteResult = LeaseOperationResult.OutcomeUnknown,
+        };
+        var processor = new CountingProcessor();
+        using var metrics = new SaucyBotMetrics();
+        using var listener = Listen(metrics, "saucybot.queue.succeeded", out var measurements);
+        var executor = CreateExecutor(processor, metrics);
+        var item = new QueuedMessageWorkItem("42-0", TestData.Queued().Item, lease);
+
+        var outcome = await executor.ExecuteAsync("worker-1", item, CancellationToken.None);
+
+        Assert.NotEqual(QueuedWorkItemExecutionOutcome.Completed, outcome);
+        Assert.Equal(0, measurements.GetValueOrDefault("saucybot.queue.succeeded"));
+        Assert.Equal(1, processor.Calls);
+        Assert.Equal(1, lease.CompleteCalls);
+        Assert.Equal(1, lease.DisposeCalls);
+    }
+
+    [Fact]
+    public async Task AmbiguousRetryIsNotReportedAsSuccess()
+    {
+        var lease = new FakeWorkItemLease
+        {
+            RetryResult = LeaseOperationResult.OutcomeUnknown,
+        };
+        var processor = new CountingProcessor { Throw = true };
+        using var metrics = new SaucyBotMetrics();
+        using var listener = Listen(metrics, "saucybot.queue.succeeded", out var measurements);
+        var executor = CreateExecutor(processor, metrics);
+        var item = new QueuedMessageWorkItem("42-0", TestData.Queued().Item, lease);
+
+        var outcome = await executor.ExecuteAsync("worker-1", item, CancellationToken.None);
+
+        Assert.NotEqual(QueuedWorkItemExecutionOutcome.Completed, outcome);
+        Assert.Equal(0, measurements.GetValueOrDefault("saucybot.queue.succeeded"));
+        Assert.Equal(1, processor.Calls);
+        Assert.Equal(0, lease.CompleteCalls);
+    }
+
+    [Fact]
+    public async Task AmbiguousLeaseResultsReturnTheUnknownOutcome()
+    {
+        using var metrics = new SaucyBotMetrics();
+        var completedItem = new QueuedMessageWorkItem(
+            "42-0",
+            TestData.Queued().Item,
+            new FakeWorkItemLease { CompleteResult = LeaseOperationResult.OutcomeUnknown });
+        var failedItem = new QueuedMessageWorkItem(
+            "43-0",
+            TestData.Queued().Item,
+            new FakeWorkItemLease { RetryResult = LeaseOperationResult.OutcomeUnknown });
+
+        var completionOutcome = await CreateExecutor(new CountingProcessor(), metrics)
+            .ExecuteAsync("worker-1", completedItem, CancellationToken.None);
+        var retryOutcome = await CreateExecutor(new CountingProcessor { Throw = true }, metrics)
+            .ExecuteAsync("worker-1", failedItem, CancellationToken.None);
+
+        Assert.Equal(QueuedWorkItemExecutionOutcome.OutcomeUnknown, completionOutcome);
+        Assert.Equal(QueuedWorkItemExecutionOutcome.OutcomeUnknown, retryOutcome);
+    }
+
+    [Fact]
+    public async Task HungBackendCompletionIsBoundedAndNeverReportedAsSuccess()
+    {
+        var client = new FakeLeaseBackend { CompleteHangs = true };
+        var lease = CreateLease(client, new WorkQueueOptions
+        {
+            BackendOperationTimeout = TimeSpan.FromMilliseconds(100),
+            HeartbeatInterval = TimeSpan.FromMilliseconds(10),
+            MaxProcessingTime = TimeSpan.FromSeconds(30),
+        });
+        var processor = new CountingProcessor();
+        using var metrics = new SaucyBotMetrics();
+        var executor = CreateExecutor(processor, metrics, maxProcessingTime: TimeSpan.FromSeconds(30));
+        var item = new QueuedMessageWorkItem("42-0", TestData.Queued().Item, lease);
+
+        var stopwatch = Stopwatch.StartNew();
+        var outcome = await executor
+            .ExecuteAsync("worker-1", item, CancellationToken.None)
+            .WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        stopwatch.Stop();
+        client.CompleteRelease.TrySetResult();
+
+        Assert.NotEqual(QueuedWorkItemExecutionOutcome.Completed, outcome);
+        Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(2), $"completion was not bounded, took {stopwatch.Elapsed}");
+        Assert.Equal(0, client.CompletedCount);
+        Assert.Equal(1, processor.Calls);
+    }
+
+    [Fact]
+    public async Task OverdueHandlerIsAwaitedLeavesItemForRecoveryAndStopsHeartbeat()
+    {
+        var client = new FakeLeaseBackend();
+        var lease = CreateLease(client, new WorkQueueOptions
+        {
+            BackendOperationTimeout = TimeSpan.FromMilliseconds(100),
+            HeartbeatInterval = TimeSpan.FromMilliseconds(10),
+            MaxProcessingTime = TimeSpan.FromMilliseconds(200),
+        });
+        var processor = new NonCooperativeProcessor();
+        var logger = new RecordingLogger<QueuedWorkItemExecutor>();
+        using var metrics = new SaucyBotMetrics();
+        var executor = new QueuedWorkItemExecutor(
+            processor,
+            new WorkQueueOptions { MaxProcessingTime = TimeSpan.FromMilliseconds(200) },
+            logger,
+            metrics);
+        var item = new QueuedMessageWorkItem("42-0", TestData.Queued().Item, lease);
+
+        var execution = executor.ExecuteAsync("worker-1", item, CancellationToken.None);
+        try
+        {
+            await processor.Started.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+            await Task.Delay(TimeSpan.FromMilliseconds(500), TestContext.Current.CancellationToken);
+
+            Assert.False(execution.IsCompleted);
+            var renewalsAfterDeadline = client.RenewCalls;
+            await Task.Delay(TimeSpan.FromMilliseconds(150), TestContext.Current.CancellationToken);
+            Assert.Equal(renewalsAfterDeadline, client.RenewCalls);
+            Assert.Equal(0, client.CompletedCount);
+            Assert.True(lease.LostToken.IsCancellationRequested);
+            Assert.Contains(logger.Messages, message => message.Contains("overdue", StringComparison.Ordinal));
+
+            processor.Release();
+            var outcome = await execution.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+            Assert.NotEqual(QueuedWorkItemExecutionOutcome.Completed, outcome);
+            Assert.Equal(0, client.CompletedCount);
+        }
+        finally
+        {
+            processor.Release();
+            await execution.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        }
+    }
+
+    private static IWorkItemLease CreateLease(FakeLeaseBackend client, WorkQueueOptions options) =>
+        new RedisWorkItemLease(
+            client,
+            options,
+            "worker-1",
+            "42-0",
+            "lease-token",
+            (exception, cancellationToken) => client.RetryAsync("worker-1", "42-0", "lease-token", cancellationToken));
+
     private static QueuedWorkItemExecutor CreateExecutor(
         IWorkItemProcessor processor,
         SaucyBotMetrics metrics,
@@ -168,6 +319,7 @@ public sealed class QueuedWorkItemExecutorTest
 
     private static MeterListener Listen(
         SaucyBotMetrics metrics,
+        string instrumentPrefix,
         out Dictionary<string, long> measurements)
     {
         var values = new Dictionary<string, long>();
@@ -175,7 +327,7 @@ public sealed class QueuedWorkItemExecutorTest
         var listener = new MeterListener();
         listener.InstrumentPublished = (instrument, current) =>
         {
-            if (instrument.Name.StartsWith("saucybot.queue.lease", StringComparison.Ordinal))
+            if (instrument.Name.StartsWith(instrumentPrefix, StringComparison.Ordinal))
             {
                 current.EnableMeasurementEvents(instrument);
             }
@@ -198,6 +350,8 @@ public sealed class QueuedWorkItemExecutorTest
         public int DisposeCalls { get; private set; }
         public Exception? CompleteException { get; init; }
         public Exception? RetryException { get; init; }
+        public LeaseOperationResult CompleteResult { get; init; } = LeaseOperationResult.Applied;
+        public LeaseOperationResult RetryResult { get; init; } = LeaseOperationResult.Applied;
 
         public CancellationToken LostToken => _lost.Token;
 
@@ -211,7 +365,7 @@ public sealed class QueuedWorkItemExecutorTest
                 return Task.FromException<LeaseOperationResult>(CompleteException);
             }
 
-            return Task.FromResult(LeaseOperationResult.Applied);
+            return Task.FromResult(CompleteResult);
         }
 
         public Task<LeaseOperationResult> RetryAsync(Exception exception, CancellationToken cancellationToken)
@@ -222,7 +376,7 @@ public sealed class QueuedWorkItemExecutorTest
                 return Task.FromException<LeaseOperationResult>(RetryException);
             }
 
-            return Task.FromResult(LeaseOperationResult.Applied);
+            return Task.FromResult(RetryResult);
         }
 
         public ValueTask DisposeAsync()
@@ -259,5 +413,114 @@ public sealed class QueuedWorkItemExecutorTest
     {
         public Task ProcessAsync(QueuedMessageWorkItem item, CancellationToken cancellationToken) =>
             Task.FromException(new InvalidOperationException("processing failed"));
+    }
+
+    private sealed class CountingProcessor : IWorkItemProcessor
+    {
+        public int Calls { get; private set; }
+        public bool Throw { get; init; }
+
+        public Task ProcessAsync(QueuedMessageWorkItem item, CancellationToken cancellationToken)
+        {
+            Calls++;
+            return Throw
+                ? Task.FromException(new InvalidOperationException("processing failed"))
+                : Task.CompletedTask;
+        }
+    }
+
+    private sealed class NonCooperativeProcessor : IWorkItemProcessor
+    {
+        private readonly TaskCompletionSource _release = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public TaskCompletionSource Started { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public async Task ProcessAsync(QueuedMessageWorkItem item, CancellationToken cancellationToken)
+        {
+            Started.TrySetResult();
+            // Ignores cancellation on purpose until the test releases it.
+            await _release.Task;
+        }
+
+        public void Release() => _release.TrySetResult();
+    }
+
+    private sealed class RecordingLogger<T> : ILogger<T>
+    {
+        public List<string> Messages { get; } = [];
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            Messages.Add(formatter(state, exception));
+        }
+    }
+
+    private sealed class FakeLeaseBackend : IRedisStreamClient
+    {
+        public int RenewCalls { get; private set; }
+        public int CompletedCount { get; private set; }
+        public bool CompleteHangs { get; init; }
+        public TaskCompletionSource CompleteRelease { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public Task EnsureGroupAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+        public Task<string> AddAsync(string payload, CancellationToken cancellationToken) =>
+            Task.FromResult("1-0");
+
+        public Task<RedisStreamEntry?> ReadNewAsync(
+            string consumer,
+            string leaseToken,
+            CancellationToken cancellationToken) =>
+            Task.FromResult<RedisStreamEntry?>(null);
+
+        public Task<bool> RenewAsync(
+            string consumer,
+            string entryId,
+            string leaseToken,
+            CancellationToken cancellationToken)
+        {
+            RenewCalls++;
+            return Task.FromResult(true);
+        }
+
+        public Task<RedisStreamEntry?> ReclaimAsync(
+            string consumer,
+            TimeSpan minimumIdleTime,
+            string leaseToken,
+            CancellationToken cancellationToken) =>
+            Task.FromResult<RedisStreamEntry?>(null);
+
+        public async Task<LeaseOperationResult> CompleteAsync(
+            string consumer,
+            string entryId,
+            string leaseToken,
+            CancellationToken cancellationToken)
+        {
+            if (CompleteHangs)
+            {
+                await CompleteRelease.Task;
+            }
+
+            CompletedCount++;
+            return LeaseOperationResult.Applied;
+        }
+
+        public Task<LeaseOperationResult> RetryAsync(
+            string consumer,
+            string entryId,
+            string leaseToken,
+            CancellationToken cancellationToken) =>
+            Task.FromResult(LeaseOperationResult.Applied);
+
+        public Task ClearPendingAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }
 }

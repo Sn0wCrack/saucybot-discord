@@ -16,7 +16,8 @@ public sealed class DiscordClientHost
 {
     private readonly ILogger<DiscordClientHost> _logger;
     private readonly BotOptions _botOptions;
-    private readonly IMessageWorkQueue _messageWorkQueue;
+    private readonly IWorkItemProducer<MessageWorkItem> _producer;
+    private readonly WorkQueueOptions _options;
     private readonly SiteRegistry _siteRegistry;
     private readonly InteractionWorkChannel _interactionWorkChannel;
     private readonly IInteractionProcessor _interactionProcessor;
@@ -30,7 +31,8 @@ public sealed class DiscordClientHost
     public DiscordClientHost(
         ILogger<DiscordClientHost> logger,
         IOptions<BotOptions> botOptions,
-        IMessageWorkQueue messageWorkQueue,
+        IWorkItemProducer<MessageWorkItem> producer,
+        WorkQueueOptions options,
         SiteRegistry siteRegistry,
         InteractionWorkChannel interactionWorkChannel,
         IInteractionProcessor interactionProcessor,
@@ -42,7 +44,8 @@ public sealed class DiscordClientHost
     {
         _logger = logger;
         _botOptions = botOptions.Value;
-        _messageWorkQueue = messageWorkQueue;
+        _producer = producer;
+        _options = options;
         _siteRegistry = siteRegistry;
         _interactionWorkChannel = interactionWorkChannel;
         _interactionProcessor = interactionProcessor;
@@ -70,8 +73,15 @@ public sealed class DiscordClientHost
         }
     }
 
-    public Task AdmitMessageAsync(MessageWorkItem item) =>
-        _messageWorkQueue.EnqueueAsync(item, _workQueueHostedService.AdmissionToken);
+    public async Task AdmitMessageAsync(MessageWorkItem item)
+    {
+        var result = await _producer.EnqueueAsync(item, _options.EnqueueTimeout, _workQueueHostedService.AdmissionToken);
+        if (result == EnqueueResult.TimedOut)
+        {
+            _metrics.EnqueueTimedOut.Add(1);
+            _logger.LogWarning("Queue enqueue timed out for message {MessageId}", item.MessageId);
+        }
+    }
 
     public async Task AdmitInteractionAsync(IInteractionWorkItem item)
     {

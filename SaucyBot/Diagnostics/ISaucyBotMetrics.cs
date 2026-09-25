@@ -8,6 +8,7 @@ public interface ISaucyBotMetrics : IDisposable
     Histogram<double> QueueAge { get; }
     UpDownCounter<long> ActiveWorkers { get; }
     Counter<long> Enqueued { get; }
+    Counter<long> EnqueueTimedOut { get; }
     Counter<long> Dequeued { get; }
     Counter<long> Failed { get; }
     Counter<long> Succeeded { get; }

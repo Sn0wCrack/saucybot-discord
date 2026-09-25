@@ -56,7 +56,9 @@ public sealed class DependencyInjectionTest
         services.AddSingleton(Substitute.For<IConnectionMultiplexer>());
         services.AddSingleton<ISaucyBotMetrics, SaucyBotMetrics>();
         services.AddSingleton(new WorkQueueOptions());
-        services.AddRedisQueue(new RedisWorkQueueOptions { ConnectionString = "queue:6379" });
+        services.AddRedisQueue(
+            new RedisWorkQueueOptions { ConnectionString = "queue:6379" },
+            TimeSpan.FromSeconds(5));
 
         using var provider = services.BuildServiceProvider();
 
@@ -75,7 +77,9 @@ public sealed class DependencyInjectionTest
         var services = new ServiceCollection();
 
         Assert.Throws<OptionsValidationException>(() =>
-            services.AddRedisQueue(new RedisWorkQueueOptions { PendingReadTimeout = TimeSpan.Zero }));
+            services.AddRedisQueue(
+                new RedisWorkQueueOptions { PendingReadTimeout = TimeSpan.Zero },
+                TimeSpan.FromSeconds(5)));
     }
 
     [Fact]

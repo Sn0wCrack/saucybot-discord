@@ -128,6 +128,19 @@ The `Queue` keys below are generic worker settings. They apply to every backend.
 > The legacy keys `Queue__Redis__HeartbeatInterval`, `Queue__Redis__PendingMessageIdleTime`, and `Queue__Redis__ReclaimerInterval` still work when the matching generic key is not set, and the bot logs a deprecation warning for each one it uses.
 > Move these values to `Queue__HeartbeatInterval`, `Queue__PendingMessageIdleTime`, and `Queue__ReclaimerInterval`. A generic key always takes precedence over its legacy key.
 
+#### Timeout and outage behavior
+
+Queue operations are bounded, so a Redis outage cannot block the bot without limit.
+
+An enqueue stops after `EnqueueTimeout`. If Redis does not answer in time, the bot reports a timeout, records the `saucybot.queue.enqueue_timed_out` metric, and logs a warning. The bot does not retry the enqueue automatically. Redis can still accept the item after the bot stops waiting, so the same message can enter the queue later.
+
+Lease renewal, completion, retry, and cleanup stop after `BackendOperationTimeout`. The Redis command timeout follows the same value, so Redis also stops each command at the transport level. If a completion or a retry has an unknown outcome, the item stays in the queue and recovery delivers it again later. The handler does not run again in the same attempt.
+
+Message processing is at-least-once. Handlers must tolerate duplicate delivery and must give the same result when they run twice. Handlers must honor cancellation and must stop side effects when the token is canceled.
+
+> [!WARNING]
+> A handler that ignores cancellation keeps its worker until it finishes. Lease renewal stops at `MaxProcessingTime`, so recovery can deliver the item to another worker and the side effects then run twice. If all workers are stuck on such handlers, restart the bot. The queue logs each handler that runs past its deadline.
+
 #### Queue.Redis
 
 These keys are specific to the Redis backend. A different backend validates and documents its own settings.

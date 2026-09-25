@@ -192,4 +192,61 @@ public sealed class StackExchangeRedisStreamClientTest
 
         Assert.Equal(LeaseOperationResult.OutcomeUnknown, result);
     }
+
+    [Fact]
+    public async Task AddAsync_WhenRedisTimesOutReportsAnAmbiguousEnqueueInsteadOfBackpressure()
+    {
+        _database
+            .StreamAddAsync(Arg.Any<RedisKey>(), Arg.Any<RedisValue>(), Arg.Any<RedisValue>())
+            .Returns(Task.FromException<RedisValue>(
+                new RedisTimeoutException(CommandFlags.None, "simulated enqueue timeout", CommandStatus.WaitingToBeSent)));
+        var client = CreateClient(Options(TimeSpan.FromSeconds(1)));
+
+        await Assert.ThrowsAsync<RedisEnqueueAmbiguousException>(
+            () => client.AddAsync("payload", CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task AddAsync_WhenConnectionFailsReportsAnAmbiguousEnqueueInsteadOfBackpressure()
+    {
+        _database
+            .StreamAddAsync(Arg.Any<RedisKey>(), Arg.Any<RedisValue>(), Arg.Any<RedisValue>())
+            .Returns(Task.FromException<RedisValue>(
+                new RedisConnectionException(
+                    ConnectionFailureType.UnableToConnect,
+                    CommandFlags.None,
+                    "simulated connection failure",
+                    null,
+                    CommandStatus.WaitingToBeSent)));
+        var client = CreateClient(Options(TimeSpan.FromSeconds(1)));
+
+        await Assert.ThrowsAsync<RedisEnqueueAmbiguousException>(
+            () => client.AddAsync("payload", CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task AddAsync_WhenServerRejectsTheWriteMapsToRetryableBackpressure()
+    {
+        _database
+            .StreamAddAsync(Arg.Any<RedisKey>(), Arg.Any<RedisValue>(), Arg.Any<RedisValue>())
+            .Returns(Task.FromException<RedisValue>(
+                new RedisServerException(
+                    RedisErrorKind.Misconfigured,
+                    CommandFlags.None,
+                    "MISCONF Redis is configured to save RDB snapshots")));
+        var client = CreateClient(Options(TimeSpan.FromSeconds(1)));
+
+        await Assert.ThrowsAsync<RedisBackpressureException>(
+            () => client.AddAsync("payload", CancellationToken.None));
+    }
+
+    [Fact]
+    public void BuildConfiguration_SetsTheNativeCommandTimeout()
+    {
+        var configuration = ServiceRegistration.BuildConfiguration(
+            Options(TimeSpan.FromSeconds(1)),
+            TimeSpan.FromSeconds(3));
+
+        Assert.Equal(3000, configuration.SyncTimeout);
+    }
 }

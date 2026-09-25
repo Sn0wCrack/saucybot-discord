@@ -50,12 +50,46 @@ public sealed class RedisWorkQueue : IMessageWorkQueue, IWorkItemProducer<Messag
             while (true)
             {
                 cancellationToken.ThrowIfCancellationRequested();
+                // Timeout.InfiniteTimeSpan is -1 ms and must never count as expired.
+                var remaining = deadline is null ? Timeout.InfiniteTimeSpan : deadline.Value - DateTimeOffset.UtcNow;
+                if (remaining != Timeout.InfiniteTimeSpan && remaining <= TimeSpan.Zero)
+                {
+                    return LogEnqueueTimedOut(timeout);
+                }
+
                 try
                 {
-                    await _client.AddAsync(item.Serialize(), cancellationToken);
+                    var add = _client.AddAsync(item.Serialize(), cancellationToken);
+                    // An abandoned add can still fault later; keep it observed.
+                    _ = add.ContinueWith(
+                        static task => _ = task.Exception,
+                        CancellationToken.None,
+                        TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+                        TaskScheduler.Default);
+                    if (remaining == Timeout.InfiniteTimeSpan)
+                    {
+                        await add.WaitAsync(cancellationToken);
+                    }
+                    else
+                    {
+                        await add.WaitAsync(remaining, cancellationToken);
+                    }
+
                     _metrics?.Enqueued.Add(1);
                     _metrics?.QueueDepth.Add(1);
                     return EnqueueResult.Accepted;
+                }
+                catch (RedisEnqueueAmbiguousException exception)
+                {
+                    _logger.LogWarning(
+                        exception,
+                        "Queue enqueue has an unknown outcome after {Timeout}; Redis can still accept the command after the caller stops waiting, so the caller must not retry automatically",
+                        timeout);
+                    return EnqueueResult.TimedOut;
+                }
+                catch (TimeoutException)
+                {
+                    return LogEnqueueTimedOut(timeout);
                 }
                 catch (RedisBackpressureException)
                 {
@@ -63,16 +97,15 @@ public sealed class RedisWorkQueue : IMessageWorkQueue, IWorkItemProducer<Messag
                     var delay = _redisOptions.RetryDelay;
                     if (deadline is not null)
                     {
-                        var remaining = deadline.Value - DateTimeOffset.UtcNow;
-                        if (remaining <= TimeSpan.Zero)
+                        var remainingDelay = deadline.Value - DateTimeOffset.UtcNow;
+                        if (remainingDelay <= TimeSpan.Zero)
                         {
-                            _logger.LogWarning("Redis queue stayed unavailable for the whole {Timeout} enqueue limit", timeout);
-                            return EnqueueResult.TimedOut;
+                            return LogEnqueueTimedOut(timeout);
                         }
 
-                        if (delay > remaining)
+                        if (delay > remainingDelay)
                         {
-                            delay = remaining;
+                            delay = remainingDelay;
                         }
                     }
 
@@ -88,6 +121,14 @@ public sealed class RedisWorkQueue : IMessageWorkQueue, IWorkItemProducer<Messag
             _metrics?.Cancelled.Add(1);
             throw;
         }
+    }
+
+    private EnqueueResult LogEnqueueTimedOut(TimeSpan timeout)
+    {
+        _logger.LogWarning(
+            "Queue enqueue timed out after {Timeout}; Redis can still accept the command after the caller stops waiting, so the caller must not retry automatically",
+            timeout);
+        return EnqueueResult.TimedOut;
     }
 
     public Task EnqueueAsync(MessageWorkItem item, CancellationToken cancellationToken) =>
@@ -330,11 +371,11 @@ public sealed class RedisWorkQueue : IMessageWorkQueue, IWorkItemProducer<Messag
             cancellationToken.ThrowIfCancellationRequested();
             try
             {
-                var result = await _client.CompleteAsync(
-                    consumer,
-                    entryId,
-                    leaseToken,
-                    cancellationToken);
+                // Cleanup is repeatable and safe to abandon on cancellation, so
+                // its bound follows both the operation timeout and the caller.
+                var result = await _client
+                    .CompleteAsync(consumer, entryId, leaseToken, cancellationToken)
+                    .WaitAsync(_options.BackendOperationTimeout, cancellationToken);
                 if (result is LeaseOperationResult.Applied or LeaseOperationResult.AlreadyApplied)
                 {
                     return;

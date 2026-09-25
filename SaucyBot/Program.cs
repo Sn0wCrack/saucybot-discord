@@ -70,7 +70,8 @@ await Host.CreateDefaultBuilder(args)
         services.AddSingleton(queueOptions);
         services.AddSingleton<InteractionWorkChannel>();
         services.AddRedisQueue(
-            configuration.GetSection("Queue:Redis").Get<RedisWorkQueueOptions>() ?? new RedisWorkQueueOptions());
+            configuration.GetSection("Queue:Redis").Get<RedisWorkQueueOptions>() ?? new RedisWorkQueueOptions(),
+            queueOptions.BackendOperationTimeout);
         services.AddSingleton<IWorkItemProcessor, WorkItemProcessor>();
         services.AddSingleton<IQueuedWorkItemExecutor, QueuedWorkItemExecutor>();
         services.AddSaucyBotServices();

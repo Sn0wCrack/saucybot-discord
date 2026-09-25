@@ -14,6 +14,7 @@ public sealed class SaucyBotMetrics : ISaucyBotMetrics
         QueueAge = _meter.CreateHistogram<double>("saucybot.queue.age", "ms");
         ActiveWorkers = _meter.CreateUpDownCounter<long>("saucybot.workers.active", "workers");
         Enqueued = _meter.CreateCounter<long>("saucybot.queue.enqueued", "items");
+        EnqueueTimedOut = _meter.CreateCounter<long>("saucybot.queue.enqueue_timed_out", "items");
         Dequeued = _meter.CreateCounter<long>("saucybot.queue.dequeued", "items");
         Failed = _meter.CreateCounter<long>("saucybot.queue.failed", "items");
         Succeeded = _meter.CreateCounter<long>("saucybot.queue.succeeded", "items");
@@ -36,6 +37,8 @@ public sealed class SaucyBotMetrics : ISaucyBotMetrics
     public UpDownCounter<long> ActiveWorkers { get; }
 
     public Counter<long> Enqueued { get; }
+
+    public Counter<long> EnqueueTimedOut { get; }
 
     public Counter<long> Dequeued { get; }
 

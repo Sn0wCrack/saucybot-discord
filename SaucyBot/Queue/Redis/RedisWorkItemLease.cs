@@ -54,13 +54,9 @@ internal sealed class RedisWorkItemLease : IWorkItemLease
             return LeaseOperationResult.LeaseLost;
         }
 
-        var result = await _client.CompleteAsync(_consumer, _entryId, _leaseToken, cancellationToken);
-        if (result == LeaseOperationResult.LeaseLost)
-        {
-            MarkLost();
-        }
-
-        return result;
+        return await ExecuteMutationAsync(
+            token => _client.CompleteAsync(_consumer, _entryId, _leaseToken, token),
+            cancellationToken);
     }
 
     public async Task<LeaseOperationResult> RetryAsync(Exception exception, CancellationToken cancellationToken)
@@ -73,7 +69,48 @@ internal sealed class RedisWorkItemLease : IWorkItemLease
             return LeaseOperationResult.LeaseLost;
         }
 
-        var result = await _retryOperation(exception, cancellationToken);
+        return await ExecuteMutationAsync(token => _retryOperation(exception, token), cancellationToken);
+    }
+
+    // Completion and retry scripts are fenced and idempotent for one lease
+    // token, so an ambiguous outcome is retried once with the same token. When
+    // the result stays unknown the item is left for recovery and the handler
+    // must not be rerun here. A started mutation is always awaited to a bounded
+    // end, even when the caller cancels, because its outcome decides whether
+    // work stays pending.
+    private async Task<LeaseOperationResult> ExecuteMutationAsync(
+        Func<CancellationToken, Task<LeaseOperationResult>> operation,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var result = LeaseOperationResult.OutcomeUnknown;
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                result = await operation(cancellationToken).WaitAsync(_options.BackendOperationTimeout);
+            }
+            catch (TimeoutException exception)
+            {
+                _logger.LogWarning(
+                    exception,
+                    "Redis lease mutation for queue entry {EntryId} exceeded {BackendOperationTimeout}; the outcome is unknown",
+                    _entryId,
+                    _options.BackendOperationTimeout);
+                result = LeaseOperationResult.OutcomeUnknown;
+            }
+
+            if (result != LeaseOperationResult.OutcomeUnknown || attempt >= 2)
+            {
+                break;
+            }
+
+            _logger.LogWarning(
+                "Repeating the lease mutation for queue entry {EntryId} with the same lease token after an unknown outcome",
+                _entryId);
+        }
+
         if (result == LeaseOperationResult.LeaseLost)
         {
             MarkLost();
@@ -104,11 +141,14 @@ internal sealed class RedisWorkItemLease : IWorkItemLease
         {
             while (await timer.WaitForNextTickAsync(renewalLifetime.Token))
             {
+                // Each renewal is bounded and cancellation-aware so one stalled
+                // command cannot keep the lease busy past its operation timeout.
                 var renewed = await _client.RenewAsync(
-                    _consumer,
-                    _entryId,
-                    _leaseToken,
-                    renewalLifetime.Token);
+                        _consumer,
+                        _entryId,
+                        _leaseToken,
+                        renewalLifetime.Token)
+                    .WaitAsync(_options.BackendOperationTimeout, renewalLifetime.Token);
                 if (!renewed)
                 {
                     MarkLost();

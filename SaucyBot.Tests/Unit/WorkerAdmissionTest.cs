@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Metrics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -14,6 +15,7 @@ using SaucyBot;
 using SaucyBot.Diagnostics;
 using SaucyBot.Library.Discord;
 using SaucyBot.Queue;
+using SaucyBot.Queue.Redis;
 using SaucyBot.Services;
 using SaucyBot.Tests.Unit.Common;
 using Xunit;
@@ -414,6 +416,73 @@ public sealed class WorkerAdmissionTest
     }
 
     [Fact]
+    public async Task MessageAdmissionPassesTheConfiguredEnqueueTimeoutToTheProducer()
+    {
+        var queue = new FakeWorkQueue();
+        await using var queueService = CreateQueueService(queue);
+        var clientHost = CreateClientHost(
+            queue,
+            queueService,
+            workQueueOptions: new WorkQueueOptions { EnqueueTimeout = TimeSpan.FromSeconds(7) });
+
+        await clientHost.AdmitMessageAsync(CreateQueuedItem("1-0").Item);
+
+        Assert.Equal(TimeSpan.FromSeconds(7), queue.LastEnqueueTimeout);
+    }
+
+    [Fact]
+    public async Task MessageAdmissionRecordsEnqueueTimedOutWhenRedisAddHangsWithoutLoggingContent()
+    {
+        var client = new HangingAddRedisClient();
+        using var metrics = new SaucyBotMetrics();
+        long enqueueTimedOut = 0;
+        using var listener = new MeterListener();
+        listener.InstrumentPublished = (instrument, meterListener) =>
+        {
+            if (ReferenceEquals(instrument, metrics.EnqueueTimedOut))
+            {
+                meterListener.EnableMeasurementEvents(instrument);
+            }
+        };
+        listener.SetMeasurementEventCallback<long>((instrument, measurement, _, _) =>
+        {
+            enqueueTimedOut += measurement;
+        });
+        listener.Start();
+        var producer = new RedisWorkQueue(
+            client,
+            new WorkQueueOptions
+            {
+                EnqueueTimeout = TimeSpan.FromMilliseconds(100),
+                BackendOperationTimeout = TimeSpan.FromMilliseconds(100),
+            },
+            new RedisWorkQueueOptions { RetryDelay = TimeSpan.Zero },
+            metrics);
+        var logger = new RecordingLogger<DiscordClientHost>();
+        await using var queueService = CreateQueueService(new FakeWorkQueue());
+        var clientHost = CreateClientHost(
+            producer,
+            queueService,
+            workQueueOptions: new WorkQueueOptions { EnqueueTimeout = TimeSpan.FromMilliseconds(100) },
+            metrics: metrics,
+            logger: logger);
+        var item = TestData.Message() with { Content = "super-secret-content" };
+
+        try
+        {
+            await clientHost.AdmitMessageAsync(item).WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        }
+        finally
+        {
+            client.AddCompletion.TrySetResult("1-0");
+        }
+
+        Assert.Equal(1, enqueueTimedOut);
+        Assert.Contains(logger.Messages, message => message.Contains("timed out", StringComparison.Ordinal));
+        Assert.DoesNotContain("super-secret-content", string.Join("\n", logger.Messages));
+    }
+
+    [Fact]
     public async Task WorkerInteractionAdmissionUsesShutdownCancellationWithoutPredeferring()
     {
         var queue = new FakeWorkQueue();
@@ -606,16 +675,20 @@ public sealed class WorkerAdmissionTest
         new DelegatingExecutor(queue, new RecordingProcessor()));
 
     private static DiscordClientHost CreateClientHost(
-        FakeWorkQueue queue,
+        IWorkItemProducer<MessageWorkItem> producer,
         WorkQueueHostedService queueService,
         InteractionWorkChannel? interactionChannel = null,
-        IInteractionProcessor? interactionProcessor = null)
+        IInteractionProcessor? interactionProcessor = null,
+        WorkQueueOptions? workQueueOptions = null,
+        ISaucyBotMetrics? metrics = null,
+        ILogger<DiscordClientHost>? logger = null)
     {
         var services = new ServiceCollection().BuildServiceProvider();
         return new DiscordClientHost(
-            Microsoft.Extensions.Logging.Abstractions.NullLogger<DiscordClientHost>.Instance,
+            logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<DiscordClientHost>.Instance,
             new ConfigurationBuilder().Build().BotOptions(),
-            queue,
+            producer,
+            workQueueOptions ?? new WorkQueueOptions(),
             new SiteRegistry(
                 Microsoft.Extensions.Logging.Abstractions.NullLogger<SiteRegistry>.Instance,
                 new ConfigurationBuilder().Build().BotOptions(),
@@ -624,7 +697,7 @@ public sealed class WorkerAdmissionTest
             interactionChannel ?? new InteractionWorkChannel(new WorkQueueOptions()),
             interactionProcessor ?? Substitute.For<IInteractionProcessor>(),
             queueService,
-            new SaucyBotMetrics(),
+            metrics ?? new SaucyBotMetrics(),
             new InteractionHandler(
                 Microsoft.Extensions.Logging.Abstractions.NullLogger<InteractionHandler>.Instance,
                 services),
@@ -681,7 +754,7 @@ public sealed class WorkerAdmissionTest
         }
     }
 
-    private sealed class FakeWorkQueue : IMessageWorkQueue
+    private sealed class FakeWorkQueue : IMessageWorkQueue, IWorkItemProducer<MessageWorkItem>
     {
         private readonly Channel<QueuedMessageWorkItem> _items = Channel.CreateUnbounded<QueuedMessageWorkItem>();
 
@@ -692,6 +765,7 @@ public sealed class WorkerAdmissionTest
         public TaskCompletionSource ReadCancellationObservedSignal { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public int ClearCalls { get; private set; }
         public Action? ClearPendingCallback { get; set; }
+        public TimeSpan? LastEnqueueTimeout { get; private set; }
 
         public void Add(QueuedMessageWorkItem item) => _items.Writer.TryWrite(item);
 
@@ -699,6 +773,16 @@ public sealed class WorkerAdmissionTest
         {
             cancellationToken.ThrowIfCancellationRequested();
             throw new NotSupportedException();
+        }
+
+        public Task<EnqueueResult> EnqueueAsync(
+            MessageWorkItem item,
+            TimeSpan timeout,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            LastEnqueueTimeout = timeout;
+            return Task.FromResult(EnqueueResult.Accepted);
         }
 
         public async IAsyncEnumerable<QueuedMessageWorkItem> ReadAsync(
@@ -763,6 +847,70 @@ public sealed class WorkerAdmissionTest
             CancellationToken cancellationToken)
         {
             return Task.FromResult(new WorkItemFailureResult(WorkItemFailureAction.Retried, item.DeliveryCount));
+        }
+    }
+
+    private sealed class HangingAddRedisClient : IRedisStreamClient
+    {
+        public TaskCompletionSource<string> AddCompletion { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public Task EnsureGroupAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+        public Task<string> AddAsync(string payload, CancellationToken cancellationToken) => AddCompletion.Task;
+
+        public Task<RedisStreamEntry?> ReadNewAsync(
+            string consumer,
+            string leaseToken,
+            CancellationToken cancellationToken) =>
+            Task.FromResult<RedisStreamEntry?>(null);
+
+        public Task<bool> RenewAsync(
+            string consumer,
+            string entryId,
+            string leaseToken,
+            CancellationToken cancellationToken) =>
+            Task.FromResult(true);
+
+        public Task<RedisStreamEntry?> ReclaimAsync(
+            string consumer,
+            TimeSpan minimumIdleTime,
+            string leaseToken,
+            CancellationToken cancellationToken) =>
+            Task.FromResult<RedisStreamEntry?>(null);
+
+        public Task<LeaseOperationResult> CompleteAsync(
+            string consumer,
+            string entryId,
+            string leaseToken,
+            CancellationToken cancellationToken) =>
+            Task.FromResult(LeaseOperationResult.Applied);
+
+        public Task<LeaseOperationResult> RetryAsync(
+            string consumer,
+            string entryId,
+            string leaseToken,
+            CancellationToken cancellationToken) =>
+            Task.FromResult(LeaseOperationResult.Applied);
+
+        public Task ClearPendingAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+    }
+
+    private sealed class RecordingLogger<T> : ILogger<T>
+    {
+        public List<string> Messages { get; } = [];
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            Messages.Add(formatter(state, exception));
         }
     }
 }

@@ -95,7 +95,8 @@ public sealed class InteractionResponseTest
         var clientHost = new DiscordClientHost(
             NullLogger<DiscordClientHost>.Instance,
             new ConfigurationBuilder().Build().BotOptions(),
-            queue,
+            Substitute.For<IWorkItemProducer<MessageWorkItem>>(),
+            new WorkQueueOptions(),
             new SiteRegistry(NullLogger<SiteRegistry>.Instance, new ConfigurationBuilder().Build().BotOptions(), services, []),
             channel,
             new CallbackInteractionProcessor(process),

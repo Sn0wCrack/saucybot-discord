@@ -16,6 +16,7 @@ public enum QueuedWorkItemExecutionOutcome
     Failed,
     Cancelled,
     LeaseLost,
+    OutcomeUnknown,
 }
 
 public sealed class QueuedWorkItemExecutor : IQueuedWorkItemExecutor
@@ -49,9 +50,25 @@ public sealed class QueuedWorkItemExecutor : IQueuedWorkItemExecutor
         Exception? failure = null;
         var completed = false;
 
+        // A handler that ignores cancellation stays awaited here. The lease
+        // stops renewing at MaxProcessingTime, so the item is recovered while
+        // this task remains observable and attached to its worker.
+        var processing = RunHandlerAsync(item, processingCancellation.Token);
+        using var overdueDeadline = new CancellationTokenSource(_options.MaxProcessingTime);
+        using var overdueRegistration = overdueDeadline.Token.Register(() =>
+        {
+            if (!processing.IsCompleted)
+            {
+                _logger.LogWarning(
+                    "Queue entry {EntryId} handler is overdue and still runs after {MaxProcessingTime}; the worker keeps awaiting it and the item stays pending for recovery",
+                    item.EntryId,
+                    _options.MaxProcessingTime);
+            }
+        });
+
         try
         {
-            await _processor.ProcessAsync(item, processingCancellation.Token);
+            await processing;
             processingCancellation.Token.ThrowIfCancellationRequested();
             completed = true;
         }
@@ -84,6 +101,13 @@ public sealed class QueuedWorkItemExecutor : IQueuedWorkItemExecutor
                         "Handled failed queue entry {EntryId} with lease result {Result}",
                         item.EntryId,
                         result);
+                    if (result == LeaseOperationResult.OutcomeUnknown)
+                    {
+                        _logger.LogWarning(
+                            "Queue entry {EntryId} retry outcome is unknown; the item stays pending for recovery and the handler is not rerun here",
+                            item.EntryId);
+                        return QueuedWorkItemExecutionOutcome.OutcomeUnknown;
+                    }
                 }
                 catch (Exception cleanupException)
                 {
@@ -104,9 +128,25 @@ public sealed class QueuedWorkItemExecutor : IQueuedWorkItemExecutor
 
             try
             {
-                await lease.CompleteAsync(CancellationToken.None);
-                _metrics.Succeeded.Add(1);
-                return QueuedWorkItemExecutionOutcome.Completed;
+                var result = await lease.CompleteAsync(CancellationToken.None);
+                switch (result)
+                {
+                    case LeaseOperationResult.Applied:
+                    case LeaseOperationResult.AlreadyApplied:
+                        _metrics.Succeeded.Add(1);
+                        return QueuedWorkItemExecutionOutcome.Completed;
+                    case LeaseOperationResult.LeaseLost:
+                        _metrics.LeaseLost.Add(1, QueueMetricTags.Lease(consumer));
+                        _logger.LogWarning(
+                            "Skipping success for queue entry {EntryId} after lease loss",
+                            item.EntryId);
+                        return QueuedWorkItemExecutionOutcome.LeaseLost;
+                    default:
+                        _logger.LogWarning(
+                            "Queue entry {EntryId} completion outcome is unknown; success is not reported and the item stays pending for recovery",
+                            item.EntryId);
+                        return QueuedWorkItemExecutionOutcome.OutcomeUnknown;
+                }
             }
             catch (Exception cleanupException)
             {
@@ -123,4 +163,9 @@ public sealed class QueuedWorkItemExecutor : IQueuedWorkItemExecutor
             await lease.DisposeAsync();
         }
     }
+
+    // Wrapping the call keeps synchronous handler exceptions observable as a
+    // faulted task for the overdue check.
+    private async Task RunHandlerAsync(QueuedMessageWorkItem item, CancellationToken cancellationToken) =>
+        await _processor.ProcessAsync(item, cancellationToken);
 }

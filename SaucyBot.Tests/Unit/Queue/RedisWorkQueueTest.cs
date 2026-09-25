@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Threading;
@@ -44,6 +45,253 @@ public sealed class RedisWorkQueueTest
 
         Assert.Equal(EnqueueResult.TimedOut, result);
         Assert.Empty(client.Payloads);
+    }
+
+    [Fact]
+    public async Task ProducerEnqueueReturnsTimedOutWithinLimitWhenAddRemainsIncomplete()
+    {
+        var client = new FakeRedisStreamClient { AddHangs = true };
+        IWorkItemProducer<MessageWorkItem> producer = CreateQueue(client);
+
+        var stopwatch = Stopwatch.StartNew();
+        try
+        {
+            var result = await producer
+                .EnqueueAsync(CreateItem(), TimeSpan.FromMilliseconds(100), CancellationToken.None)
+                .WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+            stopwatch.Stop();
+
+            Assert.Equal(EnqueueResult.TimedOut, result);
+            Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(2), $"enqueue was not bounded, took {stopwatch.Elapsed}");
+            Assert.Equal(1, client.AddCalls);
+        }
+        finally
+        {
+            client.AddCompletion.TrySetResult("1-0");
+        }
+    }
+
+    [Fact]
+    public async Task LeaseCompletionReturnsOutcomeUnknownWithinLimitWhenMutationHangs()
+    {
+        var client = new FakeRedisStreamClient
+        {
+            CompleteCompletion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously),
+        };
+        client.Entries.Enqueue(new RedisStreamEntry("42-0", CreateItem().Serialize()));
+        IWorkItemConsumer<MessageWorkItem> consumer = CreateQueue(
+            client,
+            new WorkQueueOptions { BackendOperationTimeout = TimeSpan.FromMilliseconds(100) });
+        var delivery = await ReadSingleDeliveryAsync(consumer, TestContext.Current.CancellationToken);
+        await using var lease = delivery.Lease;
+
+        var stopwatch = Stopwatch.StartNew();
+        try
+        {
+            var result = await lease
+                .CompleteAsync(CancellationToken.None)
+                .WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+            stopwatch.Stop();
+
+            Assert.Equal(LeaseOperationResult.OutcomeUnknown, result);
+            Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(2), $"completion was not bounded, took {stopwatch.Elapsed}");
+            Assert.Empty(client.Acknowledged);
+        }
+        finally
+        {
+            client.CompleteCompletion?.TrySetResult();
+        }
+    }
+
+    [Fact]
+    public async Task LeaseCompletionRepeatsTheMutationWithTheSameLeaseTokenAfterOutcomeUnknown()
+    {
+        var client = new FakeRedisStreamClient { CompleteUnknownResults = 1 };
+        client.Entries.Enqueue(new RedisStreamEntry("42-0", CreateItem().Serialize()));
+        IWorkItemConsumer<MessageWorkItem> consumer = CreateQueue(
+            client,
+            new WorkQueueOptions { BackendOperationTimeout = TimeSpan.FromSeconds(5) });
+        var delivery = await ReadSingleDeliveryAsync(consumer, TestContext.Current.CancellationToken);
+        await using var lease = delivery.Lease;
+
+        var result = await lease.CompleteAsync(CancellationToken.None);
+
+        Assert.Equal(LeaseOperationResult.Applied, result);
+        Assert.Equal(2, client.Operations.Count(operation => operation == "complete:42-0"));
+        Assert.Single(client.CompleteTokens.Distinct());
+        Assert.Equal(["42-0"], client.Acknowledged);
+        Assert.Equal(["42-0"], client.Deleted);
+    }
+
+    [Fact]
+    public async Task LeaseCompletionKeepsOutcomeUnknownWhenEveryAttemptIsUnknown()
+    {
+        var client = new FakeRedisStreamClient { CompleteUnknownResults = int.MaxValue };
+        client.Entries.Enqueue(new RedisStreamEntry("42-0", CreateItem().Serialize()));
+        IWorkItemConsumer<MessageWorkItem> consumer = CreateQueue(
+            client,
+            new WorkQueueOptions { BackendOperationTimeout = TimeSpan.FromSeconds(5) });
+        var delivery = await ReadSingleDeliveryAsync(consumer, TestContext.Current.CancellationToken);
+        await using var lease = delivery.Lease;
+
+        var result = await lease.CompleteAsync(CancellationToken.None);
+
+        Assert.Equal(LeaseOperationResult.OutcomeUnknown, result);
+        Assert.Equal(2, client.Operations.Count(operation => operation == "complete:42-0"));
+        Assert.Empty(client.Acknowledged);
+    }
+
+    [Fact]
+    public async Task LeaseRetryReturnsOutcomeUnknownWithinLimitWhenMutationHangs()
+    {
+        var client = new FakeRedisStreamClient { RetryHangs = true };
+        client.Entries.Enqueue(new RedisStreamEntry("42-0", CreateItem().Serialize(), DeliveryCount: 1));
+        IWorkItemConsumer<MessageWorkItem> consumer = CreateQueue(
+            client,
+            new WorkQueueOptions
+            {
+                MaxProcessingAttempts = 3,
+                BackendOperationTimeout = TimeSpan.FromMilliseconds(100),
+            });
+        var delivery = await ReadSingleDeliveryAsync(consumer, TestContext.Current.CancellationToken);
+        await using var lease = delivery.Lease;
+
+        var stopwatch = Stopwatch.StartNew();
+        try
+        {
+            var result = await lease
+                .RetryAsync(new InvalidOperationException("failed"), CancellationToken.None)
+                .WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+            stopwatch.Stop();
+
+            Assert.Equal(LeaseOperationResult.OutcomeUnknown, result);
+            Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(2), $"retry was not bounded, took {stopwatch.Elapsed}");
+        }
+        finally
+        {
+            client.RetryCompletion.TrySetResult(LeaseOperationResult.Applied);
+        }
+    }
+
+    [Fact]
+    public async Task LeaseRetryRepeatsTheMutationWithTheSameLeaseTokenAfterOutcomeUnknown()
+    {
+        var client = new FakeRedisStreamClient { RetryUnknownResults = 1 };
+        client.Entries.Enqueue(new RedisStreamEntry("42-0", CreateItem().Serialize(), DeliveryCount: 1));
+        IWorkItemConsumer<MessageWorkItem> consumer = CreateQueue(
+            client,
+            new WorkQueueOptions
+            {
+                MaxProcessingAttempts = 3,
+                BackendOperationTimeout = TimeSpan.FromSeconds(5),
+            });
+        var delivery = await ReadSingleDeliveryAsync(consumer, TestContext.Current.CancellationToken);
+        await using var lease = delivery.Lease;
+
+        var result = await lease.RetryAsync(new InvalidOperationException("failed"), CancellationToken.None);
+
+        Assert.Equal(LeaseOperationResult.Applied, result);
+        Assert.Equal(2, client.Operations.Count(operation => operation == "retry:42-0"));
+        Assert.Single(client.RetryTokens.Distinct());
+    }
+
+    [Fact]
+    public async Task LeaseRenewalStopsWithinLimitWhenRenewalHangs()
+    {
+        var client = new FakeRedisStreamClient { RenewHangs = true };
+        client.Entries.Enqueue(new RedisStreamEntry("42-0", CreateItem().Serialize()));
+        IWorkItemConsumer<MessageWorkItem> consumer = CreateQueue(
+            client,
+            new WorkQueueOptions
+            {
+                HeartbeatInterval = TimeSpan.FromMilliseconds(10),
+                BackendOperationTimeout = TimeSpan.FromMilliseconds(50),
+                MaxProcessingTime = TimeSpan.FromSeconds(30),
+            });
+        var delivery = await ReadSingleDeliveryAsync(consumer, TestContext.Current.CancellationToken);
+        await using var lease = delivery.Lease;
+
+        await client.RenewObserved.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        try
+        {
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(
+                () => Task.Delay(Timeout.InfiniteTimeSpan, lease.LostToken)
+                    .WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken));
+
+            Assert.Equal(
+                LeaseOperationResult.LeaseLost,
+                await lease.CompleteAsync(CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
+        }
+        finally
+        {
+            client.RenewCompletion.TrySetResult(true);
+        }
+    }
+
+    [Fact]
+    public async Task MalformedCleanupIsBoundedWhenCompletionHangs()
+    {
+        var client = new FakeRedisStreamClient
+        {
+            CompleteCompletion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously),
+        };
+        client.Entries.Enqueue(new RedisStreamEntry("bad-0", "invalid"));
+        client.Entries.Enqueue(new RedisStreamEntry("good-0", CreateItem().Serialize()));
+        IMessageWorkQueue queue = CreateQueue(
+            client,
+            new WorkQueueOptions { BackendOperationTimeout = TimeSpan.FromMilliseconds(100) },
+            redisOptions: new()
+            {
+                RetryDelay = TimeSpan.Zero,
+                MalformedCleanupMaxAttempts = 2,
+            });
+
+        var stopwatch = Stopwatch.StartNew();
+        var messages = queue.ReadAsync("worker-1", TestContext.Current.CancellationToken)
+            .GetAsyncEnumerator(TestContext.Current.CancellationToken);
+        Task<bool>? pending = null;
+        try
+        {
+            pending = messages.MoveNextAsync().AsTask();
+            Assert.True(await pending.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
+            stopwatch.Stop();
+
+            Assert.Equal("good-0", messages.Current.EntryId);
+            Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(2), $"cleanup was not bounded, took {stopwatch.Elapsed}");
+            Assert.Equal(2, client.Operations.Count(operation => operation == "complete:bad-0"));
+        }
+        finally
+        {
+            client.CompleteCompletion?.TrySetResult();
+            if (pending is not null)
+            {
+                try
+                {
+                    await pending.WaitAsync(TimeSpan.FromSeconds(5), CancellationToken.None);
+                }
+                catch (Exception)
+                {
+                    // Failure output above is authoritative; only drain the read here.
+                }
+            }
+
+            await messages.DisposeAsync();
+        }
+    }
+
+    [Fact]
+    public async Task ProducerEnqueueDoesNotRetryAnAmbiguousAdd()
+    {
+        var client = new FakeRedisStreamClient { AddAmbiguousFailures = 1 };
+        IWorkItemProducer<MessageWorkItem> producer = CreateQueue(client, redisOptions: new() { RetryDelay = TimeSpan.Zero });
+
+        var result = await producer.EnqueueAsync(
+            CreateItem(),
+            TimeSpan.FromMilliseconds(200),
+            CancellationToken.None);
+
+        Assert.Equal(EnqueueResult.TimedOut, result);
+        Assert.Equal(1, client.AddCalls);
     }
 
     [Fact]
@@ -759,26 +1007,37 @@ public sealed class RedisWorkQueueTest
     private sealed class FakeRedisStreamClient : IRedisStreamClient
     {
         public int AddFailures { get; set; }
+        public int AddAmbiguousFailures { get; set; }
+        public bool AddHangs { get; init; }
         public int AddCalls { get; private set; }
         public int ClearCalls { get; private set; }
         public int EnsureGroupCalls { get; private set; }
         public int NewReads { get; private set; }
         public int RenewCalls { get; private set; }
         public bool RenewResult { get; set; } = true;
+        public bool RenewHangs { get; init; }
+        public TaskCompletionSource<bool> RenewCompletion { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public string? LastRenewConsumer { get; private set; }
         public string? LastRenewEntryId { get; private set; }
         public string? LastRenewToken { get; private set; }
         public LeaseOperationResult RetryResult { get; set; } = LeaseOperationResult.Applied;
+        public int RetryUnknownResults { get; set; }
+        public bool RetryHangs { get; init; }
+        public TaskCompletionSource<LeaseOperationResult> RetryCompletion { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public int CompleteFailures { get; set; }
         public Exception? CompleteException { get; set; }
         public LeaseOperationResult CompleteResult { get; set; } = LeaseOperationResult.Applied;
+        public int CompleteUnknownResults { get; set; }
         public TaskCompletionSource RenewObserved { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource<string> AddCompletion { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public Queue<RedisStreamEntry> Entries { get; } = new();
         public Queue<RedisStreamEntry> ReclaimedEntries { get; } = new();
         public List<string> Payloads { get; } = [];
         public List<string> Acknowledged { get; } = [];
         public List<string> Deleted { get; } = [];
         public List<string> Operations { get; } = [];
+        public List<string> CompleteTokens { get; } = [];
+        public List<string> RetryTokens { get; } = [];
         public TaskCompletionSource CompleteStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public TaskCompletionSource? CompleteCompletion { get; init; }
         public bool ReturnEntryAfterCancellation { get; init; }
@@ -795,9 +1054,19 @@ public sealed class RedisWorkQueueTest
         public Task<string> AddAsync(string payload, CancellationToken cancellationToken)
         {
             AddCalls++;
+            if (AddHangs)
+            {
+                return AddCompletion.Task;
+            }
+
             if (AddFailures-- > 0)
             {
                 throw new RedisBackpressureException("queue full");
+            }
+
+            if (AddAmbiguousFailures-- > 0)
+            {
+                throw new RedisEnqueueAmbiguousException("enqueue outcome unknown");
             }
 
             Payloads.Add(payload);
@@ -849,7 +1118,7 @@ public sealed class RedisWorkQueueTest
             LastRenewEntryId = entryId;
             LastRenewToken = leaseToken;
             RenewObserved.TrySetResult();
-            return Task.FromResult(RenewResult);
+            return RenewHangs ? RenewCompletion.Task : Task.FromResult(RenewResult);
         }
 
         public Task<RedisStreamEntry?> ReclaimAsync(
@@ -866,10 +1135,16 @@ public sealed class RedisWorkQueueTest
             CancellationToken cancellationToken)
         {
             Operations.Add($"complete:{entryId}");
+            CompleteTokens.Add(leaseToken);
             CompleteStarted.TrySetResult();
             if (CompleteCompletion is not null)
             {
                 await CompleteCompletion.Task;
+            }
+
+            if (CompleteUnknownResults-- > 0)
+            {
+                return LeaseOperationResult.OutcomeUnknown;
             }
 
             if (CompleteFailures-- > 0)
@@ -898,6 +1173,17 @@ public sealed class RedisWorkQueueTest
             CancellationToken cancellationToken)
         {
             Operations.Add($"retry:{entryId}");
+            RetryTokens.Add(leaseToken);
+            if (RetryHangs)
+            {
+                return RetryCompletion.Task;
+            }
+
+            if (RetryUnknownResults-- > 0)
+            {
+                return Task.FromResult(LeaseOperationResult.OutcomeUnknown);
+            }
+
             return Task.FromResult(RetryResult);
         }
 
