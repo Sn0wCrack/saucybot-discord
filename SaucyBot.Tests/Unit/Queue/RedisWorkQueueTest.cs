@@ -79,9 +79,28 @@ public sealed class RedisWorkQueueTest
             CompleteCompletion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously),
         };
         client.Entries.Enqueue(new RedisStreamEntry("42-0", CreateItem().Serialize()));
+        using var metrics = new SaucyBotMetrics();
+        var timeoutCount = 0;
+        using var listener = new MeterListener();
+        listener.InstrumentPublished = (instrument, meterListener) =>
+        {
+            if (ReferenceEquals(instrument, metrics.BackendOperationTimedOut))
+            {
+                meterListener.EnableMeasurementEvents(instrument);
+            }
+        };
+        listener.SetMeasurementEventCallback<long>((_, measurement, tags, _) =>
+        {
+            if (tags.ToArray().Any(tag => tag.Key == "operation" && Equals(tag.Value, "complete")))
+            {
+                timeoutCount += (int)measurement;
+            }
+        });
+        listener.Start();
         IWorkItemConsumer<MessageWorkItem> consumer = CreateQueue(
             client,
-            new WorkQueueOptions { BackendOperationTimeout = TimeSpan.FromMilliseconds(100) });
+            new WorkQueueOptions { BackendOperationTimeout = TimeSpan.FromMilliseconds(100) },
+            metrics: metrics);
         var delivery = await ReadSingleDeliveryAsync(consumer, TestContext.Current.CancellationToken);
         await using var lease = delivery.Lease;
 
@@ -94,6 +113,7 @@ public sealed class RedisWorkQueueTest
             stopwatch.Stop();
 
             Assert.Equal(LeaseOperationResult.OutcomeUnknown, result);
+            Assert.Equal(2, timeoutCount);
             Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(2), $"completion was not bounded, took {stopwatch.Elapsed}");
             Assert.Empty(client.Acknowledged);
         }

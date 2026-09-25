@@ -16,6 +16,8 @@ public interface ISaucyBotMetrics : IDisposable
     Counter<long> Cancelled { get; }
     Counter<long> HandlerOutcomes { get; }
     Histogram<double> HandlerDuration { get; }
+    Counter<long> BackendOperationTimedOut { get; }
+    Counter<long> HandlerOverdue { get; }
     Counter<long> Malformed { get; }
     Counter<long> CleanupFailed { get; }
     Counter<long> LeaseRenewed { get; }

@@ -103,19 +103,16 @@ public sealed class InteractionQueueWorker
         try
         {
             await _pipeline.InvokeAsync(context, ProcessInteractionTerminalAsync, cancellationToken);
-            _metrics.Succeeded.Add(1);
             activity?.SetStatus(ActivityStatusCode.Ok);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            _metrics.Cancelled.Add(1);
             activity?.SetTag("saucybot.cancelled", true);
             _logger.LogDebug("Interaction worker cancelled for interaction {InteractionId}", interaction.Id);
             await SendFailureResponseAsync(interaction);
         }
         catch (Exception exception)
         {
-            _metrics.Failed.Add(1);
             activity?.SetStatus(ActivityStatusCode.Error, exception.Message);
             activity?.SetTag("error.type", exception.GetType().FullName);
             _logger.LogError(exception, "Interaction worker failed for {InteractionId}", interaction.Id);

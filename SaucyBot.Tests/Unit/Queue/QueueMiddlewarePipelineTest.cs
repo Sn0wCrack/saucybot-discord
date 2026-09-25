@@ -26,6 +26,15 @@ public sealed class QueueMiddlewarePipelineTest
     private Exception? TerminalFailure { get; set; }
 
     [Fact]
+    public void MetricsExposeBackendTimeoutAndOverdueHandlerCounters()
+    {
+        using var metrics = new SaucyBotMetrics();
+
+        Assert.NotNull(metrics.BackendOperationTimedOut);
+        Assert.NotNull(metrics.HandlerOverdue);
+    }
+
+    [Fact]
     public async Task PipelineRunsMiddlewareInRegistrationOrderAndUnwindsInReverse()
     {
         var first = new RecordingMiddleware("first", _trace);
@@ -200,7 +209,7 @@ public sealed class QueueMiddlewarePipelineTest
     public async Task MetricsMiddlewareRecordsSuccessOutcomeAndProcessingDuration()
     {
         using var metrics = new SaucyBotMetrics();
-        using var capture = new MetricsCapture();
+        using var capture = new MetricsCapture(metrics);
         var pipeline = CreatePipeline(new QueueMetricsMiddleware<MessageWorkItem>(metrics));
 
         await pipeline.InvokeAsync(CreateContext(), TerminalAsync, CancellationToken.None);
@@ -221,7 +230,7 @@ public sealed class QueueMiddlewarePipelineTest
     public async Task MetricsMiddlewareRecordsFailureOutcomeAndRethrows()
     {
         using var metrics = new SaucyBotMetrics();
-        using var capture = new MetricsCapture();
+        using var capture = new MetricsCapture(metrics);
         TerminalFailure = new InvalidOperationException("handler failed");
         var pipeline = CreatePipeline(new QueueMetricsMiddleware<MessageWorkItem>(metrics));
 
@@ -232,13 +241,17 @@ public sealed class QueueMiddlewarePipelineTest
         Assert.Equal(1, outcome.Value);
         Assert.Equal("message", outcome.Tags["work_type"]);
         Assert.Equal("failed", outcome.Tags["outcome"]);
+
+        var duration = Assert.Single(capture.Samples, sample => sample.Name == "saucybot.queue.handler_duration");
+        Assert.True(duration.Value >= 0);
+        Assert.Equal("message", duration.Tags["work_type"]);
     }
 
     [Fact]
     public async Task MetricsMiddlewareRecordsCancellationOutcomeAndRethrows()
     {
         using var metrics = new SaucyBotMetrics();
-        using var capture = new MetricsCapture();
+        using var capture = new MetricsCapture(metrics);
         using var cancellation = new CancellationTokenSource();
         cancellation.Cancel();
         TerminalFailure = new OperationCanceledException(cancellation.Token);
@@ -251,13 +264,17 @@ public sealed class QueueMiddlewarePipelineTest
         Assert.Equal(1, outcome.Value);
         Assert.Equal("message", outcome.Tags["work_type"]);
         Assert.Equal("cancelled", outcome.Tags["outcome"]);
+
+        var duration = Assert.Single(capture.Samples, sample => sample.Name == "saucybot.queue.handler_duration");
+        Assert.True(duration.Value >= 0);
+        Assert.Equal("message", duration.Tags["work_type"]);
     }
 
     [Fact]
     public async Task MetricsMiddlewareClassifiesUnrequestedCancellationAsFailure()
     {
         using var metrics = new SaucyBotMetrics();
-        using var capture = new MetricsCapture();
+        using var capture = new MetricsCapture(metrics);
         TerminalFailure = new OperationCanceledException(CancellationToken.None);
         var pipeline = CreatePipeline(new QueueMetricsMiddleware<MessageWorkItem>(metrics));
 
@@ -266,6 +283,7 @@ public sealed class QueueMiddlewarePipelineTest
 
         var outcome = Assert.Single(capture.Samples, sample => sample.Name == "saucybot.queue.handler_outcomes");
         Assert.Equal("failed", outcome.Tags["outcome"]);
+        Assert.Single(capture.Samples, sample => sample.Name == "saucybot.queue.handler_duration");
     }
 
     [Fact]
@@ -282,7 +300,7 @@ public sealed class QueueMiddlewarePipelineTest
     public async Task MetricsMiddlewareLabelsInteractionWorkAsInteraction()
     {
         using var metrics = new SaucyBotMetrics();
-        using var capture = new MetricsCapture();
+        using var capture = new MetricsCapture(metrics);
         var pipeline = new QueueMiddlewarePipeline<IInteractionWorkItem>(
             new IQueueMiddleware<IInteractionWorkItem>[] { new QueueMetricsMiddleware<IInteractionWorkItem>(metrics) });
         var context = new QueueWorkContext<IInteractionWorkItem>(
@@ -439,14 +457,16 @@ public sealed class QueueMiddlewarePipelineTest
     private sealed class MetricsCapture : IDisposable
     {
         private readonly MeterListener _listener = new();
+        private readonly Instrument[] _instruments;
         private readonly object _gate = new();
         private readonly List<MetricSample> _samples = [];
 
-        public MetricsCapture()
+        public MetricsCapture(SaucyBotMetrics metrics)
         {
+            _instruments = [metrics.HandlerOutcomes, metrics.HandlerDuration];
             _listener.InstrumentPublished = (instrument, listener) =>
             {
-                if (instrument.Meter.Name == SaucyBotMetrics.MeterName)
+                if (_instruments.Contains(instrument))
                 {
                     listener.EnableMeasurementEvents(instrument);
                 }

@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
+using SaucyBot.Diagnostics;
 using StackExchange.Redis;
 
 namespace SaucyBot.Queue.Redis;
@@ -7,11 +8,13 @@ namespace SaucyBot.Queue.Redis;
 public sealed class StackExchangeRedisStreamClient(
     IConnectionMultiplexer connection,
     RedisWorkQueueOptions options,
-    ILogger<StackExchangeRedisStreamClient> logger) : IRedisStreamClient
+    ILogger<StackExchangeRedisStreamClient> logger,
+    ISaucyBotMetrics? metrics = null) : IRedisStreamClient
 {
     private readonly IDatabase _database = connection.GetDatabase();
     private readonly RedisWorkQueueOptions _options = options;
     private readonly ILogger<StackExchangeRedisStreamClient> _logger = logger;
+    private readonly ISaucyBotMetrics? _metrics = metrics;
     private readonly ConcurrentDictionary<string, string> _reclaimCursors = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, SemaphoreSlim> _reclaimLocks = new(StringComparer.Ordinal);
 
@@ -26,6 +29,11 @@ public sealed class StackExchangeRedisStreamClient(
         }
         catch (RedisServerException exception) when (exception.Message.Contains("BUSYGROUP", StringComparison.OrdinalIgnoreCase))
         {
+        }
+        catch (RedisTimeoutException)
+        {
+            RecordBackendTimeout("startup");
+            throw;
         }
     }
 
@@ -52,6 +60,11 @@ public sealed class StackExchangeRedisStreamClient(
         }
         catch (Exception exception) when (exception is RedisTimeoutException or RedisConnectionException)
         {
+            if (exception is RedisTimeoutException)
+            {
+                RecordBackendTimeout("enqueue");
+            }
+
             // The write may still reach Redis after the caller stops waiting, so
             // the outcome is ambiguous and must not be retried automatically.
             throw new RedisEnqueueAmbiguousException(exception.Message, exception);
@@ -71,6 +84,11 @@ public sealed class StackExchangeRedisStreamClient(
         {
             entries = await read.WaitAsync(cancellationToken);
         }
+        catch (RedisTimeoutException)
+        {
+            RecordBackendTimeout("read");
+            throw;
+        }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             using var grace = new CancellationTokenSource(_options.PendingReadTimeout);
@@ -80,6 +98,11 @@ public sealed class StackExchangeRedisStreamClient(
             }
             catch (Exception exception) when (exception is OperationCanceledException or RedisException or TimeoutException)
             {
+                if (exception is not OperationCanceledException || grace.IsCancellationRequested)
+                {
+                    RecordBackendTimeout("read");
+                }
+
                 _logger.LogWarning(
                     exception,
                     "Stream read for consumer {Consumer} did not finish within {PendingReadTimeout}.",
@@ -109,12 +132,20 @@ public sealed class StackExchangeRedisStreamClient(
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var result = await _database.ScriptEvaluateAsync(
-                RedisQueueScripts.RenewLease,
-                [_options.StreamName],
-                [_options.ConsumerGroup, entryId, consumer, leaseToken])
-            .WaitAsync(cancellationToken);
-        return (long)result == 1;
+        try
+        {
+            var result = await _database.ScriptEvaluateAsync(
+                    RedisQueueScripts.RenewLease,
+                    [_options.StreamName],
+                    [_options.ConsumerGroup, entryId, consumer, leaseToken])
+                .WaitAsync(cancellationToken);
+            return (long)result == 1;
+        }
+        catch (RedisTimeoutException)
+        {
+            RecordBackendTimeout("renew");
+            throw;
+        }
     }
 
     public async Task<RedisStreamEntry?> ReclaimAsync(
@@ -179,6 +210,11 @@ public sealed class StackExchangeRedisStreamClient(
                 return ToEntry(entry, deliveryCount);
             }
         }
+        catch (RedisTimeoutException)
+        {
+            RecordBackendTimeout("recovery");
+            throw;
+        }
         finally
         {
             reclaimLock.Release();
@@ -210,6 +246,7 @@ public sealed class StackExchangeRedisStreamClient(
         string leaseToken,
         CancellationToken cancellationToken) =>
         ExecuteLeaseScriptAsync(
+            "complete",
             RedisQueueScripts.CompleteLease,
             consumer,
             entryId,
@@ -222,6 +259,7 @@ public sealed class StackExchangeRedisStreamClient(
         string leaseToken,
         CancellationToken cancellationToken) =>
         ExecuteLeaseScriptAsync(
+            "retry",
             RedisQueueScripts.RetryLease,
             consumer,
             entryId,
@@ -229,6 +267,7 @@ public sealed class StackExchangeRedisStreamClient(
             cancellationToken);
 
     private async Task<LeaseOperationResult> ExecuteLeaseScriptAsync(
+        string operation,
         string script,
         string consumer,
         string entryId,
@@ -254,6 +293,11 @@ public sealed class StackExchangeRedisStreamClient(
         }
         catch (Exception exception) when (exception is RedisTimeoutException or RedisConnectionException)
         {
+            if (exception is RedisTimeoutException)
+            {
+                RecordBackendTimeout(operation);
+            }
+
             _logger.LogWarning(
                 exception,
                 "Redis lease mutation outcome is unknown for queue entry {EntryId}",
@@ -262,11 +306,22 @@ public sealed class StackExchangeRedisStreamClient(
         }
     }
 
-    public Task ClearPendingAsync(CancellationToken cancellationToken)
+    public async Task ClearPendingAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        return _database.KeyDeleteAsync(_options.StreamName).WaitAsync(cancellationToken);
+        try
+        {
+            await _database.KeyDeleteAsync(_options.StreamName).WaitAsync(cancellationToken);
+        }
+        catch (RedisTimeoutException)
+        {
+            RecordBackendTimeout("clear_pending");
+            throw;
+        }
     }
+
+    private void RecordBackendTimeout(string operation) =>
+        _metrics?.BackendOperationTimedOut.Add(1, QueueMetricTags.BackendOperation(operation));
 
     private static RedisStreamEntry ToEntry(StreamEntry entry, int? deliveryCount = null)
     {

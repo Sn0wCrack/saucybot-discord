@@ -20,4 +20,9 @@ public static class QueueMetricTags
         { "work_type", workType },
         { "outcome", outcome },
     };
+
+    public static TagList BackendOperation(string operation) => new()
+    {
+        { "operation", operation },
+    };
 }

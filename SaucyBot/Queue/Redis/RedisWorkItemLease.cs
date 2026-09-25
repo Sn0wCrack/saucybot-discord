@@ -55,6 +55,7 @@ internal sealed class RedisWorkItemLease : IWorkItemLease
         }
 
         return await ExecuteMutationAsync(
+            "complete",
             token => _client.CompleteAsync(_consumer, _entryId, _leaseToken, token),
             cancellationToken);
     }
@@ -69,7 +70,10 @@ internal sealed class RedisWorkItemLease : IWorkItemLease
             return LeaseOperationResult.LeaseLost;
         }
 
-        return await ExecuteMutationAsync(token => _retryOperation(exception, token), cancellationToken);
+        return await ExecuteMutationAsync(
+            "retry",
+            token => _retryOperation(exception, token),
+            cancellationToken);
     }
 
     // Completion and retry scripts are fenced and idempotent for one lease
@@ -79,6 +83,7 @@ internal sealed class RedisWorkItemLease : IWorkItemLease
     // end, even when the caller cancels, because its outcome decides whether
     // work stays pending.
     private async Task<LeaseOperationResult> ExecuteMutationAsync(
+        string operationName,
         Func<CancellationToken, Task<LeaseOperationResult>> operation,
         CancellationToken cancellationToken)
     {
@@ -93,6 +98,9 @@ internal sealed class RedisWorkItemLease : IWorkItemLease
             }
             catch (TimeoutException exception)
             {
+                _metrics?.BackendOperationTimedOut.Add(
+                    1,
+                    QueueMetricTags.BackendOperation(operationName));
                 _logger.LogWarning(
                     exception,
                     "Redis lease mutation for queue entry {EntryId} exceeded {BackendOperationTimeout}; the outcome is unknown",
@@ -160,6 +168,18 @@ internal sealed class RedisWorkItemLease : IWorkItemLease
         }
         catch (OperationCanceledException) when (deadline.IsCancellationRequested)
         {
+            MarkLost();
+        }
+        catch (TimeoutException exception)
+        {
+            _metrics?.BackendOperationTimedOut.Add(
+                1,
+                QueueMetricTags.BackendOperation("renew"));
+            _logger.LogWarning(
+                exception,
+                "Redis lease renewal for queue entry {EntryId} exceeded {BackendOperationTimeout}",
+                _entryId,
+                _options.BackendOperationTimeout);
             MarkLost();
         }
         catch (OperationCanceledException) when (_renewalStop.IsCancellationRequested)

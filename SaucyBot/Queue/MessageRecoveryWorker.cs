@@ -65,6 +65,13 @@ public sealed class MessageRecoveryWorker
             }
             catch (Exception exception)
             {
+                if (exception is TimeoutException)
+                {
+                    _metrics.BackendOperationTimedOut.Add(
+                        1,
+                        QueueMetricTags.BackendOperation("recovery"));
+                }
+
                 _logger.LogError(exception, "Queue recovery worker {Consumer} failed", consumer);
                 try
                 {

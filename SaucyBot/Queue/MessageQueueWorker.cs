@@ -5,6 +5,7 @@ namespace SaucyBot.Queue;
 
 public sealed class MessageQueueWorker
 {
+    private static readonly TimeSpan HandlerCancellationGracePeriod = TimeSpan.FromMilliseconds(10);
     private readonly MessageDeliveryChannel _deliveries;
     private readonly IQueueMiddlewarePipeline<MessageWorkItem> _pipeline;
     private readonly IWorkItemProcessor _processor;
@@ -129,10 +130,11 @@ public sealed class MessageQueueWorker
         CancellationToken stoppingToken)
     {
         await using var lease = delivery.Lease;
+        using var deadline = new CancellationTokenSource(_options.MaxProcessingTime);
         using var processing = CancellationTokenSource.CreateLinkedTokenSource(
             stoppingToken,
-            lease.LostToken);
-        processing.CancelAfter(_options.MaxProcessingTime);
+            lease.LostToken,
+            deadline.Token);
 
         var context = new QueueWorkContext<MessageWorkItem>(
             delivery.Item,
@@ -142,27 +144,45 @@ public sealed class MessageQueueWorker
 
         try
         {
-            await _pipeline.InvokeAsync(context, HandleDeliveryAsync, processing.Token);
+            var handler = _pipeline.InvokeAsync(context, HandleDeliveryAsync, processing.Token);
+            var deadlineTask = Task.Delay(Timeout.InfiniteTimeSpan, deadline.Token);
+            await Task.WhenAny(handler, deadlineTask);
+            var handlerOverdue = false;
+            if (deadline.IsCancellationRequested && !handler.IsCompleted)
+            {
+                // Allow cooperative cancellation continuations to complete before recording overdue work.
+                await Task.WhenAny(handler, Task.Delay(HandlerCancellationGracePeriod));
+                handlerOverdue = !handler.IsCompleted;
+                if (handlerOverdue)
+                {
+                    _metrics.HandlerOverdue.Add(1, QueueMetricTags.Handler("message"));
+                }
+            }
+
+            await handler;
+            if (handlerOverdue)
+            {
+                _logger.LogWarning(
+                    "Message handler remained active after its processing deadline for {DeliveryId}",
+                    delivery.DeliveryId);
+            }
+
             processing.Token.ThrowIfCancellationRequested();
         }
         catch (OperationCanceledException) when (lease.LostToken.IsCancellationRequested)
         {
-            _metrics.Cancelled.Add(1);
             return RecordLeaseLost();
         }
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
         {
-            _metrics.Cancelled.Add(1);
             return MessageWorkResult.Cancelled;
         }
         catch (OperationCanceledException) when (processing.IsCancellationRequested)
         {
-            _metrics.Cancelled.Add(1);
             return MessageWorkResult.Cancelled;
         }
         catch (Exception exception)
         {
-            _metrics.Failed.Add(1);
             return await RetryFailedDeliveryAsync(lease, delivery, exception);
         }
 
@@ -185,7 +205,6 @@ public sealed class MessageQueueWorker
 
         MessageWorkResult CompleteSuccessfully()
         {
-            _metrics.Succeeded.Add(1);
             return MessageWorkResult.Completed;
         }
 

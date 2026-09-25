@@ -358,6 +358,13 @@ public sealed class RedisWorkQueue : IWorkItemProducer<MessageWorkItem>, IWorkIt
             }
             catch (Exception exception)
             {
+                if (exception is TimeoutException)
+                {
+                    _metrics?.BackendOperationTimedOut.Add(
+                        1,
+                        QueueMetricTags.BackendOperation("cleanup"));
+                }
+
                 _metrics?.CleanupFailed.Add(1);
                 if (attempt >= Math.Max(1, _redisOptions.MalformedCleanupMaxAttempts))
                 {

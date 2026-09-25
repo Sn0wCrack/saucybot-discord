@@ -22,6 +22,8 @@ public sealed class SaucyBotMetrics : ISaucyBotMetrics
         Cancelled = _meter.CreateCounter<long>("saucybot.queue.cancelled", "items");
         HandlerOutcomes = _meter.CreateCounter<long>("saucybot.queue.handler_outcomes", "items");
         HandlerDuration = _meter.CreateHistogram<double>("saucybot.queue.handler_duration", "ms");
+        BackendOperationTimedOut = _meter.CreateCounter<long>("saucybot.queue.backend_operation_timed_out", "operations");
+        HandlerOverdue = _meter.CreateCounter<long>("saucybot.queue.handler_overdue", "items");
         Malformed = _meter.CreateCounter<long>("saucybot.queue.malformed", "items");
         CleanupFailed = _meter.CreateCounter<long>("saucybot.queue.cleanup_failed", "items");
         LeaseRenewed = _meter.CreateCounter<long>("saucybot.queue.lease_renewed", "renewals");
@@ -55,6 +57,10 @@ public sealed class SaucyBotMetrics : ISaucyBotMetrics
     public Counter<long> HandlerOutcomes { get; }
 
     public Histogram<double> HandlerDuration { get; }
+
+    public Counter<long> BackendOperationTimedOut { get; }
+
+    public Counter<long> HandlerOverdue { get; }
 
     public Counter<long> Malformed { get; }
 
