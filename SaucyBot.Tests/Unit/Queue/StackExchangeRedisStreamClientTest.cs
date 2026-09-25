@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using SaucyBot.Queue;
+using SaucyBot.Queue.Redis;
 using StackExchange.Redis;
 using Xunit;
 

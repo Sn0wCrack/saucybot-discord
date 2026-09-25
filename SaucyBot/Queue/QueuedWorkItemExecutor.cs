@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using SaucyBot.Diagnostics;
+using SaucyBot.Queue.Redis;
 
 namespace SaucyBot.Queue;
 

@@ -1,3 +1,3 @@
-namespace SaucyBot.Queue;
+namespace SaucyBot.Queue.Redis;
 
 public sealed class RedisBackpressureException(string message) : Exception(message);

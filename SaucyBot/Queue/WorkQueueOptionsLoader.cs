@@ -7,6 +7,9 @@ namespace SaucyBot.Queue;
 public static class WorkQueueOptionsLoader
 {
     private const string QueueSectionName = "Queue";
+
+    // Legacy Queue:Redis:* timing keys still map onto the generic options below.
+    // Backend-specific Queue:Redis settings bind separately through Queue.Redis.ServiceRegistration.AddRedisQueue.
     private const string LegacySectionName = "Redis";
 
     public static WorkQueueOptions Bind(IConfiguration configuration, ILogger logger)

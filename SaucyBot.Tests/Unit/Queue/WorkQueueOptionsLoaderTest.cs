@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using SaucyBot.Queue;
+using SaucyBot.Queue.Redis;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Queue;
@@ -37,16 +38,41 @@ public sealed class WorkQueueOptionsLoaderTest
     }
 
     [Fact]
-    public void Bind_StillBindsBackendSpecificRedisSettings()
+    public void Bind_KeepsGenericOptionsIndependentFromRedisBackendSettings()
     {
-        var options = Bind(new Dictionary<string, string?>
+        var configuration = Configuration(new Dictionary<string, string?>
         {
             ["Queue:Redis:ConnectionString"] = "queue:1234",
             ["Queue:Redis:StreamName"] = "custom:stream",
+            ["Queue:HeartbeatInterval"] = "00:00:07",
         });
 
-        Assert.Equal("queue:1234", options.Redis.ConnectionString);
-        Assert.Equal("custom:stream", options.Redis.StreamName);
+        var options = WorkQueueOptionsLoader.Bind(configuration, NullLogger.Instance);
+        var redis = configuration.GetSection("Queue:Redis").Get<RedisWorkQueueOptions>();
+
+        Assert.Equal(TimeSpan.FromSeconds(7), options.HeartbeatInterval);
+        Assert.Equal("queue:1234", redis!.ConnectionString);
+        Assert.Equal("custom:stream", redis.StreamName);
+    }
+
+    [Fact]
+    public void Bind_WithBackendSectionPresent_StillMapsLegacyTimingKeys()
+    {
+        var logger = new RecordingLogger();
+
+        var options = WorkQueueOptionsLoader.Bind(
+            Configuration(new Dictionary<string, string?>
+            {
+                ["Queue:Redis:ConnectionString"] = "queue:1234",
+                ["Queue:Redis:RetryDelay"] = "00:00:02",
+                ["Queue:Redis:HeartbeatInterval"] = "00:00:12",
+            }),
+            logger);
+
+        Assert.Equal(TimeSpan.FromSeconds(12), options.HeartbeatInterval);
+        Assert.Contains(logger.Entries, entry =>
+            entry.Level == LogLevel.Warning &&
+            entry.Message.Contains("Queue:Redis:HeartbeatInterval", StringComparison.Ordinal));
     }
 
     [Fact]

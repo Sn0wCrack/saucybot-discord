@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 
-namespace SaucyBot.Queue;
+namespace SaucyBot.Queue.Redis;
 
 public sealed class StackExchangeRedisStreamClient(
     IConnectionMultiplexer connection,

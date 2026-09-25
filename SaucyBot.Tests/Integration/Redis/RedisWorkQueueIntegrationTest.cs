@@ -9,6 +9,7 @@ using DotNet.Testcontainers.Builders;
 using Microsoft.Extensions.Logging.Abstractions;
 using SaucyBot.Diagnostics;
 using SaucyBot.Queue;
+using SaucyBot.Queue.Redis;
 using StackExchange.Redis;
 using Testcontainers.Redis;
 using Xunit;
@@ -92,14 +93,14 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
     [Fact]
     public async Task CreatesConsumerGroupEnqueuesReadsAndAcknowledgesWithDeletion()
     {
-        var options = CreateOptions("ack");
-        var client = CreateClient(options.Redis);
-        var queue = new RedisWorkQueue(client, options);
+        var redis = CreateRedisOptions("ack");
+        var client = CreateClient(redis);
+        IMessageWorkQueue queue = new RedisWorkQueue(client, CreateOptions(), redis);
         var item = TestItem();
 
         await client.EnsureGroupAsync(TestContext.Current.CancellationToken);
-        var groups = await Database.StreamGroupInfoAsync(options.Redis.StreamName);
-        Assert.Contains(groups, group => group.Name == options.Redis.ConsumerGroup);
+        var groups = await Database.StreamGroupInfoAsync(redis.StreamName);
+        Assert.Contains(groups, group => group.Name == redis.ConsumerGroup);
 
         await queue.EnqueueAsync(item, TestContext.Current.CancellationToken);
         await using var messages = queue.ReadAsync("consumer-1", TestContext.Current.CancellationToken)
@@ -110,18 +111,18 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
         Assert.Equal(item, queued.Item);
         await queue.CompleteAsync(queued, TestContext.Current.CancellationToken);
 
-        Assert.Equal(0, await Database.StreamLengthAsync(options.Redis.StreamName));
+        Assert.Equal(0, await Database.StreamLengthAsync(redis.StreamName));
     }
 
     [Fact]
     public async Task MalformedEntryIsAcknowledgedDeletedAndValidEntryIsReturned()
     {
-        var options = CreateOptions("malformed");
-        var client = CreateClient(options.Redis);
-        var queue = new RedisWorkQueue(client, options);
+        var redis = CreateRedisOptions("malformed");
+        var client = CreateClient(redis);
+        IMessageWorkQueue queue = new RedisWorkQueue(client, CreateOptions(), redis);
 
         await client.EnsureGroupAsync(TestContext.Current.CancellationToken);
-        await Database.StreamAddAsync(options.Redis.StreamName, "payload", "not-json");
+        await Database.StreamAddAsync(redis.StreamName, "payload", "not-json");
         await queue.EnqueueAsync(TestItem(), TestContext.Current.CancellationToken);
 
         await using var messages = queue.ReadAsync("consumer-1", TestContext.Current.CancellationToken)
@@ -129,7 +130,7 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
         Assert.True(await messages.MoveNextAsync());
         Assert.Equal(TestItem().MessageId, messages.Current.Item.MessageId);
 
-        var entries = await Database.StreamRangeAsync(options.Redis.StreamName);
+        var entries = await Database.StreamRangeAsync(redis.StreamName);
         Assert.Single(entries);
         Assert.DoesNotContain(entries, entry => entry.Values.Any(value => value.Value == "not-json"));
     }
@@ -137,23 +138,23 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
     [Fact]
     public async Task StartupCleanupDeletesPendingStream()
     {
-        var options = CreateOptions("startup-cleanup", clearPendingOnStartup: true);
-        var client = CreateClient(options.Redis);
-        var queue = new RedisWorkQueue(client, options);
+        var redis = CreateRedisOptions("startup-cleanup");
+        var client = CreateClient(redis);
+        var queue = new RedisWorkQueue(client, CreateOptions(clearPendingOnStartup: true), redis);
 
         await queue.EnqueueAsync(TestItem(), TestContext.Current.CancellationToken);
-        Assert.True(await Database.KeyExistsAsync(options.Redis.StreamName));
+        Assert.True(await Database.KeyExistsAsync(redis.StreamName));
 
         await queue.StartAsync(TestContext.Current.CancellationToken);
 
-        Assert.False(await Database.KeyExistsAsync(options.Redis.StreamName));
+        Assert.False(await Database.KeyExistsAsync(redis.StreamName));
     }
 
     [Fact]
     public async Task ReadCancellationStopsWaitingForNewEntries()
     {
-        var options = CreateOptions("cancellation");
-        var queue = new RedisWorkQueue(CreateClient(options.Redis), options);
+        var redis = CreateRedisOptions("cancellation");
+        var queue = new RedisWorkQueue(CreateClient(redis), CreateOptions(), redis);
         using var cancellation = new CancellationTokenSource();
         await using var messages = queue.ReadAsync("consumer-1", cancellation.Token)
             .GetAsyncEnumerator(cancellation.Token);
@@ -167,8 +168,8 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
     [Fact]
     public async Task ExplicitRecoveryReclaimsIdlePendingEntryAndReportsDeliveryCount()
     {
-        var options = CreateOptions("reclaim", pendingMessageIdleTime: TimeSpan.Zero);
-        var client = CreateClient(options.Redis);
+        var redis = CreateRedisOptions("reclaim");
+        var client = CreateClient(redis);
 
         await client.EnsureGroupAsync(TestContext.Current.CancellationToken);
         await client.AddAsync(
@@ -193,25 +194,55 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
     }
 
     [Fact]
+    public async Task ProducerConsumerRoundTripCompletesThroughTheLease()
+    {
+        var redis = CreateRedisOptions("contracts");
+        var client = CreateClient(redis);
+        var queue = new RedisWorkQueue(client, CreateOptions(), redis);
+        IWorkItemProducer<MessageWorkItem> producer = queue;
+        IWorkItemConsumer<MessageWorkItem> consumer = queue;
+
+        await consumer.StartAsync(TestContext.Current.CancellationToken);
+        var enqueued = await producer.EnqueueAsync(
+            TestItem(),
+            TimeSpan.FromSeconds(5),
+            TestContext.Current.CancellationToken);
+        Assert.Equal(EnqueueResult.Accepted, enqueued);
+
+        await using var deliveries = consumer.ReadAsync("consumer-1", TestContext.Current.CancellationToken)
+            .GetAsyncEnumerator(TestContext.Current.CancellationToken);
+        Assert.True(await deliveries.MoveNextAsync());
+        var delivery = deliveries.Current;
+        await using var lease = delivery.Lease;
+
+        Assert.Equal(TestItem().MessageId, delivery.Item.MessageId);
+        Assert.Equal(1, delivery.Attempt);
+        Assert.False(lease.LostToken.IsCancellationRequested);
+        Assert.Equal(
+            LeaseOperationResult.Applied,
+            await lease.CompleteAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(0, await Database.StreamLengthAsync(redis.StreamName));
+    }
+
+    [Fact]
     public async Task HostedWorkerProcessesAndAcknowledgesAQueuedMessage()
     {
-        var options = CreateOptions("worker");
-        var client = CreateClient(options.Redis);
-        var queue = new RedisWorkQueue(client, options);
+        var redis = CreateRedisOptions("worker");
+        var client = CreateClient(redis);
+        var queue = new RedisWorkQueue(client, CreateOptions(), redis);
         var processor = new RecordingProcessor();
         var metrics = new SaucyBotMetrics();
         var executor = new QueuedWorkItemExecutor(
             processor,
             queue,
             client,
-            new WorkQueueOptions { Redis = options.Redis, MaxProcessingTime = TimeSpan.FromSeconds(5) },
+            new WorkQueueOptions { MaxProcessingTime = TimeSpan.FromSeconds(5) },
             NullLogger<QueuedWorkItemExecutor>.Instance,
             metrics);
         await using var service = new WorkQueueHostedService(
             queue,
             new WorkQueueOptions
             {
-                Redis = options.Redis,
                 MessageWorkerCount = 1,
                 InteractionWorkerCount = 0,
                 ShutdownDrainTimeout = TimeSpan.FromSeconds(5),
@@ -229,17 +260,15 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
 
         Assert.Equal(1, processor.ProcessedCount);
         Assert.Equal(TestItem().MessageId, processor.Item!.Item.MessageId);
-        Assert.Equal(0, await Database.StreamLengthAsync(options.Redis.StreamName));
+        Assert.Equal(0, await Database.StreamLengthAsync(redis.StreamName));
     }
 
     [Fact]
     public async Task RecoveryWorkerProcessesAnIdlePendingMessage()
     {
-        var options = CreateOptions(
-            "recovery-worker",
-            pendingMessageIdleTime: TimeSpan.Zero);
-        var client = CreateClient(options.Redis);
-        var queue = new RedisWorkQueue(client, options);
+        var redis = CreateRedisOptions("recovery-worker");
+        var client = CreateClient(redis);
+        var queue = new RedisWorkQueue(client, CreateOptions(), redis);
         var processor = new RecordingProcessor();
         var metrics = new SaucyBotMetrics();
         var executor = new QueuedWorkItemExecutor(
@@ -248,7 +277,6 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
             client,
             new WorkQueueOptions
             {
-                Redis = options.Redis,
                 MessageWorkerCount = 1,
                 InteractionWorkerCount = 0,
                 MaxProcessingTime = TimeSpan.FromSeconds(5),
@@ -265,7 +293,6 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
             queue,
             new WorkQueueOptions
             {
-                Redis = options.Redis,
                 MessageWorkerCount = 1,
                 InteractionWorkerCount = 0,
                 ShutdownDrainTimeout = TimeSpan.FromSeconds(5),
@@ -281,7 +308,7 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
         await service.StopAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(1, processor.ProcessedCount);
-        Assert.Equal(0, await Database.StreamLengthAsync(options.Redis.StreamName));
+        Assert.Equal(0, await Database.StreamLengthAsync(redis.StreamName));
     }
 
     [Fact]
@@ -295,12 +322,12 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
         Assert.Equal("noeviction", configuration[1].ToString());
         Assert.Equal("536870912", maxMemory[1].ToString());
 
-        var options = CreateOptions("noeviction");
-        var queue = new RedisWorkQueue(CreateClient(options.Redis), options);
+        var redis = CreateRedisOptions("noeviction");
+        IMessageWorkQueue queue = new RedisWorkQueue(CreateClient(redis), CreateOptions(), redis);
         var item = TestItem();
 
         await queue.EnqueueAsync(item, TestContext.Current.CancellationToken);
-        Assert.True(await Database.KeyExistsAsync(options.Redis.StreamName));
+        Assert.True(await Database.KeyExistsAsync(redis.StreamName));
 
         await using var messages = queue.ReadAsync("consumer-1", TestContext.Current.CancellationToken)
             .GetAsyncEnumerator(TestContext.Current.CancellationToken);
@@ -308,7 +335,7 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
         Assert.Equal(item.MessageId, messages.Current.Item.MessageId);
 
         await queue.CompleteAsync(messages.Current, TestContext.Current.CancellationToken);
-        Assert.Equal(0, await Database.StreamLengthAsync(options.Redis.StreamName));
+        Assert.Equal(0, await Database.StreamLengthAsync(redis.StreamName));
     }
 
     private ConnectionMultiplexer Connection =>
@@ -319,22 +346,19 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
     private IRedisStreamClient CreateClient(RedisWorkQueueOptions options) =>
         new StackExchangeRedisStreamClient(Connection, options, NullLogger<StackExchangeRedisStreamClient>.Instance);
 
-    private static WorkQueueOptions CreateOptions(
-        string name,
-        bool clearPendingOnStartup = false,
-        TimeSpan? pendingMessageIdleTime = null) => new()
-        {
-            ClearPendingOnStartup = clearPendingOnStartup,
-            PendingMessageIdleTime = pendingMessageIdleTime ?? TimeSpan.FromSeconds(30),
-            Redis = new RedisWorkQueueOptions
-            {
-                StreamName = $"integration:queue:{Interlocked.Increment(ref _streamNumber)}:{name}",
-                ConsumerGroup = $"integration-workers-{name}",
-                RetryDelay = TimeSpan.FromMilliseconds(10),
-                MalformedCleanupMaxAttempts = 2,
-                MalformedCleanupMaxDelay = TimeSpan.FromMilliseconds(10),
-            },
-        };
+    private static WorkQueueOptions CreateOptions(bool clearPendingOnStartup = false) => new()
+    {
+        ClearPendingOnStartup = clearPendingOnStartup,
+    };
+
+    private static RedisWorkQueueOptions CreateRedisOptions(string name) => new()
+    {
+        StreamName = $"integration:queue:{Interlocked.Increment(ref _streamNumber)}:{name}",
+        ConsumerGroup = $"integration-workers-{name}",
+        RetryDelay = TimeSpan.FromMilliseconds(10),
+        MalformedCleanupMaxAttempts = 2,
+        MalformedCleanupMaxDelay = TimeSpan.FromMilliseconds(10),
+    };
 
     private static MessageWorkItem TestItem() => new(
         1,

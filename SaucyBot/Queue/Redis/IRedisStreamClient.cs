@@ -1,4 +1,4 @@
-namespace SaucyBot.Queue;
+namespace SaucyBot.Queue.Redis;
 
 public interface IRedisStreamClient
 {

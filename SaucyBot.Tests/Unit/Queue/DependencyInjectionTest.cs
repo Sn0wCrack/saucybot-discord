@@ -6,14 +6,17 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using NSubstitute;
 using SaucyBot.Diagnostics;
 using SaucyBot.Library.Discord;
 using SaucyBot.Library.Sites;
 using SaucyBot.Options;
 using SaucyBot.Queue;
+using SaucyBot.Queue.Redis;
 using SaucyBot.Services;
 using SaucyBot.Site;
+using StackExchange.Redis;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Queue;
@@ -43,6 +46,36 @@ public sealed class DependencyInjectionTest
 
         Assert.IsType<SaucyBotMetrics>(provider.GetRequiredService<ISaucyBotMetrics>());
         Assert.Same(provider.GetRequiredService<ISaucyBotMetrics>(), provider.GetRequiredService<ISaucyBotMetrics>());
+    }
+
+    [Fact]
+    public void RedisQueueExtensionRegistersBackendNeutralProducerAndConsumer()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton(Substitute.For<IConnectionMultiplexer>());
+        services.AddSingleton<ISaucyBotMetrics, SaucyBotMetrics>();
+        services.AddSingleton(new WorkQueueOptions());
+        services.AddRedisQueue(new RedisWorkQueueOptions { ConnectionString = "queue:6379" });
+
+        using var provider = services.BuildServiceProvider();
+
+        var producer = provider.GetRequiredService<IWorkItemProducer<MessageWorkItem>>();
+        var consumer = provider.GetRequiredService<IWorkItemConsumer<MessageWorkItem>>();
+
+        Assert.IsType<RedisWorkQueue>(producer);
+        Assert.Same(producer, consumer);
+        Assert.Same(producer, provider.GetRequiredService<IMessageWorkQueue>());
+        Assert.Same(producer, provider.GetRequiredService<RedisWorkQueue>());
+    }
+
+    [Fact]
+    public void RedisQueueExtensionRejectsInvalidBackendOptions()
+    {
+        var services = new ServiceCollection();
+
+        Assert.Throws<OptionsValidationException>(() =>
+            services.AddRedisQueue(new RedisWorkQueueOptions { PendingReadTimeout = TimeSpan.Zero }));
     }
 
     [Fact]

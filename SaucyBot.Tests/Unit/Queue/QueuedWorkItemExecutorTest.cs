@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
 using SaucyBot.Diagnostics;
 using SaucyBot.Queue;
+using SaucyBot.Queue.Redis;
 using SaucyBot.Tests.Unit.Common;
 using Xunit;
 
