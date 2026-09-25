@@ -587,6 +587,14 @@ public sealed class WorkerAdmissionTest
         queue.MaxProcessingAttempts = options.MaxProcessingAttempts;
         var metrics = new SaucyBotMetrics();
         var deliveries = new MessageDeliveryChannel(options);
+        interactionChannel ??= new InteractionWorkChannel(options);
+        var interactionWorker = new InteractionQueueWorker(
+            interactionChannel,
+            new QueueMiddlewarePipeline<IInteractionWorkItem>(
+                [new QueueMetricsMiddleware<IInteractionWorkItem>(metrics)]),
+            interactionProcessor ?? Substitute.For<IInteractionProcessor>(),
+            SubstituteLogger<InteractionQueueWorker>(),
+            metrics);
         return new WorkQueueHostedService(
             queue,
             deliveries,
@@ -601,8 +609,8 @@ public sealed class WorkerAdmissionTest
                 metrics),
             options,
             SubstituteLogger<WorkQueueHostedService>(),
-            interactionChannel ?? new InteractionWorkChannel(options),
-            interactionProcessor ?? Substitute.For<IInteractionProcessor>(),
+            interactionChannel,
+            interactionWorker,
             metrics);
     }
 

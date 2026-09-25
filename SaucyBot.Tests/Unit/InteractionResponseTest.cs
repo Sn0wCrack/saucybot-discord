@@ -91,6 +91,13 @@ public sealed class InteractionResponseTest
         var channel = new InteractionWorkChannel(options);
         var metrics = new SaucyBotMetrics();
         var pipeline = new QueueMiddlewarePipeline<MessageWorkItem>([]);
+        var interactionProcessor = new CallbackInteractionProcessor(process);
+        var interactionWorker = new InteractionQueueWorker(
+            channel,
+            new QueueMiddlewarePipeline<IInteractionWorkItem>([]),
+            interactionProcessor,
+            NullLogger<InteractionQueueWorker>.Instance,
+            metrics);
         var service = new WorkQueueHostedService(
             queue,
             deliveries,
@@ -100,7 +107,7 @@ public sealed class InteractionResponseTest
             options,
             NullLogger<WorkQueueHostedService>.Instance,
             channel,
-            new CallbackInteractionProcessor(process),
+            interactionWorker,
             metrics);
         var services = new ServiceCollection().BuildServiceProvider();
         var clientHost = new DiscordClientHost(

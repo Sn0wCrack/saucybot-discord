@@ -688,6 +688,13 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
         SaucyBotMetrics metrics)
     {
         var deliveries = new MessageDeliveryChannel(options);
+        var interactionChannel = new InteractionWorkChannel(options);
+        var interactionWorker = new InteractionQueueWorker(
+            interactionChannel,
+            new QueueMiddlewarePipeline<IInteractionWorkItem>([]),
+            new NoOpInteractionProcessor(),
+            NullLogger<InteractionQueueWorker>.Instance,
+            metrics);
         return new WorkQueueHostedService(
             queue,
             deliveries,
@@ -702,8 +709,8 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
                 metrics),
             options,
             NullLogger<WorkQueueHostedService>.Instance,
-            new InteractionWorkChannel(options),
-            new NoOpInteractionProcessor(),
+            interactionChannel,
+            interactionWorker,
             metrics);
     }
 

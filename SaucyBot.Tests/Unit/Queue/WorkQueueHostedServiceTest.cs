@@ -209,6 +209,13 @@ public sealed class WorkQueueHostedServiceTest
         var metrics = new SaucyBotMetrics();
         var pipeline = new QueueMiddlewarePipeline<MessageWorkItem>(
             [new QueueMetricsMiddleware<MessageWorkItem>(metrics)]);
+        var interactionChannel = new InteractionWorkChannel(options);
+        var interactionWorker = new InteractionQueueWorker(
+            interactionChannel,
+            new QueueMiddlewarePipeline<IInteractionWorkItem>([]),
+            Substitute.For<IInteractionProcessor>(),
+            NullLogger<InteractionQueueWorker>.Instance,
+            metrics);
 
         return new WorkQueueHostedService(
             queue,
@@ -218,8 +225,8 @@ public sealed class WorkQueueHostedServiceTest
             new MessageQueueWorker(channel, pipeline, processor, options, NullLogger<MessageQueueWorker>.Instance, metrics),
             options,
             NullLogger<WorkQueueHostedService>.Instance,
-            new InteractionWorkChannel(options),
-            Substitute.For<IInteractionProcessor>(),
+            interactionChannel,
+            interactionWorker,
             metrics);
     }
 

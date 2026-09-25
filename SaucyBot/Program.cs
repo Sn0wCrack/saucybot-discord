@@ -77,7 +77,9 @@ await Host.CreateDefaultBuilder(args)
         services.AddSingleton<MessageQueueReader>();
         services.AddSingleton<MessageRecoveryWorker>();
         services.AddSingleton<MessageQueueWorker>();
+        services.AddSingleton<InteractionQueueWorker>();
         services.AddQueueMiddleware<MessageWorkItem, QueueMetricsMiddleware<MessageWorkItem>>();
+        services.AddQueueMiddleware<IInteractionWorkItem, QueueMetricsMiddleware<IInteractionWorkItem>>();
         services.AddSaucyBotServices();
         services.AddSaucyBotSites();
 
