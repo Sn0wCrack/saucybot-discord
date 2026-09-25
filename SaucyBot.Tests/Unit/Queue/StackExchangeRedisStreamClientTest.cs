@@ -248,5 +248,17 @@ public sealed class StackExchangeRedisStreamClientTest
             TimeSpan.FromSeconds(3));
 
         Assert.Equal(3000, configuration.SyncTimeout);
+        Assert.Equal(3000, configuration.AsyncTimeout);
+
+        var connectionStringOverrides = Options(TimeSpan.FromSeconds(1)) with
+        {
+            ConnectionString = "queue:6379,syncTimeout=30000,asyncTimeout=30000",
+        };
+        var overridden = ServiceRegistration.BuildConfiguration(
+            connectionStringOverrides,
+            TimeSpan.FromSeconds(3));
+
+        Assert.Equal(3000, overridden.SyncTimeout);
+        Assert.Equal(3000, overridden.AsyncTimeout);
     }
 }

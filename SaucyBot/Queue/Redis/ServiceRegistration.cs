@@ -27,9 +27,10 @@ public static class ServiceRegistration
         return services;
     }
 
-    // The Redis-native command timeout bounds every command at the transport on
+    // The Redis-native command timeouts bound every command at the transport on
     // top of the generic backend operation timeout applied at the contract
-    // boundary.
+    // boundary. Both values are set because a connection-string asyncTimeout
+    // would otherwise let async commands outlive the operation timeout.
     public static ConfigurationOptions BuildConfiguration(
         RedisWorkQueueOptions options,
         TimeSpan commandTimeout)
@@ -37,7 +38,9 @@ public static class ServiceRegistration
         ArgumentNullException.ThrowIfNull(options);
 
         var configuration = ConfigurationOptions.Parse(options.ConnectionString);
-        configuration.SyncTimeout = (int)Math.Clamp(commandTimeout.TotalMilliseconds, 1, int.MaxValue);
+        var timeout = (int)Math.Clamp(commandTimeout.TotalMilliseconds, 1, int.MaxValue);
+        configuration.SyncTimeout = timeout;
+        configuration.AsyncTimeout = timeout;
         return configuration;
     }
 }

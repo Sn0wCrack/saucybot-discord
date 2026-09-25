@@ -101,6 +101,15 @@ public sealed class QueuedWorkItemExecutor : IQueuedWorkItemExecutor
                         "Handled failed queue entry {EntryId} with lease result {Result}",
                         item.EntryId,
                         result);
+                    if (result == LeaseOperationResult.LeaseLost)
+                    {
+                        _metrics.LeaseLost.Add(1, QueueMetricTags.Lease(consumer));
+                        _logger.LogWarning(
+                            "Skipping retry handling for queue entry {EntryId} after lease loss",
+                            item.EntryId);
+                        return QueuedWorkItemExecutionOutcome.LeaseLost;
+                    }
+
                     if (result == LeaseOperationResult.OutcomeUnknown)
                     {
                         _logger.LogWarning(

@@ -199,6 +199,27 @@ public sealed class QueuedWorkItemExecutorTest
     }
 
     [Fact]
+    public async Task RetryLeaseLossIsReportedAsLeaseLost()
+    {
+        var lease = new FakeWorkItemLease
+        {
+            RetryResult = LeaseOperationResult.LeaseLost,
+        };
+        var processor = new CountingProcessor { Throw = true };
+        using var metrics = new SaucyBotMetrics();
+        using var listener = Listen(metrics, "saucybot.queue.lease_lost", out var measurements);
+        var executor = CreateExecutor(processor, metrics);
+        var item = new QueuedMessageWorkItem("42-0", TestData.Queued().Item, lease);
+
+        var outcome = await executor.ExecuteAsync("worker-1", item, CancellationToken.None);
+
+        Assert.Equal(QueuedWorkItemExecutionOutcome.LeaseLost, outcome);
+        Assert.Equal(1, measurements.GetValueOrDefault("saucybot.queue.lease_lost"));
+        Assert.Equal(1, processor.Calls);
+        Assert.Equal(0, lease.CompleteCalls);
+    }
+
+    [Fact]
     public async Task AmbiguousLeaseResultsReturnTheUnknownOutcome()
     {
         using var metrics = new SaucyBotMetrics();
