@@ -9,6 +9,12 @@
         "nuget"
       ],
       "minimumReleaseAge": "3 days"
+    },
+    {
+      "matchDatasources": ["docker"],
+      "matchPackagePatterns": ["^mcr\\.microsoft\\.com/dotnet/"],
+      "ignoreUnstable": true,
+      "unstablePattern": "-rc|-preview|-alpha|-beta"
     }
   ],
   "ignorePaths": [
