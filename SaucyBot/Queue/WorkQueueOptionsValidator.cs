@@ -13,7 +13,11 @@ public static class WorkQueueOptionsValidator
         RequirePositive(failures, options.MessageWorkerCount, nameof(options.MessageWorkerCount));
         RequirePositive(failures, options.InteractionWorkerCount, nameof(options.InteractionWorkerCount));
         RequirePositive(failures, options.InteractionChannelCapacity, nameof(options.InteractionChannelCapacity));
-        RequirePositive(failures, options.RecoveryHandoffCapacity, nameof(options.RecoveryHandoffCapacity));
+        if (options.RecoveryHandoffCapacity < 2)
+        {
+            failures.Add(
+                $"{nameof(options.RecoveryHandoffCapacity)} must be at least 2 so message reading and recovery can both reserve handoff capacity.");
+        }
         RequirePositive(failures, options.MaxProcessingAttempts, nameof(options.MaxProcessingAttempts));
 
         RequirePositive(failures, options.EnqueueTimeout, nameof(options.EnqueueTimeout));

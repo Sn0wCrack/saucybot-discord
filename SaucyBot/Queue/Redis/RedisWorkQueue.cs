@@ -5,7 +5,7 @@ using SaucyBot.Diagnostics;
 
 namespace SaucyBot.Queue.Redis;
 
-public sealed class RedisWorkQueue : IMessageWorkQueue, IWorkItemProducer<MessageWorkItem>, IWorkItemConsumer<MessageWorkItem>
+public sealed class RedisWorkQueue : IWorkItemProducer<MessageWorkItem>, IWorkItemConsumer<MessageWorkItem>
 {
     internal const string PayloadField = "payload";
 
@@ -14,7 +14,8 @@ public sealed class RedisWorkQueue : IMessageWorkQueue, IWorkItemProducer<Messag
         MessageWorkItem Item,
         int Attempt,
         DateTimeOffset ReceivedAt,
-        string LeaseToken);
+        string LeaseToken,
+        bool IsRecovered);
 
     private readonly IRedisStreamClient _client;
     private readonly WorkQueueOptions _options;
@@ -131,9 +132,6 @@ public sealed class RedisWorkQueue : IMessageWorkQueue, IWorkItemProducer<Messag
         return EnqueueResult.TimedOut;
     }
 
-    public Task EnqueueAsync(MessageWorkItem item, CancellationToken cancellationToken) =>
-        EnqueueAsync(item, Timeout.InfiniteTimeSpan, cancellationToken);
-
     public Task StartAsync(CancellationToken cancellationToken) => StartBackendAsync(cancellationToken);
 
     public async IAsyncEnumerable<WorkDelivery<MessageWorkItem>> ReadAsync(
@@ -160,38 +158,6 @@ public sealed class RedisWorkQueue : IMessageWorkQueue, IWorkItemProducer<Messag
         }
     }
 
-    IAsyncEnumerable<QueuedMessageWorkItem> IMessageWorkQueue.ReadAsync(
-        string consumer,
-        CancellationToken cancellationToken) =>
-        ReadQueuedAsync(consumer, cancellationToken);
-
-    public async IAsyncEnumerable<QueuedMessageWorkItem> ReclaimAsync(
-        string consumer,
-        TimeSpan minimumIdleTime,
-        int count,
-        [EnumeratorCancellation] CancellationToken cancellationToken)
-    {
-        await foreach (var prepared in ReclaimPreparedAsync(consumer, minimumIdleTime, count, cancellationToken))
-        {
-            yield return CreateQueuedItem(consumer, prepared);
-        }
-    }
-
-    public Task CompleteAsync(QueuedMessageWorkItem item, CancellationToken cancellationToken) =>
-        item.Lease.CompleteAsync(cancellationToken);
-
-    public async Task<WorkItemFailureResult> FailAsync(
-        QueuedMessageWorkItem item,
-        Exception exception,
-        CancellationToken cancellationToken)
-    {
-        var action = ShouldDiscard(item.DeliveryCount)
-            ? WorkItemFailureAction.Discarded
-            : WorkItemFailureAction.Retried;
-        await item.Lease.RetryAsync(exception, cancellationToken);
-        return new WorkItemFailureResult(action, item.DeliveryCount);
-    }
-
     public Task ClearPendingAsync(CancellationToken cancellationToken)
     {
         if (!_options.ClearPendingOnStartup)
@@ -208,24 +174,13 @@ public sealed class RedisWorkQueue : IMessageWorkQueue, IWorkItemProducer<Messag
         await ClearPendingAsync(cancellationToken);
     }
 
-    private async IAsyncEnumerable<QueuedMessageWorkItem> ReadQueuedAsync(
-        string consumer,
-        [EnumeratorCancellation] CancellationToken cancellationToken)
-    {
-        await _client.EnsureGroupAsync(cancellationToken);
-
-        await foreach (var prepared in ReadPreparedAsync(consumer, cancellationToken))
-        {
-            yield return CreateQueuedItem(consumer, prepared);
-        }
-    }
-
     private async IAsyncEnumerable<PreparedDelivery> ReadPreparedAsync(
         string consumer,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        while (!cancellationToken.IsCancellationRequested)
+        while (true)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var leaseToken = CreateLeaseToken();
             var entry = await _client.ReadNewAsync(consumer, leaseToken, cancellationToken);
             if (entry is null)
@@ -241,7 +196,7 @@ public sealed class RedisWorkQueue : IMessageWorkQueue, IWorkItemProducer<Messag
                 cancellationToken.ThrowIfCancellationRequested();
             }
 
-            var prepared = await PrepareAsync(entry, consumer, leaseToken, cancellationToken);
+            var prepared = await PrepareAsync(entry, consumer, leaseToken, isRecovered: false, cancellationToken: cancellationToken);
             if (prepared is not null)
             {
                 yield return prepared;
@@ -257,6 +212,7 @@ public sealed class RedisWorkQueue : IMessageWorkQueue, IWorkItemProducer<Messag
     {
         for (var index = 0; index < Math.Max(1, count); index++)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var leaseToken = CreateLeaseToken();
             var entry = await _client.ReclaimAsync(
                 consumer,
@@ -265,10 +221,12 @@ public sealed class RedisWorkQueue : IMessageWorkQueue, IWorkItemProducer<Messag
                 cancellationToken);
             if (entry is null)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 yield break;
             }
 
-            var prepared = await PrepareAsync(entry, consumer, leaseToken, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+            var prepared = await PrepareAsync(entry, consumer, leaseToken, isRecovered: true, cancellationToken: cancellationToken);
             if (prepared is not null)
             {
                 yield return prepared;
@@ -280,6 +238,7 @@ public sealed class RedisWorkQueue : IMessageWorkQueue, IWorkItemProducer<Messag
         RedisStreamEntry entry,
         string consumer,
         string leaseToken,
+        bool isRecovered,
         CancellationToken cancellationToken)
     {
         MessageWorkItem item;
@@ -291,7 +250,11 @@ public sealed class RedisWorkQueue : IMessageWorkQueue, IWorkItemProducer<Messag
         {
             _logger.LogError(exception, "Discarding malformed work item {EntryId}", entry.EntryId);
             _metrics?.Malformed.Add(1);
-            _metrics?.QueueDepth.Add(-1);
+            if (!isRecovered)
+            {
+                _metrics?.QueueDepth.Add(-1);
+            }
+
             await DiscardMalformedAsync(entry.EntryId, consumer, leaseToken, cancellationToken);
             return null;
         }
@@ -301,7 +264,8 @@ public sealed class RedisWorkQueue : IMessageWorkQueue, IWorkItemProducer<Messag
             item,
             entry.DeliveryCount,
             DateTimeOffset.UtcNow,
-            leaseToken);
+            leaseToken,
+            isRecovered);
     }
 
     private WorkDelivery<MessageWorkItem> CreateDelivery(string consumer, PreparedDelivery prepared) =>
@@ -310,10 +274,8 @@ public sealed class RedisWorkQueue : IMessageWorkQueue, IWorkItemProducer<Messag
             prepared.EntryId,
             prepared.Attempt,
             prepared.ReceivedAt,
-            CreateLease(consumer, prepared));
-
-    private QueuedMessageWorkItem CreateQueuedItem(string consumer, PreparedDelivery prepared) =>
-        new(prepared.EntryId, prepared.Item, CreateLease(consumer, prepared), prepared.Attempt);
+            CreateLease(consumer, prepared),
+            prepared.IsRecovered);
 
     private IWorkItemLease CreateLease(string consumer, PreparedDelivery prepared) =>
         new RedisWorkItemLease(

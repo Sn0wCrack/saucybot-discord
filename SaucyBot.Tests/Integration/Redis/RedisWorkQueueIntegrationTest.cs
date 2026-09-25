@@ -97,14 +97,14 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
     {
         var redis = CreateRedisOptions("ack");
         var client = CreateClient(redis);
-        IMessageWorkQueue queue = new RedisWorkQueue(client, CreateOptions(), redis);
+        var queue = new RedisWorkQueue(client, CreateOptions(), redis);
         var item = TestItem();
 
         await client.EnsureGroupAsync(TestContext.Current.CancellationToken);
         var groups = await Database.StreamGroupInfoAsync(redis.StreamName);
         Assert.Contains(groups, group => group.Name == redis.ConsumerGroup);
 
-        await queue.EnqueueAsync(item, TestContext.Current.CancellationToken);
+        await queue.EnqueueAsync(item, TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         await using var messages = queue.ReadAsync("consumer-1", TestContext.Current.CancellationToken)
             .GetAsyncEnumerator(TestContext.Current.CancellationToken);
         Assert.True(await messages.MoveNextAsync());
@@ -118,7 +118,7 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
         Assert.Equal(item.Content, queued.Item.Content);
         Assert.Equal(item.Embeds, queued.Item.Embeds);
         Assert.Equal(item.CorrelationId, queued.Item.CorrelationId);
-        await queue.CompleteAsync(queued, TestContext.Current.CancellationToken);
+        await queued.Lease.CompleteAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(0, await Database.StreamLengthAsync(redis.StreamName));
     }
@@ -128,11 +128,11 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
     {
         var redis = CreateRedisOptions("malformed");
         var client = CreateClient(redis);
-        IMessageWorkQueue queue = new RedisWorkQueue(client, CreateOptions(), redis);
+        var queue = new RedisWorkQueue(client, CreateOptions(), redis);
 
         await client.EnsureGroupAsync(TestContext.Current.CancellationToken);
         await Database.StreamAddAsync(redis.StreamName, "payload", "not-json");
-        await queue.EnqueueAsync(TestItem(), TestContext.Current.CancellationToken);
+        await queue.EnqueueAsync(TestItem(), TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         await using var messages = queue.ReadAsync("consumer-1", TestContext.Current.CancellationToken)
             .GetAsyncEnumerator(TestContext.Current.CancellationToken);
@@ -151,7 +151,7 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
         var client = CreateClient(redis);
         var queue = new RedisWorkQueue(client, CreateOptions(clearPendingOnStartup: true), redis);
 
-        await queue.EnqueueAsync(TestItem(), TestContext.Current.CancellationToken);
+        await queue.EnqueueAsync(TestItem(), TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         Assert.True(await Database.KeyExistsAsync(redis.StreamName));
 
         await queue.StartAsync(TestContext.Current.CancellationToken);
@@ -242,7 +242,7 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
         var queue = new RedisWorkQueue(CreateClient(redis), options, redis);
         IWorkItemConsumer<MessageWorkItem> consumer = queue;
         await consumer.StartAsync(TestContext.Current.CancellationToken);
-        await queue.EnqueueAsync(TestItem(), TestContext.Current.CancellationToken);
+        await queue.EnqueueAsync(TestItem(), TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         await using var firstRead = consumer.ReadAsync("consumer-a", TestContext.Current.CancellationToken)
             .GetAsyncEnumerator(TestContext.Current.CancellationToken);
@@ -276,7 +276,7 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
         var queue = new RedisWorkQueue(client, CreateOptions(), redis);
         IWorkItemConsumer<MessageWorkItem> consumer = queue;
         await consumer.StartAsync(TestContext.Current.CancellationToken);
-        await queue.EnqueueAsync(TestItem(), TestContext.Current.CancellationToken);
+        await queue.EnqueueAsync(TestItem(), TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         await using var firstRead = consumer.ReadAsync("consumer-a", TestContext.Current.CancellationToken)
             .GetAsyncEnumerator(TestContext.Current.CancellationToken);
@@ -322,7 +322,7 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
         var queue = new RedisWorkQueue(CreateClient(redis), CreateOptions(), redis);
         IWorkItemConsumer<MessageWorkItem> consumer = queue;
         await consumer.StartAsync(TestContext.Current.CancellationToken);
-        await queue.EnqueueAsync(TestItem(), TestContext.Current.CancellationToken);
+        await queue.EnqueueAsync(TestItem(), TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         await using var read = consumer.ReadAsync("consumer-a", TestContext.Current.CancellationToken)
             .GetAsyncEnumerator(TestContext.Current.CancellationToken);
@@ -345,7 +345,7 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
         var queue = new RedisWorkQueue(CreateClient(redis), CreateOptions(), redis);
         IWorkItemConsumer<MessageWorkItem> consumer = queue;
         await consumer.StartAsync(TestContext.Current.CancellationToken);
-        await queue.EnqueueAsync(TestItem(), TestContext.Current.CancellationToken);
+        await queue.EnqueueAsync(TestItem(), TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         await using var read = consumer.ReadAsync("consumer-a", TestContext.Current.CancellationToken)
             .GetAsyncEnumerator(TestContext.Current.CancellationToken);
@@ -372,7 +372,7 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
 
         for (var index = 0; index < 25; index++)
         {
-            await queue.EnqueueAsync(TestItem(), TestContext.Current.CancellationToken);
+            await queue.EnqueueAsync(TestItem(), TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         }
 
         // EnqueueAsync returns only admission status. Read the entries into the PEL
@@ -436,7 +436,7 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
         await consumer.StartAsync(TestContext.Current.CancellationToken);
         for (var index = 0; index < deliveryCount; index++)
         {
-            await queue.EnqueueAsync(TestItem(), TestContext.Current.CancellationToken);
+            await queue.EnqueueAsync(TestItem(), TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         }
 
         var firstDeliveries = await ReadDeliveriesAsync(consumer, "first-owner", deliveryCount);
@@ -483,7 +483,7 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
         await consumer.StartAsync(TestContext.Current.CancellationToken);
         for (var index = 0; index < deliveryCount; index++)
         {
-            await queue.EnqueueAsync(TestItem(), TestContext.Current.CancellationToken);
+            await queue.EnqueueAsync(TestItem(), TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         }
 
         var deliveries = await ReadDeliveriesAsync(consumer, "batch-owner", deliveryCount);
@@ -540,7 +540,7 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
         var queue = new RedisWorkQueue(CreateClient(redis), CreateOptions(), redis);
         IWorkItemConsumer<MessageWorkItem> consumer = queue;
         await consumer.StartAsync(TestContext.Current.CancellationToken);
-        await queue.EnqueueAsync(TestItem(), TestContext.Current.CancellationToken);
+        await queue.EnqueueAsync(TestItem(), TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         await using var read = consumer.ReadAsync("consumer-a", TestContext.Current.CancellationToken)
             .GetAsyncEnumerator(TestContext.Current.CancellationToken);
@@ -574,7 +574,7 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
         var queue = new RedisWorkQueue(CreateClient(redis), options, redis);
         IWorkItemConsumer<MessageWorkItem> consumer = queue;
         await consumer.StartAsync(TestContext.Current.CancellationToken);
-        await queue.EnqueueAsync(TestItem(), TestContext.Current.CancellationToken);
+        await queue.EnqueueAsync(TestItem(), TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         await using var read = consumer.ReadAsync("consumer-a", TestContext.Current.CancellationToken)
             .GetAsyncEnumerator(TestContext.Current.CancellationToken);
@@ -603,27 +603,16 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
         var queue = new RedisWorkQueue(client, CreateOptions(), redis);
         var processor = new RecordingProcessor();
         var metrics = new SaucyBotMetrics();
-        var executor = new QueuedWorkItemExecutor(
-            processor,
-            new WorkQueueOptions { MaxProcessingTime = TimeSpan.FromSeconds(5) },
-            NullLogger<QueuedWorkItemExecutor>.Instance,
-            metrics);
-        await using var service = new WorkQueueHostedService(
-            queue,
-            new WorkQueueOptions
-            {
-                MessageWorkerCount = 1,
-                InteractionWorkerCount = 0,
-                ShutdownDrainTimeout = TimeSpan.FromSeconds(5),
-            },
-            NullLogger<WorkQueueHostedService>.Instance,
-            new InteractionWorkChannel(new WorkQueueOptions { InteractionWorkerCount = 0 }),
-            new NoOpInteractionProcessor(),
-            metrics,
-            executor);
+        var options = new WorkQueueOptions
+        {
+            MessageWorkerCount = 1,
+            InteractionWorkerCount = 0,
+            ShutdownDrainTimeout = TimeSpan.FromSeconds(5),
+        };
+        await using var service = CreateHostedService(queue, processor, options, metrics);
 
         await service.StartAsync(TestContext.Current.CancellationToken);
-        await queue.EnqueueAsync(TestItem(), TestContext.Current.CancellationToken);
+        await queue.EnqueueAsync(TestItem(), TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         await processor.Processed.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         await service.StopAsync(TestContext.Current.CancellationToken);
 
@@ -640,36 +629,19 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
         var queue = new RedisWorkQueue(client, CreateOptions(), redis);
         var processor = new RecordingProcessor();
         var metrics = new SaucyBotMetrics();
-        var executor = new QueuedWorkItemExecutor(
-            processor,
-            new WorkQueueOptions
-            {
-                MessageWorkerCount = 1,
-                InteractionWorkerCount = 0,
-                MaxProcessingTime = TimeSpan.FromSeconds(5),
-            },
-            NullLogger<QueuedWorkItemExecutor>.Instance,
-            metrics);
-
         await client.EnsureGroupAsync(TestContext.Current.CancellationToken);
-        await queue.EnqueueAsync(TestItem(), TestContext.Current.CancellationToken);
+        await queue.EnqueueAsync(TestItem(), TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         var pending = await client.ReadNewAsync("dead-worker", "dead-worker-token", TestContext.Current.CancellationToken);
         Assert.NotNull(pending);
 
-        await using var service = new WorkQueueHostedService(
-            queue,
-            new WorkQueueOptions
-            {
-                MessageWorkerCount = 1,
-                InteractionWorkerCount = 0,
-                PendingMessageIdleTime = TimeSpan.Zero,
-                ShutdownDrainTimeout = TimeSpan.FromSeconds(5),
-            },
-            NullLogger<WorkQueueHostedService>.Instance,
-            new InteractionWorkChannel(new WorkQueueOptions { InteractionWorkerCount = 0 }),
-            new NoOpInteractionProcessor(),
-            metrics,
-            executor);
+        var options = new WorkQueueOptions
+        {
+            MessageWorkerCount = 1,
+            InteractionWorkerCount = 0,
+            PendingMessageIdleTime = TimeSpan.Zero,
+            ShutdownDrainTimeout = TimeSpan.FromSeconds(5),
+        };
+        await using var service = CreateHostedService(queue, processor, options, metrics);
 
         await service.StartAsync(TestContext.Current.CancellationToken);
         await processor.Processed.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
@@ -689,10 +661,10 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
         Assert.Equal("536870912", maxMemory[1].ToString());
 
         var redis = CreateRedisOptions("noeviction");
-        IMessageWorkQueue queue = new RedisWorkQueue(CreateClient(redis), CreateOptions(), redis);
+        var queue = new RedisWorkQueue(CreateClient(redis), CreateOptions(), redis);
         var item = TestItem();
 
-        await queue.EnqueueAsync(item, TestContext.Current.CancellationToken);
+        await queue.EnqueueAsync(item, TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         Assert.True(await Database.KeyExistsAsync(redis.StreamName));
 
         await using var messages = queue.ReadAsync("consumer-1", TestContext.Current.CancellationToken)
@@ -700,7 +672,7 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
         Assert.True(await messages.MoveNextAsync());
         Assert.Equal(item.MessageId, messages.Current.Item.MessageId);
 
-        await queue.CompleteAsync(messages.Current, TestContext.Current.CancellationToken);
+        await messages.Current.Lease.CompleteAsync(TestContext.Current.CancellationToken);
         Assert.Equal(0, await Database.StreamLengthAsync(redis.StreamName));
     }
 
@@ -708,6 +680,32 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
         _connection ?? throw new InvalidOperationException("The Valkey fixture did not initialize.");
 
     private IDatabase Database => Connection.GetDatabase();
+
+    private static WorkQueueHostedService CreateHostedService(
+        RedisWorkQueue queue,
+        RecordingProcessor processor,
+        WorkQueueOptions options,
+        SaucyBotMetrics metrics)
+    {
+        var deliveries = new MessageDeliveryChannel(options);
+        return new WorkQueueHostedService(
+            queue,
+            deliveries,
+            new MessageQueueReader(queue, deliveries, NullLogger<MessageQueueReader>.Instance),
+            new MessageRecoveryWorker(queue, deliveries, options, NullLogger<MessageRecoveryWorker>.Instance, metrics),
+            new MessageQueueWorker(
+                deliveries,
+                new QueueMiddlewarePipeline<MessageWorkItem>([]),
+                processor,
+                options,
+                NullLogger<MessageQueueWorker>.Instance,
+                metrics),
+            options,
+            NullLogger<WorkQueueHostedService>.Instance,
+            new InteractionWorkChannel(options),
+            new NoOpInteractionProcessor(),
+            metrics);
+    }
 
     private IRedisStreamClient CreateClient(RedisWorkQueueOptions options) =>
         new StackExchangeRedisStreamClient(Connection, options, NullLogger<StackExchangeRedisStreamClient>.Instance);

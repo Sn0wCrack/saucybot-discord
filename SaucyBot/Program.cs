@@ -73,7 +73,10 @@ await Host.CreateDefaultBuilder(args)
             configuration.GetSection("Queue:Redis").Get<RedisWorkQueueOptions>() ?? new RedisWorkQueueOptions(),
             queueOptions.BackendOperationTimeout);
         services.AddSingleton<IWorkItemProcessor, WorkItemProcessor>();
-        services.AddSingleton<IQueuedWorkItemExecutor, QueuedWorkItemExecutor>();
+        services.AddSingleton<MessageDeliveryChannel>();
+        services.AddSingleton<MessageQueueReader>();
+        services.AddSingleton<MessageRecoveryWorker>();
+        services.AddSingleton<MessageQueueWorker>();
         services.AddQueueMiddleware<MessageWorkItem, QueueMetricsMiddleware<MessageWorkItem>>();
         services.AddSaucyBotServices();
         services.AddSaucyBotSites();

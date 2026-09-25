@@ -23,9 +23,6 @@ internal static class TestData
         true,
         CorrelationId);
 
-    public static QueuedMessageWorkItem Queued(string entryId = "1-0", int deliveryCount = 1) =>
-        new(entryId, Message(), new NoOpWorkItemLease(), deliveryCount);
-
     public sealed class NoOpWorkItemLease : IWorkItemLease
     {
         public CancellationToken LostToken => CancellationToken.None;

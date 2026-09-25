@@ -47,8 +47,9 @@ public sealed class WorkQueueOptionsValidatorTest
 
     [Theory]
     [InlineData(0)]
+    [InlineData(1)]
     [InlineData(-1)]
-    public void Validate_WithNonpositiveRecoveryHandoffCapacity_Throws(int capacity)
+    public void Validate_WithInsufficientRecoveryHandoffCapacity_Throws(int capacity)
     {
         AssertRejected(new WorkQueueOptions { RecoveryHandoffCapacity = capacity });
     }

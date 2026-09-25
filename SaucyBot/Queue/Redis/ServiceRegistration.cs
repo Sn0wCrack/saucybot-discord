@@ -20,7 +20,6 @@ public static class ServiceRegistration
             _ => ConnectionMultiplexer.Connect(BuildConfiguration(options, commandTimeout)));
         services.AddSingleton<IRedisStreamClient, StackExchangeRedisStreamClient>();
         services.AddSingleton<RedisWorkQueue>();
-        services.AddSingleton<IMessageWorkQueue>(provider => provider.GetRequiredService<RedisWorkQueue>());
         services.AddSingleton<IWorkItemProducer<MessageWorkItem>>(provider => provider.GetRequiredService<RedisWorkQueue>());
         services.AddSingleton<IWorkItemConsumer<MessageWorkItem>>(provider => provider.GetRequiredService<RedisWorkQueue>());
 

@@ -67,7 +67,8 @@ public sealed class DependencyInjectionTest
 
         Assert.IsType<RedisWorkQueue>(producer);
         Assert.Same(producer, consumer);
-        Assert.Same(producer, provider.GetRequiredService<IMessageWorkQueue>());
+        Assert.Same(producer, provider.GetRequiredService<IWorkItemConsumer<MessageWorkItem>>());
+        Assert.Same(producer, provider.GetRequiredService<IWorkItemProducer<MessageWorkItem>>());
         Assert.Same(producer, provider.GetRequiredService<RedisWorkQueue>());
     }
 

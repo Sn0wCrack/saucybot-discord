@@ -5,18 +5,21 @@ namespace SaucyBot.Queue;
 
 public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
 {
-    private readonly IMessageWorkQueue _queue;
+    private readonly IWorkItemConsumer<MessageWorkItem> _consumer;
+    private readonly MessageDeliveryChannel _deliveryChannel;
+    private readonly MessageQueueReader _messageReader;
+    private readonly MessageRecoveryWorker _recoveryWorker;
+    private readonly MessageQueueWorker _messageWorker;
     private readonly WorkQueueOptions _options;
     private readonly ILogger<WorkQueueHostedService> _logger;
     private readonly InteractionWorkChannel _interactionChannel;
     private readonly IInteractionProcessor _interactionProcessor;
     private readonly ISaucyBotMetrics _metrics;
-    private readonly IQueuedWorkItemExecutor _executor;
-    private readonly List<Task> _workers = [];
     private readonly CancellationTokenSource _admissionCancellation = new();
     private readonly CancellationTokenSource _workerCancellation = new();
     private readonly CancellationTokenSource _readCancellation = new();
     private readonly TaskCompletionSource _workersReady = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly TaskCompletionSource _completionReady = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly string _consumerInstance = $"{Environment.MachineName}-{Guid.NewGuid():N}";
     private Task? _completion;
     private int _disposed;
@@ -25,63 +28,71 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
     public Task WorkerCompletion => _completion ?? Task.CompletedTask;
 
     public WorkQueueHostedService(
-        IMessageWorkQueue queue,
+        IWorkItemConsumer<MessageWorkItem> consumer,
+        MessageDeliveryChannel deliveryChannel,
+        MessageQueueReader messageReader,
+        MessageRecoveryWorker recoveryWorker,
+        MessageQueueWorker messageWorker,
         WorkQueueOptions options,
         ILogger<WorkQueueHostedService> logger,
         InteractionWorkChannel interactionChannel,
         IInteractionProcessor interactionProcessor,
-        ISaucyBotMetrics metrics,
-        IQueuedWorkItemExecutor executor)
+        ISaucyBotMetrics metrics)
     {
-        _queue = queue;
+        _consumer = consumer;
+        _deliveryChannel = deliveryChannel;
+        _messageReader = messageReader;
+        _recoveryWorker = recoveryWorker;
+        _messageWorker = messageWorker;
         _options = options;
         _logger = logger;
         _interactionChannel = interactionChannel;
         _interactionProcessor = interactionProcessor;
         _metrics = metrics;
-        _executor = executor;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         using var stoppingRegistration = stoppingToken.Register(StopIntake);
-        var workerCancellation = _workerCancellation.Token;
-
+        var reader = RunReaderSupervisedAsync($"{_consumerInstance}-reader", _readCancellation.Token);
+        var recovery = _recoveryWorker.RunAsync($"{_consumerInstance}-recovery", _readCancellation.Token);
         var messageWorkers = Math.Max(1, _options.MessageWorkerCount);
         var interactionWorkers = Math.Max(1, _options.InteractionWorkerCount);
+        var consumers = new List<Task>(messageWorkers + interactionWorkers);
 
         for (var i = 0; i < messageWorkers; i++)
         {
-            _workers.Add(RunSupervisedWorkerAsync($"{_consumerInstance}-{i}", workerCancellation));
+            consumers.Add(_messageWorker.RunSupervisedAsync(
+                $"{_consumerInstance}-message-{i}",
+                _workerCancellation.Token));
         }
 
         for (var i = 0; i < interactionWorkers; i++)
         {
-            _workers.Add(RunInteractionWorkerAsync(workerCancellation));
+            consumers.Add(RunInteractionWorkerAsync(_workerCancellation.Token));
         }
-
-        _workers.Add(RunRecoveryAsync($"{_consumerInstance}-recovery", workerCancellation));
 
         _logger.LogInformation(
             "Queue workers started with {MessageWorkerCount} message workers and {InteractionWorkerCount} interaction workers",
             messageWorkers,
-            interactionWorkers
-        );
+            interactionWorkers);
 
-        _completion = Task.WhenAll(_workers);
         _workersReady.TrySetResult();
+        _completion = CompleteAfterProducersAsync(Task.WhenAll(reader, recovery), Task.WhenAll(consumers));
         _ = _completion.ContinueWith(
             completed => _ = completed.Exception,
             CancellationToken.None,
             TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
             TaskScheduler.Default);
+        _completionReady.TrySetResult();
         await _completion;
     }
 
     public override async Task StartAsync(CancellationToken cancellationToken)
     {
-        await _queue.StartAsync(cancellationToken);
+        await _consumer.StartAsync(cancellationToken);
         await base.StartAsync(cancellationToken);
+        await _completionReady.Task.WaitAsync(cancellationToken);
     }
 
     public override async Task StopAsync(CancellationToken cancellationToken)
@@ -91,6 +102,7 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
         if (cancellationToken.IsCancellationRequested)
         {
             _workerCancellation.Cancel();
+            await _deliveryChannel.DisposeAsync();
             cancellationToken.ThrowIfCancellationRequested();
         }
 
@@ -113,6 +125,7 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
         {
             _logger.LogWarning("Queue worker drain was cancelled by the host caller");
             _workerCancellation.Cancel();
+            await _deliveryChannel.DisposeAsync();
             throw;
         }
         catch (OperationCanceledException) when (timeout.IsCancellationRequested)
@@ -121,8 +134,8 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
                 "Queue worker drain exceeded {ShutdownDrainTimeout}; cancelling remaining work",
                 _options.ShutdownDrainTimeout);
             _workerCancellation.Cancel();
+            await _deliveryChannel.DisposeAsync();
         }
-
     }
 
     public void StopIntake()
@@ -137,124 +150,77 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
         if (_completion is { IsCompleted: false } completion)
         {
             _ = completion.ContinueWith(
-                _ => DisposeResources(),
+                _ => _ = DisposeResourcesAsync(),
                 CancellationToken.None,
                 TaskContinuationOptions.ExecuteSynchronously,
                 TaskScheduler.Default);
-        }
-        else
-        {
-            DisposeResources();
+            return ValueTask.CompletedTask;
         }
 
-        return ValueTask.CompletedTask;
+        return new ValueTask(DisposeResourcesAsync());
     }
 
-    private void DisposeResources()
+    private async Task DisposeResourcesAsync()
     {
         if (Interlocked.Exchange(ref _disposed, 1) != 0)
         {
             return;
         }
 
-        Dispose();
-        _admissionCancellation.Dispose();
-        _workerCancellation.Dispose();
-        _readCancellation.Dispose();
+        try
+        {
+            await _deliveryChannel.DisposeAsync();
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "Failed to dispose queued message deliveries");
+        }
+        finally
+        {
+            Dispose();
+            _admissionCancellation.Dispose();
+            _workerCancellation.Dispose();
+            _readCancellation.Dispose();
+        }
     }
 
-    private async Task RunWorkerAsync(string consumer, CancellationToken cancellationToken)
+    private async Task CompleteAfterProducersAsync(Task producers, Task consumers)
     {
         try
         {
-            await _workersReady.Task.WaitAsync(cancellationToken);
-            using var readCancellation = CancellationTokenSource.CreateLinkedTokenSource(
-                cancellationToken,
-                _readCancellation.Token);
-
-            await foreach (var item in _queue.ReadAsync(consumer, readCancellation.Token))
-            {
-                _metrics.Dequeued.Add(1);
-                _metrics.QueueDepth.Add(-1);
-                _logger.LogDebug(
-                    "Message worker {Consumer} picked up queue entry {EntryId}",
-                    consumer,
-                    item.EntryId);
-                if (item.Item.EnqueuedAt != default)
-                {
-                    _metrics.QueueAge.Record((DateTimeOffset.UtcNow - item.Item.EnqueuedAt).TotalMilliseconds);
-                }
-
-                _metrics.ActiveWorkers.Add(1);
-                using var activity = QueueTelemetry.ActivitySource.StartActivity(ActivityKind.Consumer);
-                activity?.SetTag("saucybot.work.type", "message");
-                activity?.SetTag("saucybot.queue.consumer", consumer);
-                activity?.SetTag("saucybot.queue.entry_id", item.EntryId);
-                try
-                {
-                    var outcome = await _executor.ExecuteAsync(consumer, item, cancellationToken);
-                    switch (outcome)
-                    {
-                        case QueuedWorkItemExecutionOutcome.Completed:
-                            activity?.SetStatus(ActivityStatusCode.Ok);
-                            break;
-                        case QueuedWorkItemExecutionOutcome.Failed:
-                            activity?.SetStatus(ActivityStatusCode.Error, "queue item processing failed");
-                            break;
-                        case QueuedWorkItemExecutionOutcome.Cancelled:
-                            activity?.SetTag("saucybot.cancelled", true);
-                            break;
-                        case QueuedWorkItemExecutionOutcome.LeaseLost:
-                            activity?.SetTag("saucybot.lease_lost", true);
-                            break;
-                        case QueuedWorkItemExecutionOutcome.OutcomeUnknown:
-                            activity?.SetTag("saucybot.outcome_unknown", true);
-                            break;
-                    }
-                    _logger.LogDebug(
-                        "Message worker {Consumer} handled queue entry {EntryId} with outcome {Outcome}",
-                        consumer,
-                        item.EntryId,
-                        outcome);
-                }
-                finally
-                {
-                    _metrics.ActiveWorkers.Add(-1);
-                }
-            }
+            await producers;
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested || _readCancellation.IsCancellationRequested)
+        finally
         {
-            _logger.LogDebug(
-                "Message worker {Consumer} stopped because queue consumption was cancelled",
-                consumer);
+            _deliveryChannel.Complete();
         }
+
+        await consumers;
     }
 
-    private async Task RunSupervisedWorkerAsync(string consumer, CancellationToken cancellationToken)
+    private async Task RunReaderSupervisedAsync(string consumer, CancellationToken cancellationToken)
     {
-        while (!cancellationToken.IsCancellationRequested && !_readCancellation.IsCancellationRequested)
+        while (!cancellationToken.IsCancellationRequested)
         {
             try
             {
-                await RunWorkerAsync(consumer, cancellationToken);
-
-                if (cancellationToken.IsCancellationRequested || _readCancellation.IsCancellationRequested)
+                await _messageReader.RunAsync(consumer, cancellationToken);
+                if (cancellationToken.IsCancellationRequested)
                 {
                     return;
                 }
 
-                _logger.LogWarning("Message worker {Consumer} stopped unexpectedly; restarting", consumer);
-                _metrics.WorkerRestarts.Add(1, new KeyValuePair<string, object?>("worker_type", "message"));
+                _logger.LogWarning("Message queue reader {Consumer} stopped unexpectedly; restarting", consumer);
+                _metrics.WorkerRestarts.Add(1, new KeyValuePair<string, object?>("worker_type", "reader"));
             }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested || _readCancellation.IsCancellationRequested)
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
                 return;
             }
             catch (Exception exception)
             {
-                _logger.LogError(exception, "Message worker {Consumer} failed; restarting", consumer);
-                _metrics.WorkerRestarts.Add(1, new KeyValuePair<string, object?>("worker_type", "message"));
+                _logger.LogError(exception, "Message queue reader {Consumer} failed; restarting", consumer);
+                _metrics.WorkerRestarts.Add(1, new KeyValuePair<string, object?>("worker_type", "reader"));
             }
 
             try
@@ -268,88 +234,26 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
         }
     }
 
-    private async Task RunRecoveryAsync(string consumer, CancellationToken cancellationToken)
-    {
-        using var recoveryCancellation = CancellationTokenSource.CreateLinkedTokenSource(
-            cancellationToken,
-            _readCancellation.Token);
-        var recoveryToken = recoveryCancellation.Token;
-
-        try
-        {
-            await _workersReady.Task.WaitAsync(recoveryToken);
-
-            while (!recoveryToken.IsCancellationRequested)
-            {
-                try
-                {
-                    await foreach (var item in _queue.ReclaimAsync(
-                                       consumer,
-                                       _options.PendingMessageIdleTime,
-                                       Math.Max(1, _options.MessageWorkerCount),
-                                       recoveryToken))
-                    {
-                        _logger.LogWarning(
-                            "Recovery worker {Consumer} reclaimed queue entry {EntryId}",
-                            consumer,
-                            item.EntryId);
-                        _metrics.Reclaimed.Add(1, new KeyValuePair<string, object?>("consumer_type", "recovery"));
-                        _metrics.ActiveWorkers.Add(1);
-                        try
-                        {
-                            var outcome = await _executor.ExecuteAsync(consumer, item, recoveryToken);
-                            if (outcome is QueuedWorkItemExecutionOutcome.LeaseLost)
-                            {
-                                _logger.LogWarning(
-                                    "Recovery worker {Consumer} lost the lease for queue entry {EntryId}",
-                                    consumer,
-                                    item.EntryId);
-                            }
-                        }
-                        finally
-                        {
-                            _metrics.ActiveWorkers.Add(-1);
-                        }
-                    }
-
-                    await Task.Delay(_options.ReclaimerInterval, recoveryToken);
-                }
-                catch (OperationCanceledException) when (recoveryToken.IsCancellationRequested)
-                {
-                    return;
-                }
-                catch (Exception exception)
-                {
-                    _logger.LogError(exception, "Queue recovery worker {Consumer} failed", consumer);
-                    await Task.Delay(TimeSpan.FromSeconds(1), recoveryToken);
-                }
-            }
-        }
-        catch (OperationCanceledException) when (recoveryToken.IsCancellationRequested)
-        {
-        }
-    }
-
     private async Task RunInteractionWorkerAsync(CancellationToken cancellationToken)
     {
         try
         {
             await _workersReady.Task.WaitAsync(cancellationToken);
-            await foreach (var interaction in _interactionChannel!.ReadAllAsync(cancellationToken))
+            await foreach (var interaction in _interactionChannel.ReadAllAsync(cancellationToken))
             {
                 _metrics.Dequeued.Add(1);
                 _metrics.QueueDepth.Add(-1);
                 _metrics.ActiveWorkers.Add(1);
-                _logger.LogDebug("Interaction worker picked up interaction {InteractionId}", interaction?.Id);
+                _logger.LogDebug("Interaction worker picked up interaction {InteractionId}", interaction.Id);
                 using var activity = QueueTelemetry.ActivitySource.StartActivity(ActivityKind.Consumer);
                 activity?.SetTag("saucybot.work.type", "interaction");
-                activity?.SetTag("saucybot.interaction.id", interaction?.Id);
+                activity?.SetTag("saucybot.interaction.id", interaction.Id);
                 try
                 {
-                    await _interactionProcessor.ProcessAsync(interaction!, cancellationToken);
+                    await _interactionProcessor.ProcessAsync(interaction, cancellationToken);
                     _metrics.Succeeded.Add(1);
                     activity?.SetStatus(ActivityStatusCode.Ok);
-                    _logger.LogDebug("Interaction worker completed interaction {InteractionId}", interaction?.Id);
+                    _logger.LogDebug("Interaction worker completed interaction {InteractionId}", interaction.Id);
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {
@@ -360,7 +264,7 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
                 }
                 catch (Exception exception)
                 {
-                    _logger.LogError(exception, "Interaction worker failed for {InteractionId}", interaction?.Id);
+                    _logger.LogError(exception, "Interaction worker failed for {InteractionId}", interaction.Id);
                     _metrics.Failed.Add(1);
                     activity?.SetStatus(ActivityStatusCode.Error, exception.Message);
                     activity?.SetTag("error.type", exception.GetType().FullName);
@@ -378,17 +282,9 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
         }
     }
 
-    private Task SendInteractionFailureAsync(IInteractionWorkItem? interaction)
-    {
-        if (interaction is null)
-        {
-            _logger.LogError("Interaction processing failed before a failure response could be sent");
-            return Task.CompletedTask;
-        }
-
-        return InteractionFailureResponder.SendAsync(
+    private Task SendInteractionFailureAsync(IInteractionWorkItem interaction) =>
+        InteractionFailureResponder.SendAsync(
             interaction,
             _logger,
             TimeSpan.FromSeconds(1));
-    }
 }
