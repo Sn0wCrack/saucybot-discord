@@ -20,7 +20,7 @@ public sealed class QueueMiddlewarePipeline<T> : IQueueMiddlewarePipeline<T>
         CancellationToken cancellationToken) =>
         InvokeStepAsync(0, context, terminal, cancellationToken);
 
-    private Task InvokeStepAsync(
+    private async Task InvokeStepAsync(
         int index,
         QueueWorkContext<T> context,
         QueueWorkDelegate<T> terminal,
@@ -28,7 +28,8 @@ public sealed class QueueMiddlewarePipeline<T> : IQueueMiddlewarePipeline<T>
     {
         if (index >= _middleware.Length)
         {
-            return terminal(context, cancellationToken);
+            await terminal(context, cancellationToken);
+            return;
         }
 
         // A method group, not a closure over loop state, carries the rest of
@@ -36,7 +37,8 @@ public sealed class QueueMiddlewarePipeline<T> : IQueueMiddlewarePipeline<T>
         var next = new SingleUseNext((nextContext, nextToken) =>
             InvokeStepAsync(index + 1, nextContext, terminal, nextToken));
 
-        return _middleware[index].InvokeAsync(context, next.InvokeAsync, cancellationToken);
+        await _middleware[index].InvokeAsync(context, next.InvokeAsync, cancellationToken);
+        next.EnsureCalled();
     }
 
     private sealed class SingleUseNext(QueueWorkDelegate<T> next)
@@ -51,6 +53,14 @@ public sealed class QueueMiddlewarePipeline<T> : IQueueMiddlewarePipeline<T>
             }
 
             return next(context, cancellationToken);
+        }
+
+        public void EnsureCalled()
+        {
+            if (Volatile.Read(ref _called) == 0)
+            {
+                throw new InvalidOperationException("Queue middleware must call next exactly once.");
+            }
         }
     }
 }

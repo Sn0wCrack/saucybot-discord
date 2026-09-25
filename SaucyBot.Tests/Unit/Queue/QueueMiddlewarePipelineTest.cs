@@ -165,15 +165,17 @@ public sealed class QueueMiddlewarePipelineTest
     }
 
     [Fact]
-    public async Task MiddlewareThatSkipsNextShortCircuitsTheTerminal()
+    public async Task MiddlewareThatSkipsNextFailsInsteadOfAcknowledgingDelivery()
     {
         var first = new RecordingMiddleware("first", _trace);
         var second = new RecordingMiddleware("second", _trace) { SkipNext = true };
         var third = new RecordingMiddleware("third", _trace);
         var pipeline = CreatePipeline(first, second, third);
 
-        await pipeline.InvokeAsync(CreateContext(), TerminalAsync, CancellationToken.None);
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => pipeline.InvokeAsync(CreateContext(), TerminalAsync, CancellationToken.None));
 
+        Assert.Equal("Queue middleware must call next exactly once.", exception.Message);
         Assert.Equal(["enter:first", "enter:second", "exit:second", "exit:first"], _trace);
         Assert.Equal(0, TerminalCalls);
         Assert.Empty(third.Contexts);
