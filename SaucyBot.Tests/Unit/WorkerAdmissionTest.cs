@@ -93,7 +93,7 @@ public sealed class WorkerAdmissionTest
         await processor.Processed.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         await service.StopAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal([item], processor.Items);
+        Assert.Equal([item.Item], processor.Items);
         Assert.Equal([item], queue.Acknowledged);
     }
 
@@ -120,7 +120,7 @@ public sealed class WorkerAdmissionTest
         await processor.Processed.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         await service.StopAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal([failed, succeeded], processor.Items);
+        Assert.Equal([failed.Item, succeeded.Item], processor.Items);
         Assert.Equal([succeeded], queue.Acknowledged);
     }
 
@@ -562,7 +562,7 @@ public sealed class WorkerAdmissionTest
 
     private sealed class RecordingProcessor : IWorkItemProcessor
     {
-        public List<QueuedMessageWorkItem> Items { get; } = [];
+        public List<MessageWorkItem> Items { get; } = [];
         public TaskCompletionSource Processed { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public TaskCompletionSource Started { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public TaskCompletionSource StartedCount { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -575,9 +575,9 @@ public sealed class WorkerAdmissionTest
         public int MaximumConcurrency { get; private set; }
         private int _concurrency;
 
-        public async Task ProcessAsync(QueuedMessageWorkItem item, CancellationToken cancellationToken)
+        public async Task ProcessAsync(WorkDelivery<MessageWorkItem> delivery, CancellationToken cancellationToken)
         {
-            Items.Add(item);
+            Items.Add(delivery.Item);
             Started.TrySetResult();
             var concurrency = Interlocked.Increment(ref _concurrency);
             MaximumConcurrency = Math.Max(MaximumConcurrency, concurrency);
@@ -628,7 +628,7 @@ public sealed class WorkerAdmissionTest
         {
             try
             {
-                await processor.ProcessAsync(item, cancellationToken);
+                await processor.ProcessAsync(item.ToDelivery(), cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
                 await queue.CompleteAsync(item, CancellationToken.None);
                 return QueuedWorkItemExecutionOutcome.Completed;

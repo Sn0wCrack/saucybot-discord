@@ -25,12 +25,49 @@ public sealed class WorkItemProcessorTest
         await using var provider = services.BuildServiceProvider();
         var processor = new WorkItemProcessor(provider.GetRequiredService<IServiceScopeFactory>(), NullLogger<WorkItemProcessor>.Instance);
 
-        await processor.ProcessAsync(CreateItem(), cancellation.Token);
+        await processor.ProcessAsync(CreateDelivery(), cancellation.Token);
 
         Assert.Equal(cancellation.Token, await observed.Task);
     }
 
-    private static QueuedMessageWorkItem CreateItem() => TestData.Queued();
+    [Fact]
+    public async Task ProcessingInvokesTheScopedHandlerWithTheDeliveryItem()
+    {
+        var delivery = CreateDelivery();
+        MessageWorkItem? observed = null;
+        var services = new ServiceCollection();
+        services.AddScoped<IMessageWorkHandler>(_ => new DelegateMessageWorkHandler((item, _) =>
+        {
+            observed = item;
+            return Task.CompletedTask;
+        }));
+        await using var provider = services.BuildServiceProvider();
+        var processor = new WorkItemProcessor(provider.GetRequiredService<IServiceScopeFactory>(), NullLogger<WorkItemProcessor>.Instance);
+
+        await processor.ProcessAsync(delivery, CancellationToken.None);
+
+        Assert.Same(delivery.Item, observed);
+    }
+
+    [Fact]
+    public async Task ProcessingFailuresPropagateToTheCaller()
+    {
+        var services = new ServiceCollection();
+        services.AddScoped<IMessageWorkHandler>(_ => new DelegateMessageWorkHandler(
+            (_, _) => throw new InvalidOperationException("handler failed")));
+        await using var provider = services.BuildServiceProvider();
+        var processor = new WorkItemProcessor(provider.GetRequiredService<IServiceScopeFactory>(), NullLogger<WorkItemProcessor>.Instance);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => processor.ProcessAsync(CreateDelivery(), CancellationToken.None));
+    }
+
+    private static WorkDelivery<MessageWorkItem> CreateDelivery() => new(
+        TestData.Message(),
+        "1-0",
+        1,
+        DateTimeOffset.UtcNow,
+        new TestData.NoOpWorkItemLease());
 
     private sealed class DelegateMessageWorkHandler(Func<MessageWorkItem, CancellationToken, Task> handler) : IMessageWorkHandler
     {

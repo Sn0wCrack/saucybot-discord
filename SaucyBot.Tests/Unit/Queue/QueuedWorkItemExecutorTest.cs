@@ -413,7 +413,7 @@ public sealed class QueuedWorkItemExecutorTest
         public bool CancellationObserved { get; private set; }
         private readonly TaskCompletionSource _release = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        public async Task ProcessAsync(QueuedMessageWorkItem item, CancellationToken cancellationToken)
+        public async Task ProcessAsync(WorkDelivery<MessageWorkItem> delivery, CancellationToken cancellationToken)
         {
             Started.TrySetResult();
             try
@@ -432,7 +432,7 @@ public sealed class QueuedWorkItemExecutorTest
 
     private sealed class FailingProcessor : IWorkItemProcessor
     {
-        public Task ProcessAsync(QueuedMessageWorkItem item, CancellationToken cancellationToken) =>
+        public Task ProcessAsync(WorkDelivery<MessageWorkItem> delivery, CancellationToken cancellationToken) =>
             Task.FromException(new InvalidOperationException("processing failed"));
     }
 
@@ -441,7 +441,7 @@ public sealed class QueuedWorkItemExecutorTest
         public int Calls { get; private set; }
         public bool Throw { get; init; }
 
-        public Task ProcessAsync(QueuedMessageWorkItem item, CancellationToken cancellationToken)
+        public Task ProcessAsync(WorkDelivery<MessageWorkItem> delivery, CancellationToken cancellationToken)
         {
             Calls++;
             return Throw
@@ -456,7 +456,7 @@ public sealed class QueuedWorkItemExecutorTest
 
         public TaskCompletionSource Started { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        public async Task ProcessAsync(QueuedMessageWorkItem item, CancellationToken cancellationToken)
+        public async Task ProcessAsync(WorkDelivery<MessageWorkItem> delivery, CancellationToken cancellationToken)
         {
             Started.TrySetResult();
             // Ignores cancellation on purpose until the test releases it.

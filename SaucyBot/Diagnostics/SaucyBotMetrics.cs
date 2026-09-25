@@ -20,6 +20,8 @@ public sealed class SaucyBotMetrics : ISaucyBotMetrics
         Succeeded = _meter.CreateCounter<long>("saucybot.queue.succeeded", "items");
         Retried = _meter.CreateCounter<long>("saucybot.queue.retried", "items");
         Cancelled = _meter.CreateCounter<long>("saucybot.queue.cancelled", "items");
+        HandlerOutcomes = _meter.CreateCounter<long>("saucybot.queue.handler_outcomes", "items");
+        HandlerDuration = _meter.CreateHistogram<double>("saucybot.queue.handler_duration", "ms");
         Malformed = _meter.CreateCounter<long>("saucybot.queue.malformed", "items");
         CleanupFailed = _meter.CreateCounter<long>("saucybot.queue.cleanup_failed", "items");
         LeaseRenewed = _meter.CreateCounter<long>("saucybot.queue.lease_renewed", "renewals");
@@ -49,6 +51,10 @@ public sealed class SaucyBotMetrics : ISaucyBotMetrics
     public Counter<long> Retried { get; }
 
     public Counter<long> Cancelled { get; }
+
+    public Counter<long> HandlerOutcomes { get; }
+
+    public Histogram<double> HandlerDuration { get; }
 
     public Counter<long> Malformed { get; }
 

@@ -84,4 +84,11 @@ public sealed record QueuedMessageWorkItem(
     string EntryId,
     MessageWorkItem Item,
     IWorkItemLease Lease,
-    int DeliveryCount = 1);
+    int DeliveryCount = 1)
+{
+    // Bridges the temporary IMessageWorkQueue path to the neutral delivery
+    // contract. The legacy path does not track its receive time, so the
+    // handover time stands in until the worker reads deliveries directly.
+    public WorkDelivery<MessageWorkItem> ToDelivery() =>
+        new(Item, EntryId, DeliveryCount, DateTimeOffset.UtcNow, Lease);
+}

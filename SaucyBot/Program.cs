@@ -74,6 +74,7 @@ await Host.CreateDefaultBuilder(args)
             queueOptions.BackendOperationTimeout);
         services.AddSingleton<IWorkItemProcessor, WorkItemProcessor>();
         services.AddSingleton<IQueuedWorkItemExecutor, QueuedWorkItemExecutor>();
+        services.AddQueueMiddleware<MessageWorkItem, QueueMetricsMiddleware<MessageWorkItem>>();
         services.AddSaucyBotServices();
         services.AddSaucyBotSites();
 

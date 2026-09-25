@@ -805,12 +805,12 @@ public sealed class RedisWorkQueueIntegrationTest : IAsyncLifetime
     private sealed class RecordingProcessor : IWorkItemProcessor
     {
         public TaskCompletionSource Processed { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        public QueuedMessageWorkItem? Item { get; private set; }
+        public WorkDelivery<MessageWorkItem>? Item { get; private set; }
         public int ProcessedCount { get; private set; }
 
-        public Task ProcessAsync(QueuedMessageWorkItem item, CancellationToken cancellationToken)
+        public Task ProcessAsync(WorkDelivery<MessageWorkItem> delivery, CancellationToken cancellationToken)
         {
-            Item = item;
+            Item = delivery;
             ProcessedCount++;
             Processed.TrySetResult();
             return Task.CompletedTask;

@@ -9,4 +9,15 @@ public static class QueueMetricTags
         { "work_type", "message" },
         { "consumer_type", consumer.EndsWith("-recovery", StringComparison.Ordinal) ? "recovery" : "normal" },
     };
+
+    public static TagList Handler(string workType) => new()
+    {
+        { "work_type", workType },
+    };
+
+    public static TagList HandlerOutcome(string workType, string outcome) => new()
+    {
+        { "work_type", workType },
+        { "outcome", outcome },
+    };
 }
