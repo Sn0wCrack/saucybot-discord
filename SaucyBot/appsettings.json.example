@@ -1,119 +1,119 @@
 {
-  "OpenTelemetry": {
-    "Enabled": true,
-    "ServiceName": "SaucyBot",
-    "OtlpEndpoint": "http://otel-collector:4318",
-    "OtlpProtocol": "HttpProtobuf",
-    "OtlpHeaders": "",
-    "ExportIntervalMilliseconds": 10000,
-    "Tracing": {
-      "Enabled": false,
-      "SamplingRatio": 0.1
+    "OpenTelemetry": {
+        "Enabled": true,
+        "ServiceName": "SaucyBot",
+        "OtlpEndpoint": "http://otel-collector:4318",
+        "OtlpProtocol": "HttpProtobuf",
+        "OtlpHeaders": "",
+        "ExportIntervalMilliseconds": 10000,
+        "Tracing": {
+            "Enabled": false,
+            "SamplingRatio": 0.1
+        }
+    },
+    "Sentry": {
+        "Dsn": "",
+        "SampleRate": 1.0
+    },
+    "Serilog": {
+        "MinimumLevel": {
+            "Default": "Information",
+            "Override": {
+                "Microsoft": "Information",
+                "Microsoft.Hosting.Lifetime": "Information",
+                "Microsoft.EntityFrameworkCore": "Information",
+                "System.Net.Http.HttpClient": "Warning"
+            }
+        }
+    },
+    "Bot": {
+        "ShardMode": "Automatic",
+        "DiscordStatus": {
+            "Enabled": true,
+            "Type": "Watching",
+            "Text": "your links..."
+        },
+        "MessageCacheSize": 10,
+        "DiscordToken": "",
+        "ConnectionTimeout": 120000,
+        "DisabledSites": [],
+        "MaximumEmbeds": 8,
+        "RestrictNSFW": false
+    },
+    "Database": {
+        "Disabled": false,
+        "ConnectionString": "server=database;user=root;password=secret;database=bot"
+    },
+    "Cache": {
+        "Driver": "Redis",
+        "Redis": {
+            "DefaultLifetime": 3600,
+            "ConnectionString": "cache:6379"
+        },
+        "Memory": {
+            "DefaultLifetime": 3600
+        }
+    },
+    "Queue": {
+        "ConnectionString": "queue:6379",
+        "StreamName": "saucybot:messages",
+        "ConsumerGroup": "saucybot-workers",
+        "RetryDelay": "00:00:01",
+        "ClearPendingOnStartup": false,
+        "MessageWorkerCount": 5,
+        "InteractionWorkerCount": 5,
+        "InteractionChannelCapacity": 100,
+        "ShutdownDrainTimeout": "00:00:30",
+        "PendingReadTimeout": "00:00:01"
+    },
+    "Sites": {
+        "ArtStation": {
+            "PostLimit": 5
+        },
+        "Pixiv": {
+            "Login": "",
+            "Password": "",
+            "SessionCookie": "",
+            "PostLimit": 5,
+            "Ugoira": {
+                "Codec": "H264",
+                "Bitrate": 2000,
+                "Preset": 6,
+                "CRF": 40
+            }
+        },
+        "Twitter": {
+            "ApiKey": "",
+            "ApiSecret": "",
+            "AccessToken": "",
+            "AccessSecret": "",
+            "BearerToken": "",
+            "Delay": "2.00"
+        },
+        "ExHentai": {
+            "Cookies": {
+                "MemberId": "",
+                "PasswordHash": ""
+            }
+        },
+        "FxTwitter": {
+            "AutoDetectLanguage": false
+        },
+        "DeviantArt": {
+            "ClientId": 0,
+            "ClientSecret": ""
+        },
+        "Misskey": {
+            "Delay": "2.00"
+        },
+        "Bluesky": {
+            "Delay": "2.00"
+        },
+        "FurAffinity": {
+            "Cookies": {
+                "A": "",
+                "B": ""
+            }
+        }
     }
-  },
-  "Sentry": {
-    "Dsn": "",
-    "SampleRate": 1.0
-  },
-  "Serilog": {
-    "MinimumLevel": {
-      "Default": "Information",
-      "Override": {
-        "Microsoft": "Information",
-        "Microsoft.Hosting.Lifetime": "Information",
-        "Microsoft.EntityFrameworkCore": "Information",
-        "System.Net.Http.HttpClient": "Warning"
-      }
-    }
-  },
-  "Bot": {
-    "ShardMode": "Automatic",
-    "DiscordStatus": {
-      "Enabled": true,
-      "Type": "Watching",
-      "Text": "your links..."
-    },
-    "MessageCacheSize": 10,
-    "DiscordToken": "",
-    "ConnectionTimeout": 120000,
-    "DisabledSites": [],
-    "MaximumEmbeds": 8,
-    "RestrictNSFW": false
-  },
-  "Database": {
-    "Disabled": false,
-    "ConnectionString": "server=database;user=root;password=secret;database=bot"
-  },
-  "Cache": {
-    "Driver": "Redis",
-    "Redis": {
-      "DefaultLifetime": 3600,
-      "ConnectionString": "cache:6379"
-    },
-    "Memory": {
-      "DefaultLifetime": 3600
-    }
-  },
-  "Queue": {
-    "ConnectionString": "queue:6379",
-    "StreamName": "saucybot:messages",
-    "ConsumerGroup": "saucybot-workers",
-    "RetryDelay": "00:00:01",
-    "ClearPendingOnStartup": false,
-    "MessageWorkerCount": 5,
-    "InteractionWorkerCount": 5,
-    "InteractionChannelCapacity": 100,
-    "ShutdownDrainTimeout": "00:00:30",
-    "PendingReadTimeout": "00:00:01"
-  },
-  "Sites": {
-    "ArtStation": {
-      "PostLimit": 5
-    },
-    "Pixiv": {
-      "Login": "",
-      "Password": "",
-      "SessionCookie": "",
-      "PostLimit": 5,
-      "Ugoira": {
-        "Codec": "H264",
-        "Bitrate": 2000,
-        "Preset": 6,
-        "CRF": 40
-      }
-    },
-    "Twitter": {
-      "ApiKey": "",
-      "ApiSecret": "",
-      "AccessToken": "",
-      "AccessSecret": "",
-      "BearerToken": "",
-      "Delay": "2.00"
-    },
-    "ExHentai": {
-      "Cookies": {
-        "MemberId": "",
-        "PasswordHash": ""
-      }
-    },
-    "FxTwitter": {
-      "AutoDetectLanguage": false
-    },
-    "DeviantArt": {
-      "ClientId": 0,
-      "ClientSecret": ""
-    },
-    "Misskey": {
-      "Delay": "2.00"
-    },
-    "Bluesky": {
-      "Delay": "2.00"
-    },
-    "FurAffinity": {
-      "Cookies": {
-        "A": "",
-        "B": ""
-      }
-    }
-  }
 }

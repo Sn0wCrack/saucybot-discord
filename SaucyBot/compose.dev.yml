@@ -7,6 +7,9 @@ services:
         CONFIGURATION: '${CONFIGURATION}'
     env_file:
       - .env
+    environment:
+      OpenTelemetry__OtlpEndpoint: "${OTEL_EXPORTER_OTLP_ENDPOINT:-http://host.containers.internal:17011}"
+      OpenTelemetry__OtlpProtocol: "${OTEL_EXPORTER_OTLP_PROTOCOL:-grpc}"
     volumes:
       - ./appsettings.Development.json:/app/appsettings.Development.json
     depends_on:
@@ -16,9 +19,10 @@ services:
         condition: service_healthy
       database:
         condition: service_healthy
-      otel-collector:
-        condition: service_started
     restart: unless-stopped
+    extra_hosts:
+      # Ensure the Docker users among us have OpenTelemetry work
+      - "host.containers.internal:host-gateway"
 
   database:
     image: docker.io/library/mariadb:12.3@sha256:ab1c3dd381940233af12512b97d47b508fd3a0f17fbe3ba388739b7bc17cbc0b
@@ -63,15 +67,6 @@ services:
       timeout: 30s
       retries: 10
       start_period: 10s
-
-  otel-collector:
-    image: docker.io/otel/opentelemetry-collector-contrib:0.160.0@sha256:799dc6cf12c96192af37b5bdba804da8c10b3bc563b43cb90c3f3c58d9572ad6
-    command: [ '--config=/etc/otelcol-contrib/config.yaml' ]
-    volumes:
-      - ./otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml:ro
-    ports:
-      - '8889:8889'
-    restart: unless-stopped
 
 volumes:
   database:

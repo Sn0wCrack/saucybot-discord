@@ -95,7 +95,6 @@ public static partial class Helper
     {
         return string.IsNullOrEmpty(input)
             ? input
-            // Remove emojis and fix any resulting double spaces
             : EmojiRegex().Replace(input, "");
     }
 }

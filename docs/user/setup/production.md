@@ -111,9 +111,14 @@ Use `XINFO STREAM` and `XPENDING` to monitor stream length, oldest entry age, an
 consumer-group backlog. `saucybot.queue.depth` represents available work and does
 not include items currently claimed by workers. Use `saucybot.workers.active`,
 `saucybot.queue.lease_renewed`, `saucybot.queue.lease_lost`,
-`saucybot.queue.reclaimed`, and `saucybot.queue.worker_restarted` to investigate
-in-flight work and worker failures. OpenTelemetry exports these metrics when
-enabled. Configure the exporter with the
+`saucybot.queue.reclaimed`, `saucybot.queue.handler_outcomes`,
+`saucybot.queue.handler_duration`, `saucybot.queue.backend_operation_timed_out`,
+`saucybot.queue.handler_overdue`, and `saucybot.queue.worker_restarted` to investigate
+in-flight work, backend timeouts, slow handlers, and worker failures. The backend
+timeout metric uses fixed operation names. The overdue-handler metric records handlers
+that remain active after cancellation. These metrics use fixed work-type, outcome, and
+operation labels. They do not include message or delivery IDs. OpenTelemetry exports them
+when enabled. Configure the exporter with the
 `OpenTelemetry__OtlpEndpoint` and related environment variables described in the
 [configuration reference](configuration.md#opentelemetry); keep endpoint credentials in `.env`, not tracked files.
 Set `Sentry__Dsn` to a Sentry project DSN to receive runtime error reports (empty disables it).
@@ -124,9 +129,16 @@ renews its lease while processing. If it stops renewing, another worker can
 recover the item after the idle timeout. Redis Streams provide at-least-once
 delivery, so message processing must tolerate duplicate delivery.
 
-Lease renewal does not provide fencing against a worker that pauses and later
-resumes after another worker has reclaimed its item. Keep message side effects
-idempotent; use the message ID or queue entry ID for deduplication where needed.
+The queue rejects completion from a worker after another worker claims the item.
+It cannot stop a paused handler from resuming and repeating external side effects.
+Make each message handler safe to run more than once. Use a stable message key to prevent duplicate
+side effects when the service supports that feature.
+
+Stop all bot workers before you deploy this queue version. Older workers do not
+use lease tokens. They can delete work after a new worker claims it.
+
+The bot stops admitting work during shutdown. It drains admitted work for up to
+`ShutdownDrainTimeout`. Unfinished messages stay pending for recovery.
 
 Do not treat separate logical Valkey databases as resource isolation. Cache and queue
 must remain separate Valkey services so their memory limits, eviction policies, and

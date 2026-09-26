@@ -99,6 +99,7 @@ public sealed partial class VxTwitterSite : BaseSite
 
     private static string GetTweetText(VxTwitterResponse tweet)
     {
+        // TODO: There's an issue here where escaping Markdown causes invalid presentation and breaks URLs due to naive replacement.
         var text = LinkifyTwitterContent(tweet.Text);
         text = Helper.EscapeDiscordMarkdown(text);
         if (tweet.QuotedTweet is null)

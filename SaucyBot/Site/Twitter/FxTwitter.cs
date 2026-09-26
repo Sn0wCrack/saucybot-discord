@@ -334,6 +334,7 @@ public sealed partial class FxTwitterSite : BaseSite
     {
         var text = tweet.Translation is not null ? tweet.Translation.Text : tweet.Text;
 
+        // TODO: There's an issue here where escaping Markdown causes invalid presentation and breaks URLs due to naive replacement.
         text = LinkifyTwitterContent(text);
         text = Helper.EscapeDiscordMarkdown(text);
 
@@ -354,6 +355,7 @@ public sealed partial class FxTwitterSite : BaseSite
     {
         var quotedText = quote.Translation is not null ? quote.Translation.Text : quote.Text;
 
+        // TODO: There's an issue here where escaping Markdown causes invalid presentation and breaks URLs due to naive replacement.
         quotedText = LinkifyTwitterContent(quotedText);
         quotedText = Helper.EscapeDiscordMarkdown(quotedText);
 

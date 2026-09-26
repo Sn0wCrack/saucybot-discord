@@ -1,6 +1,5 @@
 ﻿**/.containerignore
 **/.dockerignore
-**/.env
 **/.env*
 **/.editorconfig
 **/.git
@@ -14,7 +13,6 @@
 **/.toolstarget
 **/.vs
 **/.vscode
-**/.idea
 **/*.*proj.user
 **/*.dbmdl
 **/*.jfm
@@ -31,7 +29,6 @@
 **/obj
 **/secrets.dev.yaml
 **/values.dev.yaml
-**/appsettings.json
 **/appsettings*.json
 **/otel-collector-config.yaml
 LICENSE

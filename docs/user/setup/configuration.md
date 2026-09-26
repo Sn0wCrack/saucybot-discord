@@ -119,7 +119,7 @@ The `Queue` keys below are generic worker settings. They apply to every backend.
 | `MessageWorkerCount` | Integer | Number of message workers. Increase only after checking queue age, CPU, memory, and upstream rate limits. | `5` |
 | `InteractionWorkerCount` | Integer | Number of interaction workers. | `5` |
 | `InteractionChannelCapacity` | Integer | Maximum number of admitted in-process interactions waiting for workers. | `100` |
-| `RecoveryHandoffCapacity` | Integer | Maximum number of recovered deliveries waiting in the in-process handoff before recovery pauses. Environment variable: `Queue__RecoveryHandoffCapacity`. | `25` |
+| `RecoveryHandoffCapacity` | Integer | Maximum number of deliveries waiting in the handoff. Set this to at least `2` so new reads and recovery can both make progress. Environment variable: `Queue__RecoveryHandoffCapacity`. | `25` |
 | `ClearPendingOnStartup` | Boolean | Delete pending work when the queue starts. Enable only when intentionally discarding pending work. | `false` |
 | `ShutdownDrainTimeout` | TimeSpan | Maximum time allowed to drain admitted work during shutdown. | `00:00:30` |
 
@@ -136,14 +136,20 @@ An enqueue stops after `EnqueueTimeout`. If Redis does not answer in time, the b
 
 Lease renewal, completion, retry, and cleanup stop after `BackendOperationTimeout`. The Redis command timeout follows the same value, so Redis also stops each command at the transport level. If a completion or a retry has an unknown outcome, the item stays in the queue and recovery delivers it again later. The handler does not run again in the same attempt.
 
+OpenTelemetry reports backend timeouts with `saucybot.queue.backend_operation_timed_out`. The `operation` tag uses a fixed operation name. It does not include message or delivery IDs.
+
+OpenTelemetry reports handler results with `saucybot.queue.handler_outcomes` and handler duration with `saucybot.queue.handler_duration`. The outcome tag uses `succeeded`, `failed`, or `cancelled`.
+
 Message processing is at-least-once. Handlers must tolerate duplicate delivery and must give the same result when they run twice. Handlers must honor cancellation and must stop side effects when the token is canceled.
 
 > [!WARNING]
-> A handler that ignores cancellation keeps its worker until it finishes. Lease renewal stops at `MaxProcessingTime`, so recovery can deliver the item to another worker and the side effects then run twice. If all workers are stuck on such handlers, restart the bot. The queue logs each handler that runs past its deadline.
+> A handler that ignores cancellation keeps its worker until it finishes. Lease renewal stops at `MaxProcessingTime`, so recovery can deliver the item to another worker and side effects can run twice. If all workers are stuck on such handlers, restart the bot. The `saucybot.queue.handler_overdue` metric counts handlers that remain active after cancellation.
 
 #### Queue.Redis
 
 These keys are specific to the Redis backend. A different backend validates and documents its own settings.
+
+This release supports only the Redis backend.
 
 Lease scripts use only the configured `StreamName` key. Redis Cluster routes each script by that key, so `StreamName` does not need a hash tag.
 
