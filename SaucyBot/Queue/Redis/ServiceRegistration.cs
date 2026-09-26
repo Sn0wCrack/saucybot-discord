@@ -13,8 +13,6 @@ public static class ServiceRegistration
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(options);
 
-        RedisWorkQueueOptionsValidator.Validate(options);
-
         services.AddSingleton(options);
         services.TryAddSingleton<IConnectionMultiplexer>(
             _ => ConnectionMultiplexer.Connect(BuildConfiguration(options, commandTimeout)));

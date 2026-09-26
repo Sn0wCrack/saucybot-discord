@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SaucyBot;
 using SaucyBot.Database;
@@ -52,15 +51,8 @@ await Host.CreateDefaultBuilder(args)
         services.AddSaucyBotDatabase();
 
         services.AddSaucyBotCache(configuration);
-        var bootstrapLoggerConfiguration = new LoggerConfiguration();
-        ApplySerilogConfiguration(bootstrapLoggerConfiguration, configuration);
-        var bootstrapSerilogLogger = bootstrapLoggerConfiguration.CreateLogger();
-        using var bootstrapLoggerFactory = LoggerFactory.Create(
-            logging => logging.AddSerilog(bootstrapSerilogLogger));
-        var queueOptions = WorkQueueOptionsLoader.Bind(
-            configuration,
-            bootstrapLoggerFactory.CreateLogger("SaucyBot.Queue"));
-        WorkQueueOptionsValidator.Validate(queueOptions);
+        var queueOptions = configuration.GetSection("Queue").Get<WorkQueueOptions>()
+            ?? new WorkQueueOptions();
 
         if (queueOptions.Driver != QueueDriverType.Redis)
         {

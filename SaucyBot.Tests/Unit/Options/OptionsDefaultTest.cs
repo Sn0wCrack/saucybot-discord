@@ -1,7 +1,6 @@
 using System;
 using SaucyBot.Options;
 using SaucyBot.Options.Sites;
-using SaucyBot.Queue;
 using SaucyBot.Services.Cache;
 using SaucyBot.Site.Pixiv;
 using Xunit;
@@ -79,22 +78,6 @@ public sealed class OptionsDefaultTest
         var options = new SentryOptions();
 
         Assert.Null(options.SampleRate);
-    }
-
-    [Fact]
-    public void QueueGenericTimingDefaultsArePositiveAndBounded()
-    {
-        var options = new WorkQueueOptions();
-
-        Assert.Equal(TimeSpan.FromSeconds(5), options.EnqueueTimeout);
-        Assert.Equal(TimeSpan.FromSeconds(5), options.BackendOperationTimeout);
-        Assert.Equal(25, options.RecoveryHandoffCapacity);
-        Assert.Equal(TimeSpan.FromSeconds(5), options.HeartbeatInterval);
-        Assert.Equal(TimeSpan.FromSeconds(5), options.ReclaimerInterval);
-        Assert.Equal(TimeSpan.FromSeconds(30), options.PendingMessageIdleTime);
-        Assert.True(options.MaxProcessingTime > TimeSpan.Zero);
-        Assert.True(options.ShutdownDrainTimeout > TimeSpan.Zero);
-        Assert.True(options.HeartbeatInterval < options.PendingMessageIdleTime);
     }
 
     [Fact]

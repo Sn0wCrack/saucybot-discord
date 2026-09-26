@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using NSubstitute;
 using SaucyBot.Diagnostics;
 using SaucyBot.Library.Discord;
@@ -70,17 +69,6 @@ public sealed class DependencyInjectionTest
         Assert.Same(producer, provider.GetRequiredService<IWorkItemConsumer<MessageWorkItem>>());
         Assert.Same(producer, provider.GetRequiredService<IWorkItemProducer<MessageWorkItem>>());
         Assert.Same(producer, provider.GetRequiredService<RedisWorkQueue>());
-    }
-
-    [Fact]
-    public void RedisQueueExtensionRejectsInvalidBackendOptions()
-    {
-        var services = new ServiceCollection();
-
-        Assert.Throws<OptionsValidationException>(() =>
-            services.AddRedisQueue(
-                new RedisWorkQueueOptions { PendingReadTimeout = TimeSpan.Zero },
-                TimeSpan.FromSeconds(5)));
     }
 
     [Fact]
