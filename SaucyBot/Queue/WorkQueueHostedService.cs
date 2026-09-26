@@ -24,7 +24,6 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
     private int _disposed;
 
     public CancellationToken AdmissionToken => _admissionCancellation.Token;
-    public Task WorkerCompletion => _completion ?? Task.CompletedTask;
 
     public WorkQueueHostedService(
         IWorkItemConsumer<MessageWorkItem> consumer,

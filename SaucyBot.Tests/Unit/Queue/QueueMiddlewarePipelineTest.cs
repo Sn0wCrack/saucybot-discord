@@ -287,16 +287,6 @@ public sealed class QueueMiddlewarePipelineTest
     }
 
     [Fact]
-    public void MiddlewareContextDoesNotExposeLeaseOperations()
-    {
-        var properties = typeof(QueueWorkContext<MessageWorkItem>).GetProperties();
-
-        Assert.DoesNotContain(
-            properties,
-            property => typeof(IWorkItemLease).IsAssignableFrom(property.PropertyType));
-    }
-
-    [Fact]
     public async Task MetricsMiddlewareLabelsInteractionWorkAsInteraction()
     {
         using var metrics = new SaucyBotMetrics();

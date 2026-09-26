@@ -25,7 +25,7 @@ public sealed class MessageRecoveryWorker
         _metrics = metrics;
     }
 
-    public async Task RunAsync(string consumer, CancellationToken cancellationToken)
+    internal async Task RunAsync(string consumer, CancellationToken cancellationToken)
     {
         while (!cancellationToken.IsCancellationRequested)
         {

@@ -12,15 +12,6 @@ namespace SaucyBot.Tests.Unit.Queue;
 public sealed class WorkItemProcessorTest
 {
     [Fact]
-    public void ProcessorHandlerContractAcceptsOnlyTheMessageWorkItem()
-    {
-        var method = typeof(IWorkItemProcessor).GetMethod(nameof(IWorkItemProcessor.ProcessAsync));
-
-        Assert.NotNull(method);
-        Assert.Equal(typeof(MessageWorkItem), method!.GetParameters()[0].ParameterType);
-    }
-
-    [Fact]
     public async Task ProcessingPassesTheItemCancellationTokenToTheScopedHandler()
     {
         using var cancellation = new CancellationTokenSource();

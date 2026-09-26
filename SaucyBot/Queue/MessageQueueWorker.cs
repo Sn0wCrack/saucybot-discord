@@ -29,7 +29,7 @@ public sealed class MessageQueueWorker
         _metrics = metrics;
     }
 
-    public async Task RunAsync(string consumer, CancellationToken cancellationToken)
+    private async Task RunAsync(string consumer, CancellationToken cancellationToken)
     {
         try
         {
@@ -44,7 +44,7 @@ public sealed class MessageQueueWorker
         }
     }
 
-    public async Task RunSupervisedAsync(string consumer, CancellationToken cancellationToken)
+    internal async Task RunSupervisedAsync(string consumer, CancellationToken cancellationToken)
     {
         while (!cancellationToken.IsCancellationRequested)
         {

@@ -33,16 +33,17 @@ public sealed class MessageRecoveryWorkerTest
         var running = reader.RunAsync("reader-1", cancellation.Token);
         Assert.Equal(0, consumer.ReadCalls);
 
-        var first = await channel.ReadAsync(TestContext.Current.CancellationToken);
-        Assert.Equal("initial-0", first.DeliveryId);
-        var second = await channel.ReadAsync(TestContext.Current.CancellationToken);
-        Assert.Equal("initial-1", second.DeliveryId);
+        await using var readerOutput = channel.ReadAllAsync(TestContext.Current.CancellationToken)
+            .GetAsyncEnumerator(TestContext.Current.CancellationToken);
+        Assert.True(await readerOutput.MoveNextAsync());
+        Assert.Equal("initial-0", readerOutput.Current.DeliveryId);
+        Assert.True(await readerOutput.MoveNextAsync());
+        Assert.Equal("initial-1", readerOutput.Current.DeliveryId);
         await consumer.ReadStarted.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
-        var next = await channel.ReadAsync(TestContext.Current.CancellationToken)
-            .AsTask()
-            .WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
-        Assert.Equal("new-0", next.DeliveryId);
+        Assert.True(await readerOutput.MoveNextAsync().AsTask()
+            .WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
+        Assert.Equal("new-0", readerOutput.Current.DeliveryId);
 
         cancellation.Cancel();
         await running.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
@@ -75,17 +76,18 @@ public sealed class MessageRecoveryWorkerTest
 
         Assert.Equal(0, consumer.RecoveryCalls);
 
-        var first = await channel.ReadAsync(TestContext.Current.CancellationToken);
-        Assert.Equal("initial-0", first.DeliveryId);
-        var second = await channel.ReadAsync(TestContext.Current.CancellationToken);
-        Assert.Equal("initial-1", second.DeliveryId);
+        await using var recoveryOutput = channel.ReadAllAsync(TestContext.Current.CancellationToken)
+            .GetAsyncEnumerator(TestContext.Current.CancellationToken);
+        Assert.True(await recoveryOutput.MoveNextAsync());
+        Assert.Equal("initial-0", recoveryOutput.Current.DeliveryId);
+        Assert.True(await recoveryOutput.MoveNextAsync());
+        Assert.Equal("initial-1", recoveryOutput.Current.DeliveryId);
         await consumer.RecoveryStarted.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
-        var next = await channel.ReadAsync(TestContext.Current.CancellationToken)
-            .AsTask()
-            .WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
-        Assert.Equal("recovered-0", next.DeliveryId);
-        Assert.True(next.IsRecovered);
+        Assert.True(await recoveryOutput.MoveNextAsync().AsTask()
+            .WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
+        Assert.Equal("recovered-0", recoveryOutput.Current.DeliveryId);
+        Assert.True(recoveryOutput.Current.IsRecovered);
         Assert.True(consumer.RecoveryCalls >= 1);
 
         cancellation.Cancel();

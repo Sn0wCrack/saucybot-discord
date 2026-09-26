@@ -26,7 +26,7 @@ public sealed class InteractionQueueWorker
         _metrics = metrics;
     }
 
-    public async Task RunAsync(CancellationToken cancellationToken)
+    private async Task RunAsync(CancellationToken cancellationToken)
     {
         try
         {
@@ -41,12 +41,12 @@ public sealed class InteractionQueueWorker
         }
     }
 
-    public Task ProcessImmediatelyAsync(
+    internal Task ProcessImmediatelyAsync(
         IInteractionWorkItem interaction,
         CancellationToken cancellationToken) =>
         ProcessInteractionAsync(interaction, cancellationToken, wasQueued: false);
 
-    public async Task RunSupervisedAsync(CancellationToken cancellationToken)
+    internal async Task RunSupervisedAsync(CancellationToken cancellationToken)
     {
         while (!cancellationToken.IsCancellationRequested)
         {

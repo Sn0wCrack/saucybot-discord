@@ -66,7 +66,7 @@ public sealed class MessageQueueWorkerTest
             metrics);
         using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
 
-        var running = worker.RunAsync("message-1", cancellation.Token);
+        var running = worker.RunSupervisedAsync("message-1", cancellation.Token);
         await processor.Processed.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         await lease.Completed.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         cancellation.Cancel();
@@ -105,7 +105,7 @@ public sealed class MessageQueueWorkerTest
             new SaucyBotMetrics());
         using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
 
-        var running = worker.RunAsync("message-1", cancellation.Token);
+        var running = worker.RunSupervisedAsync("message-1", cancellation.Token);
         await lease.Retried.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         cancellation.Cancel();
         channel.Complete();
@@ -140,7 +140,7 @@ public sealed class MessageQueueWorkerTest
             new SaucyBotMetrics());
         using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
 
-        var running = worker.RunAsync("message-1", cancellation.Token);
+        var running = worker.RunSupervisedAsync("message-1", cancellation.Token);
         await processor.Started.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         lease.Lose();
         await lease.Disposed.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
@@ -172,7 +172,7 @@ public sealed class MessageQueueWorkerTest
         var worker = CreateWorker(channel, processor);
         using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
 
-        var running = worker.RunAsync("message-1", cancellation.Token);
+        var running = worker.RunSupervisedAsync("message-1", cancellation.Token);
         await processor.Processed.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         await lease.Completed.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         cancellation.Cancel();
@@ -202,7 +202,7 @@ public sealed class MessageQueueWorkerTest
         var worker = CreateWorker(channel, processor);
         using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
 
-        var running = worker.RunAsync("message-1", cancellation.Token);
+        var running = worker.RunSupervisedAsync("message-1", cancellation.Token);
         await lease.Completed.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         cancellation.Cancel();
         channel.Complete();
@@ -251,7 +251,7 @@ public sealed class MessageQueueWorkerTest
             metrics);
         using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
 
-        var running = worker.RunAsync("message-1", cancellation.Token);
+        var running = worker.RunSupervisedAsync("message-1", cancellation.Token);
         await processor.CancellationObservedSignal.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         await lease.Disposed.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         cancellation.Cancel();
@@ -335,7 +335,7 @@ public sealed class MessageQueueWorkerTest
             logger,
             metrics);
         using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
-        var running = worker.RunAsync("message-1", cancellation.Token);
+        var running = worker.RunSupervisedAsync("message-1", cancellation.Token);
 
         await processor.Started.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         Assert.Equal(1, await overdueSignal.Task.WaitAsync(TimeSpan.FromMilliseconds(100), TestContext.Current.CancellationToken));

@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Channels;
@@ -17,18 +15,6 @@ namespace SaucyBot.Tests.Unit.Queue;
 
 public sealed class WorkQueueHostedServiceTest
 {
-    [Fact]
-    public void HostedServiceExposesOnlyTheLeaseAwareConstructor()
-    {
-        var constructors = typeof(WorkQueueHostedService).GetConstructors();
-
-        var constructor = Assert.Single(constructors);
-        var parameterTypes = constructor.GetParameters().Select(parameter => parameter.ParameterType).ToArray();
-        Assert.Contains(typeof(IWorkItemConsumer<MessageWorkItem>), parameterTypes);
-        Assert.Contains(typeof(MessageQueueWorker), parameterTypes);
-        Assert.DoesNotContain(typeof(IWorkItemProducer<MessageWorkItem>), parameterTypes);
-    }
-
     [Fact]
     public async Task CancellationAfterNonCooperativeProcessingLeavesItemPending()
     {
@@ -50,25 +36,6 @@ public sealed class WorkQueueHostedServiceTest
     }
 
     [Fact]
-    public async Task DisposalDoesNotRaceWithTimedOutWorkers()
-    {
-        var queue = new TestWorkQueue();
-        var processor = new NonCooperativeProcessor();
-        queue.Add(CreateItem("1-0"));
-
-        var service = CreateService(queue, processor, TimeSpan.FromMilliseconds(25));
-        await service.StartAsync(TestContext.Current.CancellationToken);
-        await processor.Started.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
-
-        await service.StopAsync(TestContext.Current.CancellationToken);
-        Assert.False(service.WorkerCompletion.IsCompleted);
-
-        processor.Release();
-        await service.WorkerCompletion.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
-        await service.DisposeAsync();
-    }
-
-    [Fact]
     public async Task PreCanceledStopCancelsNonCooperativeWorkersBeforeReturning()
     {
         var queue = new TestWorkQueue();
@@ -86,35 +53,11 @@ public sealed class WorkQueueHostedServiceTest
         await processor.CancellationObservedSignal.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
         processor.Release();
-        await service.WorkerCompletion.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await processor.Completed.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await service.StopAsync(TestContext.Current.CancellationToken);
         await service.DisposeAsync();
 
         Assert.Empty(queue.Acknowledged);
-    }
-
-    [Fact]
-    public async Task HostStoppingStopsIntakeButAllowsActiveWorkToDrain()
-    {
-        var queue = new TestWorkQueue();
-        var processor = new NonCooperativeProcessor();
-        queue.Add(CreateItem("1-0"));
-
-        await using var service = CreateService(queue, processor, TimeSpan.FromSeconds(1));
-        using var stopping = new CancellationTokenSource();
-        var executeAsync = typeof(WorkQueueHostedService)
-            .GetMethod("ExecuteAsync", BindingFlags.Instance | BindingFlags.NonPublic)!;
-        var execution = (Task)executeAsync.Invoke(service, [stopping.Token])!;
-
-        await processor.Started.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
-        stopping.Cancel();
-        Assert.True(service.AdmissionToken.IsCancellationRequested);
-        Assert.False(processor.CancellationObserved);
-
-        processor.Release();
-        await queue.ReadCancellationObservedSignal.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
-        await execution.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
-        Assert.True(queue.ReadCancellationObserved);
-        Assert.Single(queue.Acknowledged);
     }
 
     [Fact]

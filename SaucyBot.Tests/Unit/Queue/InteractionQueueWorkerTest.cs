@@ -28,7 +28,7 @@ public sealed class InteractionQueueWorkerTest
         await channel.WriteAsync(interaction, TestContext.Current.CancellationToken);
         channel.Complete();
 
-        await worker.RunAsync(TestContext.Current.CancellationToken);
+        await worker.RunSupervisedAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(["enter", "terminal", "exit"], trace);
         Assert.Equal(0, interaction.InitialResponses);
@@ -66,7 +66,7 @@ public sealed class InteractionQueueWorkerTest
             new CallbackProcessor((_, _) => Task.CompletedTask),
             new ThrowingMiddleware(new InvalidOperationException("middleware failed")));
         using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
-        var running = worker.RunAsync(cancellation.Token);
+        var running = worker.RunSupervisedAsync(cancellation.Token);
         await channel.WriteAsync(first, cancellation.Token);
         await first.Responded.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
 
@@ -93,7 +93,7 @@ public sealed class InteractionQueueWorkerTest
         await channel.WriteAsync(interaction, TestContext.Current.CancellationToken);
         channel.Complete();
 
-        await worker.RunAsync(TestContext.Current.CancellationToken);
+        await worker.RunSupervisedAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(1, interaction.InitialResponses);
         Assert.Equal(1, interaction.Followups);
@@ -109,7 +109,7 @@ public sealed class InteractionQueueWorkerTest
         var trace = new List<string>();
         var worker = CreateWorker(channel, processor, new TraceMiddleware(trace));
         using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
-        var running = worker.RunAsync(cancellation.Token);
+        var running = worker.RunSupervisedAsync(cancellation.Token);
         await channel.WriteAsync(interaction, TestContext.Current.CancellationToken);
         await processor.Started.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         cancellation.Cancel();

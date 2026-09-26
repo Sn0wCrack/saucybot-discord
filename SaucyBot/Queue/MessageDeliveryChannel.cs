@@ -32,7 +32,7 @@ public sealed class MessageDeliveryChannel : IAsyncDisposable
         _slots = new SemaphoreSlim(capacity, capacity);
     }
 
-    public async ValueTask<DeliveryReservation> ReserveAsync(CancellationToken cancellationToken)
+    internal async ValueTask<DeliveryReservation> ReserveAsync(CancellationToken cancellationToken)
     {
         using var waitCancellation = CancellationTokenSource.CreateLinkedTokenSource(
             cancellationToken,
@@ -57,14 +57,7 @@ public sealed class MessageDeliveryChannel : IAsyncDisposable
         return new DeliveryReservation(this);
     }
 
-    public async ValueTask<WorkDelivery<MessageWorkItem>> ReadAsync(CancellationToken cancellationToken)
-    {
-        var delivery = await _channel.Reader.ReadAsync(cancellationToken);
-        _slots.Release();
-        return delivery;
-    }
-
-    public async IAsyncEnumerable<WorkDelivery<MessageWorkItem>> ReadAllAsync(
+    internal async IAsyncEnumerable<WorkDelivery<MessageWorkItem>> ReadAllAsync(
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         await foreach (var delivery in _channel.Reader.ReadAllAsync(cancellationToken))
@@ -74,7 +67,7 @@ public sealed class MessageDeliveryChannel : IAsyncDisposable
         }
     }
 
-    public void Complete(Exception? exception = null)
+    internal void Complete(Exception? exception = null)
     {
         if (Interlocked.Exchange(ref _isCompleted, 1) != 0)
         {
@@ -103,14 +96,14 @@ public sealed class MessageDeliveryChannel : IAsyncDisposable
 
     private void ReleaseReservation() => _slots.Release();
 
-    public sealed class DeliveryReservation : IAsyncDisposable
+    internal sealed class DeliveryReservation : IAsyncDisposable
     {
         private readonly MessageDeliveryChannel _owner;
         private int _state;
 
         internal DeliveryReservation(MessageDeliveryChannel owner) => _owner = owner;
 
-        public bool Publish(WorkDelivery<MessageWorkItem> delivery)
+        internal bool Publish(WorkDelivery<MessageWorkItem> delivery)
         {
             ArgumentNullException.ThrowIfNull(delivery);
             if (Interlocked.CompareExchange(ref _state, 1, 0) != 0)

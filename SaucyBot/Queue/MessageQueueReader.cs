@@ -18,7 +18,7 @@ public sealed class MessageQueueReader
         _logger = logger;
     }
 
-    public async Task RunAsync(string consumer, CancellationToken cancellationToken)
+    internal async Task RunAsync(string consumer, CancellationToken cancellationToken)
     {
         try
         {
