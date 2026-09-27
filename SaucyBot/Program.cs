@@ -19,7 +19,6 @@ using SaucyBot.Library.Sites.Twitter;
 using SaucyBot.Options;
 using SaucyBot.Options.Sites;
 using SaucyBot.Queue;
-using SaucyBot.Queue.Redis;
 using SaucyBot.Services;
 using SaucyBot.Services.Cache;
 using SaucyBot.Site;
@@ -51,27 +50,7 @@ await Host.CreateDefaultBuilder(args)
         services.AddSaucyBotDatabase();
 
         services.AddSaucyBotCache(configuration);
-        var queueOptions = configuration.GetSection("Queue").Get<WorkQueueOptions>()
-            ?? new WorkQueueOptions();
-
-        if (queueOptions.Driver != QueueDriverType.Redis)
-        {
-            throw new InvalidOperationException($"Unsupported queue driver: {queueOptions.Driver}");
-        }
-
-        services.AddSingleton(queueOptions);
-        services.AddSingleton<InteractionWorkChannel>();
-        services.AddRedisQueue(
-            configuration.GetSection("Queue:Redis").Get<RedisWorkQueueOptions>() ?? new RedisWorkQueueOptions(),
-            queueOptions.BackendOperationTimeout);
-        services.AddSingleton<IWorkItemProcessor, WorkItemProcessor>();
-        services.AddSingleton<MessageDeliveryChannel>();
-        services.AddSingleton<MessageQueueReader>();
-        services.AddSingleton<MessageRecoveryWorker>();
-        services.AddSingleton<MessageQueueWorker>();
-        services.AddSingleton<InteractionQueueWorker>();
-        services.AddQueueMiddleware<MessageWorkItem, QueueMetricsMiddleware<MessageWorkItem>>();
-        services.AddQueueMiddleware<IInteractionWorkItem, QueueMetricsMiddleware<IInteractionWorkItem>>();
+        services.AddSaucyBotQueue(configuration);
         services.AddSaucyBotServices();
         services.AddSaucyBotSites();
 
@@ -91,8 +70,6 @@ await Host.CreateDefaultBuilder(args)
         services.AddDeviantArtClient();
         services.AddFileDownloadClient();
 
-        services.AddSingleton<WorkQueueHostedService>();
-        services.AddHostedService(provider => provider.GetRequiredService<WorkQueueHostedService>());
         services.AddSingleton<DiscordClientHost>();
         services.AddHostedService<Worker>();
     })

@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using SaucyBot.Diagnostics;
@@ -19,6 +20,26 @@ namespace SaucyBot.Tests.Unit.Queue;
 
 public sealed class DependencyInjectionTest
 {
+    [Fact]
+    public void QueueExtensionRegistersTheWorkerSystem()
+    {
+        var services = new ServiceCollection();
+        services.AddSaucyBotQueue(new ConfigurationBuilder().Build());
+
+        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(WorkQueueHostedService));
+        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(IHostedService));
+        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(IWorkItemProducer<MessageWorkItem>));
+        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(IWorkItemConsumer<MessageWorkItem>));
+        Assert.Contains(services, descriptor =>
+            descriptor.ServiceType == typeof(IWorkItemProcessor) &&
+            descriptor.ImplementationType == typeof(WorkItemProcessor));
+        Assert.Contains(services, descriptor =>
+            descriptor.ServiceType == typeof(IInteractionProcessor) &&
+            descriptor.ImplementationType == typeof(InteractionProcessor));
+        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(IQueueMiddleware<MessageWorkItem>));
+        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(IQueueMiddleware<IInteractionWorkItem>));
+    }
+
     [Fact]
     public void RedisQueueExtensionRegistersBackendNeutralProducerAndConsumer()
     {

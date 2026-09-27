@@ -15,8 +15,6 @@ public static class CoreServiceRegistration
         services.AddScoped<MessageManager>();
         services.AddSingleton<DiscordMessageResolver>();
         services.AddSingleton<IMessageResolver>(provider => provider.GetRequiredService<DiscordMessageResolver>());
-        services.AddSingleton<IInteractionProcessor, InteractionProcessor>();
-
         services.AddSingleton<IDatabaseMigrator, DatabaseMigrator>();
         services.AddScoped<IGuildConfigurationManager, GuildConfigurationManager>();
 
