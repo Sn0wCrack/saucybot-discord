@@ -22,9 +22,11 @@ public sealed class ArtStationClient : IArtStationClient
 
     public async Task<Project?> GetProject(string hash)
     {
-        var response = await _cache.Remember($"artstation.project_{hash}", async () => await _client.GetStringAsync($"{BaseUrl}/projects/{hash}.json"));
-
-        return response is null ? null : JsonSerializer.Deserialize<Project>(response);
+        return await _cache.Remember($"artstation.project_{hash}", async () =>
+        {
+            var response = await _client.GetStringAsync($"{BaseUrl}/projects/{hash}.json");
+            return JsonSerializer.Deserialize<Project>(response);
+        });
     }
 }
 

@@ -1,44 +1,9 @@
-using System.Net;
-using SaucyBot.Extensions;
-using SaucyBot.Options.Sites;
-
 namespace SaucyBot.Library.Sites.FurAffinity;
 
 public static class FurAffinityServiceRegistration
 {
-    public static IServiceCollection AddFurAffinityClient(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddFurAffinityClient(this IServiceCollection services)
     {
-        var furAffinityOptions = configuration.BindOrDefault<FurAffinityOptions>("Sites:FurAffinity");
-
-        var cookieContainer = new CookieContainer();
-        cookieContainer.Add(new Cookie
-        {
-            Name = "a",
-            Value = furAffinityOptions.Cookies.A,
-            Domain = ".furaffinity.net",
-            Path = "/",
-            HttpOnly = true,
-            Secure = true,
-        });
-        cookieContainer.Add(new Cookie
-        {
-            Name = "b",
-            Value = furAffinityOptions.Cookies.B,
-            Domain = ".furaffinity.net",
-            Path = "/",
-            HttpOnly = true,
-            Secure = true,
-        });
-
-        services.AddHtmlClient<IFaExportClient, FurAffinityDirectClient>(
-            () => new HttpClientHandler
-            {
-                CookieContainer = cookieContainer,
-                UseCookies = true,
-                AllowAutoRedirect = true,
-            }
-        );
-
         services.AddJsonApiClient<IFaExportClient, FaExportClient>();
 
         return services;

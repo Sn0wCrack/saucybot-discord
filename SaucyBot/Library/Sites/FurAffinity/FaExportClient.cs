@@ -52,12 +52,21 @@ public sealed class FaExportClient : IFaExportClient
 
     public async Task<FaExportSubmission?> GetSubmission(string identifier)
     {
-        var response = await _cache.Remember($"furaffinity.post_{identifier}", async () =>
+        return await _cache.Remember($"furaffinity.post_{identifier}", async () =>
         {
-            return await _pipeline.ExecuteAsync(async token => await _client.GetStringAsync($"{BaseUrl}/submission/{identifier}.json", token));
-        });
+            var response = await _pipeline.ExecuteAsync(async token => await _client.GetStringAsync(
+                $"{BaseUrl}/submission/{identifier}.json",
+                token));
+            if (response is null)
+            {
+                return null;
+            }
 
-        return response is null ? null : JsonSerializer.Deserialize<FaExportSubmission>(response);
+            var submission = JsonSerializer.Deserialize<FaExportSubmission>(response);
+            return submission is null
+                ? null
+                : submission with { Description = FurAffinityBbCodeCleaner.Clean(submission.Description) };
+        });
     }
 }
 

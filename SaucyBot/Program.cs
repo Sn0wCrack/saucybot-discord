@@ -54,7 +54,7 @@ await Host.CreateDefaultBuilder(args)
         services.AddSaucyBotServices();
         services.AddSaucyBotSites();
 
-        services.AddFurAffinityClient(configuration);
+        services.AddFurAffinityClient();
         services.AddArtStationClient();
         services.AddNewgroundsClient();
         services.AddDeviantArtOpenEmbedClient();

@@ -36,12 +36,10 @@ public sealed class HentaiFoundryClient : IHentaiFoundryClient
 
     public async Task<HentaiFoundryPicture?> GetPage(string url)
     {
-        var response = await _cache.Remember(
+        return await _cache.Remember(
             $"hentaifoundry.picture_{url}",
-            async () => await _client.GetStringAsync(url)
+            async () => new HentaiFoundryPicture(await _client.GetStringAsync(url))
         );
-
-        return response is null ? null : new HentaiFoundryPicture(response);
     }
 }
 
@@ -49,54 +47,53 @@ public sealed class HentaiFoundryPicture
 {
     private const string BaseUrl = "https://www.hentai-foundry.com";
 
-    private readonly IHtmlDocument _document;
+    public string? TitleValue { get; init; }
+    public string? DescriptionValue { get; init; }
+    public string? ImageSourceValue { get; init; }
+    public string? AuthorNameValue { get; init; }
+    public string? AuthorSourceValue { get; init; }
+    public string? AuthorAvatarSourceValue { get; init; }
+    public DateTimeOffset? PostedAtValue { get; init; }
+    public string ViewsValue { get; init; } = "0";
+    public string VotesValue { get; init; } = "0";
+
+    public HentaiFoundryPicture()
+    {
+    }
 
     public HentaiFoundryPicture(string page)
     {
         var parser = new HtmlParser();
+        var document = parser.ParseDocument(page);
 
-        _document = parser.ParseDocument(page);
+        TitleValue = document.QuerySelector(".imageTitle")?.TextContent;
+        DescriptionValue = document.QuerySelector(".picDescript")?.TextContent;
+
+        ImageSourceValue = document.QuerySelector("#picBox .boxbody img")?.GetAttribute("src");
+
+        AuthorNameValue = document.QuerySelector("#descriptionBox .boxbody a img")?.GetAttribute("title");
+        AuthorSourceValue = document.QuerySelector("#descriptionBox .boxbody a")?.GetAttribute("href");
+        AuthorAvatarSourceValue = document.QuerySelector("#descriptionBox .boxbody a img")?.GetAttribute("src");
+
+        var dateTime = document.QuerySelector("#pictureGeneralInfoBox time")?.GetAttribute("datetime");
+        PostedAtValue = dateTime is null ? null : DateTimeOffset.Parse(dateTime);
+
+        ViewsValue = document.QuerySelector("#pictureGeneralInfoBox .boxbody .column span:contains('Views')")
+            ?.NextSibling?.TextContent.Trim() ?? "0";
+        VotesValue = document.QuerySelector("#pictureGeneralInfoBox .boxbody .column span:contains('Vote Score')")
+            ?.NextSibling?.TextContent.Trim() ?? "0";
     }
 
-    public string? Title() => _document.QuerySelector(".imageTitle")?.TextContent;
-    public string? Description() => _document.QuerySelector(".picDescript")?.TextContent;
-    public string? ImageSrc() => _document.QuerySelector("#picBox .boxbody img")?.GetAttribute("src");
+    public string? Title() => TitleValue;
+    public string? Description() => DescriptionValue;
+    public string? ImageSrc() => ImageSourceValue;
     public string? ImageUrl() => ImageSrc() is null ? null : $"https:{ImageSrc()}";
-    public string? AuthorName() => _document.QuerySelector("#descriptionBox .boxbody a img")?.GetAttribute("title");
-    public string? AuthorSrc() => _document.QuerySelector("#descriptionBox .boxbody a")?.GetAttribute("href");
+    public string? AuthorName() => AuthorNameValue;
+    public string? AuthorSrc() => AuthorSourceValue;
     public string? AuthorUrl() => AuthorSrc() is null ? null : $"{BaseUrl}{AuthorSrc()}";
-    public string? AuthorAvatarSrc() => _document.QuerySelector("#descriptionBox .boxbody a img")?.GetAttribute("src");
+    public string? AuthorAvatarSrc() => AuthorAvatarSourceValue;
     public string? AuthorAvatarUrl() => AuthorAvatarSrc() is null ? null : $"https:{AuthorAvatarSrc()}";
-
-    public DateTimeOffset? PostedAt()
-    {
-        var datetime = _document.QuerySelector("#pictureGeneralInfoBox time")?.GetAttribute("datetime");
-
-        if (datetime is null)
-        {
-            return null;
-        }
-
-        return DateTimeOffset.Parse(datetime);
-    }
-
-    public string Views()
-    {
-        var views = _document.QuerySelector("#pictureGeneralInfoBox .boxbody .column span:contains('Views')")
-            ?.NextSibling
-            ?.TextContent
-            .Trim();
-
-        return views ?? "0";
-    }
-
-    public string Votes()
-    {
-        var votes = _document.QuerySelector("#pictureGeneralInfoBox .boxbody .column span:contains('Vote Score')")
-            ?.NextSibling
-            ?.TextContent
-            .Trim();
-
-        return votes ?? "0";
-    }
+    public DateTimeOffset? PostedAt() => PostedAtValue;
+    public string Views() => ViewsValue;
+    public string Votes() => VotesValue;
 }

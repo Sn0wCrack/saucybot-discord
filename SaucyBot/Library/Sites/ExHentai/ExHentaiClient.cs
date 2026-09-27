@@ -33,12 +33,10 @@ public sealed class ExHentaiClient : IExHentaiClient
 
     public async Task<ExHentaiGalleryPage?> GetGallery(ExHentaiGalleryRequest request)
     {
-        var response = await _cache.Remember(
+        return await _cache.Remember(
             $"exhentai.gallery_{request.Id}_{request.Hash}",
-            async () => await _client.GetStringAsync(request.GetUrl())
+            async () => new ExHentaiGalleryPage(await _client.GetStringAsync(request.GetUrl()))
         );
-
-        return response is null ? null : new ExHentaiGalleryPage(response);
     }
 }
 
@@ -73,58 +71,58 @@ public sealed record ExHentaiGalleryRequest(ExHentaiRequestMode Mode, string Id,
 
 public sealed partial class ExHentaiGalleryPage
 {
-    private readonly IHtmlDocument _document;
+    public string? TitleValue { get; init; }
+    public string? DescriptionValue { get; init; }
+    public string? RatingValue { get; init; }
+    public string? LanguageValue { get; init; }
+    public string? LengthValue { get; init; }
+    public string? AuthorNameValue { get; init; }
+    public string? AuthorUrlValue { get; init; }
+    public string? ImageUrlValue { get; init; }
+    public DateTimeOffset? PostedAtValue { get; init; }
 
     [GeneratedRegex(@"url\((?<url>.*)\)", RegexOptions.IgnoreCase)]
     private static partial Regex CssBackgroundUrlRegex();
 
+    public ExHentaiGalleryPage()
+    {
+    }
+
     public ExHentaiGalleryPage(string page)
     {
         var parser = new HtmlParser();
+        var document = parser.ParseDocument(page);
 
-        _document = parser.ParseDocument(page);
-    }
+        TitleValue = document.QuerySelector(".gm h1#gn")?.TextContent;
+        DescriptionValue = document.QuerySelector("div#comment_0")?.TextContent;
+        RatingValue = document.QuerySelector("td#rating_label")?.TextContent.Replace("Average:", "").Trim();
 
-    public string? Title() => _document.QuerySelector(".gm h1#gn")?.TextContent;
-    public string? Description() => _document.QuerySelector("div#comment_0")?.TextContent;
+        var metadata = document.QuerySelector(".gm #gmid #gd3 #gdd tbody");
+        LanguageValue = metadata?.QuerySelector("tr > td:contains('Language:')")?.NextSibling?.TextContent;
+        LengthValue = metadata?.QuerySelector("tr > td:contains('Length:')")?.NextSibling?.TextContent.Replace("pages", "").Trim();
 
-    public string? Rating() => _document.QuerySelector("td#rating_label")?.TextContent.Replace("Average:", "").Trim();
+        var author = document.QuerySelector(".gm #gmid #gdn a");
+        AuthorNameValue = author?.TextContent;
+        AuthorUrlValue = author?.GetAttribute("href");
 
-    public string? Language() =>
-        MetaContainer()?.QuerySelector("tr > td:contains('Language:')")?.NextSibling?.TextContent;
-
-    public string? Length() =>
-        MetaContainer()?.QuerySelector("tr > td:contains('Length:')")?.NextSibling?.TextContent.Replace("pages", "").Trim();
-
-    public string? AuthorName() => _document.QuerySelector(".gm #gmid #gdn a")?.TextContent;
-
-    public string? AuthorUrl() => _document.QuerySelector(".gm #gmid #gdn a")?.GetAttribute("href");
-
-    public string? ImageUrl()
-    {
-        var style = _document.QuerySelector(".gm #gd1 > div")?.GetAttribute("style");
-
-        if (style is null)
+        var style = document.QuerySelector(".gm #gd1 > div")?.GetAttribute("style");
+        if (style is not null)
         {
-            return null;
+            var match = CssBackgroundUrlRegex().Match(style);
+            ImageUrlValue = match.Groups["url"].Value;
         }
 
-        var match = CssBackgroundUrlRegex().Match(style);
-
-        return match.Groups["url"].Value;
+        var dateTime = metadata?.QuerySelector("tr > td:contains('Posted:')")?.NextSibling?.TextContent;
+        PostedAtValue = dateTime is null ? null : DateTimeOffset.Parse(dateTime);
     }
 
-    public DateTimeOffset? PostedAt()
-    {
-        var dateTime = MetaContainer()?.QuerySelector("tr > td:contains('Posted:')")?.NextSibling?.TextContent;
-
-        if (dateTime is null)
-        {
-            return null;
-        }
-
-        return DateTimeOffset.Parse(dateTime);
-    }
-
-    private IElement? MetaContainer() => _document.QuerySelector(".gm #gmid #gd3 #gdd tbody");
+    public string? Title() => TitleValue;
+    public string? Description() => DescriptionValue;
+    public string? Rating() => RatingValue;
+    public string? Language() => LanguageValue;
+    public string? Length() => LengthValue;
+    public string? AuthorName() => AuthorNameValue;
+    public string? AuthorUrl() => AuthorUrlValue;
+    public string? ImageUrl() => ImageUrlValue;
+    public DateTimeOffset? PostedAt() => PostedAtValue;
 }

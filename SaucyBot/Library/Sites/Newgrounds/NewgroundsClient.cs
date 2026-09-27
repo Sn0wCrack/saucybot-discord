@@ -31,34 +31,40 @@ public sealed class NewgroundsClient : INewgroundsClient
     {
         var url = $"{BaseUrl}/art/view/{user}/{slug}";
 
-        var response = await _cache.Remember(
+        return await _cache.Remember(
             $"newgrounds.art_{user}_{slug}",
-            async () => await _client.GetStringAsync(url)
+            async () => new NewgroundsArt(await _client.GetStringAsync(url))
         );
-
-        return response is null ? null : new NewgroundsArt(response);
     }
 }
 
 public sealed class NewgroundsArt
 {
-    private readonly IHtmlDocument _document;
+    public string? TitleValue { get; init; }
+    public string? DescriptionValue { get; init; }
+    public string? ImageUrlValue { get; init; }
+    public string ViewsValue { get; init; } = "0";
+    public string ScoreValue { get; init; } = "0.00";
+
+    public NewgroundsArt()
+    {
+    }
 
     public NewgroundsArt(string page)
     {
         var parser = new HtmlParser();
+        var document = parser.ParseDocument(page);
 
-        _document = parser.ParseDocument(page);
+        TitleValue = document.QuerySelector(".body-guts .column.wide.right .pod-head h2")?.TextContent;
+        DescriptionValue = document.QuerySelector("#author_comments")?.InnerHtml;
+        ImageUrlValue = document.QuerySelector(".pod-body .image img")?.GetAttribute("src");
+        ViewsValue = document.QuerySelector(".sidestats dt:contains('Views')")?.NextElementSibling?.TextContent ?? "0";
+        ScoreValue = document.QuerySelector("#score_number")?.TextContent ?? "0.00";
     }
 
-    public string? Title() => _document.QuerySelector(".body-guts .column.wide.right .pod-head h2")?.TextContent;
-
-    public string? Description() => _document.QuerySelector("#author_comments")?.InnerHtml;
-
-    public string? ImageUrl() => _document.QuerySelector(".pod-body .image img")?.GetAttribute("src");
-
-    public string Views() =>
-        _document.QuerySelector(".sidestats dt:contains('Views')")?.NextElementSibling?.TextContent ?? "0";
-
-    public string Score() => _document.QuerySelector("#score_number")?.TextContent ?? "0.00";
+    public string? Title() => TitleValue;
+    public string? Description() => DescriptionValue;
+    public string? ImageUrl() => ImageUrlValue;
+    public string Views() => ViewsValue;
+    public string Score() => ScoreValue;
 }

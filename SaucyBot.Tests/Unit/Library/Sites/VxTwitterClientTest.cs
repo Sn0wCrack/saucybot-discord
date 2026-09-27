@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -88,12 +89,67 @@ public sealed class VxTwitterClientTest
         Assert.Null(result);
     }
 
+    [Fact]
+    public async Task GetTweetCachesTheTypedResponse()
+    {
+        var handler = new RecordingHandler("""
+            {
+              "date": "Wed Oct 05 18:40:30 +0000 2022",
+              "date_epoch": 1664995230,
+              "hashtags": [],
+              "likes": 0,
+              "mediaURLs": [],
+              "media_extended": [],
+              "possibly_sensitive": false,
+              "replies": 0,
+              "retweets": 0,
+              "text": "hello",
+              "tweetID": "1577730467436138524",
+              "tweetURL": "https://twitter.com/Twitter/status/1577730467436138524",
+              "user_name": "Twitter",
+              "user_screen_name": "Twitter",
+              "user_profile_image_url": "https://pbs.twimg.com/profile_images/example.jpg"
+            }
+            """);
+        var cache = new CachingCacheManager();
+        var client = new VxTwitterClient(
+            Substitute.For<ILogger<VxTwitterClient>>(),
+            cache,
+            new HttpClient(handler));
+
+        var first = await client.GetTweet("Twitter", "1577730467436138524");
+        var second = await client.GetTweet("Twitter", "1577730467436138524");
+
+        Assert.NotNull(first);
+        Assert.Equal(first.TweetId, second?.TweetId);
+        Assert.Equal(typeof(VxTwitterResponse), cache.LastRememberType);
+        Assert.Equal("vxtwitter.tweet_Twitter_1577730467436138524_default_default", cache.LastKey);
+        Assert.Equal(1, handler.RequestCount);
+    }
+
+    [Fact]
+    public async Task InvalidJsonIsNotCachedAsATypedResponse()
+    {
+        var cache = new CachingCacheManager();
+        var client = new VxTwitterClient(
+            Substitute.For<ILogger<VxTwitterClient>>(),
+            cache,
+            new HttpClient(new RecordingHandler("not-json")));
+
+        var result = await client.GetTweet("Twitter", "invalid");
+
+        Assert.Null(result);
+        Assert.Empty(cache.Values);
+    }
+
     private sealed class RecordingHandler(string response, HttpStatusCode statusCode = HttpStatusCode.OK) : HttpMessageHandler
     {
         public Uri? RequestUri { get; private set; }
+        public int RequestCount { get; private set; }
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
+            RequestCount++;
             RequestUri = request.RequestUri;
             return Task.FromResult(new HttpResponseMessage(statusCode)
             {
@@ -111,5 +167,51 @@ public sealed class VxTwitterClientTest
         public Task<bool> Delete(object key) => Task.FromResult(false);
         public Task<T?> Remember<T>(object key, Func<Task<T?>> value) => value();
         public Task<T?> Remember<T>(object key, TimeSpan expiry, Func<Task<T?>> value) => value();
+    }
+
+    private sealed class CachingCacheManager : ICacheManager
+    {
+        private readonly Dictionary<object, object?> _values = [];
+
+        public IReadOnlyDictionary<object, object?> Values => _values;
+        public Type? LastRememberType { get; private set; }
+        public object? LastKey { get; private set; }
+
+        public Task<T?> Get<T>(object key) => Task.FromResult(
+            _values.TryGetValue(key, out var value) ? (T?)value : default);
+
+        public Task<T> Set<T>(object key, T value)
+        {
+            _values[key] = value;
+            return Task.FromResult(value);
+        }
+
+        public Task<T> Set<T>(object key, T value, TimeSpan expiry) => Set(key, value);
+
+        public Task<bool> Delete(object key) => Task.FromResult(_values.Remove(key));
+
+        public Task<T?> Remember<T>(object key, Func<Task<T?>> value) => RememberCore(key, value);
+
+        public Task<T?> Remember<T>(object key, TimeSpan expiry, Func<Task<T?>> value) => RememberCore(key, value);
+
+        private async Task<T?> RememberCore<T>(object key, Func<Task<T?>> value)
+        {
+            LastRememberType = typeof(T);
+            LastKey = key;
+
+            var existing = await Get<T>(key);
+            if (existing is not null)
+            {
+                return existing;
+            }
+
+            var created = await value();
+            if (created is not null)
+            {
+                await Set(key, created);
+            }
+
+            return created;
+        }
     }
 }

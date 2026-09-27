@@ -104,38 +104,46 @@ public sealed class PixivClient : IPixivClient
 
     public async Task<IllustrationDetailsResponse?> IllustrationDetails(string id)
     {
-        var response = await _cache.Remember($"pixiv.illustration_details_{id}", async () =>
-            await _pipeline.ExecuteAsync(async token => await _client.GetStringAsync($"{WebApiUrl}/illust/{id}", token))
-        );
-
-        return response is null ? null : JsonSerializer.Deserialize<IllustrationDetailsResponse>(response);
+        return await _cache.Remember($"pixiv.illustration_details_{id}", async () =>
+        {
+            var response = await _pipeline.ExecuteAsync(async token => await _client.GetStringAsync(
+                $"{WebApiUrl}/illust/{id}",
+                token));
+            return response is null ? null : JsonSerializer.Deserialize<IllustrationDetailsResponse>(response);
+        });
     }
 
     public async Task<IllustrationPagesResponse?> IllustrationPages(string id)
     {
-        var response = await _cache.Remember($"pixiv.illustration_pages_{id}", async () =>
-            await _pipeline.ExecuteAsync(async token => await _client.GetStringAsync($"{WebApiUrl}/illust/{id}/pages", token))
-        );
-
-        return response is null ? null : JsonSerializer.Deserialize<IllustrationPagesResponse>(response);
+        return await _cache.Remember($"pixiv.illustration_pages_{id}", async () =>
+        {
+            var response = await _pipeline.ExecuteAsync(async token => await _client.GetStringAsync(
+                $"{WebApiUrl}/illust/{id}/pages",
+                token));
+            return response is null ? null : JsonSerializer.Deserialize<IllustrationPagesResponse>(response);
+        });
     }
 
     public async Task<UgoiraMetadataResponse?> UgoiraMetadata(string id)
     {
-        var response = await _cache.Remember($"pixiv.ugoira_metadata_{id}", async () =>
-            await _pipeline.ExecuteAsync(async token => await _client.GetStringAsync($"{WebApiUrl}/illust/{id}/ugoira_meta", token))
-        );
-
-        return response is null ? null : JsonSerializer.Deserialize<UgoiraMetadataResponse>(response);
+        return await _cache.Remember($"pixiv.ugoira_metadata_{id}", async () =>
+        {
+            var response = await _pipeline.ExecuteAsync(async token => await _client.GetStringAsync(
+                $"{WebApiUrl}/illust/{id}/ugoira_meta",
+                token));
+            return response is null ? null : JsonSerializer.Deserialize<UgoiraMetadataResponse>(response);
+        });
     }
 
     public async Task<UserDetailsResponse?> UserDetails(string id)
     {
-        var response = await _cache.Remember($"pixiv.user_{id}", TimeSpan.FromDays(7), async () =>
-            await _pipeline.ExecuteAsync(async token => await _client.GetStringAsync($"{WebApiUrl}/user/{id}", token))
-        );
-
-        return response is null ? null : JsonSerializer.Deserialize<UserDetailsResponse>(response);
+        return await _cache.Remember($"pixiv.user_{id}", TimeSpan.FromDays(7), async () =>
+        {
+            var response = await _pipeline.ExecuteAsync(async token => await _client.GetStringAsync(
+                $"{WebApiUrl}/user/{id}",
+                token));
+            return response is null ? null : JsonSerializer.Deserialize<UserDetailsResponse>(response);
+        });
     }
 
     public async Task<HttpResponseMessage> PokeFile(string url, CancellationToken cancellationToken = default)

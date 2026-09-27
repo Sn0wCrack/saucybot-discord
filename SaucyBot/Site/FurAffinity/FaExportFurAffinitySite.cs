@@ -41,7 +41,7 @@ public sealed partial class FaExportFurAffinitySite : BaseSite
         var embed = new EmbedBuilder
         {
             Title = submission.Title,
-            Description = Helper.ProcessDescription(FurAffinityBbCodeCleaner.Clean(submission.Description)),
+            Description = Helper.ProcessDescription(submission.Description),
             Color = Color,
             Url = submission.Link,
             ImageUrl = submission.Download,

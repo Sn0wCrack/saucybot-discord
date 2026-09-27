@@ -28,11 +28,111 @@ public class PixivTest
         var renderer = CreateUgoiraDependencies();
         var site = CreateUgoiraSite(client, renderer);
 
-        var response = await site.Process(CreateUgoiraRequest());
+        var response = await site.Process(CreateUgoiraRequest(TestContext.Current.CancellationToken));
 
         Assert.NotNull(response);
         Assert.True(source.DisposeCount > 0);
         await response.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task UgoiraExtractsFromStagedArchiveBeforeRendering()
+    {
+        var source = new NonSeekableTrackingStream(CreateUgoiraArchive());
+        var client = CreateUgoiraClient(source);
+        string? stagedArchivePath = null;
+        var renderer = Substitute.For<IUgoiraVideoRenderer>();
+        renderer.RenderAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo =>
+            {
+                var videoPath = callInfo.ArgAt<string>(1);
+                var requestPath = Directory.GetParent(Path.GetDirectoryName(videoPath)!)!.FullName;
+                stagedArchivePath = Path.Combine(requestPath, "ugoira.zip");
+                Assert.True(File.Exists(stagedArchivePath));
+                Assert.True(File.Exists(Path.Combine(Path.GetDirectoryName(videoPath)!, "frame.jpg")));
+                File.WriteAllBytes(videoPath, [1]);
+                return Task.CompletedTask;
+            });
+        var site = CreateUgoiraSite(client, renderer);
+
+        var response = await site.Process(CreateUgoiraRequest(TestContext.Current.CancellationToken));
+
+        Assert.NotNull(response);
+        Assert.NotNull(stagedArchivePath);
+        Assert.True(source.Disposed);
+        await response.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task UgoiraExtractsArchiveMemberThatMatchesTheStagingFileName()
+    {
+        var source = new NonSeekableTrackingStream(CreateUgoiraArchiveWithStagingNameCollision());
+        var client = CreateUgoiraClient(source);
+        var renderer = Substitute.For<IUgoiraVideoRenderer>();
+        renderer.RenderAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo =>
+            {
+                var workspace = Path.GetDirectoryName(callInfo.ArgAt<string>(1))!;
+                Assert.Equal([0x5A], File.ReadAllBytes(Path.Combine(workspace, "ugoira.zip")));
+                File.WriteAllBytes(callInfo.ArgAt<string>(1), [1]);
+                return Task.CompletedTask;
+            });
+        var site = CreateUgoiraSite(client, renderer);
+
+        var response = await site.Process(CreateUgoiraRequest(TestContext.Current.CancellationToken));
+
+        Assert.NotNull(response);
+        await response.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task UgoiraCleansWorkspaceWhenStagingIsCancelled()
+    {
+        var source = new BlockingNonSeekableStream();
+        var client = CreateUgoiraClient(source);
+        var site = CreateUgoiraSite(client, Substitute.For<IUgoiraVideoRenderer>());
+        using var cancellation = new CancellationTokenSource();
+        var workspacesBefore = GetUgoiraWorkspaces();
+
+        var processing = site.Process(CreateUgoiraRequest(cancellation.Token));
+        await source.FirstChunkRead.Task;
+        cancellation.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => processing);
+
+        Assert.True(source.Disposed);
+        Assert.Empty(GetUgoiraWorkspaces().Except(workspacesBefore));
+    }
+
+    [Fact]
+    public async Task UgoiraCleansWorkspaceWhenArchiveExtractionFails()
+    {
+        var source = new NonSeekableTrackingStream([0x01, 0x02, 0x03]);
+        var client = CreateUgoiraClient(source);
+        var site = CreateUgoiraSite(client, Substitute.For<IUgoiraVideoRenderer>());
+        var workspacesBefore = GetUgoiraWorkspaces();
+
+        await Assert.ThrowsAsync<InvalidDataException>(() => site.Process(CreateUgoiraRequest(TestContext.Current.CancellationToken)));
+
+        Assert.True(source.Disposed);
+        Assert.Empty(GetUgoiraWorkspaces().Except(workspacesBefore));
+    }
+
+    [Fact]
+    public async Task UgoiraCleansWorkspaceWhenArchiveDownloadFails()
+    {
+        var source = new FailingNonSeekableStream();
+        var site = CreateUgoiraSite(
+            CreateUgoiraClient(source),
+            Substitute.For<IUgoiraVideoRenderer>());
+        var workspacesBefore = GetUgoiraWorkspaces();
+
+        var exception = await Assert.ThrowsAsync<IOException>(() => site.Process(
+            CreateUgoiraRequest(TestContext.Current.CancellationToken)));
+
+        Assert.Equal("source read failed", exception.Message);
+        Assert.True(source.Disposed);
+        Assert.Empty(GetUgoiraWorkspaces().Except(workspacesBefore));
     }
 
     [Fact]
@@ -54,21 +154,22 @@ public class PixivTest
             client,
             renderer);
 
-        await Assert.ThrowsAsync<FileNotFoundException>(() => site.Process(CreateUgoiraRequest()));
+        await Assert.ThrowsAsync<FileNotFoundException>(() => site.Process(CreateUgoiraRequest(TestContext.Current.CancellationToken)));
 
         Assert.NotNull(renderedPath);
         Assert.False(Directory.Exists(Path.GetDirectoryName(renderedPath)));
     }
 
     [Fact]
-    public async Task UgoiraPreservesRenderFailureWhenCleanupAlsoFails()
+    public async Task UgoiraPreservesRenderFailureWhenWorkspaceWasAlreadyRemoved()
     {
         var logger = new RecordingLogger<PixivSite>();
         var renderer = Substitute.For<IUgoiraVideoRenderer>();
         renderer.RenderAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(callInfo =>
             {
-                Directory.Delete(Path.GetDirectoryName(callInfo.ArgAt<string>(1))!, true);
+                var requestPath = Directory.GetParent(Path.GetDirectoryName(callInfo.ArgAt<string>(1))!)!.FullName;
+                Directory.Delete(requestPath, true);
                 throw new InvalidOperationException("render failed");
             });
         var site = new PixivSite(
@@ -77,10 +178,10 @@ public class PixivTest
             CreateUgoiraClient(new TrackingStream(CreateUgoiraArchive())),
             renderer);
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => site.Process(CreateUgoiraRequest()));
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => site.Process(CreateUgoiraRequest(TestContext.Current.CancellationToken)));
 
         Assert.Equal("render failed", exception.Message);
-        Assert.Single(logger.Exceptions);
+        Assert.Empty(logger.Exceptions);
     }
 
     [Fact]
@@ -479,12 +580,21 @@ public class PixivTest
         return client;
     }
 
-    private static ProcessRequest CreateUgoiraRequest() => new(
-new PixivSite(
+    private static ProcessRequest CreateUgoiraRequest(CancellationToken cancellationToken = default) => new(
+    new PixivSite(
             Substitute.For<ILogger<PixivSite>>(),
             new ConfigurationBuilder().Build().PixivOptions(),
             Substitute.For<IPixivClient>(),
-            Substitute.For<IUgoiraVideoRenderer>()).Pattern.Match("https://www.pixiv.net/en/artworks/123"));
+            Substitute.For<IUgoiraVideoRenderer>()).Pattern.Match("https://www.pixiv.net/en/artworks/123"),
+        Context: new ProcessingContext(NsfwAllowed: true, CancellationToken: cancellationToken));
+
+    private static HashSet<string> GetUgoiraWorkspaces()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "pixiv");
+        return Directory.Exists(root)
+            ? Directory.GetDirectories(root).ToHashSet(StringComparer.Ordinal)
+            : [];
+    }
 
     private static IllustrationDetailsResponse CreateUgoiraDetails() => new(
         false,
@@ -519,6 +629,25 @@ new PixivSite(
         return stream.ToArray();
     }
 
+    private static byte[] CreateUgoiraArchiveWithStagingNameCollision()
+    {
+        using var stream = new MemoryStream();
+        using (var archive = new ZipArchive(stream, ZipArchiveMode.Create, true))
+        {
+            using (var frame = archive.CreateEntry("frame.jpg").Open())
+            {
+                frame.WriteByte(1);
+            }
+
+            using (var collision = archive.CreateEntry("ugoira.zip").Open())
+            {
+                collision.WriteByte(0x5A);
+            }
+        }
+
+        return stream.ToArray();
+    }
+
     private sealed class TrackingStream : MemoryStream
     {
         public TrackingStream(byte[] buffer) : base(buffer)
@@ -532,6 +661,139 @@ new PixivSite(
             if (disposing)
             {
                 DisposeCount++;
+            }
+
+            base.Dispose(disposing);
+        }
+    }
+
+    private sealed class NonSeekableTrackingStream : Stream
+    {
+        private readonly MemoryStream _inner;
+
+        public bool Disposed { get; private set; }
+
+        public NonSeekableTrackingStream(byte[] buffer) => _inner = new MemoryStream(buffer);
+
+        public override bool CanRead => !Disposed && _inner.CanRead;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length => throw new NotSupportedException();
+        public override long Position
+        {
+            get => throw new NotSupportedException();
+            set => throw new NotSupportedException();
+        }
+
+        public override int Read(byte[] buffer, int offset, int count) => _inner.Read(buffer, offset, count);
+        public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default) =>
+            _inner.ReadAsync(buffer, cancellationToken);
+        public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) =>
+            _inner.ReadAsync(buffer, offset, count, cancellationToken);
+        public override void Flush() => throw new NotSupportedException();
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && !Disposed)
+            {
+                Disposed = true;
+                _inner.Dispose();
+            }
+
+            base.Dispose(disposing);
+        }
+    }
+
+    private sealed class BlockingNonSeekableStream : Stream
+    {
+        private bool _firstRead = true;
+
+        public TaskCompletionSource FirstChunkRead { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public bool Disposed { get; private set; }
+
+        public override bool CanRead => !Disposed;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length => throw new NotSupportedException();
+        public override long Position
+        {
+            get => throw new NotSupportedException();
+            set => throw new NotSupportedException();
+        }
+
+        public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            if (_firstRead)
+            {
+                _firstRead = false;
+                buffer.Span[0] = 0x2a;
+                FirstChunkRead.TrySetResult();
+                return 1;
+            }
+
+            await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+            return 0;
+        }
+
+        public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+        public override void Flush() => throw new NotSupportedException();
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                Disposed = true;
+            }
+
+            base.Dispose(disposing);
+        }
+    }
+
+    private sealed class FailingNonSeekableStream : Stream
+    {
+        private bool _firstRead = true;
+
+        public bool Disposed { get; private set; }
+
+        public override bool CanRead => true;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length => throw new NotSupportedException();
+        public override long Position
+        {
+            get => throw new NotSupportedException();
+            set => throw new NotSupportedException();
+        }
+
+        public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            if (_firstRead)
+            {
+                _firstRead = false;
+                buffer.Span[0] = 0x2a;
+                return ValueTask.FromResult(1);
+            }
+
+            return ValueTask.FromException<int>(new IOException("source read failed"));
+        }
+
+        public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+        public override void Flush() => throw new NotSupportedException();
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                Disposed = true;
             }
 
             base.Dispose(disposing);

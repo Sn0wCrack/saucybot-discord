@@ -55,25 +55,30 @@ public class VixBlueskyClient : IVixBlueskyClient
 
     public async Task<VixBlueskyResponse?> GetPost(string name, string identifier)
     {
-        var response = await _cache.Remember(
+        return await _cache.Remember<VixBlueskyResponse>(
             $"vixbluesky.post_{name}_{identifier}",
-            async () => await _pipeline.ExecuteAsync(async token => await _client.GetStringAsync($"{BaseUrl}/profile/{name}/post/{identifier}/json", token))
+            async () =>
+            {
+                var response = await _pipeline.ExecuteAsync(async token => await _client.GetStringAsync(
+                    $"{BaseUrl}/profile/{name}/post/{identifier}/json",
+                    token));
+
+                if (response is null)
+                {
+                    return null;
+                }
+
+                try
+                {
+                    return JsonSerializer.Deserialize<VixBlueskyResponse>(response);
+                }
+                catch (Exception exception)
+                {
+                    _logger.LogDebug(exception, "Failed to deserialize VixBluesky response, response not JSON or is malformed.");
+                    return null;
+                }
+            }
         );
-
-        if (response is null)
-        {
-            return null;
-        }
-
-        try
-        {
-            return JsonSerializer.Deserialize<VixBlueskyResponse>(response);
-        }
-        catch (Exception e)
-        {
-            _logger.LogDebug(e, "Failed to deserialize VixBluesky response, response not JSON or is malformed.");
-            return null;
-        }
     }
 }
 

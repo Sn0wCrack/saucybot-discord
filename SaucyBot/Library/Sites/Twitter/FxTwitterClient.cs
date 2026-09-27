@@ -54,25 +54,29 @@ public sealed class FxTwitterClient : IFxTwitterClient
 
     public async Task<FxTwitterResponse?> GetTweet(string name, string identifier, string? translate = null)
     {
-        var response = await _cache.Remember(
+        return await _cache.Remember<FxTwitterResponse>(
             BuildCacheKey(name, identifier, translate),
-            async () => await _pipeline.ExecuteAsync(async token => await _client.GetStringAsync(BuildUrl(name, identifier, translate), token))
-        );
+            async () =>
+            {
+                var response = await _pipeline.ExecuteAsync(async token => await _client.GetStringAsync(
+                    BuildUrl(name, identifier, translate),
+                    token));
 
-        if (response is null)
-        {
-            return null;
-        }
+                if (response is null)
+                {
+                    return null;
+                }
 
-        try
-        {
-            return JsonSerializer.Deserialize<FxTwitterResponse>(response);
-        }
-        catch (Exception e)
-        {
-            _logger.LogDebug(e, "Failed to deserialize FxTwitter response, response not JSON or is malformed.");
-            return null;
-        }
+                try
+                {
+                    return JsonSerializer.Deserialize<FxTwitterResponse>(response);
+                }
+                catch (Exception exception)
+                {
+                    _logger.LogDebug(exception, "Failed to deserialize FxTwitter response, response not JSON or is malformed.");
+                    return null;
+                }
+            });
     }
 
     private static string BuildUrl(string name, string identifier, string? translate = null)

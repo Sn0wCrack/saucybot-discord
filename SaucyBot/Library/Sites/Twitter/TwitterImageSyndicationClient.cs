@@ -23,12 +23,14 @@ public class TwitterImageSyndicationClient : ITwitterImageSyndicationClient
 
     public async Task<TwitterImageSyndicationTweet?> GetTweet(string identifier)
     {
-        var response = await _cache.Remember(
+        return await _cache.Remember<TwitterImageSyndicationTweet>(
             $"twitter_image_syndication.tweet_{identifier}",
-            async () => await _client.GetStringAsync($"{BaseUrl}/tweet-result?id={identifier}")
+            async () =>
+            {
+                var response = await _client.GetStringAsync($"{BaseUrl}/tweet-result?id={identifier}");
+                return JsonSerializer.Deserialize<TwitterImageSyndicationTweet?>(response);
+            }
         );
-
-        return response is null ? null : JsonSerializer.Deserialize<TwitterImageSyndicationTweet?>(response);
     }
 }
 

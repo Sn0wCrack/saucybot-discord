@@ -84,16 +84,14 @@ public sealed partial class PixivSite : BaseSite
             return null;
         }
 
-        using var file = await GetFile(metadata.UgoiraMetadata.OriginalSource, cancellationToken);
-
-        using var zip = new ZipArchive(file.Stream);
-
-        var basePath = Path.Join(
+        var requestPath = Path.Join(
             Path.GetTempPath(),
             "pixiv",
             $"{details.Id}_{Helper.RandomString()}"
         );
 
+        var basePath = Path.Join(requestPath, "media");
+        var archiveFile = Path.Join(requestPath, "ugoira.zip");
         var concatFile = Path.Join(basePath, "ffconcat");
 
         var codec = _pixivOptions.Ugoira.Codec;
@@ -107,34 +105,25 @@ public sealed partial class PixivSite : BaseSite
 
         var videoFile = Path.Join(basePath, $"ugoira.{fileExtension}");
 
-        FileStream? fileStream = null;
-        var cleanupAttempted = false;
-
         try
         {
-            await zip.ExtractToDirectoryAsync(basePath, true, cancellationToken);
+            Directory.CreateDirectory(basePath);
+
+            using (var file = await GetFile(metadata.UgoiraMetadata.OriginalSource, cancellationToken))
+            {
+                await using var archiveStream = new FileStream(archiveFile, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None);
+                await file.Stream.CopyToAsync(archiveStream, cancellationToken);
+                archiveStream.Position = 0;
+
+                using var zip = new ZipArchive(archiveStream, ZipArchiveMode.Read, leaveOpen: true);
+                await zip.ExtractToDirectoryAsync(basePath, true, cancellationToken);
+            }
+
             await File.WriteAllTextAsync(concatFile, BuildConcatFile(metadata.UgoiraMetadata.Frames), cancellationToken);
 
-            try
-            {
-                await _ugoiraVideoRenderer.RenderAsync(concatFile, videoFile, cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("{Message}", ex.Message);
-                cleanupAttempted = true;
-                try
-                {
-                    Directory.Delete(basePath, true);
-                }
-                catch (Exception cleanupException)
-                {
-                    _logger.LogError(cleanupException, "Failed to clean up rendered Pixiv media at {Path}", basePath);
-                }
-                throw;
-            }
+            await _ugoiraVideoRenderer.RenderAsync(concatFile, videoFile, cancellationToken);
 
-            fileStream = new FileStream(videoFile, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete);
+            var fileStream = new FileStream(videoFile, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete);
 
             var title = details.Title
                 .ToLowerInvariant()
@@ -144,50 +133,40 @@ public sealed partial class PixivSite : BaseSite
 
             var fileName = $"{title}_ugoira.{fileExtension}";
 
-            response.Files.Add(
-                new FileAttachment(fileStream, fileName)
-            );
+            response.Files.Add(new FileAttachment(fileStream, fileName));
 
             var componentBuilder = new ComponentBuilderV2()
                 .WithContainer(
                     BuildContainerComponent(details, response.Files)
                 );
-            var result = new ProcessResponse(
-                files: response.Files,
-                components: componentBuilder.Build(),
-                nsfw: response.IsNsfw
-            );
+            response.Components = componentBuilder.Build();
 
-            cleanupAttempted = true;
-            Directory.Delete(basePath, true);
-            fileStream = null;
-            return result;
+            Directory.Delete(requestPath, true);
+            return response;
         }
         catch
         {
-            if (fileStream is not null)
+            try
             {
-                try
-                {
-                    await fileStream.DisposeAsync();
-                }
-                catch
-                {
-                    // Preserve the failure that caused attachment construction or cleanup to fail.
-                }
+                await response.DisposeAsync();
+            }
+            catch
+            {
+                // Preserve the original processing failure.
             }
 
-            if (!cleanupAttempted && Directory.Exists(basePath))
+            if (!Directory.Exists(requestPath))
             {
-                try
-                {
-                    cleanupAttempted = true;
-                    Directory.Delete(basePath, true);
-                }
-                catch
-                {
-                    // Preserve the original processing failure.
-                }
+                throw;
+            }
+
+            try
+            {
+                Directory.Delete(requestPath, true);
+            }
+            catch (Exception cleanupException)
+            {
+                _logger.LogError(cleanupException, "Failed to clean up rendered Pixiv media at {Path}", requestPath);
             }
 
             throw;

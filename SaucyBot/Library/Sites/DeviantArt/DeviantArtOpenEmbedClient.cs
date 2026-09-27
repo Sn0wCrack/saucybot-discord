@@ -24,9 +24,11 @@ public sealed class DeviantArtOpenEmbedClient : IDeviantArtOpenEmbedClient
     {
         var query = new Dictionary<string, string> { ["url"] = url };
 
-        var response = await _cache.Remember($"deviantart.oembed_{url}", async () => await _client.GetStringWithQueryStringAsync(EndpointUrl, query));
-
-        return response is null ? null : JsonSerializer.Deserialize<OpenEmbedResponse>(response);
+        return await _cache.Remember($"deviantart.oembed_{url}", async () =>
+        {
+            var response = await _client.GetStringWithQueryStringAsync(EndpointUrl, query);
+            return JsonSerializer.Deserialize<OpenEmbedResponse>(response);
+        });
     }
 }
 

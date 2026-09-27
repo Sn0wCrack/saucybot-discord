@@ -19,16 +19,15 @@ public sealed class MisskeyClient : IMisskeyClient
 
     public async Task<ShowNoteResponse?> ShowNote(string url, string id)
     {
-        var response = await _cache.Remember($"misskey.{url}.note_{id}", async () =>
+        return await _cache.Remember($"misskey.{url}.note_{id}", async () =>
         {
             var request = JsonContent.Create(new { noteId = id });
 
             var response = await _client.PostAsync($"{url}/api/notes/show", request);
 
-            return await response.Content.ReadAsStringAsync();
+            var content = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<ShowNoteResponse>(content);
         });
-
-        return response is null ? null : JsonSerializer.Deserialize<ShowNoteResponse>(response);
     }
 }
 

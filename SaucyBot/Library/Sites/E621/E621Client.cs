@@ -20,10 +20,11 @@ public class E621Client : IE621Client
 
     public async Task<E621PostResponse?> GetPost(string identifier)
     {
-        var response = await _cache.Remember($"e621.post_{identifier}",
-            async () => await _client.GetStringAsync($"{BaseUrl}/posts/{identifier}.json"));
-
-        return response is null ? null : JsonSerializer.Deserialize<E621PostResponse>(response);
+        return await _cache.Remember($"e621.post_{identifier}", async () =>
+        {
+            var response = await _client.GetStringAsync($"{BaseUrl}/posts/{identifier}.json");
+            return JsonSerializer.Deserialize<E621PostResponse>(response);
+        });
     }
 }
 

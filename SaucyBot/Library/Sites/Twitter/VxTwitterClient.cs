@@ -61,14 +61,31 @@ public sealed class VxTwitterClient : IVxTwitterClient
         string? includeRtf = null,
         string? includeTxt = null)
     {
-        string? response;
         try
         {
-            response = await _cache.Remember(
+            return await _cache.Remember<VxTwitterResponse>(
                 BuildCacheKey(name, identifier, includeRtf, includeTxt),
-                async () => await _pipeline.ExecuteAsync(async token => await _client.GetStringAsync(
-                    BuildUrl(name, identifier, includeRtf, includeTxt),
-                    token))
+                async () =>
+                {
+                    var response = await _pipeline.ExecuteAsync(async token => await _client.GetStringAsync(
+                        BuildUrl(name, identifier, includeRtf, includeTxt),
+                        token));
+
+                    if (response is null)
+                    {
+                        return null;
+                    }
+
+                    try
+                    {
+                        return JsonSerializer.Deserialize<VxTwitterResponse>(response);
+                    }
+                    catch (Exception exception)
+                    {
+                        _logger.LogDebug(exception, "Failed to deserialize VxTwitter response, response not JSON or is malformed.");
+                        return null;
+                    }
+                }
             );
         }
         catch (HttpRequestException e)
@@ -82,20 +99,6 @@ public sealed class VxTwitterClient : IVxTwitterClient
             return null;
         }
 
-        if (response is null)
-        {
-            return null;
-        }
-
-        try
-        {
-            return JsonSerializer.Deserialize<VxTwitterResponse>(response);
-        }
-        catch (Exception e)
-        {
-            _logger.LogDebug(e, "Failed to deserialize VxTwitter response, response not JSON or is malformed.");
-            return null;
-        }
     }
 
     private static string BuildUrl(string name, string identifier, string? includeRtf, string? includeTxt)
