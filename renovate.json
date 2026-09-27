@@ -5,9 +5,7 @@
   ],
   "packageRules": [
     {
-      "matchDatasources": [
-        "nuget"
-      ],
+      "matchDatasources": ["nuget"],
       "minimumReleaseAge": "3 days"
     }
   ],
