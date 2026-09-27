@@ -18,10 +18,10 @@ public sealed partial class FxTwitterSite : BaseSite
     [GeneratedRegex(@"https?://(www\.|mobile\.)?(?<domain>twitter|x|nitter)\.(com|net)/(?<user>\S*)/status/(?<id>\d+)(/(video|photo)/\d{1})?(/(?<translate>\w{2}|\w{5}|original))?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex FxTwitterPattern();
 
-    [GeneratedRegex(@"(?<!https?://[\w.\-_%$@&?!:;/'()*]+)@([\w.]+)(?=\W|$)", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"(?<![\w])(?<!https?://[\w.\-_%$@&?!:;/'()*]+)@([\w]+)(?=\W|$)", RegexOptions.IgnoreCase)]
     private static partial Regex MentionPattern();
 
-    [GeneratedRegex(@"(?<!https?://[\w.\-_%$@&?!:;/'()*]+)#([\w.]+)(?=\W|$)", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"(?<![\w])(?<!https?://[\w.\-_%$@&?!:;/'()*]+)#([\w]+)(?=\W|$)", RegexOptions.IgnoreCase)]
     private static partial Regex HashtagPattern();
 
     public override Regex Pattern => FxTwitterPattern();
@@ -334,6 +334,7 @@ public sealed partial class FxTwitterSite : BaseSite
     {
         var text = tweet.Translation is not null ? tweet.Translation.Text : tweet.Text;
 
+        // TODO: There's an issue here where escaping Markdown causes invalid presentation and breaks URLs due to naive replacement.
         text = LinkifyTwitterContent(text);
         text = Helper.EscapeDiscordMarkdown(text);
 
@@ -354,6 +355,7 @@ public sealed partial class FxTwitterSite : BaseSite
     {
         var quotedText = quote.Translation is not null ? quote.Translation.Text : quote.Text;
 
+        // TODO: There's an issue here where escaping Markdown causes invalid presentation and breaks URLs due to naive replacement.
         quotedText = LinkifyTwitterContent(quotedText);
         quotedText = Helper.EscapeDiscordMarkdown(quotedText);
 

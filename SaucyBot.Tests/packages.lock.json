@@ -941,8 +941,8 @@
       },
       "Xabe.FFmpeg": {
         "type": "Transitive",
-        "resolved": "6.0.2",
-        "contentHash": "82rhJD6NRXJ71g+Spk3gLINUmoNK3AGmUDCIUSOqR7wW1Z1JHMpkg3RTxeg4Hw7cEaQvuBePCrz4CvPQeNzjLA=="
+        "resolved": "6.1.1",
+        "contentHash": "k3TtUpcoLdzlrc4c8n8RBS8iNFBujMY2YdLVwwKxLoNVEUs3roV5YqPGEqq4KPqPMKXvp6Gq1Zvg3L/wmQvGmQ=="
       },
       "xunit.analyzers": {
         "type": "Transitive",
@@ -1042,7 +1042,7 @@
           "Serilog.Settings.Configuration": "[10.0.1, )",
           "Serilog.Sinks.Console": "[6.1.1, )",
           "StackExchange.Redis": "[3.3.1, )",
-          "Xabe.FFmpeg": "[6.0.2, )"
+          "Xabe.FFmpeg": "[6.1.1, )"
         }
       }
     }

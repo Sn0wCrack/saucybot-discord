@@ -13,10 +13,10 @@ public sealed partial class VxTwitterSite : BaseSite
     [GeneratedRegex(@"https?://(www\.|mobile\.)?(?<domain>twitter|x|nitter)\.(com|net)/(?<user>\S*)/status/(?<id>\d+)(/(video|photo)/\d{1})?(/(?<translate>\w{2}|\w{5}|original))?", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex VxTwitterPattern();
 
-    [GeneratedRegex(@"(?<!https?://[\w.\-_%$@&?!:;/'()*]+)@([\w.]+)(?=\W|$)", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"(?<![\w])(?<!https?://[\w.\-_%$@&?!:;/'()*]+)@([\w]+)(?=\W|$)", RegexOptions.IgnoreCase)]
     private static partial Regex MentionPattern();
 
-    [GeneratedRegex(@"(?<!https?://[\w.\-_%$@&?!:;/'()*]+)#([\w.]+)(?=\W|$)", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"(?<![\w])(?<!https?://[\w.\-_%$@&?!:;/'()*]+)#([\w]+)(?=\W|$)", RegexOptions.IgnoreCase)]
     private static partial Regex HashtagPattern();
 
     public override Regex Pattern => VxTwitterPattern();
@@ -99,6 +99,7 @@ public sealed partial class VxTwitterSite : BaseSite
 
     private static string GetTweetText(VxTwitterResponse tweet)
     {
+        // TODO: There's an issue here where escaping Markdown causes invalid presentation and breaks URLs due to naive replacement.
         var text = LinkifyTwitterContent(tweet.Text);
         text = Helper.EscapeDiscordMarkdown(text);
         if (tweet.QuotedTweet is null)

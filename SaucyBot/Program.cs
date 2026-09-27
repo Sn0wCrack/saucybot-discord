@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using SaucyBot;
 using SaucyBot.Database;
@@ -22,16 +23,9 @@ using SaucyBot.Services;
 using SaucyBot.Services.Cache;
 using SaucyBot.Site;
 using Serilog;
-using StackExchange.Redis;
 
 await Host.CreateDefaultBuilder(args)
-    .UseSerilog((context, configuration) =>
-    {
-        configuration
-            .ReadFrom.Configuration(context.Configuration)
-            .Enrich.FromLogContext()
-            .WriteTo.Console(outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}");
-    })
+    .UseSerilog((context, configuration) => ApplySerilogConfiguration(configuration, context.Configuration))
     .ConfigureServices((context, services) =>
     {
         var configuration = context.Configuration;
@@ -56,19 +50,7 @@ await Host.CreateDefaultBuilder(args)
         services.AddSaucyBotDatabase();
 
         services.AddSaucyBotCache(configuration);
-        var queueOptions = configuration.BindOrDefault<WorkQueueOptions>("Queue");
-        if (queueOptions.Driver != QueueDriverType.Redis)
-        {
-            throw new InvalidOperationException($"Unsupported queue driver: {queueOptions.Driver}");
-        }
-
-        services.AddSingleton(queueOptions);
-        services.AddSingleton(queueOptions.Redis);
-        services.AddSingleton<InteractionWorkChannel>();
-        services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(queueOptions.Redis.ConnectionString));
-        services.AddSingleton<IRedisStreamClient, StackExchangeRedisStreamClient>();
-        services.AddSingleton<IMessageWorkQueue, RedisWorkQueue>();
-        services.AddSingleton<IWorkItemProcessor, WorkItemProcessor>();
+        services.AddSaucyBotQueue(configuration);
         services.AddSaucyBotServices();
         services.AddSaucyBotSites();
 
@@ -88,11 +70,15 @@ await Host.CreateDefaultBuilder(args)
         services.AddDeviantArtClient();
         services.AddFileDownloadClient();
 
-        services.AddSingleton<WorkQueueHostedService>();
-        services.AddHostedService(provider => provider.GetRequiredService<WorkQueueHostedService>());
         services.AddSingleton<DiscordClientHost>();
         services.AddHostedService<Worker>();
     })
     .UseConsoleLifetime()
     .Build()
     .RunAsync();
+
+static void ApplySerilogConfiguration(LoggerConfiguration loggerConfiguration, IConfiguration configuration) =>
+    loggerConfiguration
+        .ReadFrom.Configuration(configuration)
+        .Enrich.FromLogContext()
+        .WriteTo.Console(outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}");

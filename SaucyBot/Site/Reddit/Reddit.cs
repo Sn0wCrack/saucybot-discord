@@ -24,8 +24,6 @@ public sealed partial class RedditSite : BaseSite
 
     public override async Task<ProcessResponse?> Process(ProcessRequest request)
     {
-        // TODO: Handle v.redd.it links using youtube-dl or similar
-
         var originalUrl = WebUtility.UrlDecode(request.Match.Groups["url"].Value);
 
         return new ProcessResponse

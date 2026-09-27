@@ -112,6 +112,60 @@ public class FxTwitterTest
     }
 
     [Fact]
+    public async Task MentionsAndHashtagsOnlyLinkifyAtTokenBoundaries()
+    {
+        var config = new ConfigurationBuilder().Build();
+        var client = Substitute.For<IFxTwitterClient>();
+        var httpClientFactory = Substitute.For<IHttpClientFactory>();
+        httpClientFactory.CreateClient(Arg.Any<string>()).Returns(new HttpClient());
+        var tweet = new FxTwitterTweet(
+            Id: "123456789",
+            Url: "https://twitter.com/testuser/status/123456789",
+            Text: "P@treon C#programming @alice, #saucy! @under_score #with_under_score #Thinking.... https://example.com/@not-a-mention/#not-a-tag",
+            CreatedAt: "2024-01-01T00:00:00Z",
+            CreatedTimestamp: 1704067200,
+            Author: new FxTwitterAuthor("123", "Test User", "testuser", "https://example.com/avatar.jpg", "https://twitter.com/testuser", null, null),
+            Replies: 5,
+            Retweets: 10,
+            Likes: 20,
+            Views: 100,
+            Bookmarks: null,
+            Color: null,
+            TwitterCard: "summary",
+            Language: null,
+            Source: "web",
+            PossiblySensitive: false,
+            ReplyingToScreenName: null,
+            ReplyingToStatusId: null,
+            Translation: null,
+            QuotedTweet: null,
+            Poll: null,
+            Media: null);
+        client.GetTweet(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string?>())
+            .Returns(new FxTwitterResponse(200, "OK", tweet));
+        var site = new FxTwitterSite(
+            Substitute.For<ILogger<FxTwitterSite>>(),
+            config.FxTwitterOptions(),
+            client,
+            httpClientFactory);
+
+        var result = await site.Process(new ProcessRequest(
+            site.Pattern.Match("https://twitter.com/testuser/status/123456789")));
+
+        var description = Assert.Single(result!.Embeds).Description;
+        Assert.Contains("P@treon C#programming", description);
+        Assert.Contains("[@alice](https://twitter.com/alice),", description);
+        Assert.Contains("[#saucy](https://twitter.com/hashtag/saucy)!", description);
+        Assert.Contains("[@under\\_score](https://twitter.com/under\\_score)", description);
+        Assert.Contains("[#with\\_under\\_score](https://twitter.com/hashtag/with\\_under\\_score)", description);
+        Assert.Contains("[#Thinking](https://twitter.com/hashtag/Thinking)....", description);
+        Assert.Contains("https://example.com/@not-a-mention/#not-a-tag", description);
+        Assert.DoesNotContain("[@treon](https://twitter.com/treon)", description);
+        Assert.DoesNotContain("[#programming](https://twitter.com/hashtag/programming)", description);
+        Assert.DoesNotContain("[#Thinking....](https://twitter.com/hashtag/Thinking....)", description);
+    }
+
+    [Fact]
     public async Task NothingIsReturnedWhenTheApiClientReturnsUnsuccessfully()
     {
         var logger = Substitute.For<ILogger<FxTwitterSite>>();

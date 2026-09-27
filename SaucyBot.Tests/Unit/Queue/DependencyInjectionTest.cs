@@ -1,19 +1,19 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using SaucyBot.Diagnostics;
-using SaucyBot.Library.Discord;
 using SaucyBot.Library.Sites;
-using SaucyBot.Options;
 using SaucyBot.Queue;
+using SaucyBot.Queue.Redis;
 using SaucyBot.Services;
 using SaucyBot.Site;
+using StackExchange.Redis;
 using Xunit;
 
 namespace SaucyBot.Tests.Unit.Queue;
@@ -21,78 +21,47 @@ namespace SaucyBot.Tests.Unit.Queue;
 public sealed class DependencyInjectionTest
 {
     [Fact]
-    public void ResolverAndInteractionProcessorRemainRegistered()
+    public void QueueExtensionRegistersTheWorkerSystem()
     {
         var services = new ServiceCollection();
+        services.AddSaucyBotQueue(new ConfigurationBuilder().Build());
 
-        services.AddSaucyBotServices();
-
-        using var provider = services.BuildServiceProvider();
-
-        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(IInteractionProcessor));
-        Assert.Same(provider.GetRequiredService<IMessageResolver>(), provider.GetRequiredService<IMessageResolver>());
+        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(WorkQueueHostedService));
+        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(IHostedService));
+        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(IWorkItemProducer<MessageWorkItem>));
+        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(IWorkItemConsumer<MessageWorkItem>));
+        Assert.Contains(services, descriptor =>
+            descriptor.ServiceType == typeof(IWorkItemProcessor) &&
+            descriptor.ImplementationType == typeof(WorkItemProcessor));
+        Assert.Contains(services, descriptor =>
+            descriptor.ServiceType == typeof(IInteractionProcessor) &&
+            descriptor.ImplementationType == typeof(InteractionProcessor));
+        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(IQueueMiddleware<MessageWorkItem>));
+        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(IQueueMiddleware<IInteractionWorkItem>));
     }
 
     [Fact]
-    public void MetricsInterfaceResolvesToTheSingletonMetricsImplementation()
+    public void RedisQueueExtensionRegistersBackendNeutralProducerAndConsumer()
     {
         var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton(Substitute.For<IConnectionMultiplexer>());
         services.AddSingleton<ISaucyBotMetrics, SaucyBotMetrics>();
+        services.AddSingleton(new WorkQueueOptions());
+        services.AddRedisQueue(
+            new RedisWorkQueueOptions { ConnectionString = "queue:6379" },
+            TimeSpan.FromSeconds(5));
 
         using var provider = services.BuildServiceProvider();
 
-        Assert.IsType<SaucyBotMetrics>(provider.GetRequiredService<ISaucyBotMetrics>());
-        Assert.Same(provider.GetRequiredService<ISaucyBotMetrics>(), provider.GetRequiredService<ISaucyBotMetrics>());
-    }
+        var producer = provider.GetRequiredService<IWorkItemProducer<MessageWorkItem>>();
+        var consumer = provider.GetRequiredService<IWorkItemConsumer<MessageWorkItem>>();
 
-    [Fact]
-    public void SiteManagerRequiresAServiceProviderForQueuedProcessing()
-    {
-        var constructor = typeof(SiteManager).GetConstructors().Single();
-        var resolver = constructor.GetParameters().Single(parameter => parameter.ParameterType == typeof(IServiceProvider));
-
-        Assert.False(resolver.HasDefaultValue);
-    }
-
-    [Fact]
-    public void InteractionProcessorReliesOnTheFrameworkForScoping()
-    {
-        var constructor = typeof(InteractionProcessor).GetConstructors().Single();
-
-        Assert.Contains(constructor.GetParameters(), parameter => parameter.ParameterType == typeof(InteractionHandler));
-        Assert.DoesNotContain(constructor.GetParameters(), parameter => parameter.ParameterType == typeof(IServiceScopeFactory));
-        Assert.DoesNotContain(constructor.GetParameters(), parameter => parameter.ParameterType == typeof(IServiceProvider));
-    }
-
-    [Fact]
-    public void SiteImplementationsAreScopedWithTheirTypedClients()
-    {
-        var services = new ServiceCollection();
-
-        services.AddSaucyBotSites();
-
-        var siteRegistrations = services
-            .Where(descriptor => descriptor.ServiceType == typeof(SiteRegistration))
-            .Select(descriptor => ((SiteRegistration)descriptor.ImplementationInstance!).ImplementationType)
-            .ToHashSet();
-
-        Assert.NotEmpty(siteRegistrations);
-        Assert.All(siteRegistrations, siteType => Assert.Equal(
-            ServiceLifetime.Scoped,
-            services.Single(descriptor => descriptor.ServiceType == siteType).Lifetime));
-    }
-
-    [Fact]
-    public void WorkerAdmissionUsesSingletonSiteMetadataAndScopedResolution()
-    {
-        var services = new ServiceCollection();
-        services.AddSaucyBotServices();
-
-        Assert.Equal(ServiceLifetime.Singleton,
-            services.Single(descriptor => descriptor.ServiceType == typeof(SiteRegistry)).Lifetime);
-        Assert.DoesNotContain(services, descriptor => descriptor.ServiceType.Name == "ISiteResolver");
-        Assert.DoesNotContain(typeof(Worker).GetConstructors().Single().GetParameters(),
-            parameter => parameter.ParameterType == typeof(SiteManager));
+        Assert.IsType<RedisWorkQueue>(producer);
+        Assert.Same(producer, consumer);
+        Assert.Same(producer, provider.GetRequiredService<IWorkItemConsumer<MessageWorkItem>>());
+        Assert.Same(producer, provider.GetRequiredService<IWorkItemProducer<MessageWorkItem>>());
+        Assert.Same(producer, provider.GetRequiredService<RedisWorkQueue>());
     }
 
     [Fact]

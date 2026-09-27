@@ -92,6 +92,8 @@ Queue uses a separate Redis-compatible database, such as Redis or Valkey, for st
 
 Use the `Driver` key to select the queue backend. Redis is the default backend.
 
+The `Queue` keys below are generic worker settings. They apply to every backend. Connection strings, stream names, consumer groups, and Redis command settings live under `Queue.Redis`.
+
 ```json
 {
   "Queue": {
@@ -107,14 +109,47 @@ Use the `Driver` key to select the queue backend. Redis is the default backend.
 | Key | Value Type | Description | Default |
 |---|---|---|---|
 | `Driver` | String | Queue driver to use. | `Redis` |
+| `EnqueueTimeout` | TimeSpan | Maximum time an enqueue call waits for the backend before it reports a timeout. Environment variable: `Queue__EnqueueTimeout`. The backend can still accept the item after the caller stops waiting, so callers do not retry automatically. | `00:00:05` |
+| `BackendOperationTimeout` | TimeSpan | Maximum time one backend operation, such as lease renewal, completion, retry, or cleanup, may take. Environment variable: `Queue__BackendOperationTimeout`. | `00:00:05` |
 | `MaxProcessingAttempts` | Integer | Maximum processing attempts before a failed message is acknowledged and deleted. | `3` |
+| `MaxProcessingTime` | TimeSpan | Maximum time a worker may process one item before it gives up ownership for recovery. | `00:05:00` |
+| `HeartbeatInterval` | TimeSpan | How often an active worker renews its delivery lease. Environment variable: `Queue__HeartbeatInterval`. Keep this shorter than `PendingMessageIdleTime`. | `00:00:05` |
+| `PendingMessageIdleTime` | TimeSpan | Minimum idle time before an unfinished delivery can be recovered after its worker stops renewing the lease. Environment variable: `Queue__PendingMessageIdleTime`. | `00:00:30` |
+| `ReclaimerInterval` | TimeSpan | How often the recovery worker scans for abandoned deliveries. Environment variable: `Queue__ReclaimerInterval`. | `00:00:05` |
 | `MessageWorkerCount` | Integer | Number of message workers. Increase only after checking queue age, CPU, memory, and upstream rate limits. | `5` |
 | `InteractionWorkerCount` | Integer | Number of interaction workers. | `5` |
 | `InteractionChannelCapacity` | Integer | Maximum number of admitted in-process interactions waiting for workers. | `100` |
+| `RecoveryHandoffCapacity` | Integer | Maximum number of deliveries waiting in the handoff. Set this to at least `2` so new reads and recovery can both make progress. Environment variable: `Queue__RecoveryHandoffCapacity`. | `25` |
 | `ClearPendingOnStartup` | Boolean | Delete pending work when the queue starts. Enable only when intentionally discarding pending work. | `false` |
 | `ShutdownDrainTimeout` | TimeSpan | Maximum time allowed to drain admitted work during shutdown. | `00:00:30` |
 
+#### Timeout and outage behavior
+
+Queue operations are bounded, so a Redis outage cannot block the bot without limit.
+
+An enqueue stops after `EnqueueTimeout`. If Redis does not answer in time, the bot reports a timeout, records the `saucybot.queue.enqueue_timed_out` metric, and logs a warning. The bot does not retry the enqueue automatically. Redis can still accept the item after the bot stops waiting, so the same message can enter the queue later.
+
+Lease renewal, completion, retry, and cleanup stop after `BackendOperationTimeout`. The Redis command timeout follows the same value, so Redis also stops each command at the transport level. If a completion or a retry has an unknown outcome, the item stays in the queue and recovery delivers it again later. The handler does not run again in the same attempt.
+
+OpenTelemetry reports backend timeouts with `saucybot.queue.backend_operation_timed_out`. The `operation` tag uses a fixed operation name. It does not include message or delivery IDs.
+
+OpenTelemetry reports handler results with `saucybot.queue.handler_outcomes` and handler duration with `saucybot.queue.handler_duration`. The outcome tag uses `succeeded`, `failed`, or `cancelled`.
+
+Message processing is at-least-once. Handlers must tolerate duplicate delivery and must give the same result when they run twice. Handlers must honor cancellation and must stop side effects when the token is canceled.
+
+> [!WARNING]
+> A handler that ignores cancellation keeps its worker until it finishes. Lease renewal stops at `MaxProcessingTime`, so recovery can deliver the item to another worker and side effects can run twice. If all workers are stuck on such handlers, restart the bot. The `saucybot.queue.handler_overdue` metric counts handlers that remain active after cancellation.
+
 #### Queue.Redis
+
+These keys are specific to the Redis backend. A different backend validates and documents its own settings.
+
+This release supports only the Redis backend.
+
+Lease scripts use only the configured `StreamName` key. Redis Cluster routes each script by that key, so `StreamName` does not need a hash tag.
+
+> [!WARNING]
+> Do not run old and new queue workers at the same time during a rollout. Old workers do not use lease tokens. They can change ownership or delete work after a new worker claims it.
 
 | Key | Value Type | Description | Default |
 |---|---|---|---|
@@ -122,7 +157,6 @@ Use the `Driver` key to select the queue backend. Redis is the default backend.
 | `StreamName` | String | Redis/Valkey stream containing queued message work. | `saucybot:messages` |
 | `ConsumerGroup` | String | Consumer group used by message workers. | `saucybot-workers` |
 | `RetryDelay` | TimeSpan | Delay before retrying an unavailable Redis operation. | `00:00:01` |
-| `PendingMessageIdleTime` | TimeSpan | Minimum idle time before a pending message can be recovered. | `00:05:00` |
 | `PendingReadTimeout` | TimeSpan | Maximum wait for a Redis read to finish during cancellation. | `00:00:01` |
 | `MalformedCleanupMaxAttempts` | Integer | Maximum cleanup attempts for malformed queue entries. | `3` |
 | `MalformedCleanupMaxDelay` | TimeSpan | Maximum delay between malformed-entry cleanup attempts. | `00:00:05` |

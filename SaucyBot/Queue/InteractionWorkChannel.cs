@@ -87,27 +87,10 @@ public static class InteractionFailureResponder
 public sealed class SocketInteractionWorkItem : IInteractionWorkItem
 {
     private readonly SocketInteraction _interaction;
-    private readonly Func<string, bool, RequestOptions, Task> _respondAsync;
-    private readonly Func<string, bool, RequestOptions, Task> _followupAsync;
 
     public SocketInteractionWorkItem(SocketInteraction interaction)
-        : this(
-            interaction,
-            (content, ephemeral, options) => interaction.RespondAsync(content, ephemeral: ephemeral, options: options),
-            (content, ephemeral, options) => interaction.FollowupAsync(content, ephemeral: ephemeral, options: options))
-    {
-    }
-
-    internal SocketInteractionWorkItem(
-        SocketInteraction interaction,
-        Func<string, bool, RequestOptions, Task>? respondAsync = null,
-        Func<string, bool, RequestOptions, Task>? followupAsync = null)
     {
         _interaction = interaction;
-        _respondAsync = respondAsync ?? ((content, ephemeral, options) =>
-            interaction.RespondAsync(content, ephemeral: ephemeral, options: options));
-        _followupAsync = followupAsync ?? ((content, ephemeral, options) =>
-            interaction.FollowupAsync(content, ephemeral: ephemeral, options: options));
     }
 
     public ulong Id => _interaction.Id;
@@ -116,9 +99,7 @@ public sealed class SocketInteractionWorkItem : IInteractionWorkItem
     public bool IsSlashCommand => _interaction is SocketSlashCommand;
     public bool HasResponded => _interaction.HasResponded;
 
-    public Task DeferAsync(CancellationToken cancellationToken = default) => DeferAsyncCore(cancellationToken);
-
-    private async Task DeferAsyncCore(CancellationToken cancellationToken)
+    public async Task DeferAsync(CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
         await _interaction.DeferAsync(options: new RequestOptions { CancelToken = cancellationToken });
@@ -128,32 +109,26 @@ public sealed class SocketInteractionWorkItem : IInteractionWorkItem
         string content,
         bool ephemeral,
         CancellationToken cancellationToken = default,
-        TimeSpan? timeout = null) => RespondAsyncCore(content, ephemeral, cancellationToken, timeout);
+        TimeSpan? timeout = null)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return _interaction.RespondAsync(
+            content,
+            ephemeral: ephemeral,
+            options: CreateRequestOptions(cancellationToken, timeout));
+    }
 
     public Task FollowupAsync(
         string content,
         bool ephemeral,
         CancellationToken cancellationToken = default,
-        TimeSpan? timeout = null) => FollowupAsyncCore(content, ephemeral, cancellationToken, timeout);
-
-    private async Task RespondAsyncCore(
-        string content,
-        bool ephemeral,
-        CancellationToken cancellationToken,
-        TimeSpan? timeout)
+        TimeSpan? timeout = null)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        await _respondAsync(content, ephemeral, CreateRequestOptions(cancellationToken, timeout));
-    }
-
-    private async Task FollowupAsyncCore(
-        string content,
-        bool ephemeral,
-        CancellationToken cancellationToken,
-        TimeSpan? timeout)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        await _followupAsync(content, ephemeral, CreateRequestOptions(cancellationToken, timeout));
+        return _interaction.FollowupAsync(
+            content,
+            ephemeral: ephemeral,
+            options: CreateRequestOptions(cancellationToken, timeout));
     }
 
     private static RequestOptions CreateRequestOptions(CancellationToken cancellationToken, TimeSpan? timeout) => new()

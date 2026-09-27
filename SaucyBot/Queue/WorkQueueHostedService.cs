@@ -5,80 +5,91 @@ namespace SaucyBot.Queue;
 
 public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
 {
-    private readonly IMessageWorkQueue _queue;
-    private readonly IWorkItemProcessor _processor;
+    private readonly IWorkItemConsumer<MessageWorkItem> _consumer;
+    private readonly MessageDeliveryChannel _deliveryChannel;
+    private readonly MessageQueueReader _messageReader;
+    private readonly MessageRecoveryWorker _recoveryWorker;
+    private readonly MessageQueueWorker _messageWorker;
     private readonly WorkQueueOptions _options;
     private readonly ILogger<WorkQueueHostedService> _logger;
     private readonly InteractionWorkChannel _interactionChannel;
-    private readonly IInteractionProcessor _interactionProcessor;
+    private readonly InteractionQueueWorker _interactionWorker;
     private readonly ISaucyBotMetrics _metrics;
-    private readonly List<Task> _workers = [];
     private readonly CancellationTokenSource _admissionCancellation = new();
     private readonly CancellationTokenSource _workerCancellation = new();
     private readonly CancellationTokenSource _readCancellation = new();
-    private readonly TaskCompletionSource _workersReady = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly TaskCompletionSource _completionReady = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly string _consumerInstance = $"{Environment.MachineName}-{Guid.NewGuid():N}";
     private Task? _completion;
     private int _disposed;
 
     public CancellationToken AdmissionToken => _admissionCancellation.Token;
-    public Task WorkerCompletion => _completion ?? Task.CompletedTask;
 
     public WorkQueueHostedService(
-        IMessageWorkQueue queue,
-        IWorkItemProcessor processor,
+        IWorkItemConsumer<MessageWorkItem> consumer,
+        MessageDeliveryChannel deliveryChannel,
+        MessageQueueReader messageReader,
+        MessageRecoveryWorker recoveryWorker,
+        MessageQueueWorker messageWorker,
         WorkQueueOptions options,
         ILogger<WorkQueueHostedService> logger,
         InteractionWorkChannel interactionChannel,
-        IInteractionProcessor interactionProcessor,
+        InteractionQueueWorker interactionWorker,
         ISaucyBotMetrics metrics)
     {
-        _queue = queue;
-        _processor = processor;
+        _consumer = consumer;
+        _deliveryChannel = deliveryChannel;
+        _messageReader = messageReader;
+        _recoveryWorker = recoveryWorker;
+        _messageWorker = messageWorker;
         _options = options;
         _logger = logger;
         _interactionChannel = interactionChannel;
-        _interactionProcessor = interactionProcessor;
+        _interactionWorker = interactionWorker;
         _metrics = metrics;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         using var stoppingRegistration = stoppingToken.Register(StopIntake);
-        var workerCancellation = _workerCancellation.Token;
-
+        var reader = RunReaderSupervisedAsync($"{_consumerInstance}-reader", _readCancellation.Token);
+        var recovery = _recoveryWorker.RunAsync($"{_consumerInstance}-recovery", _readCancellation.Token);
         var messageWorkers = Math.Max(1, _options.MessageWorkerCount);
         var interactionWorkers = Math.Max(1, _options.InteractionWorkerCount);
+        var consumers = new List<Task>(messageWorkers + interactionWorkers);
 
         for (var i = 0; i < messageWorkers; i++)
         {
-            _workers.Add(RunWorkerAsync($"{Environment.MachineName}-{i}", workerCancellation));
+            consumers.Add(_messageWorker.RunSupervisedAsync(
+                $"{_consumerInstance}-message-{i}",
+                _workerCancellation.Token));
         }
 
         for (var i = 0; i < interactionWorkers; i++)
         {
-            _workers.Add(RunInteractionWorkerAsync(workerCancellation));
+            consumers.Add(_interactionWorker.RunSupervisedAsync(_workerCancellation.Token));
         }
 
         _logger.LogInformation(
             "Queue workers started with {MessageWorkerCount} message workers and {InteractionWorkerCount} interaction workers",
             messageWorkers,
-            interactionWorkers
-        );
+            interactionWorkers);
 
-        _completion = Task.WhenAll(_workers);
-        _workersReady.TrySetResult();
+        _completion = CompleteAfterProducersAsync(Task.WhenAll(reader, recovery), Task.WhenAll(consumers));
         _ = _completion.ContinueWith(
             completed => _ = completed.Exception,
             CancellationToken.None,
             TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
             TaskScheduler.Default);
+        _completionReady.TrySetResult();
         await _completion;
     }
 
     public override async Task StartAsync(CancellationToken cancellationToken)
     {
-        await _queue.StartAsync(cancellationToken);
+        await _consumer.StartAsync(cancellationToken);
         await base.StartAsync(cancellationToken);
+        await _completionReady.Task.WaitAsync(cancellationToken);
     }
 
     public override async Task StopAsync(CancellationToken cancellationToken)
@@ -88,6 +99,7 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
         if (cancellationToken.IsCancellationRequested)
         {
             _workerCancellation.Cancel();
+            await _deliveryChannel.DisposeAsync();
             cancellationToken.ThrowIfCancellationRequested();
         }
 
@@ -110,6 +122,7 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
         {
             _logger.LogWarning("Queue worker drain was cancelled by the host caller");
             _workerCancellation.Cancel();
+            await _deliveryChannel.DisposeAsync();
             throw;
         }
         catch (OperationCanceledException) when (timeout.IsCancellationRequested)
@@ -118,8 +131,8 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
                 "Queue worker drain exceeded {ShutdownDrainTimeout}; cancelling remaining work",
                 _options.ShutdownDrainTimeout);
             _workerCancellation.Cancel();
+            await _deliveryChannel.DisposeAsync();
         }
-
     }
 
     public void StopIntake()
@@ -134,176 +147,88 @@ public sealed class WorkQueueHostedService : BackgroundService, IAsyncDisposable
         if (_completion is { IsCompleted: false } completion)
         {
             _ = completion.ContinueWith(
-                _ => DisposeResources(),
+                _ => _ = DisposeResourcesAsync(),
                 CancellationToken.None,
                 TaskContinuationOptions.ExecuteSynchronously,
                 TaskScheduler.Default);
-        }
-        else
-        {
-            DisposeResources();
+            return ValueTask.CompletedTask;
         }
 
-        return ValueTask.CompletedTask;
+        return new ValueTask(DisposeResourcesAsync());
     }
 
-    private void DisposeResources()
+    private async Task DisposeResourcesAsync()
     {
         if (Interlocked.Exchange(ref _disposed, 1) != 0)
         {
             return;
         }
 
-        Dispose();
-        _admissionCancellation.Dispose();
-        _workerCancellation.Dispose();
-        _readCancellation.Dispose();
+        try
+        {
+            await _deliveryChannel.DisposeAsync();
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "Failed to dispose queued message deliveries");
+        }
+        finally
+        {
+            Dispose();
+            _admissionCancellation.Dispose();
+            _workerCancellation.Dispose();
+            _readCancellation.Dispose();
+        }
     }
 
-    private async Task RunWorkerAsync(string consumer, CancellationToken cancellationToken)
+    private async Task CompleteAfterProducersAsync(Task producers, Task consumers)
     {
         try
         {
-            await _workersReady.Task.WaitAsync(cancellationToken);
-            using var readCancellation = CancellationTokenSource.CreateLinkedTokenSource(
-                cancellationToken,
-                _readCancellation.Token);
+            await producers;
+        }
+        finally
+        {
+            _deliveryChannel.Complete();
+        }
 
-            await foreach (var item in _queue.ReadAsync(consumer, readCancellation.Token))
+        await consumers;
+    }
+
+    private async Task RunReaderSupervisedAsync(string consumer, CancellationToken cancellationToken)
+    {
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            try
             {
-                _metrics.Dequeued.Add(1);
-                _metrics.QueueDepth.Add(-1);
-                _logger.LogDebug(
-                    "Message worker {Consumer} picked up queue entry {EntryId}",
-                    consumer,
-                    item.EntryId);
-                if (item.Item.EnqueuedAt != default)
+                await _messageReader.RunAsync(consumer, cancellationToken);
+                if (cancellationToken.IsCancellationRequested)
                 {
-                    _metrics.QueueAge.Record((DateTimeOffset.UtcNow - item.Item.EnqueuedAt).TotalMilliseconds);
+                    return;
                 }
 
-                _metrics.ActiveWorkers.Add(1);
-                using var activity = QueueTelemetry.ActivitySource.StartActivity(ActivityKind.Consumer);
-                activity?.SetTag("saucybot.work.type", "message");
-                activity?.SetTag("saucybot.queue.consumer", consumer);
-                activity?.SetTag("saucybot.queue.entry_id", item.EntryId);
-                try
-                {
-                    await _processor.ProcessAsync(item, cancellationToken);
-                    cancellationToken.ThrowIfCancellationRequested();
-                    await _queue.CompleteAsync(item, CancellationToken.None);
-                    _metrics.Succeeded.Add(1);
-                    activity?.SetStatus(ActivityStatusCode.Ok);
-                    _logger.LogDebug(
-                        "Message worker {Consumer} completed queue entry {EntryId}",
-                        consumer,
-                        item.EntryId);
-                }
-                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-                {
-                    _logger.LogDebug("Message worker {Consumer} cancelled while processing {EntryId}", consumer, item.EntryId);
-                    _metrics.Cancelled.Add(1);
-                    activity?.SetTag("saucybot.cancelled", true);
-                }
-                catch (Exception exception)
-                {
-                    _metrics.Failed.Add(1);
-                    activity?.SetStatus(ActivityStatusCode.Error, exception.Message);
-                    activity?.SetTag("error.type", exception.GetType().FullName);
+                _logger.LogWarning("Message queue reader {Consumer} stopped unexpectedly; restarting", consumer);
+                _metrics.WorkerRestarts.Add(1, new KeyValuePair<string, object?>("worker_type", "reader"));
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(exception, "Message queue reader {Consumer} failed; restarting", consumer);
+                _metrics.WorkerRestarts.Add(1, new KeyValuePair<string, object?>("worker_type", "reader"));
+            }
 
-                    try
-                    {
-                        var failure = await _queue.FailAsync(item, exception, CancellationToken.None);
-                        _logger.LogDebug(
-                            "Message worker {Consumer} handled failed queue entry {EntryId} with action {Action} at attempt {Attempt}",
-                            consumer,
-                            item.EntryId,
-                            failure.Action,
-                            failure.Attempt);
-                    }
-                    catch (Exception cleanupException)
-                    {
-                        _metrics.CleanupFailed.Add(1);
-                        _logger.LogError(
-                            cleanupException,
-                            "Message worker {Consumer} failed to handle failed queue entry {EntryId}",
-                            consumer,
-                            item.EntryId);
-                    }
-                }
-                finally
-                {
-                    _metrics.ActiveWorkers.Add(-1);
-                }
+            try
+            {
+                await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                return;
             }
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested || _readCancellation.IsCancellationRequested)
-        {
-            _logger.LogDebug(
-                "Message worker {Consumer} stopped because queue consumption was cancelled",
-                consumer);
-        }
     }
 
-    private async Task RunInteractionWorkerAsync(CancellationToken cancellationToken)
-    {
-        try
-        {
-            await _workersReady.Task.WaitAsync(cancellationToken);
-            await foreach (var interaction in _interactionChannel!.ReadAllAsync(cancellationToken))
-            {
-                _metrics.Dequeued.Add(1);
-                _metrics.QueueDepth.Add(-1);
-                _metrics.ActiveWorkers.Add(1);
-                _logger.LogDebug("Interaction worker picked up interaction {InteractionId}", interaction?.Id);
-                using var activity = QueueTelemetry.ActivitySource.StartActivity(ActivityKind.Consumer);
-                activity?.SetTag("saucybot.work.type", "interaction");
-                activity?.SetTag("saucybot.interaction.id", interaction?.Id);
-                try
-                {
-                    await _interactionProcessor.ProcessAsync(interaction!, cancellationToken);
-                    _metrics.Succeeded.Add(1);
-                    activity?.SetStatus(ActivityStatusCode.Ok);
-                    _logger.LogDebug("Interaction worker completed interaction {InteractionId}", interaction?.Id);
-                }
-                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-                {
-                    _logger.LogDebug("Interaction worker cancelled");
-                    _metrics.Cancelled.Add(1);
-                    activity?.SetTag("saucybot.cancelled", true);
-                    await SendInteractionFailureAsync(interaction);
-                }
-                catch (Exception exception)
-                {
-                    _logger.LogError(exception, "Interaction worker failed for {InteractionId}", interaction?.Id);
-                    _metrics.Failed.Add(1);
-                    activity?.SetStatus(ActivityStatusCode.Error, exception.Message);
-                    activity?.SetTag("error.type", exception.GetType().FullName);
-                    await SendInteractionFailureAsync(interaction);
-                }
-                finally
-                {
-                    _metrics.ActiveWorkers.Add(-1);
-                }
-            }
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            _logger.LogDebug("Interaction worker stopped because interaction consumption was cancelled");
-        }
-    }
-
-    private Task SendInteractionFailureAsync(IInteractionWorkItem? interaction)
-    {
-        if (interaction is null)
-        {
-            _logger.LogError("Interaction processing failed before a failure response could be sent");
-            return Task.CompletedTask;
-        }
-
-        return InteractionFailureResponder.SendAsync(
-            interaction,
-            _logger,
-            TimeSpan.FromSeconds(1));
-    }
 }
