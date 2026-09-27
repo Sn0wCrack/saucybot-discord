@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using System.Threading.Channels;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -82,23 +81,49 @@ public sealed class InteractionResponseTest
     private static Fixture CreateFixture(Action process)
     {
         var queue = new EmptyWorkQueue();
-        var channel = new InteractionWorkChannel(new WorkQueueOptions());
+        var options = new WorkQueueOptions
+        {
+            MessageWorkerCount = 1,
+            InteractionWorkerCount = 1,
+            ShutdownDrainTimeout = TimeSpan.FromMilliseconds(100),
+        };
+        var deliveries = new MessageDeliveryChannel(options);
+        var channel = new InteractionWorkChannel(options);
+        var metrics = new SaucyBotMetrics();
+        var pipeline = new QueueMiddlewarePipeline<MessageWorkItem>([]);
+        var interactionProcessor = Substitute.For<IInteractionProcessor>();
+        interactionProcessor.ProcessAsync(Arg.Any<IInteractionWorkItem>(), Arg.Any<CancellationToken>())
+            .Returns(_ =>
+            {
+                process();
+                return Task.CompletedTask;
+            });
+        var interactionWorker = new InteractionQueueWorker(
+            channel,
+            new QueueMiddlewarePipeline<IInteractionWorkItem>([]),
+            interactionProcessor,
+            NullLogger<InteractionQueueWorker>.Instance,
+            metrics);
         var service = new WorkQueueHostedService(
             queue,
-            Substitute.For<IWorkItemProcessor>(),
-            new WorkQueueOptions { InteractionWorkerCount = 1, ShutdownDrainTimeout = TimeSpan.FromMilliseconds(100) },
+            deliveries,
+            new MessageQueueReader(queue, deliveries, NullLogger<MessageQueueReader>.Instance),
+            new MessageRecoveryWorker(queue, deliveries, options, NullLogger<MessageRecoveryWorker>.Instance, metrics),
+            new MessageQueueWorker(deliveries, pipeline, Substitute.For<IWorkItemProcessor>(), options, NullLogger<MessageQueueWorker>.Instance, metrics),
+            options,
             NullLogger<WorkQueueHostedService>.Instance,
             channel,
-            new CallbackInteractionProcessor(process),
-            new SaucyBotMetrics());
+            interactionWorker,
+            metrics);
         var services = new ServiceCollection().BuildServiceProvider();
         var clientHost = new DiscordClientHost(
             NullLogger<DiscordClientHost>.Instance,
             new ConfigurationBuilder().Build().BotOptions(),
             queue,
+            options,
             new SiteRegistry(NullLogger<SiteRegistry>.Instance, new ConfigurationBuilder().Build().BotOptions(), services, []),
             channel,
-            new CallbackInteractionProcessor(process),
+            interactionWorker,
             service,
             new SaucyBotMetrics(),
             new InteractionHandler(NullLogger<InteractionHandler>.Instance, services),
@@ -110,15 +135,6 @@ public sealed class InteractionResponseTest
     private sealed record Fixture(WorkQueueHostedService Service, DiscordClientHost ClientHost) : IAsyncDisposable
     {
         public ValueTask DisposeAsync() => Service.DisposeAsync();
-    }
-
-    private sealed class CallbackInteractionProcessor(Action callback) : IInteractionProcessor
-    {
-        public Task ProcessAsync(IInteractionWorkItem interaction, CancellationToken cancellationToken)
-        {
-            callback();
-            return Task.CompletedTask;
-        }
     }
 
     private sealed class RecordingInteraction : IInteractionWorkItem
@@ -161,32 +177,32 @@ public sealed class InteractionResponseTest
         }
     }
 
-    private sealed class EmptyWorkQueue : IMessageWorkQueue
+    private sealed class EmptyWorkQueue : IWorkItemProducer<MessageWorkItem>, IWorkItemConsumer<MessageWorkItem>
     {
-        private readonly Channel<QueuedMessageWorkItem> _items = Channel.CreateUnbounded<QueuedMessageWorkItem>();
-
-        public Task EnqueueAsync(MessageWorkItem item, CancellationToken cancellationToken) =>
+        public Task<EnqueueResult> EnqueueAsync(
+            MessageWorkItem item,
+            TimeSpan timeout,
+            CancellationToken cancellationToken) =>
             throw new NotSupportedException("Interaction response tests do not enqueue message work.");
 
-        public async IAsyncEnumerable<QueuedMessageWorkItem> ReadAsync(
+        public async IAsyncEnumerable<WorkDelivery<MessageWorkItem>> ReadAsync(
             string consumer,
             [EnumeratorCancellation] CancellationToken cancellationToken)
         {
-            while (true)
-            {
-                yield return await _items.Reader.ReadAsync(cancellationToken);
-            }
+            await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+            yield break;
+        }
+
+        public async IAsyncEnumerable<WorkDelivery<MessageWorkItem>> RecoverAsync(
+            string consumer,
+            TimeSpan minimumIdleTime,
+            int count,
+            [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            await Task.CompletedTask;
+            yield break;
         }
 
         public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
-
-        public Task CompleteAsync(QueuedMessageWorkItem item, CancellationToken cancellationToken) =>
-            throw new NotSupportedException("Interaction response tests do not complete message work.");
-
-        public Task<WorkItemFailureResult> FailAsync(
-            QueuedMessageWorkItem item,
-            Exception exception,
-            CancellationToken cancellationToken) =>
-            throw new NotSupportedException("Interaction response tests do not fail message work.");
     }
 }

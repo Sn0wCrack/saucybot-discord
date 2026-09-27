@@ -34,15 +34,22 @@ public sealed class VxTwitterTest
     {
         var client = Substitute.For<IVxTwitterClient>();
         client.GetTweet(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<string?>())
-            .Returns(CreateTweet(text: "@alice #saucy https://example.com/@not-a-mention"));
+            .Returns(CreateTweet(text: "P@treon C#programming @alice, #saucy! @under_score #with_under_score #Thinking.... https://example.com/@not-a-mention/#not-a-tag"));
         var site = CreateSite(client);
 
         var result = await site.Process(CreateRequest(site, "https://twitter.com/testuser/status/123456789"));
 
         var description = Assert.Single(result!.Embeds).Description;
-        Assert.Contains("[@alice](https://twitter.com/alice)", description);
-        Assert.Contains("[#saucy](https://twitter.com/hashtag/saucy)", description);
-        Assert.Contains("https://example.com/@not-a-mention", description);
+        Assert.Contains("P@treon C#programming", description);
+        Assert.Contains("[@alice](https://twitter.com/alice),", description);
+        Assert.Contains("[#saucy](https://twitter.com/hashtag/saucy)!", description);
+        Assert.Contains("[@under\\_score](https://twitter.com/under\\_score)", description);
+        Assert.Contains("[#with\\_under\\_score](https://twitter.com/hashtag/with\\_under\\_score)", description);
+        Assert.Contains("[#Thinking](https://twitter.com/hashtag/Thinking)....", description);
+        Assert.Contains("https://example.com/@not-a-mention/#not-a-tag", description);
+        Assert.DoesNotContain("[@treon](https://twitter.com/treon)", description);
+        Assert.DoesNotContain("[#programming](https://twitter.com/hashtag/programming)", description);
+        Assert.DoesNotContain("[#Thinking....](https://twitter.com/hashtag/Thinking....)", description);
     }
 
     [Fact]

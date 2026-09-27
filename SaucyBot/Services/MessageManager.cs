@@ -154,9 +154,7 @@ public sealed class MessageManager
     private bool ShouldSend(SocketSlashCommand command, ProcessResponse response)
     {
         // TODO: Determine if this is from a Guild or a DM and restrict based on that.
-        // Only allow sending NSFW in slash commands if restrict mode is off.
         var restrictNsfw = _botOptions.RestrictNSFW;
-
         return !restrictNsfw || !response.IsNsfw;
     }
 

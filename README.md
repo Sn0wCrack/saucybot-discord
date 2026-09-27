@@ -43,12 +43,12 @@ If you would like to add this bot to your server [click here](https://discord.co
 Setup
 ----------
 
-See [docs/setup](docs/setup) for installation and configuration guides covering Docker (production and development) and standalone setups.
+See [setup docuementation](docs/user/setup) for installation and configuration guides covering Docker (production and development) and standalone setups.
 
 Moderation
 ----------
 
-See [docs/moderation](docs/moderation.md) for information on available moderation tools.
+See [moderation documentation](docs/user/moderation.md) for information on available moderation tools.
 
 FAQ
 ---

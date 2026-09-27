@@ -1,0 +1,140 @@
+using System.Diagnostics;
+using SaucyBot.Diagnostics;
+
+namespace SaucyBot.Queue;
+
+public sealed class InteractionQueueWorker
+{
+    private static readonly TimeSpan FailureResponseTimeout = TimeSpan.FromSeconds(1);
+    private readonly InteractionWorkChannel _channel;
+    private readonly QueueMiddlewarePipeline<IInteractionWorkItem> _pipeline;
+    private readonly IInteractionProcessor _processor;
+    private readonly ILogger<InteractionQueueWorker> _logger;
+    private readonly ISaucyBotMetrics _metrics;
+
+    public InteractionQueueWorker(
+        InteractionWorkChannel channel,
+        QueueMiddlewarePipeline<IInteractionWorkItem> pipeline,
+        IInteractionProcessor processor,
+        ILogger<InteractionQueueWorker> logger,
+        ISaucyBotMetrics metrics)
+    {
+        _channel = channel;
+        _pipeline = pipeline;
+        _processor = processor;
+        _logger = logger;
+        _metrics = metrics;
+    }
+
+    private async Task RunAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await foreach (var interaction in _channel.ReadAllAsync(cancellationToken))
+            {
+                await ProcessOneAsync(interaction, cancellationToken);
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            _logger.LogDebug("Interaction worker stopped because interaction consumption was cancelled");
+        }
+    }
+
+    internal Task ProcessImmediatelyAsync(
+        IInteractionWorkItem interaction,
+        CancellationToken cancellationToken) =>
+        ProcessInteractionAsync(interaction, cancellationToken, wasQueued: false);
+
+    internal async Task RunSupervisedAsync(CancellationToken cancellationToken)
+    {
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            try
+            {
+                await RunAsync(cancellationToken);
+                return;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(exception, "Interaction worker failed; restarting");
+                _metrics.WorkerRestarts.Add(1, new KeyValuePair<string, object?>("worker_type", "interaction"));
+                try
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    return;
+                }
+            }
+        }
+    }
+
+    private Task ProcessOneAsync(IInteractionWorkItem interaction, CancellationToken cancellationToken) =>
+        ProcessInteractionAsync(interaction, cancellationToken, wasQueued: true);
+
+    private async Task ProcessInteractionAsync(
+        IInteractionWorkItem interaction,
+        CancellationToken cancellationToken,
+        bool wasQueued)
+    {
+        if (wasQueued)
+        {
+            _metrics.Dequeued.Add(1);
+            _metrics.QueueDepth.Add(-1);
+        }
+
+        _metrics.ActiveWorkers.Add(1);
+        var interactionMode = wasQueued ? "queued" : "immediate";
+        _logger.LogDebug("Starting {InteractionMode} interaction {InteractionId}", interactionMode, interaction.Id);
+        using var activity = QueueTelemetry.ActivitySource.StartActivity(ActivityKind.Consumer);
+        activity?.SetTag("saucybot.work.type", "interaction");
+        activity?.SetTag("saucybot.interaction.id", interaction.Id);
+
+        var context = new QueueWorkContext<IInteractionWorkItem>(
+            interaction,
+            interaction.Id.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            Attempt: 1,
+            ReceivedAt: DateTimeOffset.UtcNow);
+
+        try
+        {
+            await _pipeline.InvokeAsync(context, ProcessInteractionTerminalAsync, cancellationToken);
+            activity?.SetStatus(ActivityStatusCode.Ok);
+            _logger.LogDebug("Completed {InteractionMode} interaction {InteractionId}", interactionMode, interaction.Id);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            activity?.SetTag("saucybot.cancelled", true);
+            _logger.LogDebug("Interaction worker cancelled for interaction {InteractionId}", interaction.Id);
+            await SendFailureResponseAsync(interaction);
+        }
+        catch (Exception exception)
+        {
+            activity?.SetStatus(ActivityStatusCode.Error, exception.Message);
+            activity?.SetTag("error.type", exception.GetType().FullName);
+            _logger.LogError(exception, "Interaction worker failed for {InteractionId}", interaction.Id);
+            await SendFailureResponseAsync(interaction);
+        }
+        finally
+        {
+            _metrics.ActiveWorkers.Add(-1);
+        }
+    }
+
+    private Task ProcessInteractionTerminalAsync(
+        QueueWorkContext<IInteractionWorkItem> context,
+        CancellationToken cancellationToken) =>
+        _processor.ProcessAsync(context.Item, cancellationToken);
+
+    private Task SendFailureResponseAsync(IInteractionWorkItem interaction) =>
+        InteractionFailureResponder.SendAsync(
+            interaction,
+            _logger,
+            FailureResponseTimeout);
+}
