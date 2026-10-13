@@ -801,8 +801,8 @@
       },
       "RESPite": {
         "type": "Transitive",
-        "resolved": "3.3.1",
-        "contentHash": "1Ky6rOjP9YjA8eXWWSJDTSRgVQiRXwsKnET+X5hDuONJqq8KbYLQrTUjMg8gsdyKzwj74ivEioTuQd4mVhthdQ=="
+        "resolved": "3.4.0",
+        "contentHash": "BEdf42Eugi6oNw84vSQuLvYOzoY9KLv6gKsxFbSbv1zm23DiCULeQ8jobRgGip43T0GoAJstFW0TXvKRx9Ewlg=="
       },
       "Sentry": {
         "type": "Transitive",
@@ -904,11 +904,11 @@
       },
       "StackExchange.Redis": {
         "type": "Transitive",
-        "resolved": "3.3.1",
-        "contentHash": "AnA3ZuYnOQl2Hh/PXqV+JagA6QO8hiHovHBOc0PKz+uafVSsI0lYPQy8D0rklCC5Wpmc9MznEw+Lpt8e+LaB9w==",
+        "resolved": "3.4.0",
+        "contentHash": "29fvhba1pHQ2Vs+FIiG2201G62xL4EayGMm7yNZrHh/IcOZbzhl4g1CKQQP9xhznzDHybFURyj3XN433QctdPA==",
         "dependencies": {
           "Microsoft.Extensions.Logging.Abstractions": "10.0.5",
-          "RESPite": "3.3.1",
+          "RESPite": "3.4.0",
           "System.IO.Hashing": "10.0.12"
         }
       },
@@ -1041,7 +1041,7 @@
           "Serilog.Extensions.Hosting": "[10.0.0, )",
           "Serilog.Settings.Configuration": "[10.0.1, )",
           "Serilog.Sinks.Console": "[6.1.1, )",
-          "StackExchange.Redis": "[3.3.1, )",
+          "StackExchange.Redis": "[3.4.0, )",
           "Xabe.FFmpeg": "[6.1.1, )"
         }
       }
