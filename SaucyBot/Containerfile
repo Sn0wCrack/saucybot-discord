@@ -1,6 +1,6 @@
 ARG CONFIGURATION=Release
 
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0-alpine3.24@sha256:3cc3bbbbf93d82104892f42aa9106b6be4d120346dea0649643a97c801525256 AS build
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0-alpine3.24@sha256:230c3fbae0ceedc70bca04eed2bfb5694e8b248cadbb81010f41b7a993601f55 AS build
 
 ENV HUSKY=0
 
@@ -25,7 +25,7 @@ FROM build AS publish
 
 RUN dotnet publish "SaucyBot.csproj" -c "${CONFIGURATION}" -a "${TARGETARCH}" -o /app/publish
 
-FROM mcr.microsoft.com/dotnet/runtime:10.0-alpine3.24-extra@sha256:75536afa4e58f2f0d2befa0aaf28439fc3d4836d4dedac4e2c25c0ca679dc9a9 AS final
+FROM mcr.microsoft.com/dotnet/runtime:10.0-alpine3.24-extra@sha256:9eee236e791e93b170c378d416c2409e3370ac82568978a823d4116d8621570a AS final
 
 WORKDIR /app
 
