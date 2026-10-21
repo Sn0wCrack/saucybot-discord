@@ -35,7 +35,7 @@ ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false \
 
 RUN set -xe; \
     apk add --no-cache --update \
-        ca-certificates
+        ca-certificates \
         ffmpeg=8.1.2-r0
 
 COPY --from=publish /app/publish .
