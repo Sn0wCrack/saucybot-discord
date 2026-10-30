@@ -265,9 +265,9 @@
       },
       "Sentry": {
         "type": "Direct",
-        "requested": "[6.11.1, )",
-        "resolved": "6.11.1",
-        "contentHash": "wBC0H/5xpGo+RFK3k4j5Xa1IhVMgQr1qhoAMMkZGpI1SkyG9UhRv97rU/+O29+SJVzwU2CimBKo48/qZKyKy5w=="
+        "requested": "[6.12.1, )",
+        "resolved": "6.12.1",
+        "contentHash": "yCHz3cLGZ3TVik3rLV6rp6SaqJ0Ai7PyIi2KdoHNGpZYWEkcX7kx13IV46mufAzPW7pqZZoKNoru0w0RpmkmrA=="
       },
       "Serilog": {
         "type": "Direct",
