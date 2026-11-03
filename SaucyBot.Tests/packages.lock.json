@@ -59,8 +59,8 @@
       },
       "AngleSharp": {
         "type": "Transitive",
-        "resolved": "1.8.2",
-        "contentHash": "iRlkfBIhi+gTgTxBlYNT4PlmaiVEy7+qX3BmprAK4cYE1UjfSNFI4mEDyxC1qgtAKYg5rjGYgL3tJlzGF+Ukdg=="
+        "resolved": "1.9.0",
+        "contentHash": "NOKbXBsj4gaudXjAmdfSPxgUmKNbxP0k87ZRN56N0FW3u2z8AT7sRnTEOWjKoNrPI1vq4slV7Ld2nBCOvu/v8w=="
       },
       "BouncyCastle.Cryptography": {
         "type": "Transitive",
@@ -1015,7 +1015,7 @@
       "saucybot": {
         "type": "Project",
         "dependencies": {
-          "AngleSharp": "[1.8.2, )",
+          "AngleSharp": "[1.9.0, )",
           "Discord.Net": "[3.20.2, )",
           "EFCore.NamingConventions": "[10.0.1, )",
           "Markdig": "[1.4.0, )",
