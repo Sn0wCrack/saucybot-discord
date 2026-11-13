@@ -20,6 +20,16 @@ public static class Constants
     public const int MaximumEmbedsPerMessage = 4;
 
     /// <summary>
+    /// The maximum number of items Discord allows in a single Components V2 media gallery.
+    /// </summary>
+    public const int MaximumMediaGalleryItems = 10;
+
+    /// <summary>
+    /// Discord limits the combined length of all text across a Components V2 message to 4000 characters.
+    /// </summary>
+    public const int MaximumComponentsTextLength = 4_000;
+
+    /// <summary>
     /// Discord's maximum size for an embed Payload is 6kb. We set this slightly lower than that to allow for the data
     /// in all fields related to the embed to be taken into account when determining if an embed can be made or not.
     /// </summary>

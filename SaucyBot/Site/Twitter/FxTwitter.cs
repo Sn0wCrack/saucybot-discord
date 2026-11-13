@@ -190,78 +190,86 @@ public sealed partial class FxTwitterSite : BaseSite
 
     private ProcessResponse HandlePhoto(FxTwitterTweet tweet, IEnumerable<PhotoResult> results, bool mainTweetHasMedia)
     {
-        _logger.LogDebug("Processing as photo embed");
-
-        var description = GetTweetText(tweet);
-
-        if (description.Length >= Constants.MaximumEmbedBodyLength)
-        {
-            var early = new ProcessResponse
-            {
-                Text = $"https://fxtwitter.com/{tweet.Author.ScreenName}/status/{tweet.Id}",
-                IsNsfw = tweet.PossiblySensitive,
-            };
-
-            return early;
-        }
-
-        var response = new ProcessResponse
-        {
-            IsNsfw = tweet.PossiblySensitive,
-        };
+        _logger.LogDebug("Processing as photo gallery");
 
         var photos = mainTweetHasMedia
             ? results.Where(result => result.Source == ResultSource.MainTweet).ToList()
             : results.Where(result => result.Source == ResultSource.QuotedTweet).ToList();
 
-        foreach (var photo in photos)
-        {
-            var embed = new EmbedBuilder
-            {
-                Url = tweet.Url,
-                Timestamp = DateTimeOffset.FromUnixTimeSeconds(tweet.CreatedTimestamp),
-                Color = this.Color,
-                Description = description,
-                Author = new EmbedAuthorBuilder
-                {
-                    Name = $"{tweet.Author.Name} (@{tweet.Author.ScreenName})",
-                    IconUrl = tweet.Author.AvatarUrl,
-                    Url = $"https://twitter.com/{tweet.Author.ScreenName}",
-                },
-                Fields = new List<EmbedFieldBuilder>
-                {
-                    new ()
-                    {
-                        Name = "Replies",
-                        Value = tweet.Replies ?? 0,
-                        IsInline = true
-                    },
-                    new () {
-                        Name = "Retweets",
-                        Value = tweet.Retweets ?? 0,
-                        IsInline = true
-                    },
-                    new ()
-                    {
-                        Name = "Likes",
-                        Value = tweet.Likes ?? 0,
-                        IsInline = true
-                    },
-                    new ()
-                    {
-                        Name = "Views",
-                        Value = tweet.Views ?? 0,
-                        IsInline = true
-                    },
-                },
-                ImageUrl = GetOriginalResolutionPhotoUrl(photo.Photo.Url),
-                Footer = new EmbedFooterBuilder { IconUrl = Constants.TwitterIconUrl, Text = "Twitter" },
-            };
+        var authorUrl = tweet.Author.Url ?? $"https://twitter.com/{tweet.Author.ScreenName}";
+        var tweetUrl = tweet.Url ?? $"https://twitter.com/{tweet.Author.ScreenName}/status/{tweet.Id}";
 
-            response.Embeds.Add(embed.Build());
+        var header = $"**[{EscapeLinkText(tweet.Author.Name)} (@{tweet.Author.ScreenName})]({authorUrl})**";
+        var description = GetTweetText(tweet);
+        var stats = string.Join("    ", [
+            $"💬 {tweet.Replies ?? 0:N0}",
+            $"🔁 {tweet.Retweets ?? 0:N0}",
+            $"❤️ {tweet.Likes ?? 0:N0}",
+            $"👀 {tweet.Views ?? 0:N0}",
+        ]);
+        var footer = $"-# [Twitter](<{tweetUrl}>) · <t:{tweet.CreatedTimestamp}:f>";
+
+        var textLength = header.Length + description.Length + stats.Length + footer.Length;
+
+        if (textLength >= Constants.MaximumComponentsTextLength)
+        {
+            return new ProcessResponse
+            {
+                Text = $"https://fxtwitter.com/{tweet.Author.ScreenName}/status/{tweet.Id}",
+                IsNsfw = tweet.PossiblySensitive,
+            };
         }
 
-        return response;
+        var headerTexts = new List<string> { header };
+
+        if (description is not "")
+        {
+            headerTexts.Add(description);
+        }
+
+        var container = new ContainerBuilder()
+            .WithAccentColor(this.Color);
+
+        if (tweet.Author.AvatarUrl is not null)
+        {
+            var section = new SectionBuilder()
+                .WithAccessory(new ThumbnailBuilder(new UnfurledMediaItemProperties(tweet.Author.AvatarUrl)));
+
+            foreach (var text in headerTexts)
+            {
+                section.WithTextDisplay(text);
+            }
+
+            container.WithSection(section);
+        }
+        else
+        {
+            foreach (var text in headerTexts)
+            {
+                container.WithTextDisplay(text);
+            }
+        }
+
+        foreach (var chunk in photos.Chunk(Constants.MaximumMediaGalleryItems))
+        {
+            container.WithMediaGallery(chunk.Select(photo => GetOriginalResolutionPhotoUrl(photo.Photo.Url)));
+        }
+
+        container
+            .WithTextDisplay(stats)
+            .WithTextDisplay(footer);
+
+        return new ProcessResponse(
+            components: new ComponentBuilderV2().WithContainer(container).Build(),
+            nsfw: tweet.PossiblySensitive
+        );
+    }
+
+    private static string EscapeLinkText(string text)
+    {
+        return Helper.EscapeDiscordMarkdown(text)
+            .Replace("[", @"\[")
+            .Replace("]", @"\]");
     }
 
     private ProcessResponse HandleRegular(FxTwitterTweet tweet)
