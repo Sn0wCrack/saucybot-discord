@@ -13,6 +13,24 @@ namespace SaucyBot.Tests.Unit.Services;
 
 public class MessageManagerTest
 {
+    [Theory]
+    [InlineData(2, 1)]
+    [InlineData(4, 1)]
+    [InlineData(5, 2)]
+    [InlineData(9, 3)]
+    [InlineData(16, 4)]
+    public async Task MultipleEmbedsAreChunkedWithoutDroppingAny(int embedCount, int expectedMessages)
+    {
+        var embeds = Enumerable.Range(0, embedCount)
+            .Select(index => new EmbedBuilder { Description = index.ToString() }.Build())
+            .ToList();
+
+        var messages = await MessageManager.PartitionMessages(new ProcessResponse(embeds: embeds));
+
+        Assert.Equal(expectedMessages, messages.Count);
+        Assert.Equal(embedCount, messages.Cast<EmbedMessage>().Sum(message => message.Embeds.Count));
+    }
+
     [Fact]
     public async Task ProcessResponseWithASingleTextElementShouldReturnASingleMessage()
     {

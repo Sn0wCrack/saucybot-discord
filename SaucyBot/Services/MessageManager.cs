@@ -259,7 +259,7 @@ public sealed class MessageManager
             messages.Add(new EmbedMessage { Content = response.Text });
         }
 
-        for (var i = 0; i < response.Embeds.Count - 1; i += Constants.MaximumEmbedsPerMessage)
+        for (var i = 0; i < response.Embeds.Count; i += Constants.MaximumEmbedsPerMessage)
         {
             var chunk = response.Embeds.SafeSlice(i, i + Constants.MaximumEmbedsPerMessage);
             var files = new List<FileAttachment>();
