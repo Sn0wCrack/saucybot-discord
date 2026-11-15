@@ -806,8 +806,8 @@
       },
       "Sentry": {
         "type": "Transitive",
-        "resolved": "6.11.1",
-        "contentHash": "wBC0H/5xpGo+RFK3k4j5Xa1IhVMgQr1qhoAMMkZGpI1SkyG9UhRv97rU/+O29+SJVzwU2CimBKo48/qZKyKy5w=="
+        "resolved": "6.13.0",
+        "contentHash": "TwgXw4BwBa6gYKJxTEBJWZ0y+MyBDTMzCq8ywYWUEzG9srNmKui4AMcz6vZ9BEsaZYVJxni0EIDHGho+PQXDVA=="
       },
       "Serilog": {
         "type": "Transitive",
@@ -1036,7 +1036,7 @@
           "OpenTelemetry.Instrumentation.Runtime": "[1.19.0, )",
           "Polly.Core": "[8.8.0, )",
           "SQLitePCLRaw.bundle_e_sqlite3": "[3.0.5, )",
-          "Sentry": "[6.11.1, )",
+          "Sentry": "[6.13.0, )",
           "Serilog": "[4.4.0, )",
           "Serilog.Extensions.Hosting": "[10.0.0, )",
           "Serilog.Settings.Configuration": "[10.0.1, )",
