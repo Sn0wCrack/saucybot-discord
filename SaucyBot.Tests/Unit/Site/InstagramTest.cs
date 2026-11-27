@@ -15,9 +15,9 @@ public class InstagramTest
     // Positive Cases - Should Rewrite
 
     [Theory]
-    [InlineData("https://instagram.com/p/ABC123/", "https://vxinstagram.com/p/ABC123/")]
-    [InlineData("https://www.instagram.com/p/ABC123/", "https://vxinstagram.com/p/ABC123/")]
-    [InlineData("https://m.instagram.com/p/ABC123/", "https://vxinstagram.com/p/ABC123/")]
+    [InlineData("https://instagram.com/p/ABC123/", "https://instagramfix.com/p/ABC123/")]
+    [InlineData("https://www.instagram.com/p/ABC123/", "https://instagramfix.com/p/ABC123/")]
+    [InlineData("https://m.instagram.com/p/ABC123/", "https://instagramfix.com/p/ABC123/")]
     public async Task PostUrlsAreRewrittenCorrectly(string originalUrl, string expectedUrl)
     {
         var site = new VxInstagramSite(_logger);
@@ -28,9 +28,23 @@ public class InstagramTest
         Assert.Equal(expectedUrl, response.Text);
     }
 
+    [Fact]
+    public async Task QueryAndFragmentArePreserved()
+    {
+        const string originalUrl = "https://www.instagram.com/p/ABC123/?cplk=ZmlkcGxncjV2cWl4#comment";
+        const string expectedUrl = "https://instagramfix.com/p/ABC123/?cplk=ZmlkcGxncjV2cWl4#comment";
+        var site = new VxInstagramSite(_logger);
+        var match = site.Pattern.Matches(originalUrl).First();
+
+        var response = await site.Process(new ProcessRequest(match));
+
+        Assert.NotNull(response);
+        Assert.Equal(expectedUrl, response.Text);
+    }
+
     [Theory]
-    [InlineData("https://www.instagram.com/reel/DQLuwVcABa_/", "https://vxinstagram.com/reel/DQLuwVcABa_/")]
-    [InlineData("https://www.instagram.com/reel/DQLu_wVcA_Ba/", "https://vxinstagram.com/reel/DQLu_wVcA_Ba/")]
+    [InlineData("https://www.instagram.com/reel/DQLuwVcABa_/", "https://instagramfix.com/reel/DQLuwVcABa_/")]
+    [InlineData("https://www.instagram.com/reel/DQLu_wVcA_Ba/", "https://instagramfix.com/reel/DQLu_wVcA_Ba/")]
     public async Task ReelUrlsWithUnderscoresAreRewrittenCorrectly(string originalUrl, string expectedUrl)
     {
         var site = new VxInstagramSite(_logger);
@@ -42,9 +56,9 @@ public class InstagramTest
     }
 
     [Theory]
-    [InlineData("https://instagram.com/reel/EFG456/", "https://vxinstagram.com/reel/EFG456/")]
-    [InlineData("https://www.instagram.com/reel/EFG456/", "https://vxinstagram.com/reel/EFG456/")]
-    [InlineData("https://m.instagram.com/reel/EFG456/", "https://vxinstagram.com/reel/EFG456/")]
+    [InlineData("https://instagram.com/reel/EFG456/", "https://instagramfix.com/reel/EFG456/")]
+    [InlineData("https://www.instagram.com/reel/EFG456/", "https://instagramfix.com/reel/EFG456/")]
+    [InlineData("https://m.instagram.com/reel/EFG456/", "https://instagramfix.com/reel/EFG456/")]
     public async Task ReelUrlsAreRewrittenCorrectly(string originalUrl, string expectedUrl)
     {
         var site = new VxInstagramSite(_logger);
@@ -56,9 +70,9 @@ public class InstagramTest
     }
 
     [Theory]
-    [InlineData("https://instagram.com/reels/HIJ789/", "https://vxinstagram.com/reels/HIJ789/")]
-    [InlineData("https://www.instagram.com/reels/HIJ789/", "https://vxinstagram.com/reels/HIJ789/")]
-    [InlineData("https://m.instagram.com/reels/HIJ789/", "https://vxinstagram.com/reels/HIJ789/")]
+    [InlineData("https://instagram.com/reels/HIJ789/", "https://instagramfix.com/reels/HIJ789/")]
+    [InlineData("https://www.instagram.com/reels/HIJ789/", "https://instagramfix.com/reels/HIJ789/")]
+    [InlineData("https://m.instagram.com/reels/HIJ789/", "https://instagramfix.com/reels/HIJ789/")]
     public async Task ReelsUrlsAreRewrittenCorrectly(string originalUrl, string expectedUrl)
     {
         var site = new VxInstagramSite(_logger);
@@ -72,8 +86,8 @@ public class InstagramTest
 
 
     [Theory]
-    [InlineData("https://instagram.com/p/ABC123", "https://vxinstagram.com/p/ABC123")]
-    [InlineData("https://instagram.com/p/ABC123/", "https://vxinstagram.com/p/ABC123/")]
+    [InlineData("https://instagram.com/p/ABC123", "https://instagramfix.com/p/ABC123")]
+    [InlineData("https://instagram.com/p/ABC123/", "https://instagramfix.com/p/ABC123/")]
     public async Task TrailingSlashesAreHandledCorrectly(string originalUrl, string expectedUrl)
     {
         var site = new VxInstagramSite(_logger);
@@ -85,8 +99,8 @@ public class InstagramTest
     }
 
     [Theory]
-    [InlineData("https://instagram.com/p/ABC123/extra/segment", "https://vxinstagram.com/p/ABC123/extra/segment")]
-    [InlineData("https://instagram.com/reel/EFG456/another", "https://vxinstagram.com/reel/EFG456/another")]
+    [InlineData("https://instagram.com/p/ABC123/extra/segment", "https://instagramfix.com/p/ABC123/extra/segment")]
+    [InlineData("https://instagram.com/reel/EFG456/another", "https://instagramfix.com/reel/EFG456/another")]
     public async Task ExtraPathSegmentsArePreserved(string originalUrl, string expectedUrl)
     {
         var site = new VxInstagramSite(_logger);
@@ -98,9 +112,9 @@ public class InstagramTest
     }
 
     [Theory]
-    [InlineData("https://INSTAGRAM.COM/p/ABC123/", "https://vxinstagram.com/p/ABC123/")]
-    [InlineData("HTTPS://Instagram.Com/reel/EFG456/", "https://vxinstagram.com/reel/EFG456/")]
-    [InlineData("https://WWW.INSTAGRAM.COM/reels/HIJ789/", "https://vxinstagram.com/reels/HIJ789/")]
+    [InlineData("https://INSTAGRAM.COM/p/ABC123/", "https://instagramfix.com/p/ABC123/")]
+    [InlineData("HTTPS://Instagram.Com/reel/EFG456/", "https://instagramfix.com/reel/EFG456/")]
+    [InlineData("https://WWW.INSTAGRAM.COM/reels/HIJ789/", "https://instagramfix.com/reels/HIJ789/")]
     public async Task SchemeAndHostAreCaseInsensitive(string originalUrl, string expectedUrl)
     {
         var site = new VxInstagramSite(_logger);
@@ -114,9 +128,9 @@ public class InstagramTest
     // Negative Cases - Should Not Match
 
     [Theory]
-    [InlineData("https://vxinstagram.com/p/ABC123/")]
-    [InlineData("https://vxinstagram.com/reel/EFG456/")]
-    [InlineData("https://vxinstagram.com/reels/HIJ789/")]
+    [InlineData("https://instagramfix.com/p/ABC123/")]
+    [InlineData("https://instagramfix.com/reel/EFG456/")]
+    [InlineData("https://instagramfix.com/reels/HIJ789/")]
     public void AlreadyRewrittenUrlsAreNotMatched(string url)
     {
         var site = new VxInstagramSite(_logger);
@@ -179,10 +193,10 @@ public class InstagramTest
         var secondResponse = await site.Process(new ProcessRequest(matches[1]));
 
         Assert.NotNull(firstResponse);
-        Assert.Equal("https://vxinstagram.com/p/ABC123/", firstResponse.Text);
+        Assert.Equal("https://instagramfix.com/p/ABC123/", firstResponse.Text);
 
         Assert.NotNull(secondResponse);
-        Assert.Equal("https://vxinstagram.com/reel/EFG456/", secondResponse.Text);
+        Assert.Equal("https://instagramfix.com/reel/EFG456/", secondResponse.Text);
     }
 
     [Fact]

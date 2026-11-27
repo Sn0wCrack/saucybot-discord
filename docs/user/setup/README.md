@@ -31,4 +31,4 @@ Supported Sites
 | **e621** | Creates an embed with higher quality images and more information than Discord's default. |
 | **E(x-)Hentai** | Creates an embed to preview cover art, title, current score, etc. |
 | **Misskey** | Creates an embed for multi-image posts and NSFW posts. Only supports misskey.io. |
-| **Instagram** | Rewrites URLs to kkinstagram.com for improved embeds. Supports Posts and Reels. No external API calls — simple URL domain rewrite. |
+| **Instagram** | Rewrites post and reel URLs to [InstagramFix](https://instagramfix.com) for improved embeds. Query parameters and fragments are preserved. |

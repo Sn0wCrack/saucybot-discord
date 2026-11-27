@@ -25,8 +25,10 @@ public sealed partial class VxInstagramSite : BaseSite
     {
         var originalUrl = request.Match.Value;
         var path = request.Match.Groups["path"].Value;
+        var query = request.Match.Groups["query"].Value;
+        var fragment = request.Match.Groups["fragment"].Value;
 
-        var rewrittenUrl = $"https://vxinstagram.com/{path}";
+        var rewrittenUrl = $"https://instagramfix.com/{path}{query}{fragment}";
 
         _logger.LogDebug("Rewrote Instagram URL: {Original} -> {Rewritten}", originalUrl, rewrittenUrl);
 

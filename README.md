@@ -35,10 +35,9 @@ If you would like to add this bot to your server [click here](https://discord.co
     * **NOTE**: Live version only supports e-hentai.org right now
   * Misskey - Creates an embed for multi-image posts and NSFW posts
     * NOTE: Only supports misskey.io
-  * Instagram - Rewrites URLs to kkinstagram.com for improved embeds
+  * Instagram - Rewrites post and reel URLs to [InstagramFix](https://instagramfix.com) for improved embeds
     * Supports Posts (/p/) and Reels (/reel/, /reels/)
-    * No external API calls, simple URL domain rewrite
-    * **NOTE**: This is disabled on live version as it is currently broken. 
+    * Preserves URL query parameters and fragments
 
 Setup
 ----------
